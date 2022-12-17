@@ -1,0 +1,17 @@
+
+# A list of packages that installed by default in the pytorch/pytorch docker image
+# torch==1.13.0
+# torchtext==0.14.0
+# torchvision==0.14.0
+
+# Transformer Lens V2
+transformer-lens @ git+https://github.com/neelnanda-io/TransformerLens@25b9e076fd6a44d053f5e2925a5d1ff802692ab2
+
+# Minigrid
+Minigrid==2.1.0
+
+# torch optimizer (for lamb)
+torch-optimizer==0.3.0
+
+# tqdm
+tqdm==4.64.1

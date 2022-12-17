@@ -10,3 +10,5 @@ In steps:
 3. Train a decision transformer on minigrid [using pseudo code from paper](https://arxiv.org/pdf/2106.01345.pdf)
 4. Evaluate the decision transformer on minigrid by visually inspecting the performance.
 
+# Environment Setup (step 0):
+
