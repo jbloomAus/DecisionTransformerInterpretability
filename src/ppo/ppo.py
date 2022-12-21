@@ -1,4 +1,4 @@
-# %%
+
 import os
 import re
 import sys
@@ -31,7 +31,7 @@ warnings.filterwarnings("ignore", category= DeprecationWarning)
 
 device = t.device("cuda" if t.cuda.is_available() else "cpu")
 
-# %%
+
 
 MAIN = __name__ == "__main__"
 
@@ -42,7 +42,7 @@ if MAIN:
 
 # patch_typeguard()
 
-# %%
+
 patch_typeguard()
 
 
@@ -181,7 +181,7 @@ class Memory():
             wandb.log(vars_to_log, step=step)
 
 
-# %%
+
 
 class PPOScheduler:
     def __init__(self, optimizer: optim.Optimizer, initial_lr: float, end_lr: float, num_updates: int):
@@ -200,7 +200,7 @@ class PPOScheduler:
         for param_group in self.optimizer.param_groups:
             param_group["lr"] = self.initial_lr + frac * (self.end_lr - self.initial_lr)
 
-# %%
+
 
 class Agent(nn.Module):
     critic: nn.Sequential
@@ -329,7 +329,7 @@ class Agent(nn.Module):
             )
 
 
-# %%
+
 
 if MAIN:
     # Code to check that memory experiences are working correctly
@@ -348,7 +348,7 @@ if MAIN:
     done = t.stack([e[1] for e in memory.experiences])
     plot_cartpole_obs_and_dones(obs, done)
 
-# %%
+
 
 def calc_clipped_surrogate_objective(
     probs: Categorical, mb_action: t.Tensor, mb_advantages: t.Tensor, mb_logprobs: t.Tensor, clip_coef: float
@@ -369,7 +369,7 @@ def calc_clipped_surrogate_objective(
 
     return t.minimum(non_clipped, clipped).mean()
 
-# %%
+
 
 @typechecked
 def calc_value_function_loss(values: TT["batch"], mb_returns: TT["batch"], vf_coef: float) -> t.Tensor:
@@ -379,7 +379,7 @@ def calc_value_function_loss(values: TT["batch"], mb_returns: TT["batch"], vf_co
     '''
     return 0.5 * vf_coef * (values - mb_returns).pow(2).mean()
 
-# %%
+
 
 def calc_entropy_bonus(probs: Categorical, ent_coef: float):
     '''Return the entropy bonus term, suitable for gradient ascent.
@@ -389,7 +389,7 @@ def calc_entropy_bonus(probs: Categorical, ent_coef: float):
     return ent_coef * probs.entropy().mean()
 
 
-# %%
+
 
 from IPython.display import display
 import ipywidgets as wg
@@ -482,7 +482,7 @@ def train_ppo(args: PPOArgs):
         wandb.finish()
 
 
-# %%
+
 
 if MAIN:
     args = PPOArgs()
