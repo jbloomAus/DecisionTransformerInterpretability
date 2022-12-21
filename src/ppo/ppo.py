@@ -23,7 +23,7 @@ import wandb
 
 from .my_probe_envs import Probe1, Probe2, Probe3, Probe4, Probe5
 from .utils import (PPOArgs, arg_help, make_env, plot_cartpole_obs_and_dones,
-                    set_global_seeds)
+                    set_global_seeds, get_obs_preprocessor)
 
 device = t.device("cuda" if t.cuda.is_available() else "cpu")
 
@@ -61,6 +61,7 @@ class Memory():
         self.next_value = None
         self.device = device
         self.global_step = 0
+        self.obs_preprocessor = get_obs_preprocessor(envs.observation_space)
         self.reset()
 
     def add(self, *data: t.Tensor):
@@ -135,7 +136,7 @@ class Memory():
             for ind in indexes
         ]
 
-    def set_progress_bar_description(self, progress_bar: tqdm) -> None:
+    def get_printable_output(self) -> str:
         '''Sets a new progress bar description, if any episodes have terminated. 
         If not, then the bar's description won't change.
         '''
@@ -143,7 +144,7 @@ class Memory():
             global_step = self.global_step
             avg_episode_length = np.mean(self.episode_lengths)
             avg_episode_return = np.mean(self.episode_returns)
-            progress_bar.set_description(f"{global_step=:<06}, {avg_episode_length=:<3.0f}, {avg_episode_return=:<3.0f}")
+            return f"{global_step=:<06}\n{avg_episode_length=:<3.0f}\n{avg_episode_return=:<3.0f}"
 
     def reset(self) -> None:
         '''Function to be called at the end of each rollout period, to make 
@@ -154,7 +155,9 @@ class Memory():
         self.episode_lengths = []
         self.episode_returns = []
         if self.next_obs is None:
-            self.next_obs = t.tensor(self.envs.reset()[0]).to(self.device)
+            (obs, info) = self.envs.reset()
+            obs = self.obs_preprocessor(obs)
+            self.next_obs = t.tensor(obs).to(self.device)
             self.next_done = t.zeros(self.envs.num_envs).to(self.device, dtype=t.float)
 
     def add_vars_to_log(self, **kwargs):

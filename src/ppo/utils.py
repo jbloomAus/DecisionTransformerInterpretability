@@ -25,14 +25,15 @@ def make_env(env_id: str, seed: int, idx: int, capture_video: bool, run_name: st
     """Return a function that returns an environment after setting up boilerplate."""
     
     def thunk():
-        env = gym.make(env_id)
+        env = gym.make(env_id, render_mode="rgb_array")
         env = gym.wrappers.RecordEpisodeStatistics(env)
         if capture_video:
             if idx == 0:
                 env = gym.wrappers.RecordVideo(
                     env, 
                     f"videos/{run_name}", 
-                    episode_trigger=lambda x : x % 50 == 0 # Video every 50 runs for env #1
+                    episode_trigger=lambda x : x % 50 == 0, # Video every 50 runs for env #1
+                    disable_logger=True
                 )
         obs = env.reset(seed=seed)
         env.action_space.seed(seed)
@@ -217,3 +218,25 @@ def set_global_seeds(seed):
     random.seed(seed)
     np.random.seed(seed)
     t.backends.cudnn.deterministic = True
+
+
+import gymnasium as gym
+import torch 
+import numpy as np
+
+def get_obs_preprocessor(obs_space):
+
+    # handle cases where obs space is instance of gym.spaces.Box, gym.spaces.Dict, gym.spaces
+
+    if isinstance(obs_space, gym.spaces.Box):
+        return lambda x: x
+
+    elif isinstance(obs_space, gym.spaces.Dict):
+        obs_space = obs_space.spaces
+        if 'image' in obs_space:
+            return lambda x: preprocess_images(x['image'])
+
+def preprocess_images(images, device=None):
+    # Bug of Pytorch: very slow if not first converted to numpy array
+    images = np.array(images)
+    return images

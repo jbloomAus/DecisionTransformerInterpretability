@@ -1,8 +1,7 @@
 import pytest
 import numpy as np
 import gymnasium as gym
-from src.utils import get_obs_preprocessor
-
+from src.ppo.utils import get_obs_preprocessor
 from src.ppo.my_probe_envs import  Probe1
 from src.ppo.utils import make_env
 from minigrid.wrappers import RGBImgPartialObsWrapper, ImgObsWrapper, FlatObsWrapper, FullyObsWrapper
