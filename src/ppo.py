@@ -3,10 +3,9 @@ import warnings
 import gymnasium as gym
 import torch as t
 
-from .agent import Agent
-from .my_probe_envs import Probe1, Probe2, Probe3, Probe4, Probe5
-from .utils import PPOArgs, arg_help, make_env, set_global_seeds
-from .train import train_ppo
+from ppo.my_probe_envs import Probe1, Probe2, Probe3, Probe4, Probe5
+from ppo.utils import PPOArgs, arg_help
+from ppo.train import train_ppo
 
 warnings.filterwarnings("ignore", category= DeprecationWarning)
 device = t.device("cuda" if t.cuda.is_available() else "cpu")
