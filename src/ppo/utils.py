@@ -22,14 +22,14 @@ ActType = int
 
 
 # %%
-def make_env(env_id: str, seed: int, idx: int, capture_video: bool, run_name: str, render_mode ="rgb_array"):
+def make_env(env_id: str, seed: int, idx: int, capture_video: bool, run_name: str, render_mode ="rgb_array", max_steps = 100):
     """Return a function that returns an environment after setting up boilerplate."""
     
     def thunk():
         if render_mode:
-            env = gym.make(env_id, render_mode=render_mode)
+            env = gym.make(env_id, render_mode=render_mode, max_steps=max_steps)
         else: 
-            env = gym.make(env_id)
+            env = gym.make(env_id, max_steps=max_steps)
         env = gym.wrappers.RecordEpisodeStatistics(env)
         if capture_video:
             if idx == 0:
@@ -127,6 +127,7 @@ class PPOArgs:
     max_grad_norm: float = 0.5
     batch_size: int = 512
     minibatch_size: int = 128
+    max_steps: int = 100
 
 arg_help_strings = dict(
     exp_name = "the name of this experiment",
@@ -150,6 +151,7 @@ arg_help_strings = dict(
     max_grad_norm = "value used in gradient clipping",
     batch_size = "number of random samples we take from the rollout data",
     minibatch_size = "size of each minibatch we perform a gradient step on",
+    max_steps = "maximum number of steps in an episode",
 )
 
 def arg_help(args: Optional[PPOArgs], print_df=False):
