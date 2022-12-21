@@ -20,6 +20,7 @@ Arr = np.ndarray
 ObsType = np.ndarray
 ActType = int
 
+
 # %%
 def make_env(env_id: str, seed: int, idx: int, capture_video: bool, run_name: str):
     """Return a function that returns an environment after setting up boilerplate."""

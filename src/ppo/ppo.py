@@ -25,6 +25,10 @@ from .my_probe_envs import Probe1, Probe2, Probe3, Probe4, Probe5
 from .utils import (PPOArgs, arg_help, make_env, plot_cartpole_obs_and_dones,
                     set_global_seeds, get_obs_preprocessor)
 
+import warnings
+warnings.filterwarnings("ignore", category= DeprecationWarning)
+
+
 device = t.device("cuda" if t.cuda.is_available() else "cpu")
 
 # %%
@@ -69,16 +73,21 @@ class Memory():
         '''
         info, *experiences = data
         self.experiences.append(experiences)
-        if "episode" in info.keys():
-            for i in range(len(info["episode"])):   
-                self.episode_lengths.append(info["episode"][i]["l"])
-                self.episode_returns.append(info["episode"][i]["r"])
-                self.add_vars_to_log(
-                    episode_length = info["episode"][i]["l"],
-                    episode_return = info["episode"][i]["r"],
-                )
-            self.global_step += 1
+        if info and isinstance(info, dict):
+            if "final_info" in info.keys():
 
+                for item in info["final_info"]:
+                    if isinstance(item, dict):
+                        if "episode" in item.keys():
+                            self.episode_lengths.append(item["episode"]["l"])
+                            self.episode_returns.append(item["episode"]["r"])
+                            self.add_vars_to_log(
+                                episode_length = item["episode"]["l"],
+                                episode_return = item["episode"]["r"],
+                            )
+
+                    self.global_step += 1 
+                
     def sample_experiences(self):
         '''Helper function to print out experiences, as a sanity check!
         '''
