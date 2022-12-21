@@ -225,7 +225,6 @@ def set_global_seeds(seed):
 
 
 import gymnasium as gym
-import torch 
 import numpy as np
 
 def get_obs_preprocessor(obs_space):
