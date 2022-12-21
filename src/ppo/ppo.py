@@ -273,6 +273,7 @@ class Agent(nn.Module):
             action = probs.sample()
             logprob = probs.log_prob(action)
             next_obs, reward, next_done, next_truncated, info = envs.step(action.cpu().numpy())
+            next_obs = memory.obs_preprocessor(next_obs)
             reward = t.from_numpy(reward).to(device)
 
             # Store (s_t, d_t, a_t, logpi(a_t|s_t), v(s_t), r_t+1)

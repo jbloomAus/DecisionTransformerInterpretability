@@ -15,7 +15,7 @@ def test_get_obs_preprocessor_probe1():
     (obs, info) = env.reset() # has shape (obs, info), where obs is an ordered dict
     obs.shape
     assert isinstance(get_obs_preprocessor(env.observation_space)(obs), np.ndarray)
-    assert (get_obs_preprocessor(env.observation_space)(obs)).dtype == np.dtype('float64')
+    assert (get_obs_preprocessor(env.observation_space)(obs)).dtype == np.dtype('float32')
 
 def test_get_obs_preprocessor_MiniGrid():
 
@@ -24,7 +24,7 @@ def test_get_obs_preprocessor_MiniGrid():
     (obs, info) = env.reset() # has shape (obs, info), where obs is an ordered dict
     obs['image'].shape
     assert isinstance(get_obs_preprocessor(env.observation_space)(obs), np.ndarray)
-    assert (get_obs_preprocessor(env.observation_space)(obs)).dtype == np.dtype('float64')
+    assert (get_obs_preprocessor(env.observation_space)(obs)).dtype == np.dtype('float32')
 
 def test_get_obs_preprocessor_MiniGrid_flat():
 
@@ -33,7 +33,7 @@ def test_get_obs_preprocessor_MiniGrid_flat():
     (obs, info) = env.reset() # has shape (obs, info), where obs is an ordered dict
     print(obs.shape)
     assert isinstance(get_obs_preprocessor(env.observation_space)(obs), np.ndarray)
-    assert (get_obs_preprocessor(env.observation_space)(obs)).dtype == np.dtype('float64')
+    assert (get_obs_preprocessor(env.observation_space)(obs)).dtype == np.dtype('float32')
 
 def test_get_obs_preprocessor_MiniGrid_full_obs():
 
@@ -41,7 +41,7 @@ def test_get_obs_preprocessor_MiniGrid_full_obs():
     env = FullyObsWrapper(env())
     (obs, info) = env.reset() # has shape (obs, info), where obs is an ordered dict
     assert isinstance(get_obs_preprocessor(env.observation_space)(obs), np.ndarray)
-    assert (get_obs_preprocessor(env.observation_space)(obs)).dtype == np.dtype('float64')
+    assert (get_obs_preprocessor(env.observation_space)(obs)).dtype == np.dtype('float32')
 
 def test_get_obs_preprocessor_MiniGrid_full_img_obs():
 
@@ -49,7 +49,7 @@ def test_get_obs_preprocessor_MiniGrid_full_img_obs():
     env = ImgObsWrapper(env())
     (obs, info) = env.reset() # has shape (obs, info), where obs is an ordered dict
     assert isinstance(get_obs_preprocessor(env.observation_space)(obs), np.ndarray)
-    assert (get_obs_preprocessor(env.observation_space)(obs)).dtype == np.dtype('float64')
+    assert get_obs_preprocessor(env.observation_space)(obs).dtype == np.dtype('float32')
 
 def test_get_obs_preprocessor_MiniGrid_full_img_partial():
 
@@ -57,4 +57,4 @@ def test_get_obs_preprocessor_MiniGrid_full_img_partial():
     env = RGBImgPartialObsWrapper(env())
     (obs, info) = env.reset() # has shape (obs, info), where obs is an ordered dict
     assert isinstance(get_obs_preprocessor(env.observation_space)(obs), np.ndarray)
-    assert (get_obs_preprocessor(env.observation_space)(obs)).dtype == np.dtype('float64')
+    assert (get_obs_preprocessor(env.observation_space)(obs)).dtype == np.dtype('float32')
