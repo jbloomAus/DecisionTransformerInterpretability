@@ -1,9 +1,10 @@
 import pytest
 import torch as t
+import numpy as np 
 from einops import rearrange
 import gymnasium as gym
 from minigrid.wrappers import RGBImgPartialObsWrapper, ImgObsWrapper
-from src.model import DecisionTransformer, StateEncoder
+from src.decision_transformer import DecisionTransformer, StateEncoder
 
 
 def test_state_encoder():
@@ -171,7 +172,7 @@ def test_get_token_embeddings_multi_batch():
         all_timesteps.append(i)
 
     # convert to tensors.unsqueeze(0)
-    all_obs = t.tensor(all_obs).to(t.float32).unsqueeze(0)
+    all_obs = t.tensor(np.array(all_obs)).to(t.float32).unsqueeze(0)
     all_actions = t.tensor(all_actions).reshape(-1, 1).unsqueeze(0)
     all_returns = t.randn((10, 1))
     all_returns_to_go = all_returns.flip(0).cumsum(0).flip(0).reshape(-1, 1).unsqueeze(0)
@@ -221,7 +222,7 @@ def test_forward():
         all_timesteps.append(i)
 
     # convert to tensors.unsqueeze(0)
-    all_obs = t.tensor(all_obs).to(t.float32).unsqueeze(0)
+    all_obs = t.tensor(np.array(all_obs)).to(t.float32).unsqueeze(0)
     all_actions = t.tensor(all_actions).reshape(-1, 1).unsqueeze(0)
     all_returns = t.randn((10, 1))
     all_returns_to_go = all_returns.flip(0).cumsum(0).flip(0).reshape(-1, 1).unsqueeze(0)
@@ -261,7 +262,7 @@ def test_forward_no_actions():
         all_timesteps.append(i)
 
     # convert to tensors.unsqueeze(0)
-    all_obs = t.tensor(all_obs).to(t.float32).unsqueeze(0)
+    all_obs = t.tensor(np.array(all_obs)).to(t.float32).unsqueeze(0)
     all_actions = t.tensor(all_actions).reshape(-1, 1).unsqueeze(0)
     all_returns = t.randn((10, 1))
     all_returns_to_go = all_returns.flip(0).cumsum(0).flip(0).reshape(-1, 1).unsqueeze(0)
