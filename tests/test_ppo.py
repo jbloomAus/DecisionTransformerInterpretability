@@ -3,9 +3,10 @@ import pytest
 import gymnasium as gym
 from gymnasium.spaces import Discrete
 
-from src.ppo.ppo import train_ppo, PPOArgs, Agent
+from src.ppo.train import train_ppo
+from src.ppo.agent import Agent
 from src.ppo.my_probe_envs import  Probe1, Probe2, Probe3, Probe4, Probe5
-from src.ppo.utils import make_env
+from src.ppo.utils import make_env, PPOArgs
 
 for i in range(5):
     probes = [Probe1, Probe2, Probe3, Probe4, Probe5]
@@ -26,7 +27,8 @@ def test_probe_envs(env_name):
         track = False,
         capture_video=False,
         cuda = False,
-        total_timesteps=10000)
+        total_timesteps=10000,
+        max_steps=None)
 
     # currently, ppo has tests which run inside main if it 
     # detects "Probe" in the env name. We will fix this 
@@ -37,7 +39,7 @@ def test_probe_envs(env_name):
 def test_ppo_agent_gym():
     
     envs = gym.vector.SyncVectorEnv(
-        [make_env('CartPole-v1', 1, i+1, False, "test") for i in range(2)]
+        [make_env('CartPole-v1', 1, i+1, False, "test", max_steps=None) for i in range(2)]
     )
     assert envs.single_action_space.shape is not None
     assert isinstance(envs.single_action_space, Discrete), "only discrete action space is supported"
