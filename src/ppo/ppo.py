@@ -209,7 +209,14 @@ class Agent(nn.Module):
     def __init__(self, envs: gym.vector.SyncVectorEnv, device: t.device):
         super().__init__()
         # obs_shape will be a tuple (e.g. for RGB images this would be an array (h, w, c))
-        self.obs_shape = envs.single_observation_space.shape
+        if isinstance(envs.single_observation_space, gym.spaces.Box):
+            self.obs_shape = envs.single_observation_space.shape
+        elif isinstance(envs.single_observation_space, gym.spaces.Discrete):
+            self.obs_shape = (envs.single_observation_space.n,)
+        elif isinstance(envs.single_observation_space, gym.spaces.Dict):
+            self.obs_shape = envs.single_observation_space.spaces["image"].shape
+        else:
+            raise ValueError("Unsupported observation space")
         # num_obs is num elements in observations (e.g. for RGB images this would be h * w * c)
         self.num_obs = np.array(self.obs_shape).prod()
         # assuming a discrete action space
@@ -224,6 +231,7 @@ class Agent(nn.Module):
             self.layer_init(nn.Linear(64, 1), std=1.0)
         )
         self.actor = nn.Sequential(
+            nn.Flatten(),
             self.layer_init(nn.Linear(self.num_obs, 64)),
             nn.Tanh(),
             self.layer_init(nn.Linear(64, 64)),

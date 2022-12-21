@@ -22,11 +22,14 @@ ActType = int
 
 
 # %%
-def make_env(env_id: str, seed: int, idx: int, capture_video: bool, run_name: str):
+def make_env(env_id: str, seed: int, idx: int, capture_video: bool, run_name: str, render_mode ="rgb_array"):
     """Return a function that returns an environment after setting up boilerplate."""
     
     def thunk():
-        env = gym.make(env_id, render_mode="rgb_array")
+        if render_mode:
+            env = gym.make(env_id, render_mode=render_mode)
+        else: 
+            env = gym.make(env_id)
         env = gym.wrappers.RecordEpisodeStatistics(env)
         if capture_video:
             if idx == 0:
@@ -230,7 +233,7 @@ def get_obs_preprocessor(obs_space):
     # handle cases where obs space is instance of gym.spaces.Box, gym.spaces.Dict, gym.spaces
 
     if isinstance(obs_space, gym.spaces.Box):
-        return lambda x: x
+        return lambda x: np.array(x).astype(np.float64)
 
     elif isinstance(obs_space, gym.spaces.Dict):
         obs_space = obs_space.spaces
@@ -240,4 +243,5 @@ def get_obs_preprocessor(obs_space):
 def preprocess_images(images, device=None):
     # Bug of Pytorch: very slow if not first converted to numpy array
     images = np.array(images)
+    images = images.astype(np.float64)
     return images
