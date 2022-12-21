@@ -1,9 +1,9 @@
 # %%
-import gym
+import gymnasium as gym
 import numpy as np
 from typing import Union
 from typing import Optional
-from gym.spaces import Discrete, Box
+from gymnasium.spaces import Discrete, Box
 
 MAIN = __name__ == "__main__"
 
@@ -25,14 +25,13 @@ class Probe1(gym.Env):
         super().__init__()
         self.observation_space = Box(np.array([0]), np.array([0]))
         self.action_space = Discrete(1)
-        self.seed()
         self.reset()
 
     def step(self, action: ActType) -> tuple[ObsType, float, bool, dict]:
-        return np.array([0]), 1.0, True, {}
+        return np.array([0]), 1.0, True, False, {}
 
     def reset(
-        self, seed: Optional[int] = None, return_info=False, options=None
+        self, seed: Optional[int] = None, return_info=True, options=None
     ) -> Union[ObsType, tuple[ObsType, dict]]:
         if return_info:
             return np.array([0.0]), {}
@@ -44,10 +43,7 @@ if MAIN:
     assert env.observation_space.shape == (1,)
     assert env.action_space.shape == ()
 
-"""
-### Additional Probe Environments
-Feel free to skip ahead for now, and implement these as needed to debug your model. 
-"""
+
 # %%
 class Probe2(gym.Env):
     """One action, observation of [-1.0] or [+1.0], one timestep long, reward equals observation.
@@ -61,7 +57,6 @@ class Probe2(gym.Env):
         super().__init__()
         self.observation_space = Box(np.array([-1.0]), np.array([+1.0]))
         self.action_space = Discrete(1)
-        self.seed()
         self.reset()
         self.reward = None
 
@@ -93,7 +88,6 @@ class Probe3(gym.Env):
         super().__init__()
         self.observation_space = Box(np.array([-0.0]), np.array([+1.0]))
         self.action_space = Discrete(1)
-        self.seed()
         self.reset()
 
     def step(self, action: ActType) -> tuple[ObsType, float, bool, dict]:
@@ -128,7 +122,6 @@ class Probe4(gym.Env):
         super().__init__()
         self.observation_space = Box(np.array([-0.0]), np.array([+0.0]))
         self.action_space = Discrete(2)
-        self.seed()
         self.reset()
 
     def step(self, action: ActType) -> tuple[ObsType, float, bool, dict]:
@@ -159,7 +152,6 @@ class Probe5(gym.Env):
         super().__init__()
         self.observation_space = Box(np.array([-1.0]), np.array([+1.0]))
         self.action_space = Discrete(2)
-        self.seed()
         self.reset()
 
     def step(self, action: ActType) -> tuple[ObsType, float, bool, dict]:

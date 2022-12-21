@@ -64,13 +64,13 @@ class Memory():
         '''
         info, *experiences = data
         self.experiences.append(experiences)
-        for item in info:
-            if "episode" in item.keys():
-                self.episode_lengths.append(item["episode"]["l"])
-                self.episode_returns.append(item["episode"]["r"])
+        if "episode" in info.keys():
+            for i in range(len(info["episode"])):   
+                self.episode_lengths.append(info["episode"][i]["l"])
+                self.episode_returns.append(info["episode"][i]["r"])
                 self.add_vars_to_log(
-                    episode_length = item["episode"]["l"],
-                    episode_return = item["episode"]["r"],
+                    episode_length = info["episode"][i]["l"],
+                    episode_return = info["episode"][i]["r"],
                 )
             self.global_step += 1
 
@@ -150,7 +150,7 @@ class Memory():
         self.episode_lengths = []
         self.episode_returns = []
         if self.next_obs is None:
-            self.next_obs = t.tensor(self.envs.reset()).to(self.device)
+            self.next_obs = t.tensor(self.envs.reset()[0]).to(self.device)
             self.next_done = t.zeros(self.envs.num_envs).to(self.device, dtype=t.float)
 
     def add_vars_to_log(self, **kwargs):
@@ -245,7 +245,7 @@ class Agent(nn.Module):
             probs = Categorical(logits=logits)
             action = probs.sample()
             logprob = probs.log_prob(action)
-            next_obs, reward, next_done, info = envs.step(action.cpu().numpy())
+            next_obs, reward, next_done, next_truncated, info = envs.step(action.cpu().numpy())
             reward = t.from_numpy(reward).to(device)
 
             # Store (s_t, d_t, a_t, logpi(a_t|s_t), v(s_t), r_t+1)
