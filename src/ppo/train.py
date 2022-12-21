@@ -42,7 +42,7 @@ def get_printable_output_for_probe_envs(args: PPOArgs, agent: Agent, probe_idx: 
 
     return output
 
-def train_ppo(args: PPOArgs):
+def train_ppo(args: PPOArgs, trajectory_writer = None):
 
     # Check if running one of the probe envs
     probe_match = re.match(r"Probe(\d)-v0", args.env_id)
@@ -87,7 +87,7 @@ def train_ppo(args: PPOArgs):
     progress_bar = tqdm(range(num_updates))
     for update in progress_bar:
 
-        agent.rollout(memory, args, envs)
+        agent.rollout(memory, args, envs, trajectory_writer)
         agent.learn(memory, args, optimizer, scheduler)
         
         if args.track:
@@ -104,6 +104,9 @@ def train_ppo(args: PPOArgs):
                 out.clear_output(wait=True)
             
         memory.reset()
+
+    if trajectory_writer is not None:
+        trajectory_writer.write()
 
     envs.close()
     if args.track:

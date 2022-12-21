@@ -80,7 +80,7 @@ class Agent(nn.Module):
         scheduler = PPOScheduler(optimizer, initial_lr, end_lr, num_updates)
         return (optimizer, scheduler)
 
-    def rollout(self, memory: Memory, args: PPOArgs, envs: gym.vector.SyncVectorEnv) -> None:
+    def rollout(self, memory: Memory, args: PPOArgs, envs: gym.vector.SyncVectorEnv, trajectory_writer = None) -> None:
         '''Performs the rollout phase, as described in '37 Implementational Details'.
         '''
         device = memory.device
@@ -107,6 +107,15 @@ class Agent(nn.Module):
 
             obs = t.from_numpy(next_obs).to(device)
             done = t.from_numpy(next_done).to(device, dtype=t.float)
+
+            if trajectory_writer is not None:
+                trajectory_writer.accumulate_trajectory(
+                    next_obs = next_obs, # t + 1
+                    reward = reward, # t + 1
+                    done = done, # t + 1
+                    action = action, # t
+                    info = info # t
+                ) # trajectory is stored as S,A,R not R,S,A! 
 
         # Store last (obs, done, value) tuple, since we need it to compute advantages
         memory.next_obs = obs
