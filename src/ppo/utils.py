@@ -133,7 +133,7 @@ class PPOArgs:
     batch_size: int = 512
     minibatch_size: int = 128
     max_steps: int = 100,
-    trajectory_path: str = "trajectories/trajectories_{}.pkl".format(env_id)
+    trajectory_path: str = None
 
 arg_help_strings = dict(
     exp_name = "the name of this experiment",
