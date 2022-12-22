@@ -1,8 +1,11 @@
 import os
 import pickle
 import time
+import numpy as np
+from typing import Dict
 from dataclasses import asdict, dataclass
 
+from typeguard import typechecked
 
 class TrajectoryWriter():
     '''
@@ -23,8 +26,9 @@ class TrajectoryWriter():
         self.infos = []
         self.path = path
         self.args = args
-
-    def accumulate_trajectory(self, next_obs, reward, done, action, info):
+    
+    @typechecked
+    def accumulate_trajectory(self, next_obs: np.ndarray, reward: np.ndarray, done: np.ndarray, action: np.ndarray, info: Dict):
         self.observations.append(next_obs)
         self.actions.append(action)
         self.rewards.append(reward)
@@ -34,11 +38,11 @@ class TrajectoryWriter():
     def write(self):
 
         data = {
-            'observations': self.observations,
-            'actions': self.actions,
-            'rewards': self.rewards,
-            'dones': self.dones,
-            'infos': self.infos
+            'observations': np.array(self.observations, dtype = np.float64),
+            'actions': np.array(self.actions, dtype = np.int64),
+            'rewards': np.array(self.rewards, dtype = np.float64),
+            'dones': np.array(self.dones, dtype = bool),
+            'infos': np.array(self.infos, dtype = object)
         }
 
         metadata = {

@@ -111,9 +111,9 @@ class Agent(nn.Module):
             if trajectory_writer is not None:
                 trajectory_writer.accumulate_trajectory(
                     next_obs = next_obs, # t + 1
-                    reward = reward, # t + 1
-                    done = done, # t + 1
-                    action = action, # t
+                    reward = reward.detach().numpy(), # t + 1
+                    done = done.detach().numpy(), # t + 1
+                    action = action.detach().numpy(), # t
                     info = info # t
                 ) # trajectory is stored as S,A,R not R,S,A! 
 
