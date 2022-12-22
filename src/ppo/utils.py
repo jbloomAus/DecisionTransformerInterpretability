@@ -130,10 +130,14 @@ class PPOArgs:
     ent_coef: float = 0.01
     vf_coef: float = 0.5
     max_grad_norm: float = 0.5
-    batch_size: int = 512
-    minibatch_size: int = 128
     max_steps: int = 100,
     trajectory_path: str = None
+
+    def __post_init__(self):
+            self.batch_size = int(self.num_envs * self.num_steps)
+            self.minibatch_size = self.batch_size // self.num_minibatches
+            if self.trajectory_path is None:
+                self.trajectory_path = os.path.join("trajectories", self.env_id + ".pkl")
 
 arg_help_strings = dict(
     exp_name = "the name of this experiment",
@@ -155,11 +159,12 @@ arg_help_strings = dict(
     ent_coef = "coefficient of entropy bonus term",
     vf_coef = "cofficient of value loss function",
     max_grad_norm = "value used in gradient clipping",
-    batch_size = "number of random samples we take from the rollout data",
-    minibatch_size = "size of each minibatch we perform a gradient step on",
+    # batch_size = "number of random samples we take from the rollout data",
+    # minibatch_size = "size of each minibatch we perform a gradient step on",
     max_steps = "maximum number of steps in an episode",
     trajectory_path = "path to save the trajectories",
 )
+
 
 def arg_help(args: Optional[PPOArgs], print_df=False):
     """Prints out a nicely displayed list of arguments, their default values, and what they mean."""
