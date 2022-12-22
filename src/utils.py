@@ -23,16 +23,18 @@ class TrajectoryWriter():
         self.actions = []
         self.rewards = []
         self.dones = []
+        self.truncated = []
         self.infos = []
         self.path = path
         self.args = args
     
     @typechecked
-    def accumulate_trajectory(self, next_obs: np.ndarray, reward: np.ndarray, done: np.ndarray, action: np.ndarray, info: Dict):
+    def accumulate_trajectory(self, next_obs: np.ndarray, reward: np.ndarray, done: np.ndarray, truncated: np.ndarray, action: np.ndarray, info: Dict):
         self.observations.append(next_obs)
         self.actions.append(action)
         self.rewards.append(reward)
         self.dones.append(done)
+        self.truncated.append(truncated)
         self.infos.append(info)
     
     def write(self):
@@ -42,6 +44,7 @@ class TrajectoryWriter():
             'actions': np.array(self.actions, dtype = np.int64),
             'rewards': np.array(self.rewards, dtype = np.float64),
             'dones': np.array(self.dones, dtype = bool),
+            'truncated': np.array(self.truncated, dtype = bool),
             'infos': np.array(self.infos, dtype = object)
         }
 
