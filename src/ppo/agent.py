@@ -112,8 +112,9 @@ class Agent(nn.Module):
                 trajectory_writer.accumulate_trajectory(
                     next_obs = next_obs, # t + 1
                     reward = reward.detach().numpy(), # t + 1
-                    done = done.detach().numpy(), # t + 1
+                    done = next_done, # t + 1
                     action = action.detach().numpy(), # t
+                    truncated = next_truncated, # t + 1
                     info = info # t
                 ) # trajectory is stored as S,A,R not R,S,A! 
 
