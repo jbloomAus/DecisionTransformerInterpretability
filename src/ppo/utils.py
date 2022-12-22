@@ -1,5 +1,6 @@
 # %%
 import gymnasium as gym
+import minigrid
 import numpy as np
 from typing import List
 import os
@@ -44,6 +45,11 @@ def make_env(env_id: str, seed: int, idx: int, capture_video: bool, run_name: st
                     episode_trigger=lambda x : x % 50 == 0, # Video every 50 runs for env #1
                     disable_logger=True
                 )
+
+        # hard code for now!
+        if env_id.startswith("MiniGrid"):
+            env = minigrid.wrappers.FullyObsWrapper(env)
+
         obs = env.reset(seed=seed)
         env.action_space.seed(seed)
         env.observation_space.seed(seed)
