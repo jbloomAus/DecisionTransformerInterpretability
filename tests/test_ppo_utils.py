@@ -10,7 +10,7 @@ def test_get_obs_preprocessor_probe1():
 
     gym.envs.registration.register(id=f"Probe1-v0", entry_point=Probe1)
 
-    env = make_env('Probe1', 0, 0, False, "Test", render_mode=None)
+    env = make_env('Probe1', 0, 0, False, "Test", render_mode=None, max_steps=None)
     env = env()
     (obs, info) = env.reset() # has shape (obs, info), where obs is an ordered dict
     obs.shape
