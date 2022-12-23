@@ -25,7 +25,7 @@ def test_trajectory_writer_numpy():
         done=np.array([1, 0, 0]),
         truncated=np.array([1, 0, 0]),
         action=np.array([1, 2, 3]),
-        info=np.array([{"a": 1, "b": 2, "c": 3}], dtype=object),
+        info={"a": 1, "b": 2, "c": 3},
     )
 
     trajectory_writer.write()
@@ -70,9 +70,9 @@ def test_trajectory_writer_numpy():
         assert type(infos) == np.ndarray
         assert infos.dtype == np.object
 
-        assert infos[0][0]["a"] == 1
-        assert infos[0][0]["b"] == 2
-        assert infos[0][0]["c"] == 3
+        assert infos[0]["a"] == 1
+        assert infos[0]["b"] == 2
+        assert infos[0]["c"] == 3
     
 def test_trajectory_writer_torch():
 
