@@ -23,6 +23,7 @@ def test_trajectory_writer_numpy():
         next_obs=np.array([1, 2, 3]),
         reward=np.array([1, 2, 3]),
         done=np.array([1, 0, 0]),
+        truncated=np.array([1, 0, 0]),
         action=np.array([1, 2, 3]),
         info=np.array([{"a": 1, "b": 2, "c": 3}], dtype=object),
     )
