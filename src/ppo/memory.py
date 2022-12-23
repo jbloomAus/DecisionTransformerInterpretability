@@ -120,7 +120,7 @@ class Memory():
             global_step = self.global_step
             avg_episode_length = np.mean(self.episode_lengths)
             avg_episode_return = np.mean(self.episode_returns)
-            return f"{global_step=:<06}\n{avg_episode_length=:<3.0f}\n{avg_episode_return=:<3.0f}"
+            return f"{global_step=:<06}\n{avg_episode_length=:<3.2f}\n{avg_episode_return=:<3.2f}"
 
     def reset(self) -> None:
         '''Function to be called at the end of each rollout period, to make 
