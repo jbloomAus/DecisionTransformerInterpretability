@@ -106,7 +106,7 @@ class TrajectoryLoader():
         state_mean, state_std = self.get_state_mean_std()
 
         batch_inds = np.random.choice(
-            np.arange(num_trajectories),
+            np.arange(len(sorted_inds)),
             size=batch_size,
             replace=True,
             p=p_sample,  # reweights so we sample according to timesteps
