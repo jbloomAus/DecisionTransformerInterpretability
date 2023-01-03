@@ -23,7 +23,7 @@ ActType = int
 
 
 # %%
-def make_env(env_id: str, seed: int, idx: int, capture_video: bool, run_name: str, render_mode ="rgb_array", max_steps = 100):
+def make_env(env_id: str, seed: int, idx: int, capture_video: bool, run_name: str, render_mode ="rgb_array", max_steps = 100, fully_observed = False):
     """Return a function that returns an environment after setting up boilerplate."""
     
     def thunk():
@@ -48,7 +48,8 @@ def make_env(env_id: str, seed: int, idx: int, capture_video: bool, run_name: st
 
         # hard code for now!
         if env_id.startswith("MiniGrid"):
-            env = minigrid.wrappers.FullyObsWrapper(env)
+            if fully_observed:
+                env = minigrid.wrappers.FullyObsWrapper(env)
 
         obs = env.reset(seed=seed)
         env.action_space.seed(seed)
@@ -138,6 +139,7 @@ class PPOArgs:
     max_grad_norm: float = 0.5
     max_steps: int = 100,
     trajectory_path: str = None
+    fully_observed: bool = False
 
     def __post_init__(self):
             self.batch_size = int(self.num_envs * self.num_steps)
