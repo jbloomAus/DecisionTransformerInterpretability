@@ -51,7 +51,7 @@ def test_decision_transformer_init():
     assert decision_transformer.transformer is not None
     assert type(decision_transformer.transformer).__name__ == 'HookedTransformer'
 
-def test_get_state_embeddings():
+def test_get_state_embeddings_image():
     
     env = gym.make('MiniGrid-Empty-8x8-v0')
     env = RGBImgPartialObsWrapper(env) # Get pixel observations
@@ -63,6 +63,21 @@ def test_get_state_embeddings():
 
     # get state embeddings
     obs = t.tensor(obs).unsqueeze(0).unsqueeze(0) # add block, add batch
+    state_embeddings = decision_transformer.get_state_embeddings(obs)
+    assert state_embeddings.shape == (1, 1, 64)
+
+def test_get_state_embeddings_grid():
+    
+    env = gym.make('MiniGrid-Empty-8x8-v0')
+    # env = RGBImgPartialObsWrapper(env) # Get pixel observations
+    # env = ImgObsWrapper(env) # Get rid of the 'mission' field
+    obs, _ = env.reset() # This now produces an RGB tensor only
+
+    decision_transformer = DecisionTransformer(env, state_embedding_type='grid')
+    assert decision_transformer is not None
+
+    # get state embeddings
+    obs = t.tensor(obs['image']).unsqueeze(0).unsqueeze(0) # add block, add batch
     state_embeddings = decision_transformer.get_state_embeddings(obs)
     assert state_embeddings.shape == (1, 1, 64)
 
@@ -146,7 +161,6 @@ def test_get_token_embeddings_single_batch():
     t.testing.assert_close(token_embeddings[0][0]- time_embedding, reward_embedding)
     t.testing.assert_close(token_embeddings[0][1]- time_embedding, state_embedding)
     t.testing.assert_close(token_embeddings[0][2]- time_embedding, action_embedding)
-
 
 def test_get_token_embeddings_multi_batch():
         
@@ -238,7 +252,6 @@ def test_forward():
     )
 
     assert logits.shape == (1, 10, env.action_space.n)
-
 
 def test_forward_no_actions():
 

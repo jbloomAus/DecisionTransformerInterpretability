@@ -63,5 +63,5 @@ def test_ppo_agent_minigrid():
     agent = Agent(envs, "cpu")
 
     
-    assert agent.num_obs == 8*8*3 # depends on whether you wrapped in Fully observed or not
+    assert agent.num_obs == 7*7*3 # depends on whether you wrapped in Fully observed or not
     assert agent.num_actions == 7
