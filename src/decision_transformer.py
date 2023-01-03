@@ -1,6 +1,7 @@
 from typing import Dict, Union
 
 import einops
+import numpy as np
 import torch
 import torch as t
 import torch.nn as nn
@@ -10,6 +11,20 @@ from torchtyping import TensorType as TT
 from transformer_lens import EasyTransformer, EasyTransformerConfig
 from transformer_lens.HookedTransformerConfig import HookedTransformerConfig
 
+def seed_everything(seed: int):
+    import random, os
+    import numpy as np
+    import torch
+    
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = True
+    
+seed_everything(42)
 
 class StateEncoder(nn.Module):
     def __init__(self, n_embed):
@@ -54,7 +69,7 @@ class PosEmbedTokens(nn.Module):
         return broadcast_pos_embed
 
 class DecisionTransformer(torch.nn.Module):
-    def __init__(self, env, max_game_length: int = 1000):
+    def __init__(self, env, state_embedding_type: str = 'CNN', max_game_length: int = 1000):
         '''
         model = Classifier(cfg)
         '''
@@ -64,6 +79,7 @@ class DecisionTransformer(torch.nn.Module):
         self.block_size = 10
         vocab_size = env.action_space.n
         self.max_timestep = max_game_length
+        self.state_embedding_type = state_embedding_type
 
         self.ctx_size = 10*self.block_size # we can handle 10 full timesteps
 
@@ -72,12 +88,20 @@ class DecisionTransformer(torch.nn.Module):
         # self.pos_emb = nn.Parameter(torch.zeros(1, self.block_size + 1, self.d_model))
 
         self.time_embedding = nn.Embedding(self.max_timestep+1, self.d_model)
-        self.state_encoder = StateEncoder(self.d_model)
+
+        if state_embedding_type == 'CNN':
+            self.state_encoder = StateEncoder(self.d_model)
+        else: 
+            n_obs = np.prod(env.observation_space['image'].shape)
+            self.state_encoder = nn.Linear(n_obs, self.d_model)
+            nn.init.normal_(self.state_encoder.weight, mean=0.0, std=0.02)
+
         self.action_embedding = nn.Sequential(nn.Embedding(env.action_space.n, self.d_model), nn.Tanh())
         self.reward_embedding = nn.Sequential(nn.Linear(1, self.d_model), nn.Tanh())
 
         # Initialize weights
         nn.init.normal_(self.action_embedding[0].weight, mean=0.0, std=0.02)
+        nn.init.normal_(self.reward_embedding[0].weight, mean=0.0, std=0.02)
 
         # Transformer
         cfg = EasyTransformerConfig(
@@ -89,13 +113,14 @@ class DecisionTransformer(torch.nn.Module):
             d_vocab= 64,
             n_ctx= self.ctx_size,
             act_fn="relu",
-            normalization_type=None,
+            # normalization_type=None,
             attention_dir="causal",
             d_vocab_out=env.action_space.n, #
+            seed = 0
         )
 
         assert cfg.attention_dir == "causal", "Attention direction must be causal"
-        assert cfg.normalization_type is None, "Normalization type must be None"
+        # assert cfg.normalization_type is None, "Normalization type must be None"
 
         self.transformer = EasyTransformer(cfg)
 
@@ -129,6 +154,9 @@ class DecisionTransformer(torch.nn.Module):
 
         # since we are passing the transformer an embedding, we need to
         logits = self.transformer(token_embeddings)
+
+        # print("logits: ", logits[0, 0, :10])
+
         # select hidden states for actions
         logits = self.get_logits(logits, actions)
         # if we are given some desired targets also calculate the loss
@@ -166,8 +194,12 @@ class DecisionTransformer(torch.nn.Module):
     def get_state_embeddings(self, states):
         # embed states and recast back to (batch, block_size, n_embd)
         block_size = states.shape[1]
-        states = rearrange(states, 'batch block height width channel -> (batch block) channel height width')
-        state_embeddings = self.state_encoder(states.type(torch.float32).contiguous()) # (batch * block_size, n_embd)
+        if self.state_embedding_type == "CNN":
+            states = rearrange(states, 'batch block height width channel -> (batch block) channel height width')
+            state_embeddings = self.state_encoder(states.type(torch.float32).contiguous()) # (batch * block_size, n_embd)
+        else: 
+            states = rearrange(states, 'batch block height width channel -> (batch block) (channel height width)')
+            state_embeddings = self.state_encoder(states.type(torch.float32).contiguous()) # (batch * block_size, n_embd)
         state_embeddings = rearrange(state_embeddings, '(batch block) n_embd -> batch block n_embd', block=block_size)
         return state_embeddings
 
