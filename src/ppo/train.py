@@ -7,7 +7,7 @@ import ipywidgets as wg
 import torch as t
 from gymnasium.spaces import Discrete
 from IPython.display import display
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
 
 import wandb
 
@@ -84,9 +84,10 @@ def train_ppo(args: PPOArgs, trajectory_writer = None, make_env = None):
     num_updates = args.total_timesteps // args.batch_size
     optimizer, scheduler = agent.make_optimizer(num_updates, initial_lr=args.learning_rate, end_lr=0.0)
     
-    out = wg.Output(layout={"padding": "15px"})
-    display(out)
-    progress_bar = tqdm(range(num_updates))
+    # out = wg.Output(layout={"padding": "15px"})
+    # display(out)
+    progress_bar = tqdm(range(num_updates), position=0, leave=True)
+    
     for update in progress_bar:
 
         agent.rollout(memory, args, envs, trajectory_writer)
@@ -98,13 +99,15 @@ def train_ppo(args: PPOArgs, trajectory_writer = None, make_env = None):
         # Print output (different behaviour for probe envs vs normal envs)
         if probe_idx is None:
             output = memory.get_printable_output()
+
         else:
             output = get_printable_output_for_probe_envs(args, agent, probe_idx, update, num_updates)
         if output:
-            with out:
-                print(output)
-                out.clear_output(wait=True)
-            
+            # with out:
+            #     # print(output)
+            #     # out.clear_output(wait=True)
+            progress_bar.set_description(output)
+
         memory.reset()
 
     if trajectory_writer is not None:
