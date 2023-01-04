@@ -116,7 +116,7 @@ class Agent(nn.Module):
                     action = action.detach().numpy(), # t
                     truncated = next_truncated, # t + 1
                     info = info # t
-                ) # trajectory is stored as S,A,R not R,S,A! 
+                ) # at index i, the action at time t is the action that led to the observation at time t + 1
 
         # Store last (obs, done, value) tuple, since we need it to compute advantages
         memory.next_obs = obs
