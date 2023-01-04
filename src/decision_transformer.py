@@ -1,5 +1,7 @@
 import torch as t
 import warnings
+import wandb
+import time
 
 from environments import make_env
 
@@ -27,6 +29,14 @@ if __name__ == "__main__":
     env = make_env(env_id, seed = 0, idx = 0, capture_video=False, run_name = "dev", fully_observed=False)
     env = env()
 
+    if args.track:
+        run_name = f"{env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
+        wandb.init(
+            project=args.wandb_project_name, 
+            entity=args.wandb_entity, 
+            name=run_name,
+            config=args)
+
     # make a decision transformer
     dt = DecisionTransformer(
         env = env, 
@@ -38,13 +48,19 @@ if __name__ == "__main__":
         max_timestep=trajectory_data_set.metadata.get("args").get("max_steps") # Our DT must have a context window large enough
     )
 
-    dt = train(dt, trajectory_data_set, env, device=device, max_len=args.max_len,
-               batches=args.batches, lr=args.learning_rate, batch_size=args.batch_size)
-
-    loss, accuracy = test(dt, trajectory_data_set, make_env,
-                          device="cpu", max_len=args.max_len, batch_size=args.batch_size)
-
-    print(f"loss: {loss}, accuracy: {accuracy}")
-
-    prop_completed, all_frames = evaluate_dt_agent(
-        trajectory_data_set, dt, make_env, device=device, max_len=args.max_len, trajectories=args.n_test_episodes)
+    dt = train(
+        dt = dt, 
+        trajectory_data_set = trajectory_data_set, 
+        env = env, 
+        make_env=make_env,
+        device=device, 
+        max_len=args.max_len,
+        batches=args.batches, 
+        lr=args.learning_rate, 
+        batch_size=args.batch_size, 
+        track=args.track,
+        test_frequency=args.test_frequency,
+        test_batches = args.test_batches,
+        eval_frequency=args.eval_frequency,
+        eval_episodes=args.eval_episodes
+    )
