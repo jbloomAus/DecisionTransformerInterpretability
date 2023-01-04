@@ -6,10 +6,9 @@ from tqdm.notebook import tqdm
 
 from .decision_transformer import DecisionTransformer
 from .offline_dataset import TrajectoryLoader
-from src.ppo.utils import make_env
 
 
-def train(trajectory_data_set: TrajectoryLoader, batch_size = 128, max_len = 20, batches = 1000, lr = 0.0001, device = "cpu"):
+def train(trajectory_data_set: TrajectoryLoader, make_env, batch_size = 128, max_len = 20, batches = 1000, lr = 0.0001, device = "cpu"):
 
     loss_fn = nn.CrossEntropyLoss()
 
@@ -41,7 +40,7 @@ def train(trajectory_data_set: TrajectoryLoader, batch_size = 128, max_len = 20,
         timesteps.to(device)
         mask.to(device)
 
-        a[a==-10] = 6
+        a[a==-10] = env.action_space.n
     
         optimizer.zero_grad()
 
@@ -72,7 +71,7 @@ def train(trajectory_data_set: TrajectoryLoader, batch_size = 128, max_len = 20,
 
     return dt
 
-def test(dt, trajectory_data_set: TrajectoryLoader, batch_size = 128, max_len = 20, batches = 10, device = "cpu"):
+def test(dt, trajectory_data_set: TrajectoryLoader, make_env, batch_size = 128, max_len = 20, batches = 10, device = "cpu"):
 
     env_id = trajectory_data_set.metadata['args']['env_id']
     env = make_env(env_id, seed = 0, idx = 0, capture_video=False, run_name = "dev", fully_observed=False)
@@ -125,7 +124,7 @@ def test(dt, trajectory_data_set: TrajectoryLoader, batch_size = 128, max_len = 
     mean_loss = loss.item() / batches
     return mean_loss, accuracy
 
-def evaluate_dt_agent(trajectory_data_set: TrajectoryLoader, dt: DecisionTransformer, device = "cpu", max_len = 30, trajectories = 300):
+def evaluate_dt_agent(trajectory_data_set: TrajectoryLoader, dt: DecisionTransformer, make_env, device = "cpu", max_len = 30, trajectories = 300):
 
     env_id = trajectory_data_set.metadata['args']['env_id']
     env = make_env(env_id, seed = 15, idx = 0, capture_video=True, run_name = "dev", fully_observed=False)
