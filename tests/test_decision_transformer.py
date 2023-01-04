@@ -4,7 +4,7 @@ import numpy as np
 from einops import rearrange
 import gymnasium as gym
 from minigrid.wrappers import RGBImgPartialObsWrapper, ImgObsWrapper
-from src.decision_transformer import DecisionTransformer, StateEncoder
+from src.decision_transformer.decision_transformer import DecisionTransformer, StateEncoder
 
 
 def test_state_encoder():
