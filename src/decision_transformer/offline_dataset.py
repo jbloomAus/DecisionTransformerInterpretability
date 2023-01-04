@@ -1,5 +1,4 @@
-from torch.utils.data import Dataset, DataLoader
-from src.utils import TrajectoryReader
+import pickle
 import numpy as np
 import torch as t 
 from einops import rearrange
@@ -167,3 +166,17 @@ class TrajectoryLoader():
 
         return s, a, r, d, rtg, timesteps, mask
 
+class TrajectoryReader():
+    '''
+    The trajectory reader is responsible for reading trajectories from a file.
+    '''
+    def __init__(self, path):
+        self.path = path
+
+    def read(self):
+        with open(self.path, 'rb') as f:
+            data = pickle.load(f)
+
+        return data
+
+        

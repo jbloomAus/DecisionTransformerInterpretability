@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import numpy as np
 import pickle 
 import torch
-from src.utils import TrajectoryWriter, TrajectoryReader
+from src.utils import TrajectoryWriter
 
 
 def test_trajectory_writer_numpy():

@@ -6,7 +6,8 @@ from gymnasium.spaces import Discrete
 from src.ppo.train import train_ppo
 from src.ppo.agent import Agent
 from src.ppo.my_probe_envs import  Probe1, Probe2, Probe3, Probe4, Probe5
-from src.ppo.utils import make_env, PPOArgs
+from src.ppo.utils import PPOArgs
+from src.environments import make_env
 
 for i in range(5):
     probes = [Probe1, Probe2, Probe3, Probe4, Probe5]
@@ -33,7 +34,7 @@ def test_probe_envs(env_name):
     # currently, ppo has tests which run inside main if it 
     # detects "Probe" in the env name. We will fix this 
     # eventually.
-    ppo = train_ppo(args)
+    ppo = train_ppo(args, make_env=make_env)
 
 
 def test_ppo_agent_gym():

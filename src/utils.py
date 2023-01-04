@@ -65,17 +65,3 @@ class TrajectoryWriter():
         print(f"Trajectory written to {self.path}")
 
 
-class TrajectoryReader():
-    '''
-    The trajectory reader is responsible for reading trajectories from a file.
-    '''
-    def __init__(self, path):
-        self.path = path
-
-    def read(self):
-        with open(self.path, 'rb') as f:
-            data = pickle.load(f)
-
-        return data
-
-        

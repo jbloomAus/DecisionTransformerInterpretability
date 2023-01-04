@@ -13,7 +13,7 @@ import wandb
 
 from .agent import Agent
 from .memory import Memory
-from .utils import PPOArgs, make_env, set_global_seeds
+from .utils import PPOArgs, set_global_seeds
 
 device = t.device("cuda" if t.cuda.is_available() else "cpu")
 
@@ -42,7 +42,7 @@ def get_printable_output_for_probe_envs(args: PPOArgs, agent: Agent, probe_idx: 
 
     return output
 
-def train_ppo(args: PPOArgs, trajectory_writer = None):
+def train_ppo(args: PPOArgs, trajectory_writer = None, make_env = None):
 
     # Check if running one of the probe envs
     probe_match = re.match(r"Probe(\d)-v0", args.env_id)
