@@ -2,24 +2,15 @@ import numpy as np
 import torch as t
 import torch.nn as nn
 from einops import rearrange
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 
 from .decision_transformer import DecisionTransformer
 from .offline_dataset import TrajectoryLoader
 
 
-def train(trajectory_data_set: TrajectoryLoader, make_env, batch_size = 128, max_len = 20, batches = 1000, lr = 0.0001, device = "cpu"):
+def train(dt: DecisionTransformer, trajectory_data_set: TrajectoryLoader, env, batch_size = 128, max_len = 20, batches = 1000, lr = 0.0001, device = "cpu"):
 
     loss_fn = nn.CrossEntropyLoss()
-
-    env_id = trajectory_data_set.metadata['args']['env_id']
-    env = make_env(env_id, seed = 0, idx = 0, capture_video=False, run_name = "dev", fully_observed=False)
-    env = env()
-
-    dt = DecisionTransformer(
-        env = env, 
-        state_embedding_type="grid", # hard-coded for now to minigrid.
-        max_game_length=100)
 
     dt  = dt.to(device)
 
@@ -40,7 +31,7 @@ def train(trajectory_data_set: TrajectoryLoader, make_env, batch_size = 128, max
         timesteps.to(device)
         mask.to(device)
 
-        a[a==-10] = env.action_space.n
+        a[a==-10] = env.action_space.n # dummy action for padding
     
         optimizer.zero_grad()
 
@@ -54,7 +45,11 @@ def train(trajectory_data_set: TrajectoryLoader, make_env, batch_size = 128, max
         logits = rearrange(logits, 'b t a -> (b t) a')
         a_exp = rearrange(a, 'b t -> (b t)').to(t.int64)
         
-        loss = loss_fn(logits, a_exp)
+        # ignore dummy action
+        loss = loss_fn(
+            logits[a_exp != env.action_space.n], 
+            a_exp[a_exp != env.action_space.n]
+            )
 
         loss.backward()
         optimizer.step()
@@ -99,7 +94,7 @@ def test(dt, trajectory_data_set: TrajectoryLoader, make_env, batch_size = 128, 
         timesteps.to(device)
         mask.to(device)
 
-        a[a==-10] = 6
+        a[a==-10] = env.action_space.n # dummy action for padding
     
         logits, _ = dt.forward(
             states = s,
@@ -112,9 +107,13 @@ def test(dt, trajectory_data_set: TrajectoryLoader, make_env, batch_size = 128, 
         a_hat = t.argmax(logits, dim=-1)
         a_exp = rearrange(a, 'b t -> (b t)').to(t.int64)
 
+        logits = logits[a_exp != env.action_space.n]
+        a_hat = a_hat[a_exp != env.action_space.n]
+        a_exp = a_exp[a_exp != env.action_space.n]
+
 
         n_actions  += a_exp.shape[0]
-        n_correct += (a_hat == a_exp).sum() 
+        n_correct += (a_hat==a_exp).sum() 
         loss += loss_fn(logits, a_exp)
         
 
@@ -141,7 +140,7 @@ def evaluate_dt_agent(trajectory_data_set: TrajectoryLoader, dt: DecisionTransfo
 
         obs = t.tensor(obs['image']).unsqueeze(0).unsqueeze(0)
         rtg = t.tensor([1]).unsqueeze(0).unsqueeze(0)
-        a = t.tensor([6]).unsqueeze(0).unsqueeze(0)
+        a = t.tensor([0]).unsqueeze(0).unsqueeze(0)
         timesteps = t.tensor([0]).unsqueeze(0).unsqueeze(0)
 
         # get first action

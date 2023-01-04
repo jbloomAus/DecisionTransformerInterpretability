@@ -47,8 +47,9 @@ class TrajectoryLoader():
         self.actions = t.tensor_split(t_actions, done_indices+1)
         self.rewards = t.tensor_split(t_rewards, done_indices+1)
         self.dones = t.tensor_split(t_dones, done_indices+1)
-        self.returns = [r.sum() for r in self.rewards]
+        self.truncated = t.tensor_split(t_truncated, done_indices+1)
         self.states = t.tensor_split(t_observations, done_indices)
+        self.returns = [r.sum() for r in self.rewards]
         self.timesteps = [t.arange(len(i)) for i in self.states]
         self.traj_lens = np.array([len(i) for i in self.states])
         self.num_timesteps = sum(self.traj_lens)
@@ -66,7 +67,13 @@ class TrajectoryLoader():
         num_trajectories = 1
         timesteps = self.traj_lens[sorted_inds[-1]]
         ind = num_trajectories - 2
-        while timesteps < num_timesteps:
+
+        # this while statement checks two things:
+        # 1. that we haven't gone past the end of the array
+        # 2. that the number of timesteps we've added is less than the number of timesteps we want
+
+        # changing this line had a huge impact on performance
+        while ind >= 0 and timesteps + self.traj_lens[sorted_inds[ind]] < num_timesteps:
             timesteps += self.traj_lens[sorted_inds[ind]]
             ind -= 1
             num_trajectories += 1
@@ -102,7 +109,6 @@ class TrajectoryLoader():
 
         # asset first dim is same for all inputs
         assert len(rewards) == len(states) == len(actions) == len(dones), f"shapes are not the same: {len(rewards)} {len(states)} {len(actions)} {len(dones)}"
-        num_trajectories = self.num_trajectories
         p_sample = self.get_sampling_probabilities()
         sorted_inds = self.get_indices_of_top_p_trajectories(self.pct_traj)
         state_mean, state_std = self.get_state_mean_std()
@@ -145,10 +151,13 @@ class TrajectoryLoader():
                 rtg[-1] = np.concatenate([rtg[-1], np.zeros((1, 1, 1))], axis=1)
 
             # padding and state + reward normalization
-            tlen = s[-1].shape[1]
+            tlen = s[-1].shape[1] # sometime the trajectory is shorter than max_len (due to random start index or end of episode)
+            if a[-1].shape[1] != tlen:
+                a[-1] = np.concatenate([a[-1], np.ones((1, 1, *self.act_dim)) * -10.], axis=1)
+
+            assert tlen <= max_len, f"tlen: {tlen} max_len: {max_len}" # sanity check
+
             s[-1] = np.concatenate([np.zeros((1, max_len - tlen, *self.state_dim)), s[-1]], axis=1)
-
-
             if self.normalize_state:
                 s[-1] = (s[-1] - state_mean) / state_std
 

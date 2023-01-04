@@ -69,22 +69,33 @@ class PosEmbedTokens(nn.Module):
         return broadcast_pos_embed
 
 class DecisionTransformer(torch.nn.Module):
-    def __init__(self, env, state_embedding_type: str = 'CNN', max_game_length: int = 1000):
+
+    def __init__(
+        self,
+        env,
+        d_model: int = 64,
+        n_heads: int = 2,
+        d_mlp: int = 128,
+        n_layers: int = 2,
+        state_embedding_type: str = 'CNN',
+        max_timestep: int = 2048
+    ):
         '''
         model = Classifier(cfg)
         '''
         super().__init__()
 
         self.env = env
-        self.d_model = 64
-        self.block_size = 10
-        self.max_timestep = max_game_length
+        self.d_model = d_model
+        self.n_heads = n_heads
+        assert self.d_model % self.n_heads == 0
+        self.d_head = self.d_model // self.n_heads
+        self.d_mlp = d_mlp
+        self.n_layers = n_layers
+        self.max_timestep = max_timestep
         self.state_embedding_type = state_embedding_type
 
-        self.ctx_size = 10*self.block_size # we can handle 10 full timesteps
-
         # Embedding layers
-        self.pos_emb = nn.Parameter(torch.zeros(1, self.ctx_size, self.d_model))
         self.time_embedding = nn.Embedding(self.max_timestep+1, self.d_model)
 
         if state_embedding_type == 'CNN':
@@ -105,11 +116,11 @@ class DecisionTransformer(torch.nn.Module):
         cfg = EasyTransformerConfig(
             n_layers=2,
             d_model=self.d_model,
-            d_head=32,
-            n_heads=2,
-            d_mlp=128,
-            d_vocab= 64,
-            n_ctx= self.ctx_size,
+            d_head=self.d_head,
+            n_heads=self.n_heads,
+            d_mlp=self.d_mlp,
+            d_vocab= 64, # does this matter?
+            n_ctx= self.max_timestep*3, # 3x the max timestep so we have room for an action, reward, and state per timestep
             act_fn="relu",
             # normalization_type=None,
             attention_dir="causal",
