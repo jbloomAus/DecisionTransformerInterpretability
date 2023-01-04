@@ -75,9 +75,9 @@ class DecisionTransformer(torch.nn.Module):
         '''
         super().__init__()
 
+        self.env = env
         self.d_model = 64
         self.block_size = 10
-        vocab_size = env.action_space.n
         self.max_timestep = max_game_length
         self.state_embedding_type = state_embedding_type
 
@@ -85,8 +85,6 @@ class DecisionTransformer(torch.nn.Module):
 
         # Embedding layers
         self.pos_emb = nn.Parameter(torch.zeros(1, self.ctx_size, self.d_model))
-        # self.pos_emb = nn.Parameter(torch.zeros(1, self.block_size + 1, self.d_model))
-
         self.time_embedding = nn.Embedding(self.max_timestep+1, self.d_model)
 
         if state_embedding_type == 'CNN':
@@ -96,7 +94,7 @@ class DecisionTransformer(torch.nn.Module):
             self.state_encoder = nn.Linear(n_obs, self.d_model)
             nn.init.normal_(self.state_encoder.weight, mean=0.0, std=0.02)
 
-        self.action_embedding = nn.Sequential(nn.Embedding(env.action_space.n, self.d_model), nn.Tanh())
+        self.action_embedding = nn.Sequential(nn.Embedding(env.action_space.n + 1, self.d_model), nn.Tanh())
         self.reward_embedding = nn.Sequential(nn.Linear(1, self.d_model), nn.Tanh())
 
         # Initialize weights
