@@ -185,6 +185,9 @@ class DecisionTransformer(torch.nn.Module):
         assert states.shape[1] == actions.shape[1] == targets.shape[1], "block sizes must be the same"
 
     def get_time_embeddings(self, timesteps):
+
+        assert timesteps.max() <= self.max_timestep, "timesteps must be less than max_timesteps"
+
         block_size = timesteps.shape[1]
         timesteps = rearrange(timesteps, 'batch block time-> (batch block) time')
         time_embeddings = self.time_embedding(timesteps).squeeze(-2)

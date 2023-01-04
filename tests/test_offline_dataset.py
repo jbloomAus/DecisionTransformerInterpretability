@@ -8,7 +8,7 @@ def test_init_trajectory_loader():
 
     trajectory_data_set = TrajectoryLoader(PATH, pct_traj=1.0, device="cpu")
 
-    assert trajectory_data_set.num_trajectories == 4
+    assert trajectory_data_set.num_trajectories == 51
     assert trajectory_data_set.num_timesteps == 49664
     assert trajectory_data_set.actions is not None
     assert trajectory_data_set.rewards is not None
@@ -42,9 +42,9 @@ def test_trajectory_loader_get_indices_of_top_p():
     trajectory_data_set = TrajectoryLoader(PATH, pct_traj=1.0, device="cpu")
     indices = trajectory_data_set.get_indices_of_top_p_trajectories(pct_traj=0.1)
 
-    assert len(indices) == 1
-    assert indices[0] == 1
-    assert indices[-1] == 1
+    assert len(indices) == 9
+    assert indices[0] == 18
+    assert indices[-1] == 31
 
 
 # def test_init_trajectory_loader_pct_traj_001():

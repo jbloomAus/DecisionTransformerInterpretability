@@ -26,6 +26,7 @@ class TrajectoryLoader():
         actions = data['data'].get('actions')
         rewards = data['data'].get('rewards')
         dones = data['data'].get('dones')
+        truncated = data['data'].get('truncated')
         infos = data['data'].get('infos')
 
         observations = np.array(observations)
@@ -38,8 +39,10 @@ class TrajectoryLoader():
         t_actions = rearrange(t.tensor(actions), "t b -> (b t)")
         t_rewards = rearrange(t.tensor(rewards), "t b -> (b t)")
         t_dones = rearrange(t.tensor(dones), "t b -> (b t)")
+        t_truncated = rearrange(t.tensor(truncated), "t b -> (b t)")
 
-        done_indices = t.where(t_dones)[0]
+        t_done_or_truncated = t.logical_or(t_dones, t_truncated)
+        done_indices = t.where(t_done_or_truncated )[0]
 
         self.actions = t.tensor_split(t_actions, done_indices+1)
         self.rewards = t.tensor_split(t_rewards, done_indices+1)
