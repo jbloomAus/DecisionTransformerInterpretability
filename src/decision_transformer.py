@@ -2,6 +2,7 @@ import torch as t
 import warnings
 import wandb
 import time
+import os
 
 from environments import make_env
 
@@ -70,3 +71,18 @@ if __name__ == "__main__":
         initial_rtg=args.initial_rtg,
         eval_max_time_steps=args.eval_max_time_steps
     )
+
+    if args.track:
+        # save the model with pickle, then upload it as an artifact, then delete it.
+        # name it after the run name.
+        if not os.path.exists("models"):
+            os.mkdir("models")
+
+        model_path = f"models/{run_name}.pt"
+        t.save(dt.state_dict(), model_path)
+        artifact = wandb.Artifact(run_name, type="model")
+        artifact.add_file(model_path)
+        wandb.log_artifact(artifact)
+        os.remove(model_path)
+
+        wandb.finish()
