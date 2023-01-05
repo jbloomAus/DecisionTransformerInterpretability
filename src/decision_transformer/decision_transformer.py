@@ -110,8 +110,8 @@ class DecisionTransformer(torch.nn.Module):
         self.reward_embedding = nn.Sequential(nn.Linear(1, self.d_model, bias=False))
 
         # Initialize weights
-        nn.init.normal_(self.action_embedding[0].weight, mean=0.0, std=0.02)
-        nn.init.normal_(self.reward_embedding[0].weight, mean=0.0, std=0.02)
+        nn.init.normal_(self.action_embedding[0].weight, mean=0.0, std= 1/((env.action_space.n + 1)*self.d_model))
+        nn.init.normal_(self.reward_embedding[0].weight, mean=0.0, std= 1/self.d_model)
 
         # Transformer
         cfg = EasyTransformerConfig(
