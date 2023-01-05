@@ -26,3 +26,4 @@ class DTArgs:
     eval_frequency: int = 100
     eval_episodes: int = 20
     initial_rtg: float = 1
+    eval_max_time_steps: int = 1000

@@ -25,7 +25,8 @@ def train(
     test_batches=10,
     eval_frequency=10,
     eval_episodes=10,
-    initial_rtg=1.0):
+    initial_rtg=1.0,
+    eval_max_time_steps=100):
 
     loss_fn = nn.CrossEntropyLoss()
 
@@ -104,7 +105,9 @@ def train(
                 max_len = max_len, 
                 track=track,
                 batch_number = batch,
-                initial_rtg = initial_rtg)
+                initial_rtg = initial_rtg,
+                max_time_step=eval_max_time_steps)
+
     return dt
 
 def test(
@@ -180,14 +183,15 @@ def evaluate_dt_agent(
     trajectories=300,
     track=False,
     batch_number=0,
-    initial_rtg=0.98):
+    initial_rtg=0.98,
+    max_time_step=100):
 
     dt.eval()
     run_name = f"dt_eval_videos_{batch_number}"
     video_path = os.path.join("videos", run_name)
     env_id = trajectory_data_set.metadata['args']['env_id']
     env = make_env(env_id, seed=batch_number, idx=0, capture_video=True,
-                    max_steps = dt.max_timestep,
+                    max_steps = min(dt.max_timestep, max_time_step),
                    run_name=run_name, fully_observed=False)
     env = env()
 
