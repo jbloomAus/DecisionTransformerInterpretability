@@ -17,7 +17,8 @@ def train(
     batch_size=128, 
     max_len=20, 
     batches=1000, 
-    lr=0.0001, 
+    lr=0.0001,
+    weight_decay=0.0,
     device="cpu",
     track=False,
     test_frequency=10,
@@ -29,7 +30,7 @@ def train(
 
     dt = dt.to(device)
 
-    optimizer = t.optim.Adam(dt.parameters(), lr=lr)
+    optimizer = t.optim.Adam(dt.parameters(), lr=lr, weight_decay=weight_decay)
     pbar = tqdm(range(batches))
     for batch in pbar:
 
@@ -188,6 +189,7 @@ def evaluate_dt_agent(
                    run_name=run_name, fully_observed=False)
     env = env()
 
+    traj_lengths = []
     n_terminated = 0
     n_truncated = 0
     reward_total = 0
@@ -240,7 +242,7 @@ def evaluate_dt_agent(
 
             # print(f"took action  {action} at timestep {i} for reward {new_reward}")
             i = i + 1
-
+        
         n_positive = n_positive + (new_reward > 0)
         reward_total = reward_total + new_reward
         n_terminated = n_terminated + terminated
@@ -248,8 +250,9 @@ def evaluate_dt_agent(
 
         current_videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
         if track and (len(current_videos) > len(videos)): # we have a new video
-            new_video = [i for i in current_videos if i not in videos][0] 
-            path_to_video = os.path.join(video_path, new_video)
+            new_videos = [i for i in current_videos if i not in videos]
+            assert len(new_videos) == 1, "more than one new video found, new videos: {}".format(new_videos)
+            path_to_video = os.path.join(video_path, new_videos[0])
             wandb.log({"media/video": wandb.Video(
                 path_to_video, 
                 fps=4, 
@@ -264,5 +267,6 @@ def evaluate_dt_agent(
         wandb.log({"eval/prop_truncated": n_truncated / trajectories}, step=batch_number)
         wandb.log({"eval/mean_reward": reward_total / trajectories}, step=batch_number)
         wandb.log({"eval/prop_positive_reward": n_positive / trajectories}, step=batch_number)
+        wandb.log({"eval/mean_traj_length": sum(traj_lengths) / trajectories}, step=batch_number)
 
     return n_terminated / trajectories
