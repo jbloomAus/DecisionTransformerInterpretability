@@ -2,9 +2,10 @@
 import gymnasium as gym
 import minigrid
 
-def make_env(env_id: str, seed: int, idx: int, capture_video: bool, run_name: str, render_mode ="rgb_array", max_steps = 100, fully_observed = False):
+
+def make_env(env_id: str, seed: int, idx: int, capture_video: bool, run_name: str, render_mode="rgb_array", max_steps=100, fully_observed=False, video_frequency=50):
     """Return a function that returns an environment after setting up boilerplate."""
-    
+
     def thunk():
 
         kwargs = {}
@@ -19,9 +20,9 @@ def make_env(env_id: str, seed: int, idx: int, capture_video: bool, run_name: st
         if capture_video:
             if idx == 0:
                 env = gym.wrappers.RecordVideo(
-                    env, 
-                    f"videos/{run_name}", 
-                    episode_trigger=lambda x : x % 50 == 0, # Video every 50 runs for env #1
+                    env,
+                    f"videos/{run_name}",
+                    episode_trigger=lambda x: x % video_frequency == 0,  # Video every 50 runs for env #1
                     disable_logger=True
                 )
 
@@ -34,5 +35,5 @@ def make_env(env_id: str, seed: int, idx: int, capture_video: bool, run_name: st
         env.action_space.seed(seed)
         env.observation_space.seed(seed)
         return env
-    
+
     return thunk
