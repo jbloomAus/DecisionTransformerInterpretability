@@ -198,6 +198,7 @@ def evaluate_dt_agent(
     videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
     for video in videos:
         os.remove(os.path.join(video_path, video))
+    videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
 
     for seed in range(trajectories):
 
