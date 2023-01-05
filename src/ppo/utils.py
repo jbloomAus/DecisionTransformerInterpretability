@@ -14,6 +14,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from einops import rearrange
+import uuid
 
 MAIN = __name__ == "__main__"
 
@@ -111,7 +112,7 @@ class PPOArgs:
             self.batch_size = int(self.num_envs * self.num_steps)
             self.minibatch_size = self.batch_size // self.num_minibatches
             if self.trajectory_path is None:
-                self.trajectory_path = os.path.join("trajectories", self.env_id + ".pkl")
+                self.trajectory_path = os.path.join("trajectories", self.env_id + str(uuid.uuid4()) + ".pkl")
 
 arg_help_strings = dict(
     exp_name = "the name of this experiment",
