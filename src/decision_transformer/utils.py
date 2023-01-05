@@ -15,7 +15,8 @@ class DTArgs:
     batch_size: int = 128
     batches: int = 100
     max_len: int = 100
-    pct_traj: float = 1.0
+    pct_traj: float = 0.05
+    weight_decay: float = 0.0
     seed: int = 1
     track: bool = True
     wandb_project_name: str = "DecisionTransformerInterpretability"

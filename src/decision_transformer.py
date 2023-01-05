@@ -60,6 +60,7 @@ if __name__ == "__main__":
         max_len=args.max_len,
         batches=args.batches, 
         lr=args.learning_rate, 
+        weight_decay=args.weight_decay,
         batch_size=args.batch_size, 
         track=args.track,
         test_frequency=args.test_frequency,
