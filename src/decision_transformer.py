@@ -48,6 +48,9 @@ if __name__ == "__main__":
         max_timestep=trajectory_data_set.metadata.get("args").get("max_steps") # Our DT must have a context window large enough
     )
 
+    if args.track:
+        wandb.watch(dt, log="all")
+
     dt = train(
         dt = dt, 
         trajectory_data_set = trajectory_data_set, 
