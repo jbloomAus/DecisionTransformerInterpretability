@@ -7,9 +7,9 @@ from dataclasses import dataclass
 class DTArgs:
     exp_name: str = os.path.basename(globals().get("__file__", "DT_implementation").rstrip(".py"))
     trajectory_path: str = "trajectories/MiniGrid-Dynamic-Obstacles-6x6-v0.pkl"
-    d_model = 128
+    d_model = 32
     n_heads = 2
-    d_mlp = 248
+    d_mlp = 64
     n_layers = 2
     learning_rate: float = 0.00025
     batch_size: int = 128

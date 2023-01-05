@@ -72,10 +72,9 @@ def train(
         pbar.set_description(f"Training DT: {loss.item():.4f}")
 
         if track:
-            
-            wandb.log({"loss": loss.item()}, step=batch)
+            wandb.log({"train/loss": loss.item()}, step=batch)
             tokens_seen = (batch + 1) * batch_size * max_len
-            wandb.log({"tokens_seen": tokens_seen}, step=batch)
+            wandb.log({"metrics/tokens_seen": tokens_seen}, step=batch)
 
         # at save frequency
         if batch % 100 == 0:
@@ -165,8 +164,8 @@ def test(
     mean_loss = loss.item() / batches
 
     if track:
-        wandb.log({"test_loss": mean_loss}, step=batch_number)
-        wandb.log({"test_accuracy": accuracy}, step=batch_number)
+        wandb.log({"test/loss": mean_loss}, step=batch_number)
+        wandb.log({"test/accuracy": accuracy}, step=batch_number)
 
     return mean_loss, accuracy
 
@@ -177,18 +176,22 @@ def evaluate_dt_agent(
     max_len=30, 
     trajectories=300,
     track=False,
-    batch_number=0):
+    batch_number=0,
+    initial_rtg=0.98):
 
     dt.eval()
     run_name = f"dt_eval_videos_{batch_number}"
     video_path = os.path.join("videos", run_name)
     env_id = trajectory_data_set.metadata['args']['env_id']
-    env = make_env(env_id, seed=15, idx=0, capture_video=True,
+    env = make_env(env_id, seed=batch_number, idx=0, capture_video=True,
+                    max_steps = dt.max_timestep,
                    run_name=run_name, fully_observed=False)
     env = env()
 
-    n_completed = 0
+    n_terminated = 0
     n_truncated = 0
+    reward_total = 0
+    n_positive = 0
 
     videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
     for video in videos:
@@ -196,9 +199,9 @@ def evaluate_dt_agent(
 
     for seed in range(trajectories):
 
-        obs, _ = env.reset()
+        obs, _ = env.reset(seed = seed)
         obs = t.tensor(obs['image']).unsqueeze(0).unsqueeze(0)
-        rtg = t.tensor([1]).unsqueeze(0).unsqueeze(0)
+        rtg = t.tensor([initial_rtg]).unsqueeze(0).unsqueeze(0)
         a = t.tensor([0]).unsqueeze(0).unsqueeze(0)
         timesteps = t.tensor([0]).unsqueeze(0).unsqueeze(0)
 
@@ -209,7 +212,7 @@ def evaluate_dt_agent(
         new_obs, new_reward, terminated, truncated, info = env.step(new_action)
 
         i = 0
-        while not terminated:
+        while not (terminated or truncated):
 
             # concat init obs to new obs
             obs = t.cat(
@@ -238,24 +241,28 @@ def evaluate_dt_agent(
             # print(f"took action  {action} at timestep {i} for reward {new_reward}")
             i = i + 1
 
-            n_completed = n_completed + terminated
-            n_truncated = n_truncated + truncated
+        n_positive = n_positive + (new_reward > 0)
+        reward_total = reward_total + new_reward
+        n_terminated = n_terminated + terminated
+        n_truncated = n_truncated + truncated
 
-            current_videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
-            if track and (len(current_videos) > len(videos)): # we have a new video
-                new_video = [i for i in current_videos if i not in videos][0] 
-                path_to_video = os.path.join(video_path, new_video)
-                wandb.log({"video": wandb.Video(
-                    path_to_video, 
-                    fps=4, 
-                    format="mp4",
-                    caption=f"video of agent playing {env_id} at batch {batch_number}, episode {i}"
-                )}, step=batch_number)
+        current_videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
+        if track and (len(current_videos) > len(videos)): # we have a new video
+            new_video = [i for i in current_videos if i not in videos][0] 
+            path_to_video = os.path.join(video_path, new_video)
+            wandb.log({"media/video": wandb.Video(
+                path_to_video, 
+                fps=4, 
+                format="mp4",
+                caption=f"video of agent playing {env_id} at batch {batch_number}, episode {i}, reward {new_reward}"
+            )}, step=batch_number)
+        videos = current_videos # update videos
 
     env.close()
     if track:
-        wandb.log({"prop_completed": n_completed / trajectories}, step=batch_number)
+        wandb.log({"eval/prop_completed": n_terminated / trajectories}, step=batch_number)
+        wandb.log({"eval/prop_truncated": n_truncated / trajectories}, step=batch_number)
+        wandb.log({"eval/mean_reward": reward_total / trajectories}, step=batch_number)
+        wandb.log({"eval/prop_positive_reward": n_positive / trajectories}, step=batch_number)
 
-    print(f"completed {n_completed} trajectories out of {trajectories}")
-
-    return n_completed / trajectories
+    return n_terminated / trajectories
