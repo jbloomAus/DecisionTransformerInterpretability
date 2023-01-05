@@ -79,10 +79,6 @@ def train(
             tokens_seen = (batch + 1) * batch_size * max_len
             wandb.log({"metrics/tokens_seen": tokens_seen}, step=batch)
 
-        # at save frequency
-        if batch % 100 == 0:
-            t.save(dt.state_dict(), f"decision_transformer_{batch}.pt")
-
         # # at test frequency
         if batch % test_frequency == 0:
             test(
