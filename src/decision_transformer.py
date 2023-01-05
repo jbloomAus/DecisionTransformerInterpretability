@@ -49,7 +49,7 @@ if __name__ == "__main__":
     )
 
     if args.track:
-        wandb.watch(dt, log="all")
+        wandb.watch(dt, log="parameters")
 
     dt = train(
         dt = dt, 
