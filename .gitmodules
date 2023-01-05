@@ -1,6 +1,3 @@
 [submodule "decision-transformer"]
 	path = decision_transformer_original
 	url = https://github.com/kzl/decision-transformer.git
-[submodule "rl-starter-files"]
-	path = torch_rl
-	url = https://github.com/lcswillems/rl-starter-files.git
