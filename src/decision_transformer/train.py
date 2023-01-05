@@ -206,7 +206,8 @@ def evaluate_dt_agent(
         os.remove(os.path.join(video_path, video))
     videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
 
-    for seed in range(trajectories):
+    pbar = tqdm(range(trajectories), desc="Evaluating DT")
+    for seed in pbar:
 
         obs, _ = env.reset(seed = seed)
         obs = t.tensor(obs['image']).unsqueeze(0).unsqueeze(0)
@@ -249,6 +250,8 @@ def evaluate_dt_agent(
 
             # print(f"took action  {action} at timestep {i} for reward {new_reward}")
             i = i + 1
+
+            pbar.set_description(f"Evaluating DT: Episode {seed} at timestep {i} for reward {new_reward}")
         
         n_positive = n_positive + (new_reward > 0)
         reward_total = reward_total + new_reward
