@@ -66,5 +66,6 @@ if __name__ == "__main__":
         test_frequency=args.test_frequency,
         test_batches = args.test_batches,
         eval_frequency=args.eval_frequency,
-        eval_episodes=args.eval_episodes
+        eval_episodes=args.eval_episodes,
+        initial_rtg=args.initial_rtg
     )
