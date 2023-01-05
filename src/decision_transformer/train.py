@@ -31,7 +31,7 @@ def train(
 
     optimizer = t.optim.Adam(dt.parameters(), lr=lr)
     pbar = tqdm(range(batches))
-    for i in pbar:
+    for batch in pbar:
 
         dt.train()
         
@@ -73,17 +73,16 @@ def train(
 
         if track:
             
-            wandb.log({"loss": loss.item()})
-            
-            tokens_seen = (i + 1) * batch_size * max_len
-            wandb.log({"tokens_seen": tokens_seen})
+            wandb.log({"loss": loss.item()}, step=batch)
+            tokens_seen = (batch + 1) * batch_size * max_len
+            wandb.log({"tokens_seen": tokens_seen}, step=batch)
 
         # at save frequency
-        if i % 100 == 0:
-            t.save(dt.state_dict(), f"decision_transformer_{i}.pt")
+        if batch % 100 == 0:
+            t.save(dt.state_dict(), f"decision_transformer_{batch}.pt")
 
         # # at test frequency
-        if i % test_frequency == 0:
+        if batch % test_frequency == 0:
             test(
                 dt = dt, 
                 trajectory_data_set = trajectory_data_set,
@@ -92,16 +91,18 @@ def train(
                 max_len = max_len, 
                 batches = test_batches, 
                 device = device, 
-                track = track)
+                track = track,
+                batch_number = batch)
 
-        if i % eval_frequency == 0:
+        if batch % eval_frequency == 0:
             evaluate_dt_agent(
                 trajectory_data_set = trajectory_data_set, 
                 dt = dt, 
                 make_env = make_env, 
                 trajectories = eval_episodes,
                 max_len = max_len, 
-                track=track)
+                track=track,
+                batch_number = batch)
     return dt
 
 def test(
@@ -112,7 +113,8 @@ def test(
     max_len=20, 
     batches=10, 
     device="cpu",
-    track=False):
+    track=False,
+    batch_number=0):
 
     dt.eval()
 
@@ -163,8 +165,8 @@ def test(
     mean_loss = loss.item() / batches
 
     if track:
-        wandb.log({"test_loss": mean_loss})
-        wandb.log({"test_accuracy": accuracy})
+        wandb.log({"test_loss": mean_loss}, step=batch_number)
+        wandb.log({"test_accuracy": accuracy}, step=batch_number)
 
     return mean_loss, accuracy
 
@@ -174,10 +176,12 @@ def evaluate_dt_agent(
     make_env, 
     max_len=30, 
     trajectories=300,
-    track=False):
+    track=False,
+    batch_number=0):
 
     dt.eval()
-    run_name = "dt_eval_videos"
+    run_name = f"dt_eval_videos_{batch_number}"
+    video_path = os.path.join("videos", run_name)
     env_id = trajectory_data_set.metadata['args']['env_id']
     env = make_env(env_id, seed=15, idx=0, capture_video=True,
                    run_name=run_name, fully_observed=False)
@@ -186,9 +190,9 @@ def evaluate_dt_agent(
     n_completed = 0
     n_truncated = 0
 
-    videos = [i for i in os.listdir("videos/dt_eval_videos/") if i.endswith(".mp4")]
+    videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
     for video in videos:
-        os.remove(os.path.join("videos/dt_eval_videos/", video))
+        os.remove(os.path.join(video_path, video))
 
     for seed in range(trajectories):
 
@@ -237,14 +241,20 @@ def evaluate_dt_agent(
             n_completed = n_completed + terminated
             n_truncated = n_truncated + truncated
 
-            current_videos = [i for i in os.listdir("videos/dt_eval_videos/") if i.endswith(".mp4")]
+            current_videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
             if track and (len(current_videos) > len(videos)): # we have a new video
                 new_video = [i for i in current_videos if i not in videos][0] 
-                path_to_video = f"videos/{run_name}/{new_video}"
-                wandb.log({"video": wandb.Video(path_to_video, fps=4, format="mp4")})
+                path_to_video = os.path.join(video_path, new_video)
+                wandb.log({"video": wandb.Video(
+                    path_to_video, 
+                    fps=4, 
+                    format="mp4",
+                    caption=f"video of agent playing {env_id} at batch {batch_number}, episode {i}"
+                )}, step=batch_number)
 
+    env.close()
     if track:
-        wandb.log({"prop_completed": n_completed / trajectories})
+        wandb.log({"prop_completed": n_completed / trajectories}, step=batch_number)
 
     print(f"completed {n_completed} trajectories out of {trajectories}")
 
