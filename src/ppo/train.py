@@ -111,7 +111,7 @@ def train_ppo(args: PPOArgs, trajectory_writer = None, make_env = None):
         memory.reset()
 
     if trajectory_writer is not None:
-        trajectory_writer.write()
+        trajectory_writer.write(upload_to_wandb= args.track)
 
     envs.close()
     if args.track:

@@ -4,6 +4,7 @@ import time
 import numpy as np
 from typing import Dict
 from dataclasses import asdict, dataclass
+import wandb
 
 from typeguard import typechecked
 
@@ -37,7 +38,7 @@ class TrajectoryWriter():
         self.truncated.append(truncated)
         self.infos.append(info)
     
-    def write(self):
+    def write(self, upload_to_wandb: bool = False):
 
         data = {
             'observations': np.array(self.observations, dtype = np.float64),
@@ -61,6 +62,11 @@ class TrajectoryWriter():
                 'data': data,
                 'metadata': metadata
             }, f)
+
+        if upload_to_wandb:
+            artifact = wandb.Artifact(self.path.split("/")[-1], type = "trajectory")
+            artifact.add_file(self.path)
+            wandb.log_artifact(artifact)
 
         print(f"Trajectory written to {self.path}")
 
