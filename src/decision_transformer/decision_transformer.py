@@ -115,7 +115,7 @@ class DecisionTransformer(torch.nn.Module):
 
         # Transformer
         cfg = EasyTransformerConfig(
-            n_layers=2,
+            n_layers=self.n_layers,
             d_model=self.d_model,
             d_head=self.d_head,
             n_heads=self.n_heads,
