@@ -78,7 +78,8 @@ class DecisionTransformer(torch.nn.Module):
         d_mlp: int = 128,
         n_layers: int = 2,
         state_embedding_type: str = 'CNN',
-        max_timestep: int = 2048
+        max_timestep: int = 2048,
+        seed: int = 1,
     ):
         '''
         model = Classifier(cfg)
@@ -102,11 +103,11 @@ class DecisionTransformer(torch.nn.Module):
             self.state_encoder = StateEncoder(self.d_model)
         else: 
             n_obs = np.prod(env.observation_space['image'].shape)
-            self.state_encoder = nn.Linear(n_obs, self.d_model)
+            self.state_encoder = nn.Linear(n_obs, self.d_model, bias=False)
             nn.init.normal_(self.state_encoder.weight, mean=0.0, std=0.02)
 
-        self.action_embedding = nn.Sequential(nn.Embedding(env.action_space.n + 1, self.d_model), nn.Tanh())
-        self.reward_embedding = nn.Sequential(nn.Linear(1, self.d_model), nn.Tanh())
+        self.action_embedding = nn.Sequential(nn.Embedding(env.action_space.n + 1, self.d_model))
+        self.reward_embedding = nn.Sequential(nn.Linear(1, self.d_model, bias=False))
 
         # Initialize weights
         nn.init.normal_(self.action_embedding[0].weight, mean=0.0, std=0.02)
@@ -122,10 +123,10 @@ class DecisionTransformer(torch.nn.Module):
             d_vocab= 64, # does this matter?
             n_ctx= self.max_timestep*3, # 3x the max timestep so we have room for an action, reward, and state per timestep
             act_fn="relu",
-            # normalization_type=None,
+            normalization_type="LN",
             attention_dir="causal",
             d_vocab_out=env.action_space.n, #
-            seed = 0
+            seed = seed,
         )
 
         assert cfg.attention_dir == "causal", "Attention direction must be causal"
