@@ -1,19 +1,9 @@
-
-import re
-import time
-
-import gymnasium as gym
-import ipywidgets as wg
 import torch as t
-from gymnasium.spaces import Discrete
-from IPython.display import display
 from tqdm.autonotebook import tqdm
-
-import wandb
 
 from .agent import Agent
 from .memory import Memory
-from .utils import PPOArgs, set_global_seeds
+from .utils import PPOArgs
 
 device = t.device("cuda" if t.cuda.is_available() else "cpu")
 
@@ -42,42 +32,7 @@ def get_printable_output_for_probe_envs(args: PPOArgs, agent: Agent, probe_idx: 
 
     return output
 
-def train_ppo(args: PPOArgs, trajectory_writer = None, make_env = None):
-
-    # Check if running one of the probe envs
-    probe_match = re.match(r"Probe(\d)-v0", args.env_id)
-    probe_idx = int(probe_match.group(1)) - 1 if probe_match else None
-
-    # Verify environment is registered
-    all_envs = [env_spec for env_spec in gym.envs.registry]
-    assert args.env_id in all_envs, f"Environment {args.env_id} not registered."
-
-    # wandb initialisation, 
-    run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
-    if args.track:
-        wandb.init(
-            project=args.wandb_project_name,
-            entity=args.wandb_entity,
-            config=vars(args), # vars is equivalent to args.__dict__
-            name=run_name,
-            monitor_gym=True,
-            save_code=True,
-        )
-    set_global_seeds(args.seed)
-    device = t.device("cuda" if t.cuda.is_available() and args.cuda else "cpu")
-
-    if args.env_id in ["Probe1-v0", "Probe2-v0", "Probe3-v0", "Probe4-v0", "Probe5-v0"]:
-        envs = gym.vector.SyncVectorEnv(
-            [make_env(args.env_id, args.seed + i, i, args.capture_video, run_name, 
-            render_mode=None, max_steps = args.max_steps, fully_observed = args.fully_observed) for i in range(args.num_envs)]
-        )
-    else:
-        envs = gym.vector.SyncVectorEnv(
-            [make_env(args.env_id, args.seed + i, i, args.capture_video, run_name,
-            max_steps = args.max_steps, fully_observed = args.fully_observed) for i in range(args.num_envs)]
-        )
-    assert envs.single_action_space.shape is not None
-    assert isinstance(envs.single_action_space, Discrete), "only discrete action space is supported"
+def train_ppo(args: PPOArgs, envs, trajectory_writer = None, probe_idx = None):
 
     memory = Memory(envs, args, device)
     agent = Agent(envs, device)
@@ -114,5 +69,3 @@ def train_ppo(args: PPOArgs, trajectory_writer = None, make_env = None):
         trajectory_writer.write(upload_to_wandb= args.track)
 
     envs.close()
-    if args.track:
-        wandb.finish()

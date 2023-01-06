@@ -1,5 +1,6 @@
 import pytest
 
+import torch as t
 import gymnasium as gym
 from gymnasium.spaces import Discrete
 
@@ -21,6 +22,11 @@ def test_probe_envs(env_name):
         probes = [Probe1, Probe2, Probe3, Probe4, Probe5]
         gym.envs.registration.register(id=f"Probe{i+1}-v0", entry_point=probes[i])
 
+    envs = gym.vector.SyncVectorEnv(
+        [make_env(env_name, i, i, False, "test", 
+        render_mode=None, max_steps = None, fully_observed = False) for i in range(4)]
+    )
+
     args = PPOArgs(
         exp_name = 'Test',
         env_id = env_name,
@@ -34,7 +40,7 @@ def test_probe_envs(env_name):
     # currently, ppo has tests which run inside main if it 
     # detects "Probe" in the env name. We will fix this 
     # eventually.
-    ppo = train_ppo(args, make_env=make_env)
+    ppo = train_ppo(args, envs = envs)
 
 
 def test_ppo_agent_gym():

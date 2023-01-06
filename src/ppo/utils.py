@@ -84,27 +84,27 @@ def sum_rewards(rewards : List[int], gamma : float = 1):
 
 @dataclass
 class PPOArgs:
-    exp_name: str = os.path.basename(globals().get("__file__", "PPO_implementation").rstrip(".py"))
+    exp_name: str = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
     seed: int = 1
     cuda: bool = True
     track: bool = True
-    wandb_project_name: str = "PPOCart"
+    wandb_project_name: str = "PPO-MiniGrid"
     wandb_entity: str = None
     capture_video: bool = True
-    env_id: str = "CartPole-v1"
-    total_timesteps: int = 500000
+    env_id: str = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
+    total_timesteps: int = 5000000
     learning_rate: float = 0.00025
-    num_envs: int = 4
+    num_envs: int = 10
     num_steps: int = 128
     gamma: float = 0.99
     gae_lambda: float = 0.95
     num_minibatches: int = 4
     update_epochs: int = 4
-    clip_coef: float = 0.2
-    ent_coef: float = 0.01
+    clip_coef: float = 0.4
+    ent_coef: float = 0.2
     vf_coef: float = 0.5
-    max_grad_norm: float = 0.5
-    max_steps: int = 100,
+    max_grad_norm: float = 2
+    max_steps: int = 2000
     trajectory_path: str = None
     fully_observed: bool = False
 
