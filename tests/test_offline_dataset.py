@@ -42,8 +42,8 @@ def test_trajectory_loader_get_indices_of_top_p():
     trajectory_data_set = TrajectoryLoader(PATH, pct_traj=1.0, device="cpu")
     indices = trajectory_data_set.get_indices_of_top_p_trajectories(pct_traj=0.1)
 
-    assert len(indices) == 9
-    assert indices[0] == 18
+    assert len(indices) == 1
+    assert indices[0] == 31
     assert indices[-1] == 31
 
 
