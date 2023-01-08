@@ -4,6 +4,10 @@ from src.decision_transformer.offline_dataset import TrajectoryLoader
 
 PATH = "tests/fixtures/test_trajectories.pkl"
 
+def get_len_i_for_i_in_list(l):
+    return [len(i) for i in l]
+
+
 def test_init_trajectory_loader():
 
     trajectory_data_set = TrajectoryLoader(PATH, pct_traj=1.0, device="cpu")
@@ -22,6 +26,7 @@ def test_init_trajectory_loader():
     assert len(trajectory_data_set.actions) == len(trajectory_data_set.returns)
     assert len(trajectory_data_set.actions) == len(trajectory_data_set.states)
 
+    assert get_len_i_for_i_in_list(trajectory_data_set.actions) == get_len_i_for_i_in_list(trajectory_data_set.states)
 
 def test_trajectory_loader_get_batch():
 
@@ -42,8 +47,8 @@ def test_trajectory_loader_get_indices_of_top_p():
     trajectory_data_set = TrajectoryLoader(PATH, pct_traj=1.0, device="cpu")
     indices = trajectory_data_set.get_indices_of_top_p_trajectories(pct_traj=0.1)
 
-    assert len(indices) == 1
-    assert indices[0] == 31
+    assert len(indices) == 7
+    assert indices[0] == 20
     assert indices[-1] == 31
 
 

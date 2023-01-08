@@ -48,7 +48,7 @@ class TrajectoryLoader():
         self.rewards = t.tensor_split(t_rewards, done_indices+1)
         self.dones = t.tensor_split(t_dones, done_indices+1)
         self.truncated = t.tensor_split(t_truncated, done_indices+1)
-        self.states = t.tensor_split(t_observations, done_indices)
+        self.states = t.tensor_split(t_observations, done_indices+1)
         self.returns = [r.sum() for r in self.rewards]
         self.timesteps = [t.arange(len(i)) for i in self.states]
         self.traj_lens = np.array([len(i) for i in self.states])
@@ -66,7 +66,7 @@ class TrajectoryLoader():
 
         num_trajectories = 1
         timesteps = self.traj_lens[sorted_inds[-1]]
-        ind = num_trajectories - 2
+        ind = self.num_trajectories - 2
 
         # this while statement checks two things:
         # 1. that we haven't gone past the end of the array
