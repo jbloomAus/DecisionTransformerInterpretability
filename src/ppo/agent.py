@@ -102,21 +102,26 @@ class Agent(nn.Module):
             next_obs = memory.obs_preprocessor(next_obs)
             reward = t.from_numpy(reward).to(device)
 
+            if trajectory_writer is not None:
+                # first_obs = obs 
+                trajectory_writer.accumulate_trajectory(
+                    # the observation stored with an action and reward is the observation which the agent responded to. 
+                    next_obs = obs.detach().numpy(), 
+                    # the reward stored with an action and observation is the reward the agent received for taking that action in that state
+                    reward = reward.detach().numpy(), 
+                    # the action stored with an observation and reward is the action the agent took to get to that reward
+                    action = action.detach().numpy(), 
+                    # the done stored with an action and observation is the done the agent received for taking that action in that state
+                    done = next_done, 
+                    truncated = next_truncated, 
+                    info = info 
+                )
+
             # Store (s_t, d_t, a_t, logpi(a_t|s_t), v(s_t), r_t+1)
             memory.add(info, obs, done, action, logprob, value, reward)
-
             obs = t.from_numpy(next_obs).to(device)
             done = t.from_numpy(next_done).to(device, dtype=t.float)
 
-            if trajectory_writer is not None:
-                trajectory_writer.accumulate_trajectory(
-                    next_obs = next_obs, # t + 1
-                    reward = reward.detach().numpy(), # t + 1
-                    done = next_done, # t + 1
-                    action = action.detach().numpy(), # t
-                    truncated = next_truncated, # t + 1
-                    info = info # t
-                ) # at index i, the action at time t is the action that led to the observation at time t + 1
 
         # Store last (obs, done, value) tuple, since we need it to compute advantages
         memory.next_obs = obs
