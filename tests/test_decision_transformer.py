@@ -244,6 +244,13 @@ def test_forward():
     
     decision_transformer = DecisionTransformer(env)
 
+    if t.cuda.is_available():
+        decision_transformer = decision_transformer.cuda()
+        all_obs = all_obs.cuda()
+        all_actions = all_actions.cuda()
+        all_returns_to_go = all_returns_to_go.cuda()
+        all_timesteps = all_timesteps.cuda()
+
     _, action_logits, _= decision_transformer(
         states = all_obs,
         actions = all_actions,
