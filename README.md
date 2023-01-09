@@ -19,6 +19,13 @@ I haven't been too careful about this yet. Using python 3.9.15 with the requirem
 
 The docker file should work and we can make use of it more when the project is further ahead/if we are alternativing developers frequently and have any differential behavior. 
 
+```bash
+./scripts/build_docker.sh
+./scripts/run_docker.sh
+```
+
+Then you can ssh into the docker and a good ide will bring credentials etc.
+
 # Development so far
 
 I'm writing this midways since I'm going on holiday for a week and others might want to do some development. 
