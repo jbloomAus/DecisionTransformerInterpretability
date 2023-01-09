@@ -2,6 +2,7 @@ import gymnasium as gym
 import numpy as np
 import torch as t
 from torch import nn, optim
+from typing import Tuple
 from torch.distributions.categorical import Categorical
 from torchtyping import patch_typeguard
 from typeguard import typechecked
@@ -73,7 +74,7 @@ class Agent(nn.Module):
         t.nn.init.constant_(layer.bias, bias_const)
         return layer
 
-    def make_optimizer(self, num_updates: int, initial_lr: float, end_lr: float) -> tuple[optim.Optimizer, PPOScheduler]:
+    def make_optimizer(self, num_updates: int, initial_lr: float, end_lr: float) -> Tuple[optim.Optimizer, PPOScheduler]:
         '''Return an appropriately configured Adam with its attached scheduler.
         '''
         optimizer = optim.Adam(self.parameters(), lr=initial_lr, eps=1e-5, maximize=True)
