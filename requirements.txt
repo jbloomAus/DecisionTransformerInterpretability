@@ -6,6 +6,7 @@
 
 # Transformer Lens V2
 transformer-lens @ git+https://github.com/neelnanda-io/TransformerLens@25b9e076fd6a44d053f5e2925a5d1ff802692ab2
+protobuf==3.20
 
 # Minigrid
 Minigrid==2.1.0
