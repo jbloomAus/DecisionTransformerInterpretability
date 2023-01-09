@@ -120,12 +120,12 @@ class DecisionTransformer(torch.nn.Module):
             d_head=self.d_head,
             n_heads=self.n_heads,
             d_mlp=self.d_mlp,
-            d_vocab= 64, # does this matter?
+            d_vocab= self.d_model, 
             n_ctx= self.max_timestep*3, # 3x the max timestep so we have room for an action, reward, and state per timestep
             act_fn="relu",
             normalization_type="LN",
             attention_dir="causal",
-            d_vocab_out=env.action_space.n, #
+            d_vocab_out=self.d_model, #
             seed = seed,
         )
 
@@ -138,13 +138,24 @@ class DecisionTransformer(torch.nn.Module):
         self.transformer.embed = nn.Identity()
         self.transformer.pos_embed = PosEmbedTokens(cfg)
 
+        # get output predictions:
+
+        self.predict_actions = nn.Linear(self.d_model, env.action_space.n)
+        self.predict_rewards = nn.Linear(self.d_model, 1)
+
+        # assume flat output for now. will score against flattened input.
+        self.predict_states = nn.Linear(self.d_model, np.prod(env.observation_space['image'].shape))
+
     # state, action, and return
-    def forward(self, states, actions, targets=None, rtgs=None, timesteps=None):
+    def forward(self, states, actions, rtgs, timesteps):
         # states: (batch, block_size, 56, 56, 3)
         # actions: (batch, block_size, 1)
         # targets: (batch, block_size, 1)
         # rtgs: (batch, block_size, 1)
         # timesteps: (batch, 1, 1) # this seems wrong because the time should be different for each element in the each block (incrememnting by 1)
+
+        batch_size = states.shape[0]
+        seq_length = states.shape[1]
 
         # embed states and recast back to (batch, block_size, n_embd)
         state_embeddings = self.get_state_embeddings(states) # batch_size, block_size, n_embd
@@ -163,16 +174,19 @@ class DecisionTransformer(torch.nn.Module):
         # use transformer to model sequence and return embeddings for states, actions, and rewards
 
         # since we are passing the transformer an embedding, we need to
-        logits = self.transformer(token_embeddings)
+        x = self.transformer(token_embeddings)
+        # x.shape = (batch_size, seq_length, n_embd), seq lenght goes R, s, a, R, s, a ...
 
-        # print("logits: ", logits[0, 0, :10])
+        # reshape as in original paper 
+        # x.shape = (batch_size, seq_length, n_embd)
+        # permute so we have preds over rewards in column 0, states in column 1, and actions in column 2
+        x = x.reshape(batch_size, seq_length, 3, self.d_model).permute(0, 2, 1, 3)
 
-        # select hidden states for actions
-        logits = self.get_logits(logits, actions)
-        # if we are given some desired targets also calculate the loss
-        loss = self.get_loss(logits, targets)
+        reward_preds = self.predict_rewards(x[:,2]) # predict next return given state and action
+        state_preds = self.predict_states(x[:,2]) # predict next state given state and action
+        action_preds = self.predict_actions(x[:,1]) # predict next action given state
 
-        return logits, loss
+        return state_preds, action_preds, reward_preds
 
     def get_logits(self, logits, actions):
         if actions is not None:
@@ -183,12 +197,6 @@ class DecisionTransformer(torch.nn.Module):
             raise NotImplementedError()
         
         return logits
-
-    def get_loss(self, logits, targets):
-        if targets is not None:
-            return F.cross_entropy(logits.reshape(-1, logits.size(-1)), targets.reshape(-1))
-        else: 
-            return None
 
     def check_input_sizes(self, states, actions, targets):
         assert states.shape[0] == actions.shape[0] == targets.shape[0], "batch sizes must be the same"

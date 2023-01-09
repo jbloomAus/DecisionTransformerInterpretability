@@ -7,6 +7,7 @@ import wandb
 
 from .decision_transformer import DecisionTransformer
 from .offline_dataset import TrajectoryLoader
+from .trainer import Trainer
 
 
 def train(
@@ -33,44 +34,53 @@ def train(
     dt = dt.to(device)
 
     optimizer = t.optim.Adam(dt.parameters(), lr=lr, weight_decay=weight_decay)
+    # trainer = Trainer(
+    #     model = dt, 
+    #     optimizer = optimizer, 
+    #     batch_size=batch_size, 
+    #     max_len=max_len, 
+    #     get_batch = trajectory_data_set.get_batch,
+    #     scheduler=None, # no scheduler for now
+    #     track = track,
+    #     mask_action=env.action_space.n,
+    #     )
+
     pbar = tqdm(range(batches))
     for batch in pbar:
 
         dt.train()
         
-        s, a, r, d, rtg, timesteps, mask = trajectory_data_set.get_batch(
+        s, a, _, _, rtg, timesteps, _ = trajectory_data_set.get_batch(
             batch_size, max_len=max_len)
 
         s.to(device)
         a.to(device)
-        r.to(device)
-        d.to(device)
         rtg.to(device)
         timesteps.to(device)
-        mask.to(device)
 
         a[a == -10] = env.action_space.n  # dummy action for padding
 
         optimizer.zero_grad()
 
-        logits, _ = dt.forward(
+        state_preds, action_preds, reward_preds = dt.forward(
             states=s,
             actions=a.to(t.int32).unsqueeze(-1),
             rtgs=rtg[:, :-1, :],
             timesteps=timesteps.unsqueeze(-1)
         )
 
-        logits = rearrange(logits, 'b t a -> (b t) a')
+        action_preds = rearrange(action_preds, 'b t a -> (b t) a')
         a_exp = rearrange(a, 'b t -> (b t)').to(t.int64)
 
         # ignore dummy action
         loss = loss_fn(
-            logits[a_exp != env.action_space.n],
+            action_preds[a_exp != env.action_space.n],
             a_exp[a_exp != env.action_space.n]
         )
 
         loss.backward()
         optimizer.step()
+        # loss = trainer.train_step(step=batch)
 
         pbar.set_description(f"Training DT: {loss.item():.4f}")
 
@@ -141,24 +151,27 @@ def test(
 
         a[a == -10] = env.action_space.n  # dummy action for padding
 
-        logits, _ = dt.forward(
+        state_preds, action_preds, reward_preds = dt.forward(
             states=s,
             actions=a.to(t.int32).unsqueeze(-1),
             rtgs=rtg[:, :-1, :],
             timesteps=timesteps.unsqueeze(-1)
         )
 
-        logits = rearrange(logits, 'b t a -> (b t) a')
-        a_hat = t.argmax(logits, dim=-1)
+        action_preds = rearrange(action_preds, 'b t a -> (b t) a')
         a_exp = rearrange(a, 'b t -> (b t)').to(t.int64)
 
-        logits = logits[a_exp != env.action_space.n]
+
+        a_hat = t.argmax(action_preds, dim=-1)
+        a_exp = rearrange(a, 'b t -> (b t)').to(t.int64)
+
+        action_preds = action_preds[a_exp != env.action_space.n]
         a_hat = a_hat[a_exp != env.action_space.n]
         a_exp = a_exp[a_exp != env.action_space.n]
 
         n_actions += a_exp.shape[0]
         n_correct += (a_hat == a_exp).sum()
-        loss += loss_fn(logits, a_exp)
+        loss += loss_fn(action_preds, a_exp)
 
         accuracy = n_correct.item() / n_actions
         pbar.set_description(f"Testing DT: Accuracy so far {accuracy:.4f}")
@@ -212,9 +225,10 @@ def evaluate_dt_agent(
         timesteps = t.tensor([0]).unsqueeze(0).unsqueeze(0)
 
         # get first action
-        logits, loss = dt.forward(
+        state_preds, action_preds, reward_preds = dt.forward(
             states=obs, actions=a, rtgs=rtg, timesteps=timesteps)
-        new_action = t.argmax(logits, dim=-1)[0].item()
+
+        new_action = t.argmax(action_preds, dim=-1)[0].item()
         new_obs, new_reward, terminated, truncated, info = env.step(new_action)
 
         i = 0
@@ -234,14 +248,14 @@ def evaluate_dt_agent(
             a = t.cat(
                 [a, t.tensor([new_action]).unsqueeze(0).unsqueeze(0)], dim=1)
 
-            logits, loss = dt.forward(
+            state_preds, action_preds, reward_preds = dt.forward(
                 states=obs[:, -max_len:] if obs.shape[1] > max_len else obs,
                 actions=a[:, -max_len:] if a.shape[1] > max_len else a,
                 rtgs=rtg[:, -max_len:] if rtg.shape[1] > max_len else rtg,
                 timesteps=timesteps[:, -
                                     max_len:] if timesteps.shape[1] > max_len else timesteps
             )
-            action = t.argmax(logits, dim=-1)[0][-1].item()
+            action = t.argmax(action_preds, dim=-1)[0][-1].item()
             new_obs, new_reward, terminated, truncated, info = env.step(action)
 
             # print(f"took action  {action} at timestep {i} for reward {new_reward}")
@@ -249,7 +263,7 @@ def evaluate_dt_agent(
 
             pbar.set_description(f"Evaluating DT: Episode {seed} at timestep {i} for reward {new_reward}")
         
-        traj_lengths.append(i)
+        traj_lengths
         n_positive = n_positive + (new_reward > 0)
         reward_total = reward_total + new_reward
         n_terminated = n_terminated + terminated
