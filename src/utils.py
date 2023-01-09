@@ -37,6 +37,19 @@ class TrajectoryWriter():
         self.dones.append(done)
         self.truncated.append(truncated)
         self.infos.append(info)
+
+    def tag_terminated_trajectories(self):
+        '''
+        Tag the last trajectory in each batch as done.
+        This is needed when an episode in a minibatch is ended because the
+        timesteps limit has been reached but the episode may not have been truncated
+        or ended in the environment.
+
+        I don't love this solution, but it will do for now.
+        '''
+        n_envs = len(self.dones[-1])
+        for i in range(n_envs):
+            self.truncated[-1][i] = True
     
     def write(self, upload_to_wandb: bool = False):
 

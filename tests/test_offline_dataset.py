@@ -12,8 +12,8 @@ def test_init_trajectory_loader():
 
     trajectory_data_set = TrajectoryLoader(PATH, pct_traj=1.0, device="cpu")
 
-    assert trajectory_data_set.num_trajectories == 51
-    assert trajectory_data_set.num_timesteps == 49664
+    assert trajectory_data_set.num_trajectories == 55
+    assert trajectory_data_set.num_timesteps == 49920
     assert trajectory_data_set.actions is not None
     assert trajectory_data_set.rewards is not None
     assert trajectory_data_set.dones is not None
@@ -26,8 +26,13 @@ def test_init_trajectory_loader():
     assert len(trajectory_data_set.actions) == len(trajectory_data_set.returns)
     assert len(trajectory_data_set.actions) == len(trajectory_data_set.states)
 
+    # lengths match
     assert get_len_i_for_i_in_list(trajectory_data_set.actions) == get_len_i_for_i_in_list(trajectory_data_set.states)
 
+    # max traj length is 1000
+    assert max(get_len_i_for_i_in_list(trajectory_data_set.actions)) == trajectory_data_set.max_ep_len
+    assert trajectory_data_set.max_ep_len == trajectory_data_set.metadata["args"]["max_steps"]
+    
 def test_trajectory_loader_get_batch():
 
     trajectory_data_set = TrajectoryLoader(PATH, pct_traj=1.0, device="cpu")
@@ -48,8 +53,8 @@ def test_trajectory_loader_get_indices_of_top_p():
     indices = trajectory_data_set.get_indices_of_top_p_trajectories(pct_traj=0.1)
 
     assert len(indices) == 7
-    assert indices[0] == 20
-    assert indices[-1] == 31
+    assert indices[0] == 23
+    assert indices[-1] == 33
 
 
 # def test_init_trajectory_loader_pct_traj_001():
