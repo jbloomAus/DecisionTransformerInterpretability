@@ -5,7 +5,7 @@ import time
 import wandb
 
 from typing import Callable
-from .decision_transformer import DecisionTransformer
+from .model import DecisionTransformer
 
 class Trainer:
     '''I like this abstraction from the original paper so let's emulate it.

@@ -5,7 +5,7 @@ from einops import rearrange
 from tqdm import tqdm
 import wandb
 
-from .decision_transformer import DecisionTransformer
+from .model import DecisionTransformer
 from .offline_dataset import TrajectoryLoader
 from .trainer import Trainer
 
