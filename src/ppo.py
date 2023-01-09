@@ -73,6 +73,6 @@ if __name__ == "__main__":
         trajectory_writer=trajectory_writer, 
         probe_idx=probe_idx
     )
-
-    run.finish()
+    if args.track:
+        run.finish()
 
