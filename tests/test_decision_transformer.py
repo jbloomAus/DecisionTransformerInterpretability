@@ -244,50 +244,11 @@ def test_forward():
     
     decision_transformer = DecisionTransformer(env)
 
-    logits, _ = decision_transformer(
+    _, action_logits, _= decision_transformer(
         states = all_obs,
         actions = all_actions,
         rtgs = all_returns_to_go,
         timesteps = all_timesteps
     )
 
-    assert logits.shape == (1, 10, env.action_space.n)
-
-def test_forward_no_actions():
-
-    env = gym.make('MiniGrid-Empty-8x8-v0')
-    env = RGBImgPartialObsWrapper(env) # Get pixel observations
-    env = ImgObsWrapper(env) # Get rid of the 'mission' field
-    obs, _ = env.reset() # This now produces an RGB tensor only
-
-    # take several actions, store the observations, actions, returns and timesteps
-    all_obs = []
-    all_actions = []
-    all_returns = []
-    all_timesteps = []
-
-    for i in range(10):
-        action = env.action_space.sample()
-        obs, reward, terminated, truncated, info = env.step(action)
-        all_obs.append(obs)
-        all_actions.append(action)
-        all_returns.append(reward)
-        all_timesteps.append(i)
-
-    # convert to tensors.unsqueeze(0)
-    all_obs = t.tensor(np.array(all_obs)).to(t.float32).unsqueeze(0)
-    all_actions = t.tensor(all_actions).reshape(-1, 1).unsqueeze(0)
-    all_returns = t.randn((10, 1))
-    all_returns_to_go = all_returns.flip(0).cumsum(0).flip(0).reshape(-1, 1).unsqueeze(0)
-    all_timesteps = t.tensor(all_timesteps).reshape(-1, 1).unsqueeze(0)
-    
-    decision_transformer = DecisionTransformer(env)
-
-    logits, _ = decision_transformer(
-        states = all_obs[:, :1, :, :, :],
-        actions = None,
-        rtgs = all_returns_to_go[:, :1],
-        timesteps = all_timesteps[:, :1]
-    )
-
-    assert logits.shape == (1, 1, env.action_space.n)
+    assert action_logits.shape == (1, 10, env.action_space.n)

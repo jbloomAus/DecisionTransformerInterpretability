@@ -1,5 +1,6 @@
 from typing import Dict, Union
 
+from gymnasium.spaces import Box, Dict  
 import einops
 import numpy as np
 import torch
@@ -144,7 +145,10 @@ class DecisionTransformer(torch.nn.Module):
         self.predict_rewards = nn.Linear(self.d_model, 1)
 
         # assume flat output for now. will score against flattened input.
-        self.predict_states = nn.Linear(self.d_model, np.prod(env.observation_space['image'].shape))
+        if isinstance(env.observation_space, Box):
+            self.predict_states = nn.Linear(self.d_model, np.prod(env.observation_space.shape))
+        elif isinstance(env.observation_space, Dict):
+            self.predict_states = nn.Linear(self.d_model, np.prod(env.observation_space['image'].shape))
 
     # state, action, and return
     def forward(self, states, actions, rtgs, timesteps):
