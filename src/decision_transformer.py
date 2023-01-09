@@ -7,7 +7,7 @@ import os
 from environments import make_env
 
 from decision_transformer.utils import DTArgs
-from decision_transformer.decision_transformer import DecisionTransformer
+from decision_transformer.model import DecisionTransformer
 from decision_transformer.offline_dataset import TrajectoryLoader
 from decision_transformer.train import train
 
