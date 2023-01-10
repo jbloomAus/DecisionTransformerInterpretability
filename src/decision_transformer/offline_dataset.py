@@ -2,6 +2,7 @@ import pickle
 import numpy as np
 import torch as t 
 from einops import rearrange
+import plotly.express as px
 import random
 
 # not technically a data loader, rework later to work as one.
@@ -177,6 +178,23 @@ class TrajectoryLoader():
         mask = t.from_numpy(np.concatenate(mask, axis=0)).to(device=self.device)
 
         return s, a, r, d, rtg, timesteps, mask
+
+    def plot_reward_over_time(self):
+
+        fig = px.scatter(
+            y=[i[-1] for i in self.rewards if len(i) > 0],
+            x=[i.max() for i in self.timesteps if len(i) > 0],
+            title="Reward vs Timesteps",
+            template="plotly_white",
+            labels={
+                "x": "Timesteps",
+                "y": "Reward",
+            },
+            marginal_x="histogram",
+            marginal_y="histogram",
+        )
+
+        return fig
 
 class TrajectoryReader():
     '''
