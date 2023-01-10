@@ -78,6 +78,7 @@ class DecisionTransformer(torch.nn.Module):
         n_heads: int = 2,
         d_mlp: int = 128,
         n_layers: int = 2,
+        layer_norm: bool = True,
         state_embedding_type: str = 'CNN',
         max_timestep: int = 2048,
         seed: int = 1,
@@ -115,6 +116,11 @@ class DecisionTransformer(torch.nn.Module):
         nn.init.normal_(self.action_embedding[0].weight, mean=0.0, std= 1/((env.action_space.n + 1)*self.d_model))
         nn.init.normal_(self.reward_embedding[0].weight, mean=0.0, std= 1/self.d_model)
 
+        if layer_norm:
+            normalization_type = "LN"
+        else:
+            normalization_type = None
+
         # Transformer
         cfg = EasyTransformerConfig(
             n_layers=self.n_layers,
@@ -125,7 +131,7 @@ class DecisionTransformer(torch.nn.Module):
             d_vocab= self.d_model, 
             n_ctx= self.n_ctx, # 3x the max timestep so we have room for an action, reward, and state per timestep
             act_fn="relu",
-            normalization_type="LN",
+            normalization_type=normalization_type,
             attention_dir="causal",
             d_vocab_out=self.d_model, #
             seed = seed,

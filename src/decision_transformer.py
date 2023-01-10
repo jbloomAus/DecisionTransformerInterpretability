@@ -45,6 +45,7 @@ if __name__ == "__main__":
         n_heads = args.n_heads,
         d_mlp = args.d_mlp,
         n_layers = args.n_layers,
+        layer_norm = args.layer_norm,
         state_embedding_type="grid", # hard-coded for now to minigrid.
         max_timestep=trajectory_data_set.metadata.get("args").get("max_steps") # Our DT must have a context window large enough
     )

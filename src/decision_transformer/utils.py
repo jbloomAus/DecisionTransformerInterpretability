@@ -5,17 +5,18 @@ from dataclasses import dataclass
 @dataclass
 class DTArgs:
     exp_name: str = "Dev"
-    trajectory_path: str = "trajectories/MiniGrid-MultiRoom-N4-S5-v0916b26d8-9f9b-4a5f-b88f-665602e08f59.pkl"
-    d_model: int = 64
-    n_heads: int = 2
-    d_mlp: int = 128
+    d_model: int = 128
+    trajectory_path: str = "trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0c8c5dccc-b418-492e-bdf8-2c21256cd9f3.pkl"
+    n_heads: int = 4
+    d_mlp: int = 256
     n_layers: int = 2
-    learning_rate: float = 0.00025
-    batch_size: int = 128
-    batches: int = 3
-    max_len: int = 100
-    pct_traj: float = 1.0
-    weight_decay: float = 0.1
+    learning_rate: float = 0.0001
+    batch_size: int = 64
+    batches: int = 401
+    max_len: int = 10
+    layer_norm: bool = True
+    pct_traj: float = 1
+    weight_decay: float = 0.001
     seed: int = 1
     track: bool = True
     wandb_project_name: str = "DecisionTransformerInterpretability"
