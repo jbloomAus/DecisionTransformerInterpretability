@@ -95,6 +95,7 @@ class DecisionTransformer(torch.nn.Module):
         self.d_mlp = d_mlp
         self.n_layers = n_layers
         self.max_timestep = max_timestep
+        self.n_ctx = self.max_timestep*3
         self.state_embedding_type = state_embedding_type
 
         # Embedding layers
@@ -122,7 +123,7 @@ class DecisionTransformer(torch.nn.Module):
             n_heads=self.n_heads,
             d_mlp=self.d_mlp,
             d_vocab= self.d_model, 
-            n_ctx= self.max_timestep*3, # 3x the max timestep so we have room for an action, reward, and state per timestep
+            n_ctx= self.n_ctx, # 3x the max timestep so we have room for an action, reward, and state per timestep
             act_fn="relu",
             normalization_type="LN",
             attention_dir="causal",

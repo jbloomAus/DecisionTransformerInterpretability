@@ -104,11 +104,10 @@ def train(
 
         if batch % eval_frequency == 0:
             evaluate_dt_agent(
-                trajectory_data_set = trajectory_data_set, 
+                env_id = env.spec.id,
                 dt = dt, 
                 make_env = make_env, 
                 trajectories = eval_episodes,
-                max_len = max_len, 
                 track=track,
                 batch_number = batch,
                 initial_rtg = initial_rtg,
@@ -185,24 +184,26 @@ def test(
     return mean_loss, accuracy
 
 def evaluate_dt_agent(
-    trajectory_data_set: TrajectoryLoader, 
+    env_id: str,
     dt: DecisionTransformer, 
     make_env, 
-    max_len=30, 
     trajectories=300,
     track=False,
     batch_number=0,
     initial_rtg=0.98,
-    max_time_step=100):
+    max_time_step=100,
+    capture_video=True,
+    use_tqdm=True):
 
     dt.eval()
     run_name = f"dt_eval_videos_{batch_number}"
     video_path = os.path.join("videos", run_name)
-    env_id = trajectory_data_set.metadata['args']['env_id']
-    env = make_env(env_id, seed=batch_number, idx=0, capture_video=True,
+
+    env = make_env(env_id, seed=batch_number, idx=0, capture_video=capture_video,
                     max_steps = min(dt.max_timestep, max_time_step),
                    run_name=run_name, fully_observed=False)
     env = env()
+    max_len=dt.n_ctx
 
     traj_lengths = []
     n_terminated = 0
@@ -215,9 +216,12 @@ def evaluate_dt_agent(
         os.remove(os.path.join(video_path, video))
     videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
 
-    pbar = tqdm(range(trajectories), desc="Evaluating DT")
-    for seed in pbar:
+    if use_tqdm:
+        pbar = tqdm(range(trajectories), desc="Evaluating DT")
+    else:
+        pbar = range(trajectories)
 
+    for seed in pbar:
         obs, _ = env.reset(seed = seed)
         obs = t.tensor(obs['image']).unsqueeze(0).unsqueeze(0)
         rtg = t.tensor([initial_rtg]).unsqueeze(0).unsqueeze(0)
@@ -261,7 +265,8 @@ def evaluate_dt_agent(
             # print(f"took action  {action} at timestep {i} for reward {new_reward}")
             i = i + 1
 
-            pbar.set_description(f"Evaluating DT: Episode {seed} at timestep {i} for reward {new_reward}")
+            if use_tqdm:
+                pbar.set_description(f"Evaluating DT: Episode {seed} at timestep {i} for reward {new_reward}")
         
         traj_lengths.append(i)
 
@@ -279,16 +284,23 @@ def evaluate_dt_agent(
                 path_to_video, 
                 fps=4, 
                 format="mp4",
-                caption=f"video of agent playing {env_id} at batch {batch_number}, episode {i}, reward {new_reward}"
+                caption=f"{env_id}, after {batch_number} batch, episode length {i}, reward {new_reward}"
             )}, step=batch_number)
         videos = current_videos # update videos
 
+    statistics = {
+        "initial_rtg": initial_rtg,
+        "prop_completed": n_terminated / trajectories,
+        "prop_truncated": n_truncated / trajectories,
+        "mean_reward": reward_total / trajectories,
+        "prop_positive_reward": n_positive / trajectories,
+        "mean_traj_length": sum(traj_lengths) / trajectories
+    }
+
     env.close()
     if track:
-        wandb.log({"eval/prop_completed": n_terminated / trajectories}, step=batch_number)
-        wandb.log({"eval/prop_truncated": n_truncated / trajectories}, step=batch_number)
-        wandb.log({"eval/mean_reward": reward_total / trajectories}, step=batch_number)
-        wandb.log({"eval/prop_positive_reward": n_positive / trajectories}, step=batch_number)
-        wandb.log({"eval/mean_traj_length": sum(traj_lengths) / trajectories}, step=batch_number)
+        # log statistics at batch number but prefix with eval
+        for key, value in statistics.items():
+            wandb.log({"eval/" + key: value}, step=batch_number)
 
-    return n_terminated / trajectories
+    return statistics
