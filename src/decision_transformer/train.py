@@ -193,7 +193,8 @@ def evaluate_dt_agent(
     initial_rtg=0.98,
     max_time_step=100,
     capture_video=True,
-    use_tqdm=True):
+    use_tqdm=True,
+    device = "cpu"):
 
     dt.eval()
     run_name = f"dt_eval_videos_{batch_number}"
@@ -228,6 +229,11 @@ def evaluate_dt_agent(
         a = t.tensor([0]).unsqueeze(0).unsqueeze(0)
         timesteps = t.tensor([0]).unsqueeze(0).unsqueeze(0)
 
+        obs = obs.to(device)
+        rtg = rtg.to(device)
+        a = a.to(device)
+        timesteps = timesteps.to(device)
+        
         # get first action
         state_preds, action_preds, reward_preds = dt.forward(
             states=obs, actions=a, rtgs=rtg, timesteps=timesteps)
@@ -240,17 +246,17 @@ def evaluate_dt_agent(
 
             # concat init obs to new obs
             obs = t.cat(
-                [obs, t.tensor(new_obs['image']).unsqueeze(0).unsqueeze(0)], dim=1)
+                [obs, t.tensor(new_obs['image']).unsqueeze(0).unsqueeze(0).to(device)], dim=1)
 
             # add new reward to init reward
             rtg = t.cat([rtg, t.tensor(
-                [rtg[-1][-1].item() - new_reward]).unsqueeze(0).unsqueeze(0)], dim=1)
+                [rtg[-1][-1].item() - new_reward]).unsqueeze(0).unsqueeze(0).to(device)], dim=1)
 
             # add new timesteps
             timesteps = t.cat([timesteps, t.tensor(
-                [timesteps[-1][-1].item()+1]).unsqueeze(0).unsqueeze(0)], dim=1)
+                [timesteps[-1][-1].item()+1]).unsqueeze(0).unsqueeze(0).to(device)], dim=1)
             a = t.cat(
-                [a, t.tensor([new_action]).unsqueeze(0).unsqueeze(0)], dim=1)
+                [a, t.tensor([new_action]).unsqueeze(0).unsqueeze(0).to(device)], dim=1)
 
             state_preds, action_preds, reward_preds = dt.forward(
                 states=obs[:, -max_len:] if obs.shape[1] > max_len else obs,

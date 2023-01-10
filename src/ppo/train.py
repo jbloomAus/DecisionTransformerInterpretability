@@ -45,11 +45,12 @@ def train_ppo(args: PPOArgs, envs, trajectory_writer = None, probe_idx = None):
     # display(out)
     progress_bar = tqdm(range(num_updates), position=0, leave=True)
     
-    video_path  = os.path.join("videos", args.run_name)
-    videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
-    for video in videos:
-        os.remove(os.path.join(video_path, video))
-    videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
+    if args.track:
+        video_path  = os.path.join("videos", args.run_name)
+        videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
+        for video in videos:
+            os.remove(os.path.join(video_path, video))
+        videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
 
     for update in progress_bar:
 

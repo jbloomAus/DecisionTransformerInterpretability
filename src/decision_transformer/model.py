@@ -69,7 +69,7 @@ class PosEmbedTokens(nn.Module):
         )  # [batch, pos, d_model]
         return broadcast_pos_embed
 
-class DecisionTransformer(torch.nn.Module):
+class DecisionTransformer(nn.Module):
 
     def __init__(
         self,
@@ -82,6 +82,7 @@ class DecisionTransformer(torch.nn.Module):
         state_embedding_type: str = 'CNN',
         max_timestep: int = 2048,
         seed: int = 1,
+        device: str = 'cpu',
     ):
         '''
         model = Classifier(cfg)
@@ -98,6 +99,7 @@ class DecisionTransformer(torch.nn.Module):
         self.max_timestep = max_timestep
         self.n_ctx = self.max_timestep*3
         self.state_embedding_type = state_embedding_type
+        self.device = torch.device(device)
 
         # Embedding layers
         self.time_embedding = nn.Embedding(self.max_timestep+1, self.d_model)
@@ -156,6 +158,8 @@ class DecisionTransformer(torch.nn.Module):
             self.predict_states = nn.Linear(self.d_model, np.prod(env.observation_space.shape))
         elif isinstance(env.observation_space, Dict):
             self.predict_states = nn.Linear(self.d_model, np.prod(env.observation_space['image'].shape))
+
+        self.to(self.device)
 
     # state, action, and return
     def forward(self, states, actions, rtgs, timesteps):
