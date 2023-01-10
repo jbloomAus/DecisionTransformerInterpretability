@@ -105,18 +105,32 @@ class Agent(nn.Module):
 
             if trajectory_writer is not None:
                 # first_obs = obs 
-                trajectory_writer.accumulate_trajectory(
-                    # the observation stored with an action and reward is the observation which the agent responded to. 
-                    next_obs = obs.detach().numpy(), 
-                    # the reward stored with an action and observation is the reward the agent received for taking that action in that state
-                    reward = reward.detach().numpy(), 
-                    # the action stored with an observation and reward is the action the agent took to get to that reward
-                    action = action.detach().numpy(), 
-                    # the done stored with an action and observation is the done the agent received for taking that action in that state
-                    done = next_done, 
-                    truncated = next_truncated, 
-                    info = info 
-                )
+                if not args.cuda:
+                    trajectory_writer.accumulate_trajectory(
+                        # the observation stored with an action and reward is the observation which the agent responded to. 
+                        next_obs = obs.detach().numpy(), 
+                        # the reward stored with an action and observation is the reward the agent received for taking that action in that state
+                        reward = reward.detach().numpy(), 
+                        # the action stored with an observation and reward is the action the agent took to get to that reward
+                        action = action.detach().numpy(), 
+                        # the done stored with an action and observation is the done the agent received for taking that action in that state
+                        done = next_done, 
+                        truncated = next_truncated, 
+                        info = info 
+                    )
+                else:
+                    trajectory_writer.accumulate_trajectory(
+                        # the observation stored with an action and reward is the observation which the agent responded to. 
+                        next_obs = obs.detach().cpu().numpy(), 
+                        # the reward stored with an action and observation is the reward the agent received for taking that action in that state
+                        reward = reward.detach().cpu().numpy(), 
+                        # the action stored with an observation and reward is the action the agent took to get to that reward
+                        action = action.detach().cpu().numpy(), 
+                        # the done stored with an action and observation is the done the agent received for taking that action in that state
+                        done = next_done, 
+                        truncated = next_truncated, 
+                        info = info 
+                    )
 
             # Store (s_t, d_t, a_t, logpi(a_t|s_t), v(s_t), r_t+1)
             memory.add(info, obs, done, action, logprob, value, reward)
