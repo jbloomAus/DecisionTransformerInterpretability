@@ -1,5 +1,7 @@
 import torch as t
 from tqdm.autonotebook import tqdm
+import os
+import wandb
 
 from .agent import Agent
 from .memory import Memory
@@ -43,6 +45,12 @@ def train_ppo(args: PPOArgs, envs, trajectory_writer = None, probe_idx = None):
     # display(out)
     progress_bar = tqdm(range(num_updates), position=0, leave=True)
     
+    video_path  = os.path.join("videos", args.run_name)
+    videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
+    for video in videos:
+        os.remove(os.path.join(video_path, video))
+    videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
+
     for update in progress_bar:
 
         agent.rollout(memory, args, envs, trajectory_writer)
@@ -50,6 +58,7 @@ def train_ppo(args: PPOArgs, envs, trajectory_writer = None, probe_idx = None):
         
         if args.track:
             memory.log()
+            videos = check_and_upload_new_video(video_path=video_path, videos=videos, step=update)
 
         # Print output (different behaviour for probe envs vs normal envs)
         if probe_idx is None:
@@ -65,8 +74,24 @@ def train_ppo(args: PPOArgs, envs, trajectory_writer = None, probe_idx = None):
 
         memory.reset()
 
+
     if trajectory_writer is not None:
         trajectory_writer.tag_terminated_trajectories()
         trajectory_writer.write(upload_to_wandb= args.track)
 
     envs.close()
+
+def check_and_upload_new_video(video_path, videos, step=None):
+
+    current_videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
+    new_videos = [i for i in current_videos if i not in videos]
+    if new_videos:
+        for new_video in new_videos:
+            path_to_video = os.path.join(video_path, new_video)
+            wandb.log({"video": wandb.Video(
+                path_to_video, 
+                fps=4, 
+                caption = new_video,
+                format="mp4",
+            )}, step=step)
+    return current_videos

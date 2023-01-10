@@ -46,9 +46,12 @@ if __name__ == "__main__":
             entity=args.wandb_entity,
             config=vars(args), # vars is equivalent to args.__dict__
             name=run_name,
-            monitor_gym=True,
+            # monitor_gym=True,
             save_code=True,
         )
+
+    # add run_name to args
+    args.run_name = run_name
 
     # make envs
     set_global_seeds(args.seed)
