@@ -31,6 +31,8 @@ def test_probe_envs(env_name):
         exp_name = 'Test',
         env_id = env_name,
         num_envs = 4, # batch size is derived from num environments * minibatch size
+        num_minibatches=4,
+        num_steps=128,
         track = False,
         capture_video=False,
         cuda = False,
