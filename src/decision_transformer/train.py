@@ -263,7 +263,8 @@ def evaluate_dt_agent(
 
             pbar.set_description(f"Evaluating DT: Episode {seed} at timestep {i} for reward {new_reward}")
         
-        traj_lengths
+        traj_lengths.append(i)
+
         n_positive = n_positive + (new_reward > 0)
         reward_total = reward_total + new_reward
         n_terminated = n_terminated + terminated
