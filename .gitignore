@@ -139,3 +139,7 @@ trajectories/
 .DS_Store
 models/
 artifacts/
+
+*.png
+*.mp4
+*.gif
