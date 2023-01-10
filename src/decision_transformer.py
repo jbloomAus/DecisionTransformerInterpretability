@@ -38,6 +38,9 @@ if __name__ == "__main__":
             name=run_name,
             config=args)
 
+        fig = trajectory_data_set.plot_reward_over_time()
+        wandb.log({"dataset/reward_over_time": wandb.Plotly(fig)})
+
     # make a decision transformer
     dt = DecisionTransformer(
         env = env, 
