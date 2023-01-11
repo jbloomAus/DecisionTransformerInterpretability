@@ -68,16 +68,11 @@ def get_action_preds():
     )
 
     # make bar chart of action_preds
-    action_preds = action_preds.squeeze(0).squeeze(0)
+    action_preds = action_preds[-1][-1]
     action_preds = action_preds.detach().numpy()
     # softmax
     action_preds = np.exp(action_preds) / np.sum(np.exp(action_preds), axis=0)
     st.bar_chart(action_preds)
-
-st.subheader("Game Screen")
-
-initial_rtg = st.slider("Initial RTG", min_value=0.0, max_value=1.0, value=0.5, step=0.01)
-
 
 def respond_to_action(env, action):
     new_obs, reward, done, trunc, info = env.step(action)
@@ -146,6 +141,16 @@ def get_action_from_user(env):
         action = 6
         respond_to_action(env, action)
 
+
+st.subheader("Game Screen")
+
+initial_rtg = st.slider("Initial RTG", min_value=-5.0, max_value=5.0, value=0.5, step=0.01)
+if "rtg" in st.session_state:
+    # generate rtg vector as initial rtg - cumulative reward
+    st.session_state.rtg = initial_rtg - st.session_state.reward
+    # st.session_state.rtg = t.tensor([initial_rtg]).unsqueeze(0).unsqueeze(0)
+
+
 if "env" not in st.session_state or "dt" not in st.session_state:
     st.write("Loading environment and decision transformer...")
     env, dt = get_env_and_dt(trajectory_path, model_path)
@@ -157,8 +162,6 @@ if "env" not in st.session_state or "dt" not in st.session_state:
     st.session_state.reward = t.tensor([0]).unsqueeze(0).unsqueeze(0)
     st.session_state.a = t.tensor([0]).unsqueeze(0).unsqueeze(0)
     st.session_state.timesteps = t.tensor([0]).unsqueeze(0).unsqueeze(0)
-
-    get_action_preds()
 
 else:
     env = st.session_state.env
@@ -175,14 +178,23 @@ if "action" in st.session_state:
 else:
     get_action_from_user(env)
 
+columns = st.columns(2)
 
-
-fig = render_env(env)
-st.pyplot(fig)
+with columns[0]:
+    get_action_preds()
+with columns[1]:
+    fig = render_env(env)
+    st.pyplot(fig)
 
 st.session_state.env = env
 st.session_state.dt = dt
 
+st.subheader("Trajectory Details")
+# write out actions, rtgs, rewards, and timesteps
+st.write(f"actions: {st.session_state.a[0].squeeze(-1).tolist()}")
+st.write(f"rtgs: {st.session_state.rtg[0].squeeze(-1).tolist()}")
+st.write(f"rewards: {st.session_state.reward[0].squeeze(-1).tolist()}")
+st.write(f"timesteps: {st.session_state.timesteps[0].squeeze(-1).tolist()}")
 
 
 def store_trajectory(state, action, obs, reward, done, trunc, info):
@@ -191,9 +203,10 @@ def store_trajectory(state, action, obs, reward, done, trunc, info):
     st.session_state.trajectories.append((state, action, obs, reward, done, trunc, info))
 
 if st.button("reset"):
-    obs = env.reset()
-    if "action" in st.session_state:
-        del st.session_state.action
+    del st.session_state.env
+    del st.session_state.dt
+    st.experimental_rerun()
+    
 
 end = time.time()
 st.write(f"Time taken: {end - start}")
