@@ -24,7 +24,7 @@
 #     trajectory_path: str = None
 #     fully_observed: bool = False
 
-python src/run_ppo.py --exp_name "MiniGrid-Dynamic-Obstacles-8x8-v1" \
+python src/run_ppo.py --exp_name "MiniGrid-Dynamic-Obstacles-8x8-v0" \
     --seed 1 \
     --cuda \
     --track \
@@ -43,6 +43,6 @@ python src/run_ppo.py --exp_name "MiniGrid-Dynamic-Obstacles-8x8-v1" \
     --ent_coef 0.25 \
     --vf_coef 0.5 \
     --max_grad_norm 2 \
-    --max_steps 298 \
-    --trajectory_path None 
+    --max_steps 300 
+    # --trajectory_path None 
     # --fully_observed False
