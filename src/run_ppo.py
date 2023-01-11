@@ -1,4 +1,5 @@
 
+import argparse
 import warnings
 import gymnasium as gym
 import torch as t
@@ -7,7 +8,7 @@ import wandb
 import time
 
 from ppo.my_probe_envs import Probe1, Probe2, Probe3, Probe4, Probe5
-from ppo.utils import PPOArgs, arg_help, set_global_seeds
+from ppo.utils import PPOArgs, arg_help, set_global_seeds, parse_args
 from ppo.train import train_ppo
 from utils import TrajectoryWriter
 from environments import make_env
@@ -17,7 +18,33 @@ warnings.filterwarnings("ignore", category= DeprecationWarning)
 device = t.device("cuda" if t.cuda.is_available() else "cpu")
 
 if __name__ == "__main__":
-    args = PPOArgs()
+
+    args = parse_args()
+    args = PPOArgs(
+        exp_name=args.exp_name,
+        seed=args.seed,
+        cuda=args.cuda,
+        track=args.track,
+        wandb_project_name=args.wandb_project_name,
+        wandb_entity=args.wandb_entity,
+        capture_video=args.capture_video,
+        env_id=args.env_id,
+        total_timesteps=args.total_timesteps,
+        learning_rate=args.learning_rate,
+        num_envs=args.num_envs,
+        num_steps=args.num_steps,
+        gamma=args.gamma,
+        gae_lambda=args.gae_lambda,
+        num_minibatches=args.num_minibatches,
+        update_epochs=args.update_epochs,
+        clip_coef=args.clip_coef,
+        ent_coef=args.ent_coef,
+        vf_coef=args.vf_coef,
+        max_grad_norm=args.max_grad_norm,
+        max_steps=args.max_steps,
+        trajectory_path=args.trajectory_path,
+        fully_observed=args.fully_observed,
+    )
 
     for i in range(5):
         probes = [Probe1, Probe2, Probe3, Probe4, Probe5]

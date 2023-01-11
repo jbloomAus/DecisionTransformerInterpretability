@@ -24,15 +24,14 @@
 #     trajectory_path: str = None
 #     fully_observed: bool = False
 
-python src/run_ppo.py \
-    --exp_name "MiniGrid-Dynamic-Obstacles-8x8-v0" \
+python src/run_ppo.py --exp_name "MiniGrid-Dynamic-Obstacles-8x8-v1" \
     --seed 1 \
     --cuda \
     --track \
     --wandb_project_name "PPO-MiniGrid" \
     --capture_video \
     --env_id "MiniGrid-Dynamic-Obstacles-8x8-v0" \
-    --total_timesteps 500000 \
+    --total_timesteps 200000 \
     --learning_rate 0.00025 \
     --num_envs 30 \
     --num_steps 64 \
@@ -41,9 +40,9 @@ python src/run_ppo.py \
     --num_minibatches 30 \
     --update_epochs 4 \
     --clip_coef 0.4 \
-    --ent_coef 0.1 \
+    --ent_coef 0.25 \
     --vf_coef 0.5 \
     --max_grad_norm 2 \
-    --max_steps 4000 \
-    --trajectory_path None \
-    --fully_observed False
+    --max_steps 298 \
+    --trajectory_path None 
+    # --fully_observed False

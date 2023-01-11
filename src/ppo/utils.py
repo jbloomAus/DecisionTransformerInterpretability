@@ -1,4 +1,5 @@
 # %%
+import argparse
 import gymnasium as gym
 import minigrid
 import numpy as np
@@ -81,6 +82,62 @@ def sum_rewards(rewards : List[int], gamma : float = 1):
         total_reward *= gamma
     total_reward += rewards[0]
     return total_reward
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+                    prog = 'PPO',
+                    description = 'Proximal Policy Optimization',
+                    epilog = "'You are personally responsible for becoming more ethical than the society you grew up in.'― Eliezer Yudkowsky")
+    parser.add_argument('--exp_name', type=str, default='MiniGrid-Dynamic-Obstacles-8x8-v0',
+                        help='the name of this experiment')
+    parser.add_argument('--seed', type=int, default=1,
+                        help='seed of the experiment')      
+    parser.add_argument('--cuda', action='store_true', default=True,
+                        help='if toggled, cuda will be enabled by default')
+    parser.add_argument('--track', action='store_true', default=False,
+                        help='if toggled, this experiment will be tracked with Weights and Biases')
+    parser.add_argument('--wandb_project_name', type=str, default="PPO-MiniGrid",   
+                        help="the wandb's project name")
+    parser.add_argument('--wandb_entity', type=str, default=None,
+                        help="the entity (team) of wandb's project")
+    parser.add_argument('--capture_video', action='store_true', default=True,
+                        help='if toggled, a video will be captured during evaluation')
+    parser.add_argument('--env_id', type=str, default='MiniGrid-Dynamic-Obstacles-8x8-v0',
+                        help='the environment id')
+    parser.add_argument('--total_timesteps', type=int, default=5000000,
+                        help='the total number of timesteps to train for')
+    parser.add_argument('--learning_rate', type=float, default=0.00025,
+                        help='the learning rate of the optimizer')
+    parser.add_argument('--num_envs', type=int, default=10,
+                        help='the number of parallel environments')
+    parser.add_argument('--num_steps', type=int, default=128,
+                        help='the number of steps to run in each environment per policy rollout')
+    parser.add_argument('--gamma', type=float, default=0.99,
+                        help='the discount factor gamma')
+    parser.add_argument('--gae_lambda', type=float, default=0.95,
+                        help='the lambda for the general advantage estimation')
+    parser.add_argument('--num_minibatches', type=int, default=4,
+                        help='the number of mini batches')
+    parser.add_argument('--update_epochs', type=int, default=4,
+                        help='the K epochs to update the policy')
+    parser.add_argument('--clip_coef', type=float, default=0.2,
+                        help='the surrogate clipping coefficient')
+    parser.add_argument('--vf_coef', type=float, default=0.5,
+                        help='value loss coefficient')
+    parser.add_argument('--ent_coef', type=float, default=0.01,
+                        help='entropy term coefficient')
+    parser.add_argument('--max_grad_norm', type=float, default=0.5, 
+                        help='the maximum norm for the gradient clipping')
+    parser.add_argument('--max_steps', type=int, default=1000,
+                        help='the maximum number of steps total')
+    parser.add_argument('--trajectory_path', type=str, default=None,
+                        help='the path to the trajectory file')
+    parser.add_argument('--fully_observed', action='store_true', default=False,
+                        help='if toggled, the environment will be fully observed')
+    args = parser.parse_args()
+    return args
+    
 
 @dataclass
 class PPOArgs:
