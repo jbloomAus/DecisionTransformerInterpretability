@@ -14,7 +14,7 @@ class DTArgs:
     batch_size: int = 64
     batches: int = 401
     max_len: int = 10
-    layer_norm: bool = True
+    layer_norm: bool = False
     pct_traj: float = 1
     weight_decay: float = 0.001
     seed: int = 1

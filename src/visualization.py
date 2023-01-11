@@ -11,6 +11,7 @@ def find_agent(observation):
             if object == 'agent':
                 return i, j
 
+    return -1, -1
 
 def render_minigrid_observation(env, observation):
     if isinstance(observation, np.ndarray):

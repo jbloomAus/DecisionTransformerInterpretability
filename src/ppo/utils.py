@@ -149,9 +149,9 @@ class PPOArgs:
     wandb_entity: str = None
     capture_video: bool = True
     env_id: str = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
-    total_timesteps: int = 5000000
+    total_timesteps: int = 1800000
     learning_rate: float = 0.00025
-    num_envs: int = 10
+    num_envs: int = 4
     num_steps: int = 128
     gamma: float = 0.99
     gae_lambda: float = 0.95
@@ -161,7 +161,7 @@ class PPOArgs:
     ent_coef: float = 0.2
     vf_coef: float = 0.5
     max_grad_norm: float = 2
-    max_steps: int = 2000
+    max_steps: int = 1000
     trajectory_path: str = None
     fully_observed: bool = False
 
