@@ -61,47 +61,88 @@ def render_env(env):
 st.subheader("Game Screen")
 
 
+def respond_to_action(env, action):
+    obs, reward, done, trunc, info = env.step(action)
+    
+    st.session_state.obs = obs
+    st.session_state.done = done
+    st.session_state.trunc = trunc
+    st.session_state.info = info
+
+    st.write(f"reward: {reward}")
+    st.write(f"done: {done}")
+    st.write(f"trunc: {trunc}")
+    st.write(f"info: {info}")
+
+def get_action_from_user(env):
+
+    # create a series of buttons for each action
+    button_columns = st.columns(7)
+    with button_columns[0]:
+        left_button = st.button("Left", key = "left_button")
+    with button_columns[1]:
+        right_button = st.button("Right", key = "right_button")
+    with button_columns[2]:
+        forward_button = st.button("Forward", key = "forward_button")
+    with button_columns[3]:
+        pickup_button = st.button("Pickup", key = "pickup_button")
+    with button_columns[4]:
+        drop_button = st.button("Drop", key = "drop_button")
+    with button_columns[5]:
+        toggle_button = st.button("Toggle", key = "toggle_button")
+    with button_columns[6]:
+        done_button = st.button("Done", key = "done_button")
+
+    # if any of the buttons are pressed, take the corresponding action
+    if left_button:
+        action = 0
+        respond_to_action(env, action)
+    elif right_button:
+        action = 1
+        respond_to_action(env, action)
+    elif forward_button:
+        action = 2
+        respond_to_action(env, action)
+    elif pickup_button:
+        action = 3
+        respond_to_action(env, action)
+    elif drop_button:
+        action = 4
+        respond_to_action(env, action)
+    elif toggle_button:
+        action = 5
+        respond_to_action(env, action)
+    elif done_button:
+        action = 6
+        respond_to_action(env, action)
+
 if "env" not in st.session_state or "dt" not in st.session_state:
     st.write("Loading environment and decision transformer...")
     env, dt = get_env_and_dt(trajectory_path, model_path)
     obs, _ = env.reset()
-    fig = render_env(env)
-    st.pyplot(fig)
 else:
     env = st.session_state.env
     dt = st.session_state.dt
-    fig = render_env(env)
-    # st.pyplot(fig)
-    if "action" in st.session_state:
-        action = st.session_state.action
-        st.write(f"just took action '{action_id_to_string[st.session_state.action]}'")
-        # st.experimental_rerun()
-        del action 
-        del st.session_state.action
+
+if "action" in st.session_state:
+    action = st.session_state.action
+    if isinstance(action, str):
+        action = action_string_to_id[action]
+    st.write(f"just took action '{action_id_to_string[st.session_state.action]}'")
+    # st.experimental_rerun()
+    del action 
+    del st.session_state.action
+else:
+    get_action_from_user(env)
 
 
 
-action = st.selectbox("Select an action", ["left", "right", "forward", "pickup", "drop", "toggle", "done"], index = 6)
-action = action_string_to_id[action]   
-obs, reward, done, trunc, info = env.step(action)
 fig = render_env(env)
 st.pyplot(fig)
-st.write(f"reward: {reward}")
-st.write(f"done: {done}")
-st.write(f"trunc: {trunc}")
-st.write(f"info: {info}")
-
-
-
-# render_env(env)
 
 st.session_state.env = env
 st.session_state.dt = dt
-st.session_state.action = action
-st.session_state.obs = done
-st.session_state.done = done
-st.session_state.trunc = trunc
-st.session_state.info = info
+
 
 
 def store_trajectory(state, action, obs, reward, done, trunc, info):
@@ -117,5 +158,12 @@ if st.button("reset"):
 end = time.time()
 st.write(f"Time taken: {end - start}")
 
-print("I was executed")
+def read_index_html():
+    with open("index.html") as f:
+        return f.read()
 
+components.html(
+    read_index_html(),
+    height=0,
+    width=0,
+)

@@ -1,0 +1,67 @@
+
+<script>
+    const streamlitDoc = window.parent.document;
+    
+    const buttons = Array.from(streamlitDoc.querySelectorAll('.stButton > button'));
+    //console.log(buttons) // find buttons in console tab
+    
+    const left_button = buttons.find(el => el.innerText === 'Left');
+    const right_button = buttons.find(el => el.innerText === 'Right');
+    const forward_button = buttons.find(el => el.innerText === 'Forward');
+    const pickup_button = buttons.find(el => el.innerText === 'Pickup');
+    const drop_button = buttons.find(el => el.innerText === 'Drop');
+    const toggle_button = buttons.find(el => el.innerText === 'Toggle');
+    const done_button = buttons.find(el => el.innerText === 'Done');
+    
+    left_button.style.backgroundColor = "coral"
+    right_button.style.backgroundColor = "lightblue"
+    forward_button.style.backgroundColor = "yellow"
+    pickup_button.style.backgroundColor = "lightgreen"
+    drop_button.style.backgroundColor = "pink"
+    toggle_button.style.backgroundColor = "lightgray"
+    done_button.style.backgroundColor = "orange"
+    
+    streamlitDoc.addEventListener('keydown', function(e) {
+        switch (e.key) {
+            case 'ArrowLeft':
+                left_button.click();
+                break;
+            case 'ArrowRight':
+                right_button.click();
+                break;
+            case 'ArrowUp':
+                forward_button.click();
+                break;
+            // case 'Enter':
+            //     pickup_button.click();
+            //     break;
+            // case 'Shift':
+            //     drop_button.click();
+            //     break;
+            // case 'Backspace':
+            //     toggle_button.click();
+            //     break;
+            // case ' ':
+            //     done_button.click();
+            //     break;
+            // case 'c':
+            //     window.parent.navigator.clipboard.writeText(python_string)
+                //window.parent.navigator.clipboard.readText().then((d) => {console.log(d)})
+        }
+    });
+
+    streamlitDoc.addEventListener("keydown", function(e) {
+    if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
+            e.preventDefault();
+        }
+    }, false);
+
+    // console.log(right_button)
+</script>
+
+<!-- let's rewrite the above script to work with buttons "left", "right", "forward", "pickup", "drop", "toggle", "done" -->
+
+<!-- Path: index.html -->
+
+
+
