@@ -1,5 +1,6 @@
 import time
 
+
 import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
@@ -57,17 +58,46 @@ def render_env(env):
     plt.margins(0,0)
     return fig
 
+def get_action_preds():
+    
+    state_preds, action_preds, reward_preds = dt.forward(
+            states=st.session_state.obs, 
+            actions=st.session_state.a, 
+            rtgs=st.session_state.rtg, 
+            timesteps=st.session_state.timesteps
+    )
+
+    # make bar chart of action_preds
+    action_preds = action_preds.squeeze(0).squeeze(0)
+    action_preds = action_preds.detach().numpy()
+    # softmax
+    action_preds = np.exp(action_preds) / np.sum(np.exp(action_preds), axis=0)
+    st.bar_chart(action_preds)
 
 st.subheader("Game Screen")
 
+initial_rtg = st.slider("Initial RTG", min_value=0.0, max_value=1.0, value=0.5, step=0.01)
+
 
 def respond_to_action(env, action):
-    obs, reward, done, trunc, info = env.step(action)
-    
-    st.session_state.obs = obs
-    st.session_state.done = done
-    st.session_state.trunc = trunc
-    st.session_state.info = info
+    new_obs, reward, done, trunc, info = env.step(action)
+
+    # append to session state
+    st.session_state.obs = t.cat(
+                [st.session_state.obs, t.tensor(new_obs['image']).unsqueeze(0).unsqueeze(0)], dim=1)
+    # print(t.tensor(action).unsqueeze(0).unsqueeze(0).shape)
+    st.session_state.a = t.cat(
+                [st.session_state.a, t.tensor([action]).unsqueeze(0).unsqueeze(0)], dim=1)
+    st.session_state.reward = t.cat(
+                [st.session_state.reward, t.tensor([reward]).unsqueeze(0).unsqueeze(0)], dim=1)
+
+    rtg = initial_rtg - st.session_state.reward.sum()
+
+    st.session_state.rtg = t.cat(
+                [st.session_state.rtg, t.tensor([rtg]).unsqueeze(0).unsqueeze(0)], dim=1)
+    time = st.session_state.timesteps[-1][-1] + 1
+    st.session_state.timesteps = t.cat(
+                [st.session_state.timesteps, time.clone().detach().unsqueeze(0).unsqueeze(0)], dim=1)
 
     st.write(f"reward: {reward}")
     st.write(f"done: {done}")
@@ -120,6 +150,16 @@ if "env" not in st.session_state or "dt" not in st.session_state:
     st.write("Loading environment and decision transformer...")
     env, dt = get_env_and_dt(trajectory_path, model_path)
     obs, _ = env.reset()
+
+    # initilize the session state trajectory details
+    st.session_state.obs = t.tensor(obs['image']).unsqueeze(0).unsqueeze(0)
+    st.session_state.rtg = t.tensor([initial_rtg]).unsqueeze(0).unsqueeze(0)
+    st.session_state.reward = t.tensor([0]).unsqueeze(0).unsqueeze(0)
+    st.session_state.a = t.tensor([0]).unsqueeze(0).unsqueeze(0)
+    st.session_state.timesteps = t.tensor([0]).unsqueeze(0).unsqueeze(0)
+
+    get_action_preds()
+
 else:
     env = st.session_state.env
     dt = st.session_state.dt
