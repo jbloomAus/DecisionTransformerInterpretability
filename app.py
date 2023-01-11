@@ -76,7 +76,8 @@ def get_action_preds():
 
 def respond_to_action(env, action):
     new_obs, reward, done, trunc, info = env.step(action)
-
+    if done:
+        st.balloons()
     # append to session state
     st.session_state.obs = t.cat(
                 [st.session_state.obs, t.tensor(new_obs['image']).unsqueeze(0).unsqueeze(0)], dim=1)
