@@ -6,18 +6,49 @@ import os
 
 from environments import make_env
 
-from decision_transformer.utils import DTArgs
+from decision_transformer.utils import DTArgs, parse_args
 from decision_transformer.model import DecisionTransformer
 from decision_transformer.offline_dataset import TrajectoryLoader
 from decision_transformer.train import train
 
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-device = t.device("cuda" if t.cuda.is_available() else "cpu")
+
 
 if __name__ == "__main__":
 
-    args = DTArgs()
+    args = parse_args()
+    args = DTArgs(
+        exp_name=args.exp_name,
+        seed=args.seed,
+        cuda=args.cuda,
+        track=args.track,
+        wandb_project_name=args.wandb_project_name,
+        wandb_entity=args.wandb_entity,
+        trajectory_path=args.trajectory_path,
+        pct_traj=args.pct_traj,
+        d_model=args.d_model,
+        n_heads=args.n_heads,
+        d_mlp=args.d_mlp,
+        n_layers=args.n_layers,
+        layer_norm=args.layer_norm,
+        max_len=args.max_len,
+        batches=args.batches,
+        learning_rate=args.learning_rate,
+        weight_decay=args.weight_decay,
+        batch_size=args.batch_size,
+        test_frequency=args.test_frequency,
+        test_batches=args.test_batches,
+        eval_frequency=args.eval_frequency,
+        eval_episodes=args.eval_episodes,
+        initial_rtg=args.initial_rtg,
+        eval_max_time_steps=args.eval_max_time_steps
+    )
+
+    if args.cuda:
+        device = t.device("cuda" if t.cuda.is_available() else "cpu")
+    else:
+        device = t.device("cpu")
 
     if args.trajectory_path is None:
         raise ValueError("Must specify a trajectory path.")
@@ -50,7 +81,8 @@ if __name__ == "__main__":
         n_layers = args.n_layers,
         layer_norm = args.layer_norm,
         state_embedding_type="grid", # hard-coded for now to minigrid.
-        max_timestep=trajectory_data_set.metadata.get("args").get("max_steps") # Our DT must have a context window large enough
+        max_timestep=trajectory_data_set.metadata.get("args").get("max_steps"), # Our DT must have a context window large enough
+        device = device
     )
 
     if args.track:

@@ -111,7 +111,8 @@ def train(
                 track=track,
                 batch_number = batch,
                 initial_rtg = initial_rtg,
-                max_time_step=eval_max_time_steps)
+                max_time_step=eval_max_time_steps,
+                device = device)
 
     return dt
 
