@@ -173,6 +173,15 @@ class DecisionTransformer(nn.Module):
         seq_length = states.shape[1]
 
         # embed states and recast back to (batch, block_size, n_embd)
+        token_embeddings = self.to_tokens(states, actions, rtgs, timesteps)
+        x = self.transformer(token_embeddings)
+        state_preds, action_preds, reward_preds = self.get_logits(x, batch_size, seq_length)
+
+        return state_preds, action_preds, reward_preds
+
+    def to_tokens(self, states, actions, rtgs, timesteps):
+
+        # embed states and recast back to (batch, block_size, n_embd)
         state_embeddings = self.get_state_embeddings(states) # batch_size, block_size, n_embd
         action_embeddings = self.get_action_embeddings(actions) if actions is not None else None # batch_size, block_size, n_embd or None
         reward_embeddings = self.get_reward_embeddings(rtgs) # batch_size, block_size, n_embd
@@ -185,16 +194,10 @@ class DecisionTransformer(nn.Module):
             reward_embeddings = reward_embeddings,
             time_embeddings = time_embeddings
         )
+        return token_embeddings
 
-        # use transformer to model sequence and return embeddings for states, actions, and rewards
-
-        # since we are passing the transformer an embedding, we need to
-        x = self.transformer(token_embeddings)
-        # x.shape = (batch_size, seq_length, n_embd), seq lenght goes R, s, a, R, s, a ...
-
-        # reshape as in original paper 
-        # x.shape = (batch_size, seq_length, n_embd)
-        # permute so we have preds over rewards in column 0, states in column 1, and actions in column 2
+    def get_logits(self, x, batch_size, seq_length):
+        
         x = x.reshape(batch_size, seq_length, 3, self.d_model).permute(0, 2, 1, 3)
 
         reward_preds = self.predict_rewards(x[:,2]) # predict next return given state and action
@@ -202,16 +205,6 @@ class DecisionTransformer(nn.Module):
         action_preds = self.predict_actions(x[:,1]) # predict next action given state
 
         return state_preds, action_preds, reward_preds
-
-    def get_logits(self, logits, actions):
-        if actions is not None:
-            logits = logits[:, 1::3, :] # only keep predictions from state_embeddings (predictions over actions)
-        elif actions is None:
-            logits = logits[:, 1:, :]
-        else:
-            raise NotImplementedError()
-        
-        return logits
 
     def check_input_sizes(self, states, actions, targets):
         assert states.shape[0] == actions.shape[0] == targets.shape[0], "batch sizes must be the same"
