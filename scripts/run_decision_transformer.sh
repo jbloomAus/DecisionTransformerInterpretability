@@ -8,13 +8,11 @@ python src/run_decision_transformer.py \
     --n_layers 2 \
     --learning_rate 0.0001 \
     --batch_size 128 \
-    --batches 2001 \
-    --max_len 10 \
-    --layer_norm True \
+    --batches 101 \
+    --n_ctx 3 \
     --pct_traj 1 \
     --weight_decay 0.001 \
     --seed 1 \
-    --track True \
     --wandb_project_name "DecisionTransformerInterpretability" \
     --test_frequency 100 \
     --test_batches 10 \
@@ -22,4 +20,5 @@ python src/run_decision_transformer.py \
     --eval_episodes 10 \
     --initial_rtg 1 \
     --eval_max_time_steps 1000 \
-    --cuda True
+    --cuda True \
+    --track False 
