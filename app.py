@@ -5,11 +5,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
 import torch as t
-
+import pandas as pd
 from src.decision_transformer.model import DecisionTransformer
 from src.decision_transformer.offline_dataset import TrajectoryLoader
 from src.environments import make_env
 import streamlit.components.v1 as components
+import plotly.express as px
+import circuitsvis as cv
+from IPython.display import HTML, display
 
 start = time.time()
 st.title("MiniGrid Interpretability Playground")
@@ -40,6 +43,7 @@ def get_env_and_dt(trajectory_path, model_path):
         n_heads = 4,
         d_mlp = 256,
         n_layers = 2,
+        n_ctx=3000,
         layer_norm=False,
         state_embedding_type="grid", # hard-coded for now to minigrid.
         max_timestep=1000) # Our DT must have a context window large enough
@@ -59,20 +63,29 @@ def render_env(env):
     return fig
 
 def get_action_preds():
-    
-    state_preds, action_preds, reward_preds = dt.forward(
-            states=st.session_state.obs, 
-            actions=st.session_state.a, 
-            rtgs=st.session_state.rtg, 
-            timesteps=st.session_state.timesteps
-    )
 
-    # make bar chart of action_preds
+    tokens = dt.to_tokens(st.session_state.obs, st.session_state.a, st.session_state.rtg, st.session_state.timesteps)
+    x, cache = dt.transformer.run_with_cache(tokens, remove_batch_dim=True)
+    state_preds, action_preds, reward_preds = dt.get_logits(x, batch_size=1, seq_length= st.session_state.obs.shape[1])
+
+    return action_preds, x, cache 
+
+def plot_action_preds(action_preds):
+     # make bar chart of action_preds
     action_preds = action_preds[-1][-1]
     action_preds = action_preds.detach().numpy()
     # softmax
     action_preds = np.exp(action_preds) / np.sum(np.exp(action_preds), axis=0)
+    action_preds = pd.DataFrame(
+        action_preds, 
+        index=list(action_id_to_string.values())[:3]
+        )
     st.bar_chart(action_preds)
+
+def plot_attention_pattern(cache, layer):
+    attention_pattern = cache["pattern", layer, "attn"]
+    fig = px.imshow(attention_pattern[:,:30,:30], facet_col=0)
+    st.plotly_chart(fig)
 
 def respond_to_action(env, action):
     new_obs, reward, done, trunc, info = env.step(action)
@@ -142,7 +155,6 @@ def get_action_from_user(env):
         action = 6
         respond_to_action(env, action)
 
-
 st.subheader("Game Screen")
 
 initial_rtg = st.slider("Initial RTG", min_value=-5.0, max_value=5.0, value=0.5, step=0.01)
@@ -182,10 +194,18 @@ else:
 columns = st.columns(2)
 
 with columns[0]:
-    get_action_preds()
+    action_preds, x, cache = get_action_preds()
+    plot_action_preds(action_preds)
 with columns[1]:
     fig = render_env(env)
     st.pyplot(fig)
+
+
+with st.expander("Show Attention Pattern"):
+    layer = st.slider("Layer", min_value=0, max_value=dt.n_layers-1, value=0, step=1)
+    # timesteps_b = st.slider("Number of Tokens", min_value=1, max_value=, value=dt.n_tokens, step=1)
+    plot_attention_pattern(cache,layer)
+
 
 st.session_state.env = env
 st.session_state.dt = dt
