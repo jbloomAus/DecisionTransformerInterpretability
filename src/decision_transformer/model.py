@@ -81,6 +81,7 @@ class DecisionTransformer(nn.Module):
         layer_norm: bool = True,
         state_embedding_type: str = 'CNN',
         max_timestep: int = 2048,
+        n_ctx: int = 3,
         seed: int = 1,
         device: str = 'cpu',
     ):
@@ -97,7 +98,7 @@ class DecisionTransformer(nn.Module):
         self.d_mlp = d_mlp
         self.n_layers = n_layers
         self.max_timestep = max_timestep
-        self.n_ctx = self.max_timestep*3
+        self.n_ctx = n_ctx
         self.state_embedding_type = state_embedding_type
         self.device = torch.device(device)
 
@@ -306,8 +307,8 @@ class DecisionTransformer(nn.Module):
         if targets is not None:
             token_embeddings[:,0,:] = targets[:,0,:]
 
-        if trajectory_length > self.transformer.cfg.n_ctx:
-            raise ValueError("Trajectory length is greater than the maximum sequence length for this model")
-            # or we could truncate, deal with this later...
+        # if trajectory_length > self.transformer.cfg.n_ctx:
+        #     raise ValueError("Trajectory length is greater than the maximum sequence length for this model")
+        #     # or we could truncate, deal with this later...
 
         return token_embeddings

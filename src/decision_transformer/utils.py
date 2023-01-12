@@ -13,7 +13,7 @@ class DTArgs:
     learning_rate: float = 0.0001
     batch_size: int = 64
     batches: int = 401
-    max_len: int = 10
+    n_ctx: int = 3
     layer_norm: bool = False
     pct_traj: float = 1
     weight_decay: float = 0.001
@@ -43,12 +43,12 @@ def parse_args():
     parser.add_argument("--learning_rate", type=float, default=0.0001)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--batches", type=int, default=401)
-    parser.add_argument("--max_len", type=int, default=10)
+    parser.add_argument("--n_ctx", type=int, default=3)
     parser.add_argument("--layer_norm", type=bool, default=True)
     parser.add_argument("--pct_traj", type=float, default=1)
     parser.add_argument("--weight_decay", type=float, default=0.001)
     parser.add_argument("--seed", type=int, default=1)
-    parser.add_argument("--track", type=bool, default=True)
+    parser.add_argument("--track", type=bool, default=False)
     parser.add_argument("--wandb_project_name", type=str, default="DecisionTransformerInterpretability")
     parser.add_argument("--wandb_entity", type=str, default=None)
     parser.add_argument("--test_frequency", type=int, default=100)

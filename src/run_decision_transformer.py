@@ -32,7 +32,7 @@ if __name__ == "__main__":
         d_mlp=args.d_mlp,
         n_layers=args.n_layers,
         layer_norm=args.layer_norm,
-        max_len=args.max_len,
+        n_ctx=args.n_ctx, # we set the context and then train on sequences of lenght n_ctx // 3. 
         batches=args.batches,
         learning_rate=args.learning_rate,
         weight_decay=args.weight_decay,
@@ -81,7 +81,8 @@ if __name__ == "__main__":
         n_layers = args.n_layers,
         layer_norm = args.layer_norm,
         state_embedding_type="grid", # hard-coded for now to minigrid.
-        max_timestep=trajectory_data_set.metadata.get("args").get("max_steps"), # Our DT must have a context window large enough
+        max_timestep=trajectory_data_set.metadata.get("args").get("max_steps"), # so we can embed all the timesteps in the training data.
+        n_ctx= args.n_ctx,
         device = device
     )
 
@@ -94,7 +95,6 @@ if __name__ == "__main__":
         env = env, 
         make_env=make_env,
         device=device, 
-        max_len=args.max_len,
         batches=args.batches, 
         lr=args.learning_rate, 
         weight_decay=args.weight_decay,

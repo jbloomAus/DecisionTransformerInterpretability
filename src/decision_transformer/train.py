@@ -16,7 +16,6 @@ def train(
     env, 
     make_env,
     batch_size=128, 
-    max_len=20, 
     batches=1000, 
     lr=0.0001,
     weight_decay=0.0,
@@ -51,7 +50,8 @@ def train(
         dt.train()
         
         s, a, _, _, rtg, timesteps, _ = trajectory_data_set.get_batch(
-            batch_size, max_len=max_len)
+            batch_size, 
+            max_len=dt.n_ctx // 3)
 
         s.to(device)
         a.to(device)
@@ -86,7 +86,7 @@ def train(
 
         if track:
             wandb.log({"train/loss": loss.item()}, step=batch)
-            tokens_seen = (batch + 1) * batch_size * max_len
+            tokens_seen = (batch + 1) * batch_size * (dt.n_ctx // 3)
             wandb.log({"metrics/tokens_seen": tokens_seen}, step=batch)
 
         # # at test frequency
@@ -95,8 +95,7 @@ def train(
                 dt = dt, 
                 trajectory_data_set = trajectory_data_set,
                 env = env, 
-                batch_size = batch_size, 
-                max_len = max_len, 
+                batch_size = batch_size,
                 batches = test_batches, 
                 device = device, 
                 track = track,
@@ -121,7 +120,6 @@ def test(
     trajectory_data_set: TrajectoryLoader, 
     env, 
     batch_size=128, 
-    max_len=20, 
     batches=10, 
     device="cpu",
     track=False,
@@ -139,7 +137,7 @@ def test(
     for i in pbar:
 
         s, a, r, d, rtg, timesteps, mask = trajectory_data_set.get_batch(
-            batch_size, max_len=max_len)
+            batch_size, max_len= dt.n_ctx // 3)
 
         s.to(device)
         a.to(device)
@@ -205,7 +203,9 @@ def evaluate_dt_agent(
                     max_steps = min(dt.max_timestep, max_time_step),
                    run_name=run_name, fully_observed=False)
     env = env()
-    max_len=dt.n_ctx
+
+    assert dt.n_ctx % 3 == 0, "n_ctx must be divisible by 3"
+    max_len= dt.n_ctx // 3
 
     traj_lengths = []
     n_terminated = 0

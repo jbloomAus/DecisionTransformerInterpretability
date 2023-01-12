@@ -242,7 +242,8 @@ def test_forward():
     all_returns_to_go = all_returns.flip(0).cumsum(0).flip(0).reshape(-1, 1).unsqueeze(0)
     all_timesteps = t.tensor(all_timesteps).reshape(-1, 1).unsqueeze(0)
     
-    decision_transformer = DecisionTransformer(env)
+    # context window must be 3 * max sequence length
+    decision_transformer = DecisionTransformer(env, n_ctx=3*10, d_model=64)
 
     if t.cuda.is_available():
         decision_transformer = decision_transformer.cuda()
