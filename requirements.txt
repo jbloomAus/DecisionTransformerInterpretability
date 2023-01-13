@@ -16,3 +16,6 @@ torch-optimizer==0.3.0
 
 # tqdm
 tqdm==4.64.1
+
+# kaleido for figures
+kaleido==0.2.1
