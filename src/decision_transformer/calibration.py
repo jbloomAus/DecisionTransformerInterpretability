@@ -2,7 +2,7 @@ import pandas as pd
 import plotly.express as px
 from tqdm import tqdm
 import numpy as np
-from train import evaluate_dt_agent
+from .train import evaluate_dt_agent
 
 def calibration_statistics(dt, env_id, make_env, initial_rtg_range = np.linspace(-1,1,21), trajectories=100):
     statistics = []
