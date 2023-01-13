@@ -24,7 +24,8 @@ st.write(
 )
 
 trajectory_path = "trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0c8c5dccc-b418-492e-bdf8-2c21256cd9f3.pkl"
-model_path = "artifacts/MiniGrid-Dynamic-Obstacles-8x8-v0__Dev__1__1673368088:v0/MiniGrid-Dynamic-Obstacles-8x8-v0__Dev__1__1673368088.pt"
+model_path = "artifacts/MiniGrid-Dynamic-Obstacles-8x8-v0__MiniGrid-Dynamic-Obstacles-8x8-v0__1__1673546242:v0/MiniGrid-Dynamic-Obstacles-8x8-v0__MiniGrid-Dynamic-Obstacles-8x8-v0__1__1673546242.pt"
+# model_path = "artifacts/MiniGrid-Dynamic-Obstacles-8x8-v0__Dev__1__1673368088:v0/MiniGrid-Dynamic-Obstacles-8x8-v0__Dev__1__1673368088.pt"
 
 action_string_to_id = {"left": 0, "right": 1, "forward": 2, "pickup": 3, "drop": 4, "toggle": 5, "done": 6}
 action_id_to_string = {v: k for k, v in action_string_to_id.items()}
@@ -34,19 +35,22 @@ action_id_to_string = {v: k for k, v in action_string_to_id.items()}
 def get_env_and_dt(trajectory_path, model_path):
     trajectory_data_set = TrajectoryLoader(trajectory_path, pct_traj=1, device="cpu")
     env_id = trajectory_data_set.metadata['args']['env_id']
-    env = make_env(env_id, seed = 1, idx = 0, capture_video=False, run_name = "dev", fully_observed=False, max_steps=30)
+    env = make_env(env_id, seed = 4200, idx = 0, capture_video=False, run_name = "dev", fully_observed=False, max_steps=30)
     env = env()
 
+    n_ctx = 3
+    max_len = n_ctx // 3
+    st.session_state.max_len = max_len
     dt = DecisionTransformer(
         env = env, 
         d_model = 128,
         n_heads = 4,
         d_mlp = 256,
-        n_layers = 2,
-        n_ctx=3000,
-        layer_norm=False,
+        n_layers = 1,
+        n_ctx=n_ctx,
+        layer_norm=True,
         state_embedding_type="grid", # hard-coded for now to minigrid.
-        max_timestep=1000) # Our DT must have a context window large enough
+        max_timestep=300) # Our DT must have a context window large enough
 
     dt.load_state_dict(t.load(model_path))
     return env, dt
@@ -63,10 +67,16 @@ def render_env(env):
     return fig
 
 def get_action_preds():
+    max_len = st.session_state.max_len
+    tokens = dt.to_tokens(
+        st.session_state.obs[:,-max_len:], 
+        st.session_state.a[:,-max_len:],
+        st.session_state.rtg[:,-max_len:],
+        st.session_state.timesteps[:,-max_len:]
+    )
 
-    tokens = dt.to_tokens(st.session_state.obs, st.session_state.a, st.session_state.rtg, st.session_state.timesteps)
     x, cache = dt.transformer.run_with_cache(tokens, remove_batch_dim=True)
-    state_preds, action_preds, reward_preds = dt.get_logits(x, batch_size=1, seq_length= st.session_state.obs.shape[1])
+    state_preds, action_preds, reward_preds = dt.get_logits(x, batch_size=1, seq_length=max_len)
 
     return action_preds, x, cache 
 
@@ -84,7 +94,7 @@ def plot_action_preds(action_preds):
 
 def plot_attention_pattern(cache, layer):
     attention_pattern = cache["pattern", layer, "attn"]
-    fig = px.imshow(attention_pattern[:,:30,:30], facet_col=0)
+    fig = px.imshow(attention_pattern[:,:30,:30], facet_col=0, range_color=[0,1])
     st.plotly_chart(fig)
 
 def respond_to_action(env, action):
@@ -108,10 +118,6 @@ def respond_to_action(env, action):
     st.session_state.timesteps = t.cat(
                 [st.session_state.timesteps, time.clone().detach().unsqueeze(0).unsqueeze(0)], dim=1)
 
-    st.write(f"reward: {reward}")
-    st.write(f"done: {done}")
-    st.write(f"trunc: {trunc}")
-    st.write(f"info: {info}")
 
 def get_action_from_user(env):
 
@@ -202,9 +208,13 @@ with columns[1]:
 
 
 with st.expander("Show Attention Pattern"):
-    layer = st.slider("Layer", min_value=0, max_value=dt.n_layers-1, value=0, step=1)
+    if dt.n_layers == 1:
+        plot_attention_pattern(cache,0)
+    else:
+        layer = st.slider("Layer", min_value=0, max_value=dt.n_layers-1, value=0, step=1)
+        plot_attention_pattern(cache,layer)
     # timesteps_b = st.slider("Number of Tokens", min_value=1, max_value=, value=dt.n_tokens, step=1)
-    plot_attention_pattern(cache,layer)
+    
 
 
 st.session_state.env = env
