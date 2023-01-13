@@ -149,6 +149,7 @@ class DecisionTransformer(nn.Module):
         self.transformer.embed = nn.Identity()
         self.transformer.pos_embed = PosEmbedTokens(cfg)
         nn.init.normal_(self.transformer.pos_embed.W_pos, cfg.initializer_range) # initialize position embedding
+        self.transformer.unembed = nn.Identity() # don't unembed, we'll do that ourselves.
         # get output predictions:
 
         self.predict_actions = nn.Linear(self.d_model, env.action_space.n)
