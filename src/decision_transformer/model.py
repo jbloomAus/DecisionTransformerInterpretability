@@ -312,3 +312,12 @@ class DecisionTransformer(nn.Module):
         #     # or we could truncate, deal with this later...
 
         return token_embeddings
+
+    def get_action(self, states, actions, rtgs, timesteps):
+
+        state_preds, action_preds, reward_preds = self.forward(states, actions, rtgs, timesteps)
+
+        # get the action prediction
+        action_preds = action_preds[:,-1,:] # (batch, n_actions)
+        action = torch.argmax(action_preds, dim=-1) # (batch)
+        return action
