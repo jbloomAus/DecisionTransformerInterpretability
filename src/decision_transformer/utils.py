@@ -45,7 +45,7 @@ def parse_args():
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--batches", type=int, default=401)
     parser.add_argument("--n_ctx", type=int, default=3)
-    parser.add_argument("--layer_norm", type=bool, default=True)
+    parser.add_argument("--layer_norm", type=bool, default=False)
     parser.add_argument("--pct_traj", type=float, default=1)
     parser.add_argument("--weight_decay", type=float, default=0.001)
     parser.add_argument("--seed", type=int, default=1)
