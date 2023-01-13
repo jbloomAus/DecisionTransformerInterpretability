@@ -26,6 +26,7 @@ def train(
     eval_frequency=10,
     eval_episodes=10,
     initial_rtg=1.0,
+    prob_go_from_end=0.1,
     eval_max_time_steps=100):
 
     loss_fn = nn.CrossEntropyLoss()
@@ -51,7 +52,8 @@ def train(
         
         s, a, _, _, rtg, timesteps, _ = trajectory_data_set.get_batch(
             batch_size, 
-            max_len=dt.n_ctx // 3)
+            max_len=dt.n_ctx // 3,
+            prob_go_from_end=prob_go_from_end)
 
         s.to(device)
         a.to(device)

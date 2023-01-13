@@ -19,6 +19,7 @@ python src/run_decision_transformer.py \
     --eval_frequency 100 \
     --eval_episodes 10 \
     --initial_rtg 1 \
+    --prob_go_from_end 0.1 \
     --eval_max_time_steps 1000 \
     --cuda True \
     --track False 

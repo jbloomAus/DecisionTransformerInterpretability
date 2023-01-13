@@ -26,6 +26,7 @@ class DTArgs:
     eval_frequency: int = 100
     eval_episodes: int = 10
     initial_rtg: float = 1
+    prob_go_from_end: float = 0.1
     eval_max_time_steps: int = 1000
     cuda: bool = True
 
@@ -56,6 +57,7 @@ def parse_args():
     parser.add_argument("--eval_frequency", type=int, default=100)
     parser.add_argument("--eval_episodes", type=int, default=10)
     parser.add_argument("--initial_rtg", type=float, default=1)
+    parser.add_argument("--prob_go_from_end", type=float, default=0.1)
     parser.add_argument("--eval_max_time_steps", type=int, default=1000)
     parser.add_argument("--cuda", type=bool, default=True)
     args = parser.parse_args()

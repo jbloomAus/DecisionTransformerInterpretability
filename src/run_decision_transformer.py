@@ -42,6 +42,7 @@ if __name__ == "__main__":
         eval_frequency=args.eval_frequency,
         eval_episodes=args.eval_episodes,
         initial_rtg=args.initial_rtg,
+        prob_go_from_end=args.prob_go_from_end,
         eval_max_time_steps=args.eval_max_time_steps
     )
 
@@ -105,6 +106,7 @@ if __name__ == "__main__":
         eval_frequency=args.eval_frequency,
         eval_episodes=args.eval_episodes,
         initial_rtg=args.initial_rtg,
+        prob_go_from_end=args.prob_go_from_end,
         eval_max_time_steps=args.eval_max_time_steps
     )
 

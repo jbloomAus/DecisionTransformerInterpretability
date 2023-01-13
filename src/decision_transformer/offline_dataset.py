@@ -101,7 +101,7 @@ class TrajectoryLoader():
         state_mean, state_std = np.mean(all_states, axis=0), np.std(all_states, axis=0) + 1e-6
         return state_mean, state_std
 
-    def get_batch(self, batch_size=256, max_len=100):
+    def get_batch(self, batch_size=256, max_len=100, prob_go_from_end=None):
 
         rewards = self.rewards
         states = self.states
@@ -133,6 +133,10 @@ class TrajectoryLoader():
 
             # start index
             si = random.randint(0, traj_rewards.shape[0] - 1)
+            if prob_go_from_end is not None:
+                if random.random() < prob_go_from_end:
+                    si = traj_rewards.shape[0] - max_len
+                    si = max(0, si) # make sure it's not negative
 
             # get sequences from dataset
             s.append(traj_states[si:si + max_len].reshape(1, -1, *self.state_dim))
@@ -143,6 +147,10 @@ class TrajectoryLoader():
             # get timesteps
             timesteps.append(np.arange(si, si + s[-1].shape[1]).reshape(1, -1))
             timesteps[-1][timesteps[-1] >= self.max_ep_len] = self.max_ep_len-1  # padding cutoff
+            
+            # assrt min timesteps is greater than -1 
+            if timesteps[-1].min() <= -1:
+                assert timesteps[-1].min() >= -1, f"min timesteps is {timesteps[-1].min()}"
 
             # get rewards to go
             rtg.append(self.discount_cumsum(traj_rewards[si:], gamma=1.)[:s[-1].shape[1] + 1].reshape(1, -1, 1))
