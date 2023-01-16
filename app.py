@@ -247,31 +247,30 @@ with st.expander("Show residual stream contributions:"):
     mlp_output = cache["blocks.0.hook_mlp_out"][1]
     mlp_contribution =   (mlp_output @ forward_dir).item()
     st.write("dot production of mlp_output with forward:", mlp_contribution)
-    # st.write("dot production of hook_resid_mid with forward: (before mlp out)", cache['blocks.0.hook_resid_mid'][1] @ forward_dir)
 
-    # dif_x = (x_action - head_0_output[1] + head_1_output[1] + tokens[0][1] + cache["blocks.0.hook_mlp_out"][1]).sum().item()
-    # st.write("difference between x_action and its components:", dif_x)
-    st.write("sum over contributions:", token_contribution + head_0_contribution + head_1_contribution + mlp_contribution + pos_contribution)
+    state_dict = dt.state_dict()
+
+    attn_bias_0_dir = state_dict['transformer.blocks.0.attn.b_O']
+    attn_bias_contribution = (attn_bias_0_dir @ forward_dir).item()
+    st.write( "dot production of attn_bias_0_dir with forward:", attn_bias_contribution)
+
+    # mlp_bias_0_dir = state_dict['transformer.blocks.0.mlp.b_out']
+    # mlp_bias_contribution = (mlp_bias_0_dir @ forward_dir).item()
+    # st.write( "dot production of mlp_bias_0_dir with forward:", mlp_bias_contribution)
+
+    sum_of_contributions = token_contribution + head_0_contribution + \
+                head_1_contribution + mlp_contribution + \
+                pos_contribution + attn_bias_contribution
+    st.write("sum over contributions:", sum_of_contributions)
+    percent_explained = np.abs(sum_of_contributions) / (x_action @ forward_dir).abs().item()
+    st.write("percent explained:", percent_explained)
 
     st.write("This appears to mostly explain how each component of the residual stream contributes to the action prediction.")
     
-
-    # st.latex(
-    # r'''
-    # x = s_{original} + r_{mlp} + h_{1.1} + h_{1.2} \newline
-    # logits = W_a \cdot x \newline
-    # '''
-    # )
     
-
-
-
-
-# st.write("Keys:")
-# st.write(cache.keys())
-
-# for key in cache.keys():
-#     st.write(key, cache[key].shape)
+    # st.write(state_dict.keys())
+    # st.write(state_dict['transformer.blocks.0.attn.b_O'].shape)
+    # # let's see the contribution
 
 
  
