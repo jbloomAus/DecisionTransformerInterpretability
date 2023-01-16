@@ -1,10 +1,12 @@
 import pytest 
 
+import torch as t 
 from dataclasses import dataclass
 import numpy as np
 import pickle 
 import torch
-from src.utils import TrajectoryWriter
+from src.utils import TrajectoryWriter, load_decision_transformer
+from src.environments import make_env
 
 
 def test_trajectory_writer_numpy():
@@ -96,3 +98,13 @@ def test_trajectory_writer_torch():
             info=[{"a": 1, "b": 2, "c": 3}],
         )
 
+def test_load_decision_transformer():
+
+    model_path = "models/demo_model.pt"
+    state_dict = t.load(model_path)
+
+    env = make_env('MiniGrid-Dynamic-Obstacles-8x8-v0', 0, 0, False, "test")()
+
+    model = load_decision_transformer(state_dict, env)
+
+    assert model is not None

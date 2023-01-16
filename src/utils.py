@@ -5,8 +5,10 @@ import numpy as np
 from typing import Dict
 from dataclasses import asdict, dataclass
 import wandb
+import re
 
 from typeguard import typechecked
+from src.decision_transformer.model import DecisionTransformer
 
 class TrajectoryWriter():
     '''
@@ -84,3 +86,32 @@ class TrajectoryWriter():
         print(f"Trajectory written to {self.path}")
 
 
+def load_decision_transformer(state_dict, env):
+
+    # get number of layers from the state dict
+    num_layers = max([int(re.findall(r'\d+', k)[0]) for k in state_dict.keys() if "transformer.blocks" in k]) + 1
+    d_model = state_dict['reward_embedding.0.weight'].shape[0]
+    d_mlp = state_dict['transformer.blocks.0.mlp.W_out'].shape[0]
+    n_heads = state_dict['transformer.blocks.0.attn.W_O'].shape[0]
+    max_timestep = state_dict['time_embedding.weight'].shape[0] - 1
+    n_ctx = state_dict['transformer.pos_embed.W_pos'].shape[0]
+    layer_norm = 'transformer.blocks.0.ln1.w' in state_dict
+
+    if 'state_encoder.weight' in state_dict:
+        state_embedding_type = 'grid' # otherwise it would be a sequential and wouldn't have this 
+        
+    # now we can create the model 
+    model = DecisionTransformer(
+        env = env,
+        n_layers = num_layers,
+        d_model = d_model,
+        d_mlp = d_mlp,
+        state_embedding_type = state_embedding_type,
+        n_heads = n_heads,
+        max_timestep = max_timestep,
+        n_ctx = n_ctx,
+        layer_norm = layer_norm
+    )
+
+    model.load_state_dict(state_dict)
+    return model
