@@ -120,9 +120,9 @@ class DecisionTransformer(nn.Module):
         nn.init.normal_(self.reward_embedding[0].weight, mean=0.0, std= 1/self.d_model)
 
         if layer_norm:
-            normalization_type = "LN"
+            self.normalization_type = "LN"
         else:
-            normalization_type = None
+            self.normalization_type = None
 
         # Transformer
         cfg = EasyTransformerConfig(
@@ -134,7 +134,7 @@ class DecisionTransformer(nn.Module):
             d_vocab= self.d_model, 
             n_ctx= self.n_ctx, # 3x the max timestep so we have room for an action, reward, and state per timestep
             act_fn="relu",
-            normalization_type=normalization_type,
+            normalization_type=self.normalization_type,
             attention_dir="causal",
             d_vocab_out=self.d_model, #
             seed = seed,

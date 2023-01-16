@@ -101,10 +101,13 @@ def test_trajectory_writer_torch():
 def test_load_decision_transformer():
 
     model_path = "models/demo_model.pt"
-    state_dict = t.load(model_path)
-
     env = make_env('MiniGrid-Dynamic-Obstacles-8x8-v0', 0, 0, False, "test")()
+    model = load_decision_transformer(model_path, env)
 
-    model = load_decision_transformer(state_dict, env)
-
-    assert model is not None
+    assert model.env == env
+    assert model.env.action_space.n == 3
+    assert model.n_ctx == 3
+    assert model.d_model == 128
+    assert model.n_heads == 2
+    assert model.n_layers == 1
+    assert model.normalization_type is None

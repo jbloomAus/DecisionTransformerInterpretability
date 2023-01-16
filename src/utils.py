@@ -6,7 +6,7 @@ from typing import Dict
 from dataclasses import asdict, dataclass
 import wandb
 import re
-
+import torch as t
 from typeguard import typechecked
 from src.decision_transformer.model import DecisionTransformer
 
@@ -86,7 +86,9 @@ class TrajectoryWriter():
         print(f"Trajectory written to {self.path}")
 
 
-def load_decision_transformer(state_dict, env):
+def load_decision_transformer(model_path, env):
+
+    state_dict = t.load(model_path)
 
     # get number of layers from the state dict
     num_layers = max([int(re.findall(r'\d+', k)[0]) for k in state_dict.keys() if "transformer.blocks" in k]) + 1
