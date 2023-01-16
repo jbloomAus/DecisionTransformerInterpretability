@@ -1,18 +1,16 @@
 import time
 
-
+import gymnasium as gym
 import matplotlib.pyplot as plt
 import numpy as np
-import streamlit as st
-import torch as t
 import pandas as pd
-from src.decision_transformer.model import DecisionTransformer
-from src.decision_transformer.offline_dataset import TrajectoryLoader
-from src.environments import make_env
-import streamlit.components.v1 as components
 import plotly.express as px
-import circuitsvis as cv
-from IPython.display import HTML, display
+import streamlit as st
+import streamlit.components.v1 as components
+import torch as t
+
+from src.environments import make_env
+from src.utils import load_decision_transformer
 
 start = time.time()
 st.title("MiniGrid Interpretability Playground")
@@ -23,36 +21,41 @@ st.write(
     '''
 )
 
-trajectory_path = "trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0c8c5dccc-b418-492e-bdf8-2c21256cd9f3.pkl"
-model_path = "artifacts/MiniGrid-Dynamic-Obstacles-8x8-v0__MiniGrid-Dynamic-Obstacles-8x8-v0__1__1673546242:v0/MiniGrid-Dynamic-Obstacles-8x8-v0__MiniGrid-Dynamic-Obstacles-8x8-v0__1__1673546242.pt"
-# model_path = "artifacts/MiniGrid-Dynamic-Obstacles-8x8-v0__Dev__1__1673368088:v0/MiniGrid-Dynamic-Obstacles-8x8-v0__Dev__1__1673368088.pt"
-
+model_path = "models/demo_model.pt"
 action_string_to_id = {"left": 0, "right": 1, "forward": 2, "pickup": 3, "drop": 4, "toggle": 5, "done": 6}
 action_id_to_string = {v: k for k, v in action_string_to_id.items()}
 
+# env_id = st.selectbox("Select the environment",
+#         gym.envs.registry.keys(),
+#         index=0)
+        
 
+st.session_state.max_len = 1
 @st.cache(allow_output_mutation=True)
-def get_env_and_dt(trajectory_path, model_path):
-    trajectory_data_set = TrajectoryLoader(trajectory_path, pct_traj=1, device="cpu")
-    env_id = trajectory_data_set.metadata['args']['env_id']
+def get_env_and_dt(model_path):
+    env_id = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
     env = make_env(env_id, seed = 4200, idx = 0, capture_video=False, run_name = "dev", fully_observed=False, max_steps=30)
     env = env()
 
-    n_ctx = 3
-    max_len = n_ctx // 3
-    st.session_state.max_len = max_len
-    dt = DecisionTransformer(
-        env = env, 
-        d_model = 128,
-        n_heads = 4,
-        d_mlp = 256,
-        n_layers = 1,
-        n_ctx=n_ctx,
-        layer_norm=True,
-        state_embedding_type="grid", # hard-coded for now to minigrid.
-        max_timestep=300) # Our DT must have a context window large enough
+    # n_ctx = 3
+    # max_len = n_ctx // 3
+    # st.session_state.max_len = max_len
+    # dt = DecisionTransformer(
+    #     env = env, 
+    #     d_model = 128,
+    #     n_heads = 2,
+    #     d_mlp = 256,
+    #     n_layers = 1,
+    #     n_ctx=n_ctx,
+    #     layer_norm=False,
+    #     state_embedding_type="grid", # hard-coded for now to minigrid.
+    #     max_timestep=300) # Our DT must have a context window large enough
 
-    dt.load_state_dict(t.load(model_path))
+    # dt.load_state_dict(t.load(model_path))
+    dt = load_decision_transformer(
+        model_path, env
+    )
+
     return env, dt
 
 def render_env(env):
@@ -67,7 +70,7 @@ def render_env(env):
     return fig
 
 def get_action_preds():
-    max_len = st.session_state.max_len
+    max_len = dt.n_ctx // 3
     tokens = dt.to_tokens(
         st.session_state.obs[:,-max_len:], 
         st.session_state.a[:,-max_len:],
@@ -78,7 +81,7 @@ def get_action_preds():
     x, cache = dt.transformer.run_with_cache(tokens, remove_batch_dim=True)
     state_preds, action_preds, reward_preds = dt.get_logits(x, batch_size=1, seq_length=max_len)
 
-    return action_preds, x, cache 
+    return action_preds, x, cache, tokens
 
 def plot_action_preds(action_preds):
      # make bar chart of action_preds
@@ -161,13 +164,14 @@ def get_action_from_user(env):
         action = 6
         respond_to_action(env, action)
 
-st.subheader("Game Screen")
+with st.sidebar:
+    st.subheader("Game Screen")
 
-initial_rtg = st.slider("Initial RTG", min_value=-5.0, max_value=5.0, value=0.5, step=0.01)
-if "rtg" in st.session_state:
-    # generate rtg vector as initial rtg - cumulative reward
-    st.session_state.rtg = initial_rtg - st.session_state.reward
-    # st.session_state.rtg = t.tensor([initial_rtg]).unsqueeze(0).unsqueeze(0)
+    initial_rtg = st.slider("Initial RTG", min_value=-10.0, max_value=1.0, value=0.5, step=0.01)
+    if "rtg" in st.session_state:
+        # generate rtg vector as initial rtg - cumulative reward
+        st.session_state.rtg = initial_rtg - st.session_state.reward
+        # st.session_state.rtg = t.tensor([initial_rtg]).unsqueeze(0).unsqueeze(0)
 
 
 if "env" not in st.session_state or "dt" not in st.session_state:
@@ -200,32 +204,88 @@ else:
 columns = st.columns(2)
 
 with columns[0]:
-    action_preds, x, cache = get_action_preds()
+    action_preds, x, cache, tokens = get_action_preds()
     plot_action_preds(action_preds)
 with columns[1]:
     fig = render_env(env)
     st.pyplot(fig)
 
-
-with st.expander("Show Attention Pattern"):
+with st.expander("show attention pattern"):
     if dt.n_layers == 1:
         plot_attention_pattern(cache,0)
     else:
         layer = st.slider("Layer", min_value=0, max_value=dt.n_layers-1, value=0, step=1)
         plot_attention_pattern(cache,layer)
-    # timesteps_b = st.slider("Number of Tokens", min_value=1, max_value=, value=dt.n_tokens, step=1)
+        # timesteps_b = st.slider("Number of Tokens", min_value=1, max_value=, value=dt.n_tokens, step=1)
+
+with st.expander("Show residual stream contributions:"):
+    x_action = x[0][1]
+    # st.write(dt.action_embedding.weight.shape)
+    st.write("action embedding: ", x_action.shape)
+    forward_dir = dt.predict_actions.weight[2]-dt.predict_actions.weight[1]
+    st.write("dot production of x_action with forward:", (x_action @ forward_dir).item()) # technically  forward over right
+
+
+    st.latex(
+        r'''
+        x = s_{original} + r_{mlp} + h_{1.1} + h_{1.2} \newline
+        '''
+    )
+    # x_action = s_{original} + r_{mlp} + h_{1.1} + h_{1.2}
+    pos_contribution = (cache["hook_pos_embed"][1] @ forward_dir).item()
+    st.write("dot production of pos_embed with forward:", pos_contribution) # pos embed
+
+    token_contribution = (tokens[0][1] @ forward_dir).item()
+    st.write("dot production of first token embedding with forward:", token_contribution) # tokens 
+
+    head_0_output = cache["blocks.0.attn.hook_z"][:,0,:] @ dt.transformer.blocks[0].attn.W_O[0]
+    head_0_contribution = (head_0_output[1] @ forward_dir).item()
+    st.write("dot production of head_0_output with forward:", head_0_contribution)
+    head_1_output = cache["blocks.0.attn.hook_z"][:,1,:] @ dt.transformer.blocks[0].attn.W_O[1]
+    head_1_contribution = (head_1_output[1] @ forward_dir).item()
+    st.write("dot production of head_1_output with forward:", head_1_contribution)
+    mlp_output = cache["blocks.0.hook_mlp_out"][1]
+    mlp_contribution =   (mlp_output @ forward_dir).item()
+    st.write("dot production of mlp_output with forward:", mlp_contribution)
+    # st.write("dot production of hook_resid_mid with forward: (before mlp out)", cache['blocks.0.hook_resid_mid'][1] @ forward_dir)
+
+    # dif_x = (x_action - head_0_output[1] + head_1_output[1] + tokens[0][1] + cache["blocks.0.hook_mlp_out"][1]).sum().item()
+    # st.write("difference between x_action and its components:", dif_x)
+    st.write("sum over contributions:", token_contribution + head_0_contribution + head_1_contribution + mlp_contribution + pos_contribution)
+
+    st.write("This appears to mostly explain how each component of the residual stream contributes to the action prediction.")
     
 
+    # st.latex(
+    # r'''
+    # x = s_{original} + r_{mlp} + h_{1.1} + h_{1.2} \newline
+    # logits = W_a \cdot x \newline
+    # '''
+    # )
+    
+
+
+
+
+# st.write("Keys:")
+# st.write(cache.keys())
+
+# for key in cache.keys():
+#     st.write(key, cache[key].shape)
+
+
+ 
+st.markdown("""---""")
 
 st.session_state.env = env
 st.session_state.dt = dt
 
-st.subheader("Trajectory Details")
-# write out actions, rtgs, rewards, and timesteps
-st.write(f"actions: {st.session_state.a[0].squeeze(-1).tolist()}")
-st.write(f"rtgs: {st.session_state.rtg[0].squeeze(-1).tolist()}")
-st.write(f"rewards: {st.session_state.reward[0].squeeze(-1).tolist()}")
-st.write(f"timesteps: {st.session_state.timesteps[0].squeeze(-1).tolist()}")
+with st.expander("Trajectory Details"):
+    # write out actions, rtgs, rewards, and timesteps
+    st.write(f"actions: {st.session_state.a[0].squeeze(-1).tolist()}")
+    st.write(f"rtgs: {st.session_state.rtg[0].squeeze(-1).tolist()}")
+    st.write(f"rewards: {st.session_state.reward[0].squeeze(-1).tolist()}")
+    st.write(f"timesteps: {st.session_state.timesteps[0].squeeze(-1).tolist()}")
 
 
 def store_trajectory(state, action, obs, reward, done, trunc, info):
