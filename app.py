@@ -96,8 +96,11 @@ def plot_action_preds(action_preds):
     st.bar_chart(action_preds)
 
 def plot_attention_pattern(cache, layer):
+    n_tokens = st.session_state.dt.n_ctx - 1
     attention_pattern = cache["pattern", layer, "attn"]
-    fig = px.imshow(attention_pattern[:,:30,:30], facet_col=0, range_color=[0,1])
+    fig = px.imshow(
+        attention_pattern[:,:n_tokens,:n_tokens], 
+        facet_col=0, range_color=[0,1])
     st.plotly_chart(fig)
 
 def respond_to_action(env, action):
@@ -176,7 +179,7 @@ with st.sidebar:
 
 if "env" not in st.session_state or "dt" not in st.session_state:
     st.write("Loading environment and decision transformer...")
-    env, dt = get_env_and_dt(trajectory_path, model_path)
+    env, dt = get_env_and_dt(model_path)
     obs, _ = env.reset()
 
     # initilize the session state trajectory details
