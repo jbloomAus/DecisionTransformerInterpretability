@@ -1,6 +1,7 @@
 import time
 
 import gymnasium as gym
+from einops import rearrange
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -8,18 +9,14 @@ import plotly.express as px
 import streamlit as st
 import streamlit.components.v1 as components
 import torch as t
-
+from copy import deepcopy
 from src.environments import make_env
 from src.utils import load_decision_transformer
-
+from src.visualization import render_minigrid_observations, render_minigrid_observation
+import pandas as pd
 start = time.time()
 st.title("MiniGrid Interpretability Playground")
-st.write(
-    '''
-    To do:
-    - new game made: Start from a random environment of the kind your dt was trained on. Observe the state and it's corresponding action. Then, use the dt to predict the next action. You can choose to either take this action, or one of your own choosing. Iterate. 
-    '''
-)
+
 
 model_path = "models/demo_model.pt"
 action_string_to_id = {"left": 0, "right": 1, "forward": 2, "pickup": 3, "drop": 4, "toggle": 5, "done": 6}
@@ -124,7 +121,6 @@ def respond_to_action(env, action):
     st.session_state.timesteps = t.cat(
                 [st.session_state.timesteps, time.clone().detach().unsqueeze(0).unsqueeze(0)], dim=1)
 
-
 def get_action_from_user(env):
 
     # create a series of buttons for each action
@@ -188,6 +184,7 @@ if "env" not in st.session_state or "dt" not in st.session_state:
     st.session_state.reward = t.tensor([0]).unsqueeze(0).unsqueeze(0)
     st.session_state.a = t.tensor([0]).unsqueeze(0).unsqueeze(0)
     st.session_state.timesteps = t.tensor([0]).unsqueeze(0).unsqueeze(0)
+    st.session_state.dt = dt
 
 else:
     env = st.session_state.env
@@ -271,12 +268,150 @@ with st.expander("Show residual stream contributions:"):
     st.write("This appears to mostly explain how each component of the residual stream contributes to the action prediction.")
     
     
-    # st.write(state_dict.keys())
-    # st.write(state_dict['transformer.blocks.0.attn.b_O'].shape)
-    # # let's see the contribution
+with st.expander("How are observations encoded?"):
+    obs = st.session_state.obs[0]
+    last_obs = obs[-1]
+    st.write(obs.shape)
+    st.write(last_obs.shape)
+
+    #  obs is a grid of (OBJECT_IDX, COLOR_IDX, STATE)
+    # let's extract the indices of the weights which will match the object_idx in the flattened array
+    indices = t.arange(7*7*3)
+    object_indices = indices[2::3]
+
+    st.write("how do we encode the observations?")
+    # st.write(obs.flatten())
+
+    st.write("what is the agent currently looking at?")
+    st.write(f"observation: {obs.shape}")
+    result = render_minigrid_observations(env, last_obs.unsqueeze(0))
+    st.image(result)
+
+    
+      
+    obs_selection = st.selectbox("Visualize which obs?", ["none", "all", "object", "state","color"], key = "obs_selection")
+    if obs_selection == "object":
+    # last_obs = rearrange(last_obs, 'height width channel -> channel height width')
+        objects = last_obs.flatten()[::3].reshape(7,7)
+        fig = px.imshow(objects.T)
+        st.plotly_chart(fig)
+    elif obs_selection == "color":
+        colors = last_obs.flatten()[1::3].reshape(7,7)
+        fig = px.imshow(colors.T)
+        st.plotly_chart(fig)
+    elif obs_selection == "state":
+        states = last_obs.flatten()[2::3].reshape(7,7)
+        fig = px.imshow(states.T)
+        st.plotly_chart(fig)
 
 
- 
+    weights = dt.state_encoder.weight.detach().cpu()
+    st.write(weights.shape) # weights maps dimensions in the observation (148 flattened) to neurons (128)
+    weights_objects_only = t.zeros(weights.shape)
+    weights_objects_only[:, ::3] = weights[:, ::3]
+    weights_states_only = t.zeros(weights.shape)
+    weights_states_only[:, 2::3] = weights[:, 2::3]
+    weights_colors_only = t.zeros(weights.shape)
+    weights_colors_only[:, 1::3] = weights[:, 1::3]
+    activations = weights @ last_obs.flatten().to(t.float32)
+    activations_object = weights_objects_only @ last_obs.flatten().to(t.float32)
+    activations_state = weights_states_only @ last_obs.flatten().to(t.float32)
+    activations_color = weights_colors_only @ last_obs.flatten().to(t.float32)
+
+    st.write('bar chart of activations by neuron')
+    fig = px.bar(
+        pd.DataFrame(
+            dict(
+            object = activations_object,
+            states = activations_state, 
+            color = activations_color)
+    ), 
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+    st.write(
+        "most active neurons: ",  activations.abs().argsort(descending=True)[:10]
+    )
+    
+
+    weight_selection = st.selectbox("Visualize which weights?", ["none","all", "object", "state","color"])
+    if weight_selection == "all":
+        st.write("weights - all") 
+        st.write(weights.shape)
+        # weights = rearrange()
+        fig = px.imshow(weights.numpy())
+        st.plotly_chart(fig, use_container_width=True)
+    elif weight_selection == "object":
+        st.write("object weights by position: plotting the sum of all weights associated with objects at each position")
+        fig = px.imshow(weights[:,:49].reshape(128,7,7).sum(dim=0).T)
+        st.plotly_chart(fig, use_container_width=True)
+    elif weight_selection == "state":
+        st.write("state weights")
+        fig = px.imshow(weights[:,98:].reshape(128,7,7).sum(dim=0).T)
+        st.plotly_chart(fig, use_container_width=True)
+    elif weight_selection == "color":
+        st.write("color weights")
+        fig = px.imshow(weights[:,49:98].reshape(128,7,7).sum(dim=0).T)
+        st.plotly_chart(fig, use_container_width=True)
+
+    # all activations over trajectory
+    all_activations = obs.flatten(1).to(t.float32) @ weights.T
+    st.write(all_activations.shape)
+    fig = px.line(all_activations)
+    # print(all_activations)
+    st.plotly_chart(fig, key = 3, use_container_width=True)
+
+
+st.subheader("let's see if we can map forward dir to obs tokens")
+
+
+a,b,c = st.columns(3)
+with a:
+    st.write("objects")
+    result =t.einsum("d, d h w -> w h", forward_dir, weights[:,:49].reshape(128,7,7))
+    fig = px.imshow(result.flip(0).detach().numpy(), color_continuous_midpoint=0)
+    st.plotly_chart(fig, use_container_width=True)
+
+    objects = last_obs.flatten()[::3].reshape(7,7)
+    object_projection_forward = objects*result.flip(0)
+    fig = px.imshow(object_projection_forward.detach(), color_continuous_midpoint=0)
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.write(object_projection_forward.sum())
+with b:
+    # this might explain the chirality?
+    st.write("color")
+    result = t.einsum("d, d h w -> h w", forward_dir, weights[:,49:98].reshape(128,7,7))
+    fig = px.imshow(result.flip(0).detach().numpy(), color_continuous_midpoint=0)
+    st.plotly_chart(fig, use_container_width=True)
+
+    colors = last_obs.flatten()[1::3].reshape(7,7)
+
+    color_projection_forward = colors*result.flip(0)
+    fig = px.imshow(color_projection_forward.detach(), color_continuous_midpoint=0)
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.write(color_projection_forward.sum())
+with c:
+    st.write("states")
+    result =t.einsum("d, d h w -> h w", forward_dir, weights[:,98:].reshape(128,7,7))
+    fig = px.imshow(result.detach().numpy(), color_continuous_midpoint=0)
+    st.plotly_chart(fig, use_container_width=True)
+
+    states = last_obs.flatten()[2::3].reshape(7,7)
+    state_projection_forward = states*result.flip(0)
+    fig = px.imshow(state_projection_forward.detach(), color_continuous_midpoint=0)
+    st.plotly_chart(fig, use_container_width=True)
+    st.write(state_projection_forward.sum())
+
+st.write("Sum of Object, Color, State projections:",
+    object_projection_forward.sum() + \
+        color_projection_forward.sum())
+
+token_contribution = (tokens[0][1] @ forward_dir).item()
+st.write("dot production of first token embedding with forward:", token_contribution) # tokens 
+
+
 st.markdown("""---""")
 
 st.session_state.env = env
