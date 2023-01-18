@@ -1,6 +1,21 @@
 import streamlit as st 
 import torch as t
 
+from src.utils import load_decision_transformer
+from src.environments import make_env
+
+@st.cache(allow_output_mutation=True)
+def get_env_and_dt(model_path):
+    env_id = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
+    env = make_env(env_id, seed = 4200, idx = 0, capture_video=False, run_name = "dev", fully_observed=False, max_steps=30)
+    env = env()
+
+    # dt.load_state_dict(t.load(model_path))
+    dt = load_decision_transformer(
+        model_path, env
+    )
+    return env, dt
+
 def get_action_preds(dt):
     max_len = dt.n_ctx // 3
     tokens = dt.to_tokens(
@@ -14,7 +29,6 @@ def get_action_preds(dt):
     state_preds, action_preds, reward_preds = dt.get_logits(x, batch_size=1, seq_length=max_len)
 
     return action_preds, x, cache, tokens
-
 
 def respond_to_action(env, action, initial_rtg):
     new_obs, reward, done, trunc, info = env.step(action)
