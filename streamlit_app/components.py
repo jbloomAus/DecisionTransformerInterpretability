@@ -116,8 +116,11 @@ def render_observation_view(dt, env, tokens, logit_dir):
 def hyperpar_side_bar():
     with st.sidebar:
         st.subheader("Hyperparameters:")
-
-        initial_rtg = st.slider("Initial RTG", min_value=-1.0, max_value=1.0, value=0.9, step=0.01)
+        allow_extrapolation = st.checkbox("Allow extrapolation")
+        if allow_extrapolation:
+            initial_rtg = st.slider("Initial RTG", min_value=-10.0, max_value=10.0, value=0.9, step=0.01)
+        else:
+            initial_rtg = st.slider("Initial RTG", min_value=-1.0, max_value=1.0, value=0.9, step=0.01)
         if "rtg" in st.session_state:
             st.session_state.rtg = initial_rtg - st.session_state.reward
 
