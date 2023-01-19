@@ -1,13 +1,17 @@
-import torch as t
 import numpy as np
-import pandas as pd
+import plotly.express as px
 import streamlit as st
 import streamlit.components.v1 as components
-import plotly.express as px
-from .visualizations import plot_attention_pattern, plot_action_preds, render_env
-from .utils import read_index_html
-from .environment import get_action_preds
+import torch as t
+from einops import rearrange
+
 from src.visualization import render_minigrid_observations
+
+from .environment import get_action_preds
+from .utils import read_index_html
+from .visualizations import (plot_action_preds, plot_attention_pattern,
+                             render_env)
+
 
 def render_game_screen(dt, env):
     columns = st.columns(2)
@@ -22,158 +26,93 @@ def render_game_screen(dt, env):
 
 def render_observation_view(dt, env, tokens, forward_dir):
     
-    with st.expander("How are observations encoded?"):
-        obs = st.session_state.obs[0]
-        last_obs = obs[-1]
-        st.write(obs.shape)
-        st.write(last_obs.shape)
-
-        #  obs is a grid of (OBJECT_IDX, COLOR_IDX, STATE)
-        # let's extract the indices of the weights which will match the object_idx in the flattened array
-        indices = t.arange(7*7*3)
-        object_indices = indices[2::3]
-
-        st.write("how do we encode the observations?")
-        # st.write(obs.flatten())
-
-        st.write("what is the agent currently looking at?")
-        st.write(f"observation: {obs.shape}")
-        result = render_minigrid_observations(env, last_obs.unsqueeze(0))
-        st.image(result)
-
-        
-        
-        obs_selection = st.selectbox("Visualize which obs?", ["none", "all", "object", "state","color"], key = "obs_selection")
-        if obs_selection == "object":
-        # last_obs = rearrange(last_obs, 'height width channel -> channel height width')
-            objects = last_obs.flatten()[::3].reshape(7,7)
-            fig = px.imshow(objects.T)
-            st.plotly_chart(fig)
-        elif obs_selection == "color":
-            colors = last_obs.flatten()[1::3].reshape(7,7)
-            fig = px.imshow(colors.T)
-            st.plotly_chart(fig)
-        elif obs_selection == "state":
-            states = last_obs.flatten()[2::3].reshape(7,7)
-            fig = px.imshow(states.T)
-            st.plotly_chart(fig)
-
-
-        weights = dt.state_encoder.weight.detach().cpu()
-        st.write(weights.shape) # weights maps dimensions in the observation (148 flattened) to neurons (128)
-        weights_objects_only = t.zeros(weights.shape)
-        weights_objects_only[:, ::3] = weights[:, ::3]
-        weights_states_only = t.zeros(weights.shape)
-        weights_states_only[:, 2::3] = weights[:, 2::3]
-        weights_colors_only = t.zeros(weights.shape)
-        weights_colors_only[:, 1::3] = weights[:, 1::3]
-        activations = weights @ last_obs.flatten().to(t.float32)
-        activations_object = weights_objects_only @ last_obs.flatten().to(t.float32)
-        activations_state = weights_states_only @ last_obs.flatten().to(t.float32)
-        activations_color = weights_colors_only @ last_obs.flatten().to(t.float32)
-
-        st.write('bar chart of activations by neuron')
-        fig = px.bar(
-            pd.DataFrame(
-                dict(
-                object = activations_object,
-                states = activations_state, 
-                color = activations_color)
-        ), 
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-        st.write(
-            "most active neurons: ",  activations.abs().argsort(descending=True)[:10]
-        )
-        
-
-        weight_selection = st.selectbox("Visualize which weights?", ["none","all", "object", "state","color"])
-        if weight_selection == "all":
-            st.write("weights - all") 
-            st.write(weights.shape)
-            # weights = rearrange()
-            fig = px.imshow(weights.numpy())
-            st.plotly_chart(fig, use_container_width=True)
-        elif weight_selection == "object":
-            st.write("object weights by position: plotting the sum of all weights associated with objects at each position")
-            fig = px.imshow(weights[:,:49].reshape(128,7,7).sum(dim=0).T)
-            st.plotly_chart(fig, use_container_width=True)
-        elif weight_selection == "state":
-            st.write("state weights")
-            fig = px.imshow(weights[:,98:].reshape(128,7,7).sum(dim=0).T)
-            st.plotly_chart(fig, use_container_width=True)
-        elif weight_selection == "color":
-            st.write("color weights")
-            fig = px.imshow(weights[:,49:98].reshape(128,7,7).sum(dim=0).T)
-            st.plotly_chart(fig, use_container_width=True)
-
-        # all activations over trajectory
-        all_activations = obs.flatten(1).to(t.float32) @ weights.T
-        st.write(all_activations.shape)
-        fig = px.line(all_activations)
-        # print(all_activations)
-        st.plotly_chart(fig, key = 3, use_container_width=True)
-
-    weights = dt.state_encoder.weight.detach().cpu()
     obs = st.session_state.obs[0]
     last_obs = obs[-1]
 
-    with st.expander("let's see if we can map forward dir to obs tokens"):
+    weights = dt.state_encoder.weight.detach().cpu()
+    last_obs = st.session_state.obs[0][-1]
 
-        show_weights = st.checkbox("show weights")
-        d,a,b,c = st.columns(4)
-        with d:
-            st.write("current partial view")
-            result = render_minigrid_observations(env, last_obs.unsqueeze(0))
-            st.image(result)
-        with a:
-            st.write("objects")
-            result =t.einsum("d, d h w -> w h", forward_dir, weights[:,:49].reshape(128,7,7))
-            if show_weights:
-                fig = px.imshow(result.flip(0).detach().numpy(), color_continuous_midpoint=0)
-                st.plotly_chart(fig, use_container_width=True)
+    weights_objects = weights[:,:49]#.reshape(128, 7, 7)
+    weights_colors = weights[:,49:98]#.reshape(128, 7, 7)
+    weights_states = weights[:,98:]#.reshape(128, 7, 7)
 
-            objects = last_obs.flatten()[::3].reshape(7,7)
-            object_projection_forward = objects*result.flip(0)
-            fig = px.imshow(object_projection_forward.detach(), color_continuous_midpoint=0)
-            st.plotly_chart(fig, use_container_width=True)
+    last_obs_reshaped = rearrange(last_obs, "h w c -> (c h w)").to(t.float32).contiguous()
+    state_encoding = last_obs_reshaped @  dt.state_encoder.weight.detach().cpu().T
+    time_embedding = dt.time_embedding(st.session_state.timesteps[0][-1])
 
-            st.write(object_projection_forward.sum().item())
-        with b:
-            # this might explain the chirality?
-            st.write("color")
-            result = t.einsum("d, d h w -> h w", forward_dir, weights[:,49:98].reshape(128,7,7))
-            if show_weights:
-                fig = px.imshow(result.flip(0).detach().numpy(), color_continuous_midpoint=0)
-                st.plotly_chart(fig, use_container_width=True)
+    t.testing.assert_allclose(
+        tokens[0][1] - time_embedding[0],
+        state_encoding
+    )
 
-            colors = last_obs.flatten()[1::3].reshape(7,7)
+    last_obs_reshaped = rearrange(last_obs, "h w c -> c h w")
+    obj_embedding = weights_objects @ last_obs_reshaped[0].flatten().to(t.float32)
+    col_embedding = weights_colors @ last_obs_reshaped[1].flatten().to(t.float32)
+    state_embedding = weights_states @ last_obs_reshaped[2].flatten().to(t.float32)
 
-            color_projection_forward = colors*result.flip(0)
-            fig = px.imshow(color_projection_forward.detach(), color_continuous_midpoint=0)
-            st.plotly_chart(fig, use_container_width=True)
+    # ok now we can confirm that the state embedding is the same as the object embedding + color embedding
+    t.testing.assert_allclose(
+            tokens[0][1] - time_embedding[0],
+            obj_embedding + col_embedding + state_embedding
+    )
 
-            st.write(color_projection_forward.sum().item())
-        with c:
-            st.write("states")
-            result =t.einsum("d, d h w -> h w", forward_dir, weights[:,98:].reshape(128,7,7))
-            if show_weights:
-                fig = px.imshow(result.detach().numpy(), color_continuous_midpoint=0)
-                st.plotly_chart(fig, use_container_width=True)
 
-            states = last_obs.flatten()[2::3].reshape(7,7)
-            state_projection_forward = states*result.flip(0)
-            fig = px.imshow(state_projection_forward.detach(), color_continuous_midpoint=0)
-            st.plotly_chart(fig, use_container_width=True)
-            st.write(state_projection_forward.sum().item())
+    with st.expander("Show observation view"):
+        obj_contribution = (obj_embedding @ forward_dir).item()
+        st.write("dot production of object embedding with forward:", obj_contribution) # tokens 
 
-        st.write("Sum of Object, Color, State projections:",
-            object_projection_forward.sum() + \
-                color_projection_forward.sum())
+        col_contribution = (col_embedding @ forward_dir).item()
+        st.write("dot production of colour embedding with forward:", col_contribution) # tokens 
+
+        time_contribution = (time_embedding[0] @ forward_dir).item()
+        st.write("dot production of time embedding with forward:", time_contribution) # tokens 
+
+        state_contribution = (state_embedding @ forward_dir).item()
+        st.write("dot production of state embedding with forward:", state_contribution) # tokens
+
+        st.write("Sum of contributions", obj_contribution + col_contribution + time_contribution + state_contribution)
 
         token_contribution = (tokens[0][1] @ forward_dir).item()
         st.write("dot production of first token embedding with forward:", token_contribution) # tokens 
+
+        def project_weights_onto_dir(weights, dir):
+            return t.einsum("d, d h w -> h w", dir, weights.reshape(128,7,7)).detach()
+
+        st.write("projecting weights onto forward direction")
+
+        def plot_weights_obs_and_proj(weights, obs, forward_dir):
+            proj = project_weights_onto_dir(weights, forward_dir)
+            fig = px.imshow(obs.T)
+            fig.update_layout(coloraxis_showscale=False, margin=dict(l=0, r=0, t=0, b=0))
+            st.plotly_chart(fig, use_container_width=True, autosize=False, width =900)
+            fig = px.imshow(proj.T.detach().numpy(), color_continuous_midpoint=0)
+            fig.update_layout(coloraxis_showscale=False)
+            st.plotly_chart(fig, use_container_width=True)
+            weight_proj = proj * obs
+            fig = px.imshow(weight_proj.T.detach().numpy(), color_continuous_midpoint=0)
+            fig.update_layout(coloraxis_showscale=False)
+            st.plotly_chart(fig, use_container_width=True, height=0.1, autosize=False)
+
+        a,b,c = st.columns(3)
+        with a:
+            plot_weights_obs_and_proj(
+                weights_objects,
+                last_obs_reshaped.reshape(3,7,7)[0].detach().numpy(),
+                forward_dir
+            )
+        with b:
+            plot_weights_obs_and_proj(
+                weights_colors,
+                last_obs_reshaped.reshape(3,7,7)[1].detach().numpy(),
+                forward_dir
+            )
+        with c:
+            plot_weights_obs_and_proj(
+                weights_states,
+                last_obs_reshaped.reshape(3,7,7)[2].detach().numpy(),
+                forward_dir
+            )
+        
 
 def hyperpar_side_bar():
     with st.sidebar:
