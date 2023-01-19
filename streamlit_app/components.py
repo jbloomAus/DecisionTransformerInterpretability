@@ -24,7 +24,7 @@ def render_game_screen(dt, env):
 
     return x, cache, tokens
 
-def render_observation_view(dt, env, tokens, forward_dir):
+def render_observation_view(dt, env, tokens, logit_dir):
     
     obs = st.session_state.obs[0]
     last_obs = obs[-1]
@@ -58,21 +58,21 @@ def render_observation_view(dt, env, tokens, forward_dir):
 
 
     with st.expander("Show observation view"):
-        obj_contribution = (obj_embedding @ forward_dir).item()
+        obj_contribution = (obj_embedding @ logit_dir).item()
         st.write("dot production of object embedding with forward:", obj_contribution) # tokens 
 
-        col_contribution = (col_embedding @ forward_dir).item()
+        col_contribution = (col_embedding @ logit_dir).item()
         st.write("dot production of colour embedding with forward:", col_contribution) # tokens 
 
-        time_contribution = (time_embedding[0] @ forward_dir).item()
+        time_contribution = (time_embedding[0] @ logit_dir).item()
         st.write("dot production of time embedding with forward:", time_contribution) # tokens 
 
-        state_contribution = (state_embedding @ forward_dir).item()
+        state_contribution = (state_embedding @ logit_dir).item()
         st.write("dot production of state embedding with forward:", state_contribution) # tokens
 
         st.write("Sum of contributions", obj_contribution + col_contribution + time_contribution + state_contribution)
 
-        token_contribution = (tokens[0][1] @ forward_dir).item()
+        token_contribution = (tokens[0][1] @ logit_dir).item()
         st.write("dot production of first token embedding with forward:", token_contribution) # tokens 
 
         def project_weights_onto_dir(weights, dir):
@@ -80,8 +80,8 @@ def render_observation_view(dt, env, tokens, forward_dir):
 
         st.write("projecting weights onto forward direction")
 
-        def plot_weights_obs_and_proj(weights, obs, forward_dir):
-            proj = project_weights_onto_dir(weights, forward_dir)
+        def plot_weights_obs_and_proj(weights, obs, logit_dir):
+            proj = project_weights_onto_dir(weights, logit_dir)
             fig = px.imshow(obs.T)
             fig.update_layout(coloraxis_showscale=False, margin=dict(l=0, r=0, t=0, b=0))
             st.plotly_chart(fig, use_container_width=True, autosize=False, width =900)
@@ -98,21 +98,20 @@ def render_observation_view(dt, env, tokens, forward_dir):
             plot_weights_obs_and_proj(
                 weights_objects,
                 last_obs_reshaped.reshape(3,7,7)[0].detach().numpy(),
-                forward_dir
+                logit_dir
             )
         with b:
             plot_weights_obs_and_proj(
                 weights_colors,
                 last_obs_reshaped.reshape(3,7,7)[1].detach().numpy(),
-                forward_dir
+                logit_dir
             )
         with c:
             plot_weights_obs_and_proj(
                 weights_states,
                 last_obs_reshaped.reshape(3,7,7)[2].detach().numpy(),
-                forward_dir
+                logit_dir
             )
-        
 
 def hyperpar_side_bar():
     with st.sidebar:
@@ -132,13 +131,12 @@ def show_attention_pattern(dt, cache):
             layer = st.slider("Layer", min_value=0, max_value=dt.n_layers-1, value=0, step=1)
             plot_attention_pattern(cache,layer)
 
-def show_residual_stream_contributions(dt, x, cache, tokens):
+def show_residual_stream_contributions(dt, x, cache, tokens, logit_dir):
     with st.expander("Show residual stream contributions:"):
         x_action = x[0][1]
         # st.write(dt.action_embedding.weight.shape)
         st.write("action embedding: ", x_action.shape)
-        forward_dir = dt.predict_actions.weight[2]-dt.predict_actions.weight[1]
-        st.write("dot production of x_action with forward:", (x_action @ forward_dir).item()) # technically  forward over right
+        st.write("dot production of x_action with forward:", (x_action @ logit_dir).item()) # technically  forward over right
 
 
         st.latex(
@@ -147,41 +145,41 @@ def show_residual_stream_contributions(dt, x, cache, tokens):
             '''
         )
         # x_action = s_{original} + r_{mlp} + h_{1.1} + h_{1.2}
-        pos_contribution = (cache["hook_pos_embed"][1] @ forward_dir).item()
+        pos_contribution = (cache["hook_pos_embed"][1] @ logit_dir).item()
         st.write("dot production of pos_embed with forward:", pos_contribution) # pos embed
 
-        token_contribution = (tokens[0][1] @ forward_dir).item()
+        token_contribution = (tokens[0][1] @ logit_dir).item()
         st.write("dot production of first token embedding with forward:", token_contribution) # tokens 
 
         head_0_output = cache["blocks.0.attn.hook_z"][:,0,:] @ dt.transformer.blocks[0].attn.W_O[0]
-        head_0_contribution = (head_0_output[1] @ forward_dir).item()
+        head_0_contribution = (head_0_output[1] @ logit_dir).item()
         st.write("dot production of head_0_output with forward:", head_0_contribution)
         head_1_output = cache["blocks.0.attn.hook_z"][:,1,:] @ dt.transformer.blocks[0].attn.W_O[1]
-        head_1_contribution = (head_1_output[1] @ forward_dir).item()
+        head_1_contribution = (head_1_output[1] @ logit_dir).item()
         st.write("dot production of head_1_output with forward:", head_1_contribution)
         mlp_output = cache["blocks.0.hook_mlp_out"][1]
-        mlp_contribution =   (mlp_output @ forward_dir).item()
+        mlp_contribution =   (mlp_output @ logit_dir).item()
         st.write("dot production of mlp_output with forward:", mlp_contribution)
 
         state_dict = dt.state_dict()
 
         attn_bias_0_dir = state_dict['transformer.blocks.0.attn.b_O']
-        attn_bias_contribution = (attn_bias_0_dir @ forward_dir).item()
+        attn_bias_contribution = (attn_bias_0_dir @ logit_dir).item()
         st.write( "dot production of attn_bias_0_dir with forward:", attn_bias_contribution)
 
         # mlp_bias_0_dir = state_dict['transformer.blocks.0.mlp.b_out']
-        # mlp_bias_contribution = (mlp_bias_0_dir @ forward_dir).item()
+        # mlp_bias_contribution = (mlp_bias_0_dir @ logit_dir).item()
         # st.write( "dot production of mlp_bias_0_dir with forward:", mlp_bias_contribution)
 
         sum_of_contributions = token_contribution + head_0_contribution + \
                     head_1_contribution + mlp_contribution + \
                     pos_contribution + attn_bias_contribution
         st.write("sum over contributions:", sum_of_contributions)
-        percent_explained = np.abs(sum_of_contributions) / (x_action @ forward_dir).abs().item()
+        percent_explained = np.abs(sum_of_contributions) / (x_action @ logit_dir).abs().item()
         st.write("percent explained:", percent_explained)
 
         st.write("This appears to mostly explain how each component of the residual stream contributes to the action prediction.")
-        return forward_dir
+        return logit_dir
 
 def render_trajectory_details():
     with st.expander("Trajectory Details"):
