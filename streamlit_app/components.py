@@ -61,41 +61,67 @@ def show_attention_pattern(dt, cache):
             '''
         )
 
+        st.latex(
+            r'''
+            QK_{circuit} = W_E^T W_Q^T W_K W_E
+            '''
+        )
+
+
+
         # x = cache['blocks.0.hook_resid_pre']
         # st.write(x.shape)
 
+        W_E_rtg = dt.reward_embedding[0].weight
+        W_E_state = dt.state_encoder.weight
         # st.write(dt.transformer)
-        # W_Q = dt.transformer.blocks[0].attn.W_Q
+        W_Q = dt.transformer.blocks[0].attn.W_Q
         # b_Q = dt.transformer.blocks[0].attn.b_Q
-        # W_K = dt.transformer.blocks[0].attn.W_K
+        W_K = dt.transformer.blocks[0].attn.W_K
         # b_K = dt.transformer.blocks[0].attn.b_K
+        # st.write(W_E_rtg.shape)
+        # st.write(W_E_state.shape)
         # st.write(W_Q.shape)
         # st.write(W_K.shape)
 
-        # # q = W_Q @ x + b_Q
-        # # k = W_K @ x + b_K
-        # q = einsum('head n_emb d_head, seq n_emb -> seq head d_head', W_Q, x) + b_Q
-        # st.write(q.shape)
+        W_QK = einsum('head d_mod1 d_head, head d_mod2 d_head -> head d_mod1 d_mod2', W_Q, W_K)
+        # st.write(W_QK.shape)
 
-        # st.write(q_cache.shape)
-        
-        # st.plotly_chart(px.line(q[:,0].detach().numpy().T), use_container_width=True)
+        W_QK_full = W_E_rtg.T @ W_QK @ W_E_state 
+        # st.write(W_QK_full.shape)
 
-        a, b = st.columns(2)
+        W_QK_full_reshaped = W_QK_full.reshape(2, 1, 3, 7, 7)
+        # st.write(W_QK_full_reshaped.shape)
 
+        head = st.selectbox("Select Head", options=list(range(dt.n_heads)), index=0, key="head qk")
+        a, b, c = st.columns(3)
         with a:
-            st.write("Q")
-            q_cache = cache['blocks.0.attn.hook_q']
-            fig = px.line(q_cache[:,0].detach().numpy().T)
-            st.plotly_chart(fig, use_container_width=True)
-
+            st.plotly_chart(px.imshow(W_QK_full_reshaped[head,0,0].T.detach().numpy(), color_continuous_midpoint=0), use_container_width=True)
         with b:
-            st.write("K")
-            k_cache = cache['blocks.0.attn.hook_k']
-            fig = px.line(k_cache[:,0].detach().numpy().T)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(px.imshow(W_QK_full_reshaped[head,0,1].T.detach().numpy(), color_continuous_midpoint=0), use_container_width=True)
+        with c:
+            st.plotly_chart(px.imshow(W_QK_full_reshaped[head,0,2].T.detach().numpy(), color_continuous_midpoint=0), use_container_width=True)
 
-        A = cache['blocks.0.attn.hook_attn_scores']
+        # QK_circuit = einsum('head d_mod1 d_mod2, d_mod2 d_mod3, d_mod3 d_mod1 -> head d_mod1 d_mod1', W_QK, W_E_state, W_E_rtg)
+        # QK_circuit_full = W_E.T @ W_OV @ W_U.T
+        # st.write(OV_circuit_full.shape)
+
+        # a, b = st.columns(2)
+
+        # with a:
+        #     st.write("Q")
+        #     q_cache = cache['blocks.0.attn.hook_q']
+        #     fig = px.line(q_cache[:,0].detach().numpy().T)
+        #     st.plotly_chart(fig, use_container_width=True)
+
+        # with b:
+        #     st.write("K")
+        #     k_cache = cache['blocks.0.attn.hook_k']
+        #     fig = px.line(k_cache[:,0].detach().numpy().T)
+        #     st.plotly_chart(fig, use_container_width=True)
+
+
+        st.write('---')
 
         softmax = st.checkbox("softmax", value=True)
         heads = st.multiselect("Select Heads", options=list(range(dt.n_heads)), default=list(range(dt.n_heads)), key="heads")
