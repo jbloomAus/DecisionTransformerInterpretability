@@ -24,95 +24,6 @@ def render_game_screen(dt, env):
 
     return x, cache, tokens
 
-def render_observation_view(dt, env, tokens, logit_dir):
-    
-    obs = st.session_state.obs[0]
-    last_obs = obs[-1]
-
-    weights = dt.state_encoder.weight.detach().cpu()
-    last_obs = st.session_state.obs[0][-1]
-
-    weights_objects = weights[:,:49]#.reshape(128, 7, 7)
-    weights_colors = weights[:,49:98]#.reshape(128, 7, 7)
-    weights_states = weights[:,98:]#.reshape(128, 7, 7)
-
-    last_obs_reshaped = rearrange(last_obs, "h w c -> (c h w)").to(t.float32).contiguous()
-    state_encoding = last_obs_reshaped @  dt.state_encoder.weight.detach().cpu().T
-    time_embedding = dt.time_embedding(st.session_state.timesteps[0][-1])
-
-    t.testing.assert_allclose(
-        tokens[0][1] - time_embedding[0],
-        state_encoding
-    )
-
-    last_obs_reshaped = rearrange(last_obs, "h w c -> c h w")
-    obj_embedding = weights_objects @ last_obs_reshaped[0].flatten().to(t.float32)
-    col_embedding = weights_colors @ last_obs_reshaped[1].flatten().to(t.float32)
-    state_embedding = weights_states @ last_obs_reshaped[2].flatten().to(t.float32)
-
-    # ok now we can confirm that the state embedding is the same as the object embedding + color embedding
-    t.testing.assert_allclose(
-            tokens[0][1] - time_embedding[0],
-            obj_embedding + col_embedding + state_embedding
-    )
-
-
-    with st.expander("Show observation view"):
-        obj_contribution = (obj_embedding @ logit_dir).item()
-        st.write("dot production of object embedding with forward:", obj_contribution) # tokens 
-
-        col_contribution = (col_embedding @ logit_dir).item()
-        st.write("dot production of colour embedding with forward:", col_contribution) # tokens 
-
-        time_contribution = (time_embedding[0] @ logit_dir).item()
-        st.write("dot production of time embedding with forward:", time_contribution) # tokens 
-
-        state_contribution = (state_embedding @ logit_dir).item()
-        st.write("dot production of state embedding with forward:", state_contribution) # tokens
-
-        st.write("Sum of contributions", obj_contribution + col_contribution + time_contribution + state_contribution)
-
-        token_contribution = (tokens[0][1] @ logit_dir).item()
-        st.write("dot production of first token embedding with forward:", token_contribution) # tokens 
-
-        def project_weights_onto_dir(weights, dir):
-            return t.einsum("d, d h w -> h w", dir, weights.reshape(128,7,7)).detach()
-
-        st.write("projecting weights onto forward direction")
-
-        def plot_weights_obs_and_proj(weights, obs, logit_dir):
-            proj = project_weights_onto_dir(weights, logit_dir)
-            fig = px.imshow(obs.T)
-            fig.update_layout(coloraxis_showscale=False, margin=dict(l=0, r=0, t=0, b=0))
-            st.plotly_chart(fig, use_container_width=True, autosize=False, width =900)
-            fig = px.imshow(proj.T.detach().numpy(), color_continuous_midpoint=0)
-            fig.update_layout(coloraxis_showscale=False)
-            st.plotly_chart(fig, use_container_width=True)
-            weight_proj = proj * obs
-            fig = px.imshow(weight_proj.T.detach().numpy(), color_continuous_midpoint=0)
-            fig.update_layout(coloraxis_showscale=False)
-            st.plotly_chart(fig, use_container_width=True, height=0.1, autosize=False)
-
-        a,b,c = st.columns(3)
-        with a:
-            plot_weights_obs_and_proj(
-                weights_objects,
-                last_obs_reshaped.reshape(3,7,7)[0].detach().numpy(),
-                logit_dir
-            )
-        with b:
-            plot_weights_obs_and_proj(
-                weights_colors,
-                last_obs_reshaped.reshape(3,7,7)[1].detach().numpy(),
-                logit_dir
-            )
-        with c:
-            plot_weights_obs_and_proj(
-                weights_states,
-                last_obs_reshaped.reshape(3,7,7)[2].detach().numpy(),
-                logit_dir
-            )
-
 def hyperpar_side_bar():
     with st.sidebar:
         st.subheader("Hyperparameters:")
@@ -183,6 +94,102 @@ def show_residual_stream_contributions(dt, x, cache, tokens, logit_dir):
 
         st.write("This appears to mostly explain how each component of the residual stream contributes to the action prediction.")
         return logit_dir
+
+def render_observation_view(dt, env, tokens, logit_dir):
+    
+    obs = st.session_state.obs[0]
+    last_obs = obs[-1]
+
+    weights = dt.state_encoder.weight.detach().cpu()
+    last_obs = st.session_state.obs[0][-1]
+
+    weights_objects = weights[:,:49]#.reshape(128, 7, 7)
+    weights_colors = weights[:,49:98]#.reshape(128, 7, 7)
+    weights_states = weights[:,98:]#.reshape(128, 7, 7)
+
+    last_obs_reshaped = rearrange(last_obs, "h w c -> (c h w)").to(t.float32).contiguous()
+    state_encoding = last_obs_reshaped @  dt.state_encoder.weight.detach().cpu().T
+    time_embedding = dt.time_embedding(st.session_state.timesteps[0][-1])
+
+    t.testing.assert_allclose(
+        tokens[0][1] - time_embedding[0],
+        state_encoding
+    )
+
+    last_obs_reshaped = rearrange(last_obs, "h w c -> c h w")
+    obj_embedding = weights_objects @ last_obs_reshaped[0].flatten().to(t.float32)
+    col_embedding = weights_colors @ last_obs_reshaped[1].flatten().to(t.float32)
+    state_embedding = weights_states @ last_obs_reshaped[2].flatten().to(t.float32)
+
+    # ok now we can confirm that the state embedding is the same as the object embedding + color embedding
+    t.testing.assert_allclose(
+            tokens[0][1] - time_embedding[0],
+            obj_embedding + col_embedding + state_embedding
+    )
+
+
+    with st.expander("Show observation view"):
+        obj_contribution = (obj_embedding @ logit_dir).item()
+        st.write("dot production of object embedding with forward:", obj_contribution) # tokens 
+
+        col_contribution = (col_embedding @ logit_dir).item()
+        st.write("dot production of colour embedding with forward:", col_contribution) # tokens 
+
+        time_contribution = (time_embedding[0] @ logit_dir).item()
+        st.write("dot production of time embedding with forward:", time_contribution) # tokens 
+
+        state_contribution = (state_embedding @ logit_dir).item()
+        st.write("dot production of state embedding with forward:", state_contribution) # tokens
+
+        st.write("Sum of contributions", obj_contribution + col_contribution + time_contribution + state_contribution)
+
+        token_contribution = (tokens[0][1] @ logit_dir).item()
+        st.write("dot production of first token embedding with forward:", token_contribution) # tokens 
+
+        def project_weights_onto_dir(weights, dir):
+            return t.einsum("d, d h w -> h w", dir, weights.reshape(128,7,7)).detach()
+
+        st.write("projecting weights onto forward direction")
+        normalize = st.checkbox("Normalize weight_projection", value=True)
+
+        def plot_weights_obs_and_proj(weights, obs, logit_dir, normalize=True):
+            proj = project_weights_onto_dir(weights, logit_dir)
+            fig = px.imshow(obs.T)
+            fig.update_layout(coloraxis_showscale=False, margin=dict(l=0, r=0, t=0, b=0))
+            st.plotly_chart(fig, use_container_width=True, autosize=False, width =900)
+            fig = px.imshow(proj.T.detach().numpy(), color_continuous_midpoint=0)
+            fig.update_layout(coloraxis_showscale=False)
+            st.plotly_chart(fig, use_container_width=True)
+            weight_proj = proj * obs
+            if normalize:
+                weight_proj = 100*weight_proj / (1e-8+ weight_proj.sum()).abs()
+            fig = px.imshow(weight_proj.T.detach().numpy(), color_continuous_midpoint=0)
+            fig.update_layout(coloraxis_showscale=False)
+            st.plotly_chart(fig, use_container_width=True, height=0.1, autosize=False)
+
+        a,b,c = st.columns(3)
+        with a:
+            plot_weights_obs_and_proj(
+                weights_objects,
+                last_obs_reshaped.reshape(3,7,7)[0].detach().numpy(),
+                logit_dir,
+                normalize=normalize
+            )
+        with b:
+            plot_weights_obs_and_proj(
+                weights_colors,
+                last_obs_reshaped.reshape(3,7,7)[1].detach().numpy(),
+                logit_dir,
+                normalize=normalize
+            )
+        with c:
+            plot_weights_obs_and_proj(
+                weights_states,
+                last_obs_reshaped.reshape(3,7,7)[2].detach().numpy(),
+                logit_dir,
+                normalize=normalize
+            )
+
 
 def render_trajectory_details():
     with st.expander("Trajectory Details"):
