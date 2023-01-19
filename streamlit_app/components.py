@@ -4,6 +4,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 import torch as t
 from einops import rearrange
+from fancy_einsum import einsum
 
 from src.visualization import render_minigrid_observations
 
@@ -41,12 +42,65 @@ def hyperpar_side_bar():
     return initial_rtg
 
 def show_attention_pattern(dt, cache):
+
+    
     with st.expander("show attention pattern"):
+
+
+        st.write(cache.keys())
+
+        st.latex(
+            r'''
+            h(x)=\left(A \otimes W_O W_V\right) \cdot x \newline
+            '''
+        )
+
+        st.latex(
+            r'''
+            A=\operatorname{softmax}\left(x^T W_Q^T W_K x\right)
+            '''
+        )
+
+        # x = cache['blocks.0.hook_resid_pre']
+        # st.write(x.shape)
+
+        # st.write(dt.transformer)
+        # W_Q = dt.transformer.blocks[0].attn.W_Q
+        # b_Q = dt.transformer.blocks[0].attn.b_Q
+        # W_K = dt.transformer.blocks[0].attn.W_K
+        # b_K = dt.transformer.blocks[0].attn.b_K
+        # st.write(W_Q.shape)
+        # st.write(W_K.shape)
+
+        # # q = W_Q @ x + b_Q
+        # # k = W_K @ x + b_K
+        # q = einsum('head n_emb d_head, seq n_emb -> seq head d_head', W_Q, x) + b_Q
+        # st.write(q.shape)
+
+        # st.write(q_cache.shape)
+        
+        # st.plotly_chart(px.line(q[:,0].detach().numpy().T), use_container_width=True)
+
+
+        q_cache = cache['blocks.0.attn.hook_q']
+        fig = px.line(q_cache[:,0].detach().numpy().T)
+        st.plotly_chart(fig, use_container_width=True)
+
+        k_cache = cache['blocks.0.attn.hook_k']
+        fig = px.line(k_cache[:,0].detach().numpy().T)
+        st.plotly_chart(fig, use_container_width=True)
+
+        A = cache['blocks.0.attn.hook_attn_scores']
+
+
+        softmax = st.checkbox("softmax", value=True)
+        heads = st.multiselect("Select Heads", options=list(range(dt.n_heads)), default=list(range(dt.n_heads)), key="heads")
+
         if dt.n_layers == 1:
-            plot_attention_pattern(cache,0)
+            plot_attention_pattern(cache,0, softmax=softmax, specific_heads=heads)
         else:
             layer = st.slider("Layer", min_value=0, max_value=dt.n_layers-1, value=0, step=1)
-            plot_attention_pattern(cache,layer)
+            plot_attention_pattern(cache,layer, softmax=softmax, specific_heads=heads)
 
 def show_residual_stream_contributions(dt, x, cache, tokens, logit_dir):
     with st.expander("Show residual stream contributions:"):

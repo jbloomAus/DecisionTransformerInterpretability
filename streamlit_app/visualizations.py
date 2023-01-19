@@ -4,6 +4,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from typing import List
 
 action_string_to_id = {"left": 0, "right": 1, "forward": 2, "pickup": 3, "drop": 4, "toggle": 5, "done": 6}
 action_id_to_string = {v: k for k, v in action_string_to_id.items()}
@@ -21,11 +22,19 @@ def plot_action_preds(action_preds):
         )
     st.bar_chart(action_preds)
 
-def plot_attention_pattern(cache, layer):
+def plot_attention_pattern(cache, layer, softmax=True, specific_heads: List = None):
     n_tokens = st.session_state.dt.n_ctx - 1
-    attention_pattern = cache["pattern", layer, "attn"]
+    if softmax:
+        attention_pattern = cache["pattern", layer, "attn"]
+    else: 
+        attention_pattern = cache["attn_scores", layer, "attn"]
+
+    attention_pattern = attention_pattern[:,:n_tokens,:n_tokens]
+    if specific_heads is not None:
+        attention_pattern = attention_pattern[specific_heads]
+
     fig = px.imshow(
-        attention_pattern[:,:n_tokens,:n_tokens], 
+        attention_pattern,
         facet_col=0, range_color=[0,1])
     st.plotly_chart(fig)
 
