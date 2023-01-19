@@ -35,6 +35,9 @@ def hyperpar_side_bar():
         if "rtg" in st.session_state:
             st.session_state.rtg = initial_rtg - st.session_state.reward
 
+        timestep_adjustment = st.slider("Timestep Adjustment", min_value=-100.0, max_value=100.0, value=0.0, step=1.0)
+        st.session_state.timestep_adjustment = timestep_adjustment
+
     return initial_rtg
 
 def show_attention_pattern(dt, cache):
@@ -111,10 +114,11 @@ def render_observation_view(dt, env, tokens, logit_dir):
     state_encoding = last_obs_reshaped @  dt.state_encoder.weight.detach().cpu().T
     time_embedding = dt.time_embedding(st.session_state.timesteps[0][-1])
 
-    t.testing.assert_allclose(
-        tokens[0][1] - time_embedding[0],
-        state_encoding
-    )
+    if st.session_state.timestep_adjustment == 0: # don't test otherwise, unnecessary
+        t.testing.assert_allclose(
+            tokens[0][1] - time_embedding[0],
+            state_encoding
+        )
 
     last_obs_reshaped = rearrange(last_obs, "h w c -> c h w")
     obj_embedding = weights_objects @ last_obs_reshaped[0].flatten().to(t.float32)
@@ -122,10 +126,11 @@ def render_observation_view(dt, env, tokens, logit_dir):
     state_embedding = weights_states @ last_obs_reshaped[2].flatten().to(t.float32)
 
     # ok now we can confirm that the state embedding is the same as the object embedding + color embedding
-    t.testing.assert_allclose(
-            tokens[0][1] - time_embedding[0],
-            obj_embedding + col_embedding + state_embedding
-    )
+    if st.session_state.timestep_adjustment == 0: # don't test otherwise, unnecessary
+        t.testing.assert_allclose(
+                tokens[0][1] - time_embedding[0],
+                obj_embedding + col_embedding + state_embedding
+        )
 
 
     with st.expander("Show observation view"):
@@ -189,7 +194,6 @@ def render_observation_view(dt, env, tokens, logit_dir):
                 logit_dir,
                 normalize=normalize
             )
-
 
 def render_trajectory_details():
     with st.expander("Trajectory Details"):

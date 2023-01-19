@@ -18,11 +18,14 @@ def get_env_and_dt(model_path):
 
 def get_action_preds(dt):
     max_len = dt.n_ctx // 3
+
+    if "timestep_adjustment" in st.session_state:
+        timesteps = st.session_state.timesteps[:,-max_len:] + st.session_state.timestep_adjustment
     tokens = dt.to_tokens(
         st.session_state.obs[:,-max_len:], 
         st.session_state.a[:,-max_len:],
         st.session_state.rtg[:,-max_len:],
-        st.session_state.timesteps[:,-max_len:]
+        timesteps.to(dtype=t.long)
     )
 
     x, cache = dt.transformer.run_with_cache(tokens, remove_batch_dim=True)
