@@ -13,7 +13,7 @@ from streamlit_app.visualizations import action_string_to_id
 from streamlit_app.setup import initialize_playground
 from streamlit_app.components import reset_button, show_attention_pattern, hyperpar_side_bar, record_keypresses
 from streamlit_app.components import show_residual_stream_contributions, render_trajectory_details, render_game_screen
-from streamlit_app.components import render_observation_view
+from streamlit_app.components import render_observation_view, show_ov_circuit, show_qk_circuit
 start = time.time()
 
 with st.sidebar:
@@ -48,6 +48,8 @@ with st.sidebar:
 show_attention_pattern(dt, cache)
 show_residual_stream_contributions(dt, x, cache, tokens, logit_dir=logit_dir)
 render_observation_view(dt, env, tokens, logit_dir)
+show_ov_circuit(dt)
+show_qk_circuit(dt)
 
 st.markdown("""---""")
 

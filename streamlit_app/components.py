@@ -49,59 +49,6 @@ def show_attention_pattern(dt, cache):
 
         st.write(cache.keys())
 
-        st.latex(
-            r'''
-            h(x)=\left(A \otimes W_O W_V\right) \cdot x \newline
-            '''
-        )
-
-        st.latex(
-            r'''
-            A=\operatorname{softmax}\left(x^T W_Q^T W_K x\right)
-            '''
-        )
-
-        st.latex(
-            r'''
-            QK_{circuit} = W_E^T W_Q^T W_K W_E
-            '''
-        )
-
-
-
-        # x = cache['blocks.0.hook_resid_pre']
-        # st.write(x.shape)
-
-        W_E_rtg = dt.reward_embedding[0].weight
-        W_E_state = dt.state_encoder.weight
-        # st.write(dt.transformer)
-        W_Q = dt.transformer.blocks[0].attn.W_Q
-        # b_Q = dt.transformer.blocks[0].attn.b_Q
-        W_K = dt.transformer.blocks[0].attn.W_K
-        # b_K = dt.transformer.blocks[0].attn.b_K
-        # st.write(W_E_rtg.shape)
-        # st.write(W_E_state.shape)
-        # st.write(W_Q.shape)
-        # st.write(W_K.shape)
-
-        W_QK = einsum('head d_mod1 d_head, head d_mod2 d_head -> head d_mod1 d_mod2', W_Q, W_K)
-        # st.write(W_QK.shape)
-
-        W_QK_full = W_E_rtg.T @ W_QK @ W_E_state 
-        # st.write(W_QK_full.shape)
-
-        W_QK_full_reshaped = W_QK_full.reshape(2, 1, 3, 7, 7)
-        # st.write(W_QK_full_reshaped.shape)
-
-        head = st.selectbox("Select Head", options=list(range(dt.n_heads)), index=0, key="head qk")
-        a, b, c = st.columns(3)
-        with a:
-            st.plotly_chart(px.imshow(W_QK_full_reshaped[head,0,0].T.detach().numpy(), color_continuous_midpoint=0), use_container_width=True)
-        with b:
-            st.plotly_chart(px.imshow(W_QK_full_reshaped[head,0,1].T.detach().numpy(), color_continuous_midpoint=0), use_container_width=True)
-        with c:
-            st.plotly_chart(px.imshow(W_QK_full_reshaped[head,0,2].T.detach().numpy(), color_continuous_midpoint=0), use_container_width=True)
-
         # QK_circuit = einsum('head d_mod1 d_mod2, d_mod2 d_mod3, d_mod3 d_mod1 -> head d_mod1 d_mod1', W_QK, W_E_state, W_E_rtg)
         # QK_circuit_full = W_E.T @ W_OV @ W_U.T
         # st.write(OV_circuit_full.shape)
@@ -123,6 +70,18 @@ def show_attention_pattern(dt, cache):
 
         st.write('---')
 
+        st.latex(
+            r'''
+            h(x)=\left(A \otimes W_O W_V\right) \cdot x \newline
+            '''
+        )
+
+        st.latex(
+            r'''
+            A=\operatorname{softmax}\left(x^T W_Q^T W_K x\right)
+            '''
+        )
+
         softmax = st.checkbox("softmax", value=True)
         heads = st.multiselect("Select Heads", options=list(range(dt.n_heads)), default=list(range(dt.n_heads)), key="heads")
 
@@ -133,8 +92,43 @@ def show_attention_pattern(dt, cache):
             plot_attention_pattern(cache,layer, softmax=softmax, specific_heads=heads)
 
 
-        st.write("---")
+def show_qk_circuit(dt):
 
+    with st.expander("show QK circuit"):
+        st.latex(
+            r'''
+            QK_{circuit} = W_E^T W_Q^T W_K W_E
+            '''
+        )
+
+        W_E_rtg = dt.reward_embedding[0].weight
+        W_E_state = dt.state_encoder.weight
+        W_Q = dt.transformer.blocks[0].attn.W_Q
+        W_K = dt.transformer.blocks[0].attn.W_K
+
+
+        W_QK = einsum('head d_mod1 d_head, head d_mod2 d_head -> head d_mod1 d_mod2', W_Q, W_K)
+        # st.write(W_QK.shape)
+
+        W_QK_full = W_E_rtg.T @ W_QK @ W_E_state 
+        # st.write(W_QK_full.shape)
+
+        W_QK_full_reshaped = W_QK_full.reshape(2, 1, 3, 7, 7)
+        # st.write(W_QK_full_reshaped.shape)
+
+        head = st.selectbox("Select Head", options=list(range(dt.n_heads)), index=0, key="head qk")
+        a, b, c = st.columns(3)
+        with a:
+            st.plotly_chart(px.imshow(W_QK_full_reshaped[head,0,0].T.detach().numpy(), color_continuous_midpoint=0), use_container_width=True)
+        with b:
+            st.plotly_chart(px.imshow(W_QK_full_reshaped[head,0,1].T.detach().numpy(), color_continuous_midpoint=0), use_container_width=True)
+        with c:
+            st.plotly_chart(px.imshow(W_QK_full_reshaped[head,0,2].T.detach().numpy(), color_continuous_midpoint=0), use_container_width=True)
+
+
+def show_ov_circuit(dt):
+
+    with st.expander("Show OV Circuit"):
         st.subheader("OV circuits")
 
         st.latex(
@@ -143,24 +137,14 @@ def show_attention_pattern(dt, cache):
             '''
         )
 
-        # W_U = dt.transformer.unembed.W_U
         W_U = dt.predict_actions.weight
         W_O = dt.transformer.blocks[0].attn.W_O
         W_V = dt.transformer.blocks[0].attn.W_V
-        # W_E = dt.transformer.embed.W_E
         W_E = dt.state_encoder.weight
-
-        st.write(W_U.shape)
-        st.write(W_O.shape)
-        st.write(W_V.shape)
-        st.write(W_E.shape)
-
         W_OV = W_V @ W_O
-        st.write(W_OV.shape)
 
         # st.plotly_chart(px.imshow(W_OV.detach().numpy(), facet_col=0), use_container_width=True)
         OV_circuit_full = W_E.T @ W_OV @ W_U.T
-        st.write(OV_circuit_full.shape)
 
         #reshape the ov circuit
         OV_circuit_full_reshaped = OV_circuit_full.reshape(2, 3, 7, 7, 3)
@@ -168,8 +152,6 @@ def show_attention_pattern(dt, cache):
         for i in range(dt.env.action_space.n):
             st.write("action: ", i)
             st.plotly_chart(px.imshow(OV_circuit_full_reshaped[0][:,:,:,i].transpose(-1,-2).detach().numpy(), facet_col=0, color_continuous_midpoint=0), use_container_width=True)
-
-        st.write('---')
 
 
 def show_residual_stream_contributions(dt, x, cache, tokens, logit_dir):
