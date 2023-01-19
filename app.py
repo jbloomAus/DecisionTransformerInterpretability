@@ -33,11 +33,17 @@ x, cache, tokens = render_game_screen(dt, env)
 
 with st.sidebar:
     st.subheader("Directional Analysis")
-    positive_action_direction = st.selectbox("Positive Action Direction", ["left", "right", "forward", "pickup", "drop", "toggle", "done"], index = 2)
-    negative_action_direction = st.selectbox("Negative Action Direction", ["left", "right", "forward", "pickup", "drop", "toggle", "done"], index = 1)
-    positive_action_direction = action_string_to_id[positive_action_direction]
-    negative_action_direction = action_string_to_id[negative_action_direction]
-    logit_dir =  dt.predict_actions.weight[positive_action_direction] - dt.predict_actions.weight[negative_action_direction]
+    comparing = st.checkbox("comparing directions", value=True)
+    if comparing:
+        positive_action_direction = st.selectbox("Positive Action Direction", ["left", "right", "forward", "pickup", "drop", "toggle", "done"], index = 2)
+        negative_action_direction = st.selectbox("Negative Action Direction", ["left", "right", "forward", "pickup", "drop", "toggle", "done"], index = 1)
+        positive_action_direction = action_string_to_id[positive_action_direction]
+        negative_action_direction = action_string_to_id[negative_action_direction]
+        logit_dir =  dt.predict_actions.weight[positive_action_direction] - dt.predict_actions.weight[negative_action_direction]
+    else: 
+        selected_action_direction = st.selectbox("Selected Action Direction", ["left", "right", "forward", "pickup", "drop", "toggle", "done"], index = 2)
+        selected_action_direction = action_string_to_id[selected_action_direction]
+        logit_dir = dt.predict_actions.weight[selected_action_direction]
 
 show_attention_pattern(dt, cache)
 show_residual_stream_contributions(dt, x, cache, tokens, logit_dir=logit_dir)
