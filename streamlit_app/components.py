@@ -81,17 +81,21 @@ def show_attention_pattern(dt, cache):
         
         # st.plotly_chart(px.line(q[:,0].detach().numpy().T), use_container_width=True)
 
+        a, b = st.columns(2)
 
-        q_cache = cache['blocks.0.attn.hook_q']
-        fig = px.line(q_cache[:,0].detach().numpy().T)
-        st.plotly_chart(fig, use_container_width=True)
+        with a:
+            st.write("Q")
+            q_cache = cache['blocks.0.attn.hook_q']
+            fig = px.line(q_cache[:,0].detach().numpy().T)
+            st.plotly_chart(fig, use_container_width=True)
 
-        k_cache = cache['blocks.0.attn.hook_k']
-        fig = px.line(k_cache[:,0].detach().numpy().T)
-        st.plotly_chart(fig, use_container_width=True)
+        with b:
+            st.write("K")
+            k_cache = cache['blocks.0.attn.hook_k']
+            fig = px.line(k_cache[:,0].detach().numpy().T)
+            st.plotly_chart(fig, use_container_width=True)
 
         A = cache['blocks.0.attn.hook_attn_scores']
-
 
         softmax = st.checkbox("softmax", value=True)
         heads = st.multiselect("Select Heads", options=list(range(dt.n_heads)), default=list(range(dt.n_heads)), key="heads")
@@ -101,6 +105,46 @@ def show_attention_pattern(dt, cache):
         else:
             layer = st.slider("Layer", min_value=0, max_value=dt.n_layers-1, value=0, step=1)
             plot_attention_pattern(cache,layer, softmax=softmax, specific_heads=heads)
+
+
+        st.write("---")
+
+        st.subheader("OV circuits")
+
+        st.latex(
+            r'''
+            OV_{circuit} = W_U \cdot (W_V \cdot W_O) \cdot W_E
+            '''
+        )
+
+        # W_U = dt.transformer.unembed.W_U
+        W_U = dt.predict_actions.weight
+        W_O = dt.transformer.blocks[0].attn.W_O
+        W_V = dt.transformer.blocks[0].attn.W_V
+        # W_E = dt.transformer.embed.W_E
+        W_E = dt.state_encoder.weight
+
+        st.write(W_U.shape)
+        st.write(W_O.shape)
+        st.write(W_V.shape)
+        st.write(W_E.shape)
+
+        W_OV = W_V @ W_O
+        st.write(W_OV.shape)
+
+        # st.plotly_chart(px.imshow(W_OV.detach().numpy(), facet_col=0), use_container_width=True)
+        OV_circuit_full = W_E.T @ W_OV @ W_U.T
+        st.write(OV_circuit_full.shape)
+
+        #reshape the ov circuit
+        OV_circuit_full_reshaped = OV_circuit_full.reshape(2, 3, 7, 7, 3)
+
+        for i in range(dt.env.action_space.n):
+            st.write("action: ", i)
+            st.plotly_chart(px.imshow(OV_circuit_full_reshaped[0][:,:,:,i].transpose(-1,-2).detach().numpy(), facet_col=0, color_continuous_midpoint=0), use_container_width=True)
+
+        st.write('---')
+
 
 def show_residual_stream_contributions(dt, x, cache, tokens, logit_dir):
     with st.expander("Show residual stream contributions:"):
