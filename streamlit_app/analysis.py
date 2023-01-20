@@ -1,0 +1,85 @@
+import streamlit as st
+import torch as t
+
+
+
+def name_residual_components(dt, cache):
+    '''
+    Returns a list of keys for the residual components of the decision transformer which contribute to the final residual decomp
+    '''
+    result = [
+        "input_tokens",  # this will be block.0.resid_pre - hook_pos_embed
+        "hook_pos_embed"
+    ]
+
+    n_layers = dt.n_layers
+
+    # start with input 
+    for layer in range(n_layers):
+        # add the residual components from the attention layer
+        result.append(f"blocks.{layer}.attn.hook_z")
+        result.append(f"transformer.blocks.{layer}.attn.b_O")
+        # add the residual components from the mlp layer
+        result.append(f"blocks.{layer}.hook_mlp_out")
+
+    return result
+
+def get_residual_decomp(dt, cache, logit_dir, nice_names = True):
+    '''
+    Returns the residual decomposition for the decision transformer
+    '''
+    decomp = {}
+    n_heads = dt.n_heads
+    state_dict = dt.state_dict()
+    # get the residual components
+    residual_components = name_residual_components(dt, cache)
+    
+    for component in residual_components:
+        # decomp[component] = cache[component]
+        if component == "hook_pos_embed":
+            decomp[component] = cache[component][1] @ logit_dir
+        elif component == "input_tokens":
+            decomp[component] = ((cache['blocks.0.hook_resid_pre'] - cache["hook_pos_embed"]) @ logit_dir)[1]
+        elif component.endswith(".hook_z"):
+            for head in range(n_heads):
+                layer = int(component.split(".")[1])
+                output = cache[component][:,head,:] @ dt.transformer.blocks[layer].attn.W_O[head]
+                # why is this output 1?
+                decomp[component+f".{head}"] = output[1] @ logit_dir
+
+        elif component.endswith(".hook_mlp_out"):
+            decomp[component] = cache[component][1] @ logit_dir
+        elif component.endswith(".b_O"):
+            decomp[component] = state_dict[component] @ logit_dir
+
+    for k in decomp:
+        decomp[k] = decomp[k].detach().numpy()
+
+    if nice_names:
+        decomp = get_nice_names(decomp)
+
+
+    return decomp
+
+def get_nice_names(decomp):
+    '''
+    Will update each dictionary key with a nicer string and remove the old key
+    '''
+    new_decomp = {}
+    for k in decomp.keys():
+        if k == "hook_pos_embed":
+            new_decomp["Positional Embedding"] = decomp[k]
+        elif k == "input_tokens":
+            new_decomp["Input Tokens"] = decomp[k]
+        elif ".hook_z" in k:
+            layer = int(k.split(".")[1])
+            head = int(k.split(".")[-1])
+            new_decomp[f"Attention Layer {layer} Head {head}"] = decomp[k]
+        elif k.endswith(".hook_mlp_out"):
+            layer = int(k.split(".")[1])
+            new_decomp[f"MLP Layer {layer}"] = decomp[k]
+        elif k.endswith(".b_O"):
+            layer = int(k.split(".")[2])
+            new_decomp[f"Attention Bias Layer {layer} "] = decomp[k]
+    
+    return new_decomp

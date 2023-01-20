@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import streamlit as st
 import streamlit.components.v1 as components
@@ -12,7 +13,7 @@ from .environment import get_action_preds
 from .utils import read_index_html
 from .visualizations import (plot_action_preds, plot_attention_pattern,
                              render_env)
-
+from .analysis import get_residual_decomp, get_nice_names
 
 def render_game_screen(dt, env):
     columns = st.columns(2)
@@ -154,55 +155,23 @@ def show_ov_circuit(dt):
             st.plotly_chart(px.imshow(OV_circuit_full_reshaped[0][:,:,:,i].transpose(-1,-2).detach().numpy(), facet_col=0, color_continuous_midpoint=0), use_container_width=True)
 
 
-def show_residual_stream_contributions(dt, x, cache, tokens, logit_dir):
+def show_residual_stream_contributions(dt, cache, logit_dir):
     with st.expander("Show residual stream contributions:"):
-        x_action = x[0][1]
-        # st.write(dt.action_embedding.weight.shape)
-        st.write("action embedding: ", x_action.shape)
-        st.write("dot production of x_action with forward:", (x_action @ logit_dir).item()) # technically  forward over right
 
 
-        st.latex(
-            r'''
-            x = s_{original} + r_{mlp} + h_{1.1} + h_{1.2} \newline
-            '''
+        residual_decomp = get_residual_decomp(dt, cache, logit_dir)
+        fig = px.bar(
+            pd.DataFrame(residual_decomp, index = [0]).T
         )
-        # x_action = s_{original} + r_{mlp} + h_{1.1} + h_{1.2}
-        pos_contribution = (cache["hook_pos_embed"][1] @ logit_dir).item()
-        st.write("dot production of pos_embed with forward:", pos_contribution) # pos embed
+        fig.update_layout(
+            title="Residual Decomposition",
+            xaxis_title="Residual Stream Component",
+            yaxis_title="Contribution to Action Prediction",
+            legend_title="",
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
-        token_contribution = (tokens[0][1] @ logit_dir).item()
-        st.write("dot production of first token embedding with forward:", token_contribution) # tokens 
-
-        head_0_output = cache["blocks.0.attn.hook_z"][:,0,:] @ dt.transformer.blocks[0].attn.W_O[0]
-        head_0_contribution = (head_0_output[1] @ logit_dir).item()
-        st.write("dot production of head_0_output with forward:", head_0_contribution)
-        head_1_output = cache["blocks.0.attn.hook_z"][:,1,:] @ dt.transformer.blocks[0].attn.W_O[1]
-        head_1_contribution = (head_1_output[1] @ logit_dir).item()
-        st.write("dot production of head_1_output with forward:", head_1_contribution)
-        mlp_output = cache["blocks.0.hook_mlp_out"][1]
-        mlp_contribution =   (mlp_output @ logit_dir).item()
-        st.write("dot production of mlp_output with forward:", mlp_contribution)
-
-        state_dict = dt.state_dict()
-
-        attn_bias_0_dir = state_dict['transformer.blocks.0.attn.b_O']
-        attn_bias_contribution = (attn_bias_0_dir @ logit_dir).item()
-        st.write( "dot production of attn_bias_0_dir with forward:", attn_bias_contribution)
-
-        # mlp_bias_0_dir = state_dict['transformer.blocks.0.mlp.b_out']
-        # mlp_bias_contribution = (mlp_bias_0_dir @ logit_dir).item()
-        # st.write( "dot production of mlp_bias_0_dir with forward:", mlp_bias_contribution)
-
-        sum_of_contributions = token_contribution + head_0_contribution + \
-                    head_1_contribution + mlp_contribution + \
-                    pos_contribution + attn_bias_contribution
-        st.write("sum over contributions:", sum_of_contributions)
-        percent_explained = np.abs(sum_of_contributions) / (x_action @ logit_dir).abs().item()
-        st.write("percent explained:", percent_explained)
-
-        st.write("This appears to mostly explain how each component of the residual stream contributes to the action prediction.")
-        return logit_dir
+    return logit_dir
 
 def render_observation_view(dt, env, tokens, logit_dir):
     

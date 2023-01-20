@@ -45,19 +45,29 @@ with st.sidebar:
         selected_action_direction = action_string_to_id[selected_action_direction]
         logit_dir = dt.predict_actions.weight[selected_action_direction]
 
-show_attention_pattern(dt, cache)
-show_residual_stream_contributions(dt, x, cache, tokens, logit_dir=logit_dir)
-render_observation_view(dt, env, tokens, logit_dir)
-show_ov_circuit(dt)
-show_qk_circuit(dt)
+    analyses =  st.multiselect("Select Analyses", ["Residual Stream Contributions", "Attention Pattern", "Observation View", "OV Circuit", "QK Circuit"])
+
+if "Residual Stream Contributions" in analyses:
+    show_residual_stream_contributions(dt, cache, logit_dir=logit_dir)
+if "Attention Pattern" in analyses:
+    show_attention_pattern(dt, cache)
+if "Observation View" in analyses:
+    render_observation_view(dt, env, tokens, logit_dir)
+if "OV Circuit" in analyses:
+    show_ov_circuit(dt)
+if "QK Circuit" in analyses:
+    show_qk_circuit(dt)
+
 
 st.markdown("""---""")
 
 st.session_state.env = env
 st.session_state.dt = dt
 
-render_trajectory_details()
-reset_button()
-end = time.time()
-st.write(f"Time taken: {end - start}")
+with st.sidebar:
+    render_trajectory_details()
+    reset_button()
+    end = time.time()
+    st.write(f"Time taken: {end - start}")
+
 record_keypresses()
