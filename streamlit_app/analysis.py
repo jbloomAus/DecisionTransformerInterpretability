@@ -24,7 +24,7 @@ def name_residual_components(dt, cache):
 
     return result
 
-def get_residual_decomp(dt, cache, logit_dir, nice_names = True):
+def get_residual_decomp(dt, cache, logit_dir, nice_names = True, seq_pos = -2):
     '''
     Returns the residual decomposition for the decision transformer
     '''
@@ -35,20 +35,18 @@ def get_residual_decomp(dt, cache, logit_dir, nice_names = True):
     residual_components = name_residual_components(dt, cache)
     
     for component in residual_components:
-        # decomp[component] = cache[component]
         if component == "hook_pos_embed":
-            decomp[component] = cache[component][1] @ logit_dir
+            decomp[component] = cache[component][:,seq_pos] @ logit_dir
         elif component == "input_tokens":
-            decomp[component] = ((cache['blocks.0.hook_resid_pre'] - cache["hook_pos_embed"]) @ logit_dir)[1]
+            decomp[component] = ((cache['blocks.0.hook_resid_pre'] - cache["hook_pos_embed"]) @ logit_dir)[:,seq_pos]
         elif component.endswith(".hook_z"):
             for head in range(n_heads):
                 layer = int(component.split(".")[1])
-                output = cache[component][:,head,:] @ dt.transformer.blocks[layer].attn.W_O[head]
-                # why is this output 1?
-                decomp[component+f".{head}"] = output[1] @ logit_dir
+                output = cache[component][:,seq_pos,head,:] @ dt.transformer.blocks[layer].attn.W_O[head]
+                decomp[component+f".{head}"] = output @ logit_dir
 
         elif component.endswith(".hook_mlp_out"):
-            decomp[component] = cache[component][1] @ logit_dir
+            decomp[component] = cache[component][:,seq_pos,:] @ logit_dir
         elif component.endswith(".b_O"):
             decomp[component] = state_dict[component] @ logit_dir
 

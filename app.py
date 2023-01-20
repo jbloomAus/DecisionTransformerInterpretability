@@ -12,7 +12,7 @@ import torch as t
 from streamlit_app.visualizations import action_string_to_id
 from streamlit_app.setup import initialize_playground
 from streamlit_app.components import reset_button, show_attention_pattern, hyperpar_side_bar, record_keypresses
-from streamlit_app.components import show_residual_stream_contributions, render_trajectory_details, render_game_screen
+from streamlit_app.components import show_residual_stream_contributions_single, render_trajectory_details, render_game_screen
 from streamlit_app.components import render_observation_view, show_ov_circuit, show_qk_circuit, show_rtg_scan
 start = time.time()
 
@@ -47,8 +47,11 @@ with st.sidebar:
 
     analyses =  st.multiselect("Select Analyses", ["Residual Stream Contributions", "Attention Pattern", "Observation View", "OV Circuit", "QK Circuit"])
 
+
+show_rtg_scan(dt, logit_dir=logit_dir)
+
 if "Residual Stream Contributions" in analyses:
-    show_residual_stream_contributions(dt, cache, logit_dir=logit_dir)
+    show_residual_stream_contributions_single(dt, cache, logit_dir=logit_dir)
 if "Attention Pattern" in analyses:
     show_attention_pattern(dt, cache)
 if "Observation View" in analyses:
@@ -58,7 +61,6 @@ if "OV Circuit" in analyses:
 if "QK Circuit" in analyses:
     show_qk_circuit(dt)
 
-show_rtg_scan(dt, logit_dir=logit_dir)
 
 st.markdown("""---""")
 

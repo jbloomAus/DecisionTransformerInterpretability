@@ -155,11 +155,17 @@ def show_ov_circuit(dt):
             st.plotly_chart(px.imshow(OV_circuit_full_reshaped[0][:,:,:,i].transpose(-1,-2).detach().numpy(), facet_col=0, color_continuous_midpoint=0), use_container_width=True)
 
 
-def show_residual_stream_contributions(dt, cache, logit_dir):
+def show_residual_stream_contributions_single(dt, cache, logit_dir):
     with st.expander("Show residual stream contributions:"):
 
 
         residual_decomp = get_residual_decomp(dt, cache, logit_dir)
+
+        # this plot assumes you only have a single dim
+        for key in residual_decomp.keys():
+            residual_decomp[key] = residual_decomp[key].squeeze(0)
+            st.write(key, residual_decomp[key].shape)
+
         fig = px.bar(
             pd.DataFrame(residual_decomp, index = [0]).T
         )
@@ -176,24 +182,16 @@ def show_residual_stream_contributions(dt, cache, logit_dir):
 def show_rtg_scan(dt, logit_dir):
     with st.expander("Show RTG Scan"):
 
+        
+        batch_size = 1028
+        min_rtg = st.slider("Min RTG", min_value=-10, max_value=10, value=-1, step=1)
+        max_rtg = st.slider("Max RTG", min_value=-10, max_value=10, value=1, step=1)
 
         max_len = dt.n_ctx // 3
 
         if "timestep_adjustment" in st.session_state:
             timesteps = st.session_state.timesteps[:,-max_len:] + st.session_state.timestep_adjustment
-        
-        # tokens = dt.to_tokens(
-        #     st.session_state.obs[:,-max_len:], 
-        #     st.session_state.a[:,-max_len:],
-        #     st.session_state.rtg[:,-max_len:],
-        #     timesteps.to(dtype=t.long)
-        # )
 
-        # let's stack all the inputs to dt.to_tokens in the batch dimension, 256 times.
-
-        batch_size = 256
-        min_rtg = -10
-        max_rtg = 10
 
         obs = st.session_state.obs[:,-max_len:].repeat(batch_size, 1, 1,1,1)
         a = st.session_state.a[:,-max_len:].repeat(batch_size, 1, 1)
@@ -229,9 +227,38 @@ def show_rtg_scan(dt, logit_dir):
         fig.add_vline(x=1, line_dash="dot", line_width=1, line_color="white")
 
         st.plotly_chart(fig, use_container_width=True)
-        # st.write(action_preds)
+
+        total_dir = x[:,1,:] @ logit_dir
+
+        # Now let's do the inner product with the logit dir of the components.
+        decomp = get_residual_decomp(dt, cache,logit_dir)
+        
+        df = pd.DataFrame(decomp)
+        df["RTG"] = rtg.squeeze(1).squeeze(1).detach().cpu().numpy()
+        df["Total Dir"] = total_dir.squeeze(0).detach().cpu().numpy()
+        
+        # total dir is pretty much accurate
+        assert (total_dir.squeeze(0).detach() - df[list(decomp.keys())].sum(axis=1)).mean() < 1e-5
+        
+        fig = px.line(df, x="RTG", y=list(decomp.keys()) + ["Total Dir"], title="Action Prediction vs RTG")
 
 
+        fig.add_vline(x=-1, line_dash="dot", line_width=1, line_color="white")
+        fig.add_vline(x=0, line_dash="dot", line_width=1, line_color="white")
+        fig.add_vline(x=1, line_dash="dot", line_width=1, line_color="white")
+
+
+        st.plotly_chart(fig)
+
+        if st.checkbox("Show Correlation"):
+            st.plotly_chart(
+                px.imshow(
+                    df[list(decomp.keys()) + ["Total Dir"]].corr(),
+                    color_continuous_midpoint=0,
+                    title="Correlation between RTG and Residual Stream Components",
+                    color_continuous_scale="RdBu"
+                )
+            )
 def render_observation_view(dt, env, tokens, logit_dir):
     
     obs = st.session_state.obs[0]
