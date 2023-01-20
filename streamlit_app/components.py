@@ -173,6 +173,65 @@ def show_residual_stream_contributions(dt, cache, logit_dir):
 
     return logit_dir
 
+def show_rtg_scan(dt, logit_dir):
+    with st.expander("Show RTG Scan"):
+
+
+        max_len = dt.n_ctx // 3
+
+        if "timestep_adjustment" in st.session_state:
+            timesteps = st.session_state.timesteps[:,-max_len:] + st.session_state.timestep_adjustment
+        
+        # tokens = dt.to_tokens(
+        #     st.session_state.obs[:,-max_len:], 
+        #     st.session_state.a[:,-max_len:],
+        #     st.session_state.rtg[:,-max_len:],
+        #     timesteps.to(dtype=t.long)
+        # )
+
+        # let's stack all the inputs to dt.to_tokens in the batch dimension, 256 times.
+
+        batch_size = 256
+        min_rtg = -10
+        max_rtg = 10
+
+        obs = st.session_state.obs[:,-max_len:].repeat(batch_size, 1, 1,1,1)
+        a = st.session_state.a[:,-max_len:].repeat(batch_size, 1, 1)
+        rtg = st.session_state.rtg[:,-max_len:].repeat(batch_size, 1, 1)
+        timesteps = st.session_state.timesteps[:,-max_len:].repeat(batch_size, 1, 1) + st.session_state.timestep_adjustment
+        rtg = t.linspace(min_rtg, max_rtg, batch_size).unsqueeze(-1).unsqueeze(-1).repeat(1, max_len, 1)
+
+        tokens = dt.to_tokens(obs, a, rtg, timesteps.to(dtype=t.long))
+
+        x, cache = dt.transformer.run_with_cache(tokens, remove_batch_dim=False)
+        state_preds, action_preds, reward_preds = dt.get_logits(x, batch_size=batch_size, seq_length=max_len)
+
+        df = pd.DataFrame({
+            "RTG": rtg.squeeze(1).squeeze(1).detach().cpu().numpy(),
+            "Left": action_preds[:,0,0].detach().cpu().numpy(),
+            "Right": action_preds[:,0,1].detach().cpu().numpy(),
+            "Forward": action_preds[:,0,2].detach().cpu().numpy()
+        })
+        
+        # st.write(df.head())
+
+        # draw a line graph with left,right forward over RTG
+        fig = px.line(df, x="RTG", y=["Left", "Right", "Forward"], title="Action Prediction vs RTG")
+
+        fig.update_layout(
+            xaxis_title="RTG",
+            yaxis_title="Action Prediction",
+            legend_title="",
+        )
+        # add vertical dotted lines at RTG = -1, RTG = 0, RTG = 1
+        fig.add_vline(x=-1, line_dash="dot", line_width=1, line_color="white")
+        fig.add_vline(x=0, line_dash="dot", line_width=1, line_color="white")
+        fig.add_vline(x=1, line_dash="dot", line_width=1, line_color="white")
+
+        st.plotly_chart(fig, use_container_width=True)
+        # st.write(action_preds)
+
+
 def render_observation_view(dt, env, tokens, logit_dir):
     
     obs = st.session_state.obs[0]
