@@ -96,6 +96,12 @@ def show_attention_pattern(dt, cache):
 def show_qk_circuit(dt):
 
     with st.expander("show QK circuit"):
+
+        st.write(
+            '''
+            Usually the QK circuit uses the embedding twice but since we are interested in Atten to 
+            '''
+        )
         st.latex(
             r'''
             QK_{circuit} = W_E^T W_Q^T W_K W_E
@@ -108,23 +114,33 @@ def show_qk_circuit(dt):
         W_K = dt.transformer.blocks[0].attn.W_K
 
 
-        W_QK = einsum('head d_mod1 d_head, head d_mod2 d_head -> head d_mod1 d_mod2', W_Q, W_K)
+        W_QK = einsum('head d_mod_Q d_head, head d_mod_K d_head -> head d_mod_Q d_mod_K', W_Q, W_K)
         # st.write(W_QK.shape)
 
-        W_QK_full = W_E_rtg.T @ W_QK @ W_E_state 
+        # W_QK_full = W_E_rtg.T @ W_QK @ W_E_state 
+        W_QK_full = W_E_state.T @ W_QK @  W_E_rtg
         # st.write(W_QK_full.shape)
 
         W_QK_full_reshaped = W_QK_full.reshape(2, 1, 3, 7, 7)
         # st.write(W_QK_full_reshaped.shape)
 
-        head = st.selectbox("Select Head", options=list(range(dt.n_heads)), index=0, key="head qk")
+        heads = st.multiselect("Select Heads", options=list(range(dt.n_heads)), key="head qk")
+
         a, b, c = st.columns(3)
         with a:
-            st.plotly_chart(px.imshow(W_QK_full_reshaped[head,0,0].T.detach().numpy(), color_continuous_midpoint=0), use_container_width=True)
+            st.write("Object")
         with b:
-            st.plotly_chart(px.imshow(W_QK_full_reshaped[head,0,1].T.detach().numpy(), color_continuous_midpoint=0), use_container_width=True)
+            st.write("Color")
         with c:
-            st.plotly_chart(px.imshow(W_QK_full_reshaped[head,0,2].T.detach().numpy(), color_continuous_midpoint=0), use_container_width=True)
+            st.write("State")
+        for head in heads:
+            st.write("Head", head)
+            with a:
+                st.plotly_chart(px.imshow(W_QK_full_reshaped[head,0,0].T.detach().numpy(), color_continuous_midpoint=0), use_container_width=True)
+            with b:
+                st.plotly_chart(px.imshow(W_QK_full_reshaped[head,0,1].T.detach().numpy(), color_continuous_midpoint=0), use_container_width=True)
+            with c:
+                st.plotly_chart(px.imshow(W_QK_full_reshaped[head,0,2].T.detach().numpy(), color_continuous_midpoint=0), use_container_width=True)
 
 
 def show_ov_circuit(dt):
@@ -150,9 +166,20 @@ def show_ov_circuit(dt):
         #reshape the ov circuit
         OV_circuit_full_reshaped = OV_circuit_full.reshape(2, 3, 7, 7, 3)
 
-        for i in range(dt.env.action_space.n):
-            st.write("action: ", i)
-            st.plotly_chart(px.imshow(OV_circuit_full_reshaped[0][:,:,:,i].transpose(-1,-2).detach().numpy(), facet_col=0, color_continuous_midpoint=0), use_container_width=True)
+    
+        heads = st.multiselect("Select Heads", options=list(range(dt.n_heads)), key="head ov")
+
+        for head in heads:
+            st.write("Head", head)
+            for i in range(dt.env.action_space.n):
+                st.write("action: ", i)
+                st.plotly_chart(
+                    px.imshow(
+                        OV_circuit_full_reshaped[head][:,:,:,i].transpose(-1,-2).detach().numpy(), 
+                        facet_col=0,
+                        color_continuous_midpoint=0
+                    ), 
+                    use_container_width=True)
 
 
 def show_residual_stream_contributions_single(dt, cache, logit_dir):
@@ -226,7 +253,8 @@ def show_rtg_scan(dt, logit_dir):
         fig.add_vline(x=0, line_dash="dot", line_width=1, line_color="white")
         fig.add_vline(x=1, line_dash="dot", line_width=1, line_color="white")
 
-        st.plotly_chart(fig, use_container_width=True)
+        if st.checkbox("Show RTG Scan"):
+            st.plotly_chart(fig, use_container_width=True)
 
         total_dir = x[:,1,:] @ logit_dir
 
@@ -240,15 +268,17 @@ def show_rtg_scan(dt, logit_dir):
         # total dir is pretty much accurate
         assert (total_dir.squeeze(0).detach() - df[list(decomp.keys())].sum(axis=1)).mean() < 1e-5
         
-        fig = px.line(df, x="RTG", y=list(decomp.keys()) + ["Total Dir"], title="Action Prediction vs RTG")
+        # make a multiselect to choose the decomp keys to compare
+        decomp_keys = st.multiselect("Choose components to compare", list(decomp.keys()) + ["Total Dir"], default=list(decomp.keys())+ ["Total Dir"])
 
+        fig = px.line(df, x="RTG", y=decomp_keys, title="Residual Stream Contributions in Directional Analysis")
 
         fig.add_vline(x=-1, line_dash="dot", line_width=1, line_color="white")
         fig.add_vline(x=0, line_dash="dot", line_width=1, line_color="white")
         fig.add_vline(x=1, line_dash="dot", line_width=1, line_color="white")
 
 
-        st.plotly_chart(fig)
+        st.plotly_chart(fig, use_container_width=True)
 
         if st.checkbox("Show Correlation"):
             st.plotly_chart(
@@ -257,8 +287,10 @@ def show_rtg_scan(dt, logit_dir):
                     color_continuous_midpoint=0,
                     title="Correlation between RTG and Residual Stream Components",
                     color_continuous_scale="RdBu"
-                )
+                ),
+                use_container_width=True
             )
+
 def render_observation_view(dt, env, tokens, logit_dir):
     
     obs = st.session_state.obs[0]

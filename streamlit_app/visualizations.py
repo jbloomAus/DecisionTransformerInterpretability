@@ -23,11 +23,14 @@ def plot_action_preds(action_preds):
     st.bar_chart(action_preds)
 
 def plot_attention_pattern(cache, layer, softmax=True, specific_heads: List = None):
+
     n_tokens = st.session_state.dt.n_ctx - 1
     if softmax:
-        attention_pattern = cache["pattern", layer, "attn"]
+        if cache["pattern", layer, "attn"].shape[0] == 1:
+            attention_pattern = cache["pattern", layer, "attn"][0]
     else: 
-        attention_pattern = cache["attn_scores", layer, "attn"]
+        if cache["pattern", layer, "attn"].shape[0] == 1:
+            attention_pattern = cache["attn_scores", layer, "attn"][0]
 
     attention_pattern = attention_pattern[:,:n_tokens,:n_tokens]
     if specific_heads is not None:
