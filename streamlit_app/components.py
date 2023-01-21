@@ -7,13 +7,11 @@ import torch as t
 from einops import rearrange
 from fancy_einsum import einsum
 
-from src.visualization import render_minigrid_observations
-
 from .environment import get_action_preds
 from .utils import read_index_html
 from .visualizations import (plot_action_preds, plot_attention_pattern,
                              render_env)
-from .analysis import get_residual_decomp, get_nice_names
+from .analysis import get_residual_decomp
 
 def render_game_screen(dt, env):
     columns = st.columns(2)
