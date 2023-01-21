@@ -78,6 +78,6 @@ def get_nice_names(decomp):
             new_decomp[f"MLP Layer {layer}"] = decomp[k]
         elif k.endswith(".b_O"):
             layer = int(k.split(".")[2])
-            new_decomp[f"Attention Bias Layer {layer} "] = decomp[k]
+            new_decomp[f"Attention Bias Layer {layer}"] = decomp[k]
     
     return new_decomp
