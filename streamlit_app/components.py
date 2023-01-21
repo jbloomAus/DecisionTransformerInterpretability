@@ -283,7 +283,7 @@ def show_rtg_scan(dt, logit_dir):
         if st.checkbox("Show Correlation"):
             st.plotly_chart(
                 px.imshow(
-                    df[list(decomp.keys()) + ["Total Dir"]].corr(),
+                    df[set(list(decomp.keys()) + ["Total Dir"]) - {"Positional Embedding", "Attention Bias Layer 0"}].corr(),
                     color_continuous_midpoint=0,
                     title="Correlation between RTG and Residual Stream Components",
                     color_continuous_scale="RdBu"
