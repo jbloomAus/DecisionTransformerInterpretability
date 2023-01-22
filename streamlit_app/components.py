@@ -217,12 +217,19 @@ def show_rtg_scan(dt, logit_dir):
         if "timestep_adjustment" in st.session_state:
             timesteps = st.session_state.timesteps[:,-max_len:] + st.session_state.timestep_adjustment
 
-
         obs = st.session_state.obs[:,-max_len:].repeat(batch_size, 1, 1,1,1)
         a = st.session_state.a[:,-max_len:].repeat(batch_size, 1, 1)
         rtg = st.session_state.rtg[:,-max_len:].repeat(batch_size, 1, 1)
         timesteps = st.session_state.timesteps[:,-max_len:].repeat(batch_size, 1, 1) + st.session_state.timestep_adjustment
         rtg = t.linspace(min_rtg, max_rtg, batch_size).unsqueeze(-1).unsqueeze(-1).repeat(1, max_len, 1)
+
+        if st.checkbox("add timestep noise"):
+            # we want to add random integers in the range of a slider to the the timestep, the min/max on slider should be the max timesteps
+            if timesteps.max().item() > 0:
+                timestep_noise = st.slider("Timestep Noise", min_value=0.0, max_value=timesteps.max().item(), value=st.session_state.timestep_adjustment, step=1.0)
+                timesteps = timesteps + t.randint(low = int(-1*timestep_noise), high = int(timestep_noise), size=timesteps.shape, device=timesteps.device)
+            else:
+                st.info("Timestep noise only works when we have more than one timestep.")
 
         tokens = dt.to_tokens(obs, a, rtg, timesteps.to(dtype=t.long))
 
