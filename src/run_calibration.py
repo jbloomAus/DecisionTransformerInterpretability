@@ -41,7 +41,7 @@ if __name__ == "__main__":
         d_mlp = 256,
         n_layers = 1,
         n_ctx=n_ctx,
-        layer_norm=True,
+        layer_norm=False,
         state_embedding_type="grid", # hard-coded for now to minigrid.
         max_timestep=300
     ) 
@@ -58,6 +58,10 @@ if __name__ == "__main__":
     )
     
     fig = plot_calibration_statistics(statistics)
+    # add all the hyperparameters to the title (env id, d_model, n_heads, d_mlp, n_ctx, n_layers, max_timestep, layernorm)
+    fig.update_layout(
+        title=f"{args.env_id} - d_model: {dt.d_model} - n_heads: {dt.n_heads} - d_mlp: {dt.d_mlp} - n_ctx: {dt.n_ctx} - n_layers: {dt.n_layers} - max_timestep: {dt.max_timestep} - layernorm: {dt.layer_norm}"
+    )
 
     if not os.path.exists("figures"):
         os.mkdir("figures")
