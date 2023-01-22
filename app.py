@@ -45,11 +45,10 @@ with st.sidebar:
         selected_action_direction = action_string_to_id[selected_action_direction]
         logit_dir = dt.predict_actions.weight[selected_action_direction]
 
-    analyses =  st.multiselect("Select Analyses", ["Residual Stream Contributions", "Attention Pattern", "Observation View", "OV Circuit", "QK Circuit"])
+    analyses =  st.multiselect("Select Analyses", ["Residual Stream Contributions", "Attention Pattern", "Observation View", "OV Circuit", "QK Circuit", "Show RTG Scan"])
 
-
-show_rtg_scan(dt, logit_dir=logit_dir)
-
+if "Show RTG Scan" in analyses:
+    show_rtg_scan(dt, logit_dir=logit_dir)
 if "Residual Stream Contributions" in analyses:
     show_residual_stream_contributions_single(dt, cache, logit_dir=logit_dir)
 if "Attention Pattern" in analyses:
