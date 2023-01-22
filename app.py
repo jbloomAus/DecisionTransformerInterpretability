@@ -14,6 +14,8 @@ from streamlit_app.setup import initialize_playground
 from streamlit_app.components import reset_button, show_attention_pattern, hyperpar_side_bar, record_keypresses
 from streamlit_app.components import show_residual_stream_contributions_single, render_trajectory_details, render_game_screen
 from streamlit_app.components import render_observation_view, show_ov_circuit, show_qk_circuit, show_rtg_scan
+from streamlit_app.components import show_time_embeddings
+
 start = time.time()
 
 with st.sidebar:
@@ -47,6 +49,7 @@ with st.sidebar:
 
     analyses =  st.multiselect("Select Analyses", ["Residual Stream Contributions", "Attention Pattern", "Observation View", "OV Circuit", "QK Circuit", "Show RTG Scan"])
 
+show_time_embeddings(dt, logit_dir)
 if "Show RTG Scan" in analyses:
     show_rtg_scan(dt, logit_dir=logit_dir)
 if "Residual Stream Contributions" in analyses:

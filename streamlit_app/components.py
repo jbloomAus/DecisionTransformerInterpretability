@@ -179,6 +179,21 @@ def show_ov_circuit(dt):
                     ), 
                     use_container_width=True)
 
+def show_time_embeddings(dt, logit_dir):
+    with st.expander("Show Time Embeddings"):
+
+
+        dot_prod = dt.time_embedding.weight @ logit_dir
+        dot_prod = dot_prod.detach()
+
+        fig = px.line(dot_prod)
+        fig.update_layout(
+            title="Time Embedding Dot Product",
+            xaxis_title="Time Step",
+            yaxis_title="Dot Product",
+            legend_title="",
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
 def show_residual_stream_contributions_single(dt, cache, logit_dir):
     with st.expander("Show residual stream contributions:"):
