@@ -189,9 +189,21 @@ class TrajectoryLoader():
 
     def plot_reward_over_time(self):
 
+        reward = [i[-1] for i in self.rewards if len(i) > 0]
+        timesteps = [i.max() for i in self.timesteps if len(i) > 0]
+
+        # create a categorical color array for reward <0, 0, >0
+        colors = np.zeros(len(reward))
+        colors[np.array(reward) < 0] = -1
+        colors[np.array(reward) > 0] = 1
+
+        color_map = {-1: "Negative", 0: "Zero", 1: "Positive"}
+
+
         fig = px.scatter(
-            y=[i[-1] for i in self.rewards if len(i) > 0],
-            x=[i.max() for i in self.timesteps if len(i) > 0],
+            y=reward,
+            x=timesteps,
+            color= [color_map[i] for i in colors],
             title="Reward vs Timesteps",
             template="plotly_white",
             labels={
