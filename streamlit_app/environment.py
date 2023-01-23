@@ -22,11 +22,15 @@ def get_action_preds(dt):
     if "timestep_adjustment" in st.session_state:
         timesteps = st.session_state.timesteps[:,-max_len:] + st.session_state.timestep_adjustment
     
+    if dt.time_embedding_type == "linear":
+        timesteps.to(dtype=t.float32)
+    else: 
+        timesteps.to(dtype=t.long)
     tokens = dt.to_tokens(
         st.session_state.obs[:,-max_len:], 
         st.session_state.a[:,-max_len:],
         st.session_state.rtg[:,-max_len:],
-        timesteps.to(dtype=t.long)
+        timesteps
     )
 
     x, cache = dt.transformer.run_with_cache(tokens, remove_batch_dim=False)

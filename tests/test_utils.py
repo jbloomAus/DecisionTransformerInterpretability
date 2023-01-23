@@ -111,3 +111,17 @@ def test_load_decision_transformer():
     assert model.n_heads == 2
     assert model.n_layers == 1
     assert model.normalization_type is None
+
+def test_load_decision_transformer_linear_time():
+
+    model_path = "models/linear_model_not_performant.pt"
+    env = make_env('MiniGrid-Dynamic-Obstacles-8x8-v0', 0, 0, False, "test")()
+    model = load_decision_transformer(model_path, env)
+
+    assert model.env == env
+    assert model.env.action_space.n == 3
+    assert model.n_ctx == 3
+    assert model.d_model == 128
+    assert model.n_heads == 2
+    assert model.n_layers == 1
+    assert model.normalization_type is None

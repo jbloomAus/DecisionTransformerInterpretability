@@ -182,8 +182,13 @@ def show_ov_circuit(dt):
 def show_time_embeddings(dt, logit_dir):
     with st.expander("Show Time Embeddings"):
 
+        if dt.time_embedding_type == "linear":
+            time_steps = t.arange(100).unsqueeze(0).unsqueeze(-1).to(t.float32)
+            time_embeddings = dt.get_time_embeddings(time_steps).squeeze(0) 
+            dot_prod = time_embeddings @ logit_dir
+        else:
+            dot_prod = dt.time_embedding.weight @ logit_dir
 
-        dot_prod = dt.time_embedding.weight @ logit_dir
         dot_prod = dot_prod.detach()
 
         fig = px.line(dot_prod)
