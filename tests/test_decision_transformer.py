@@ -111,18 +111,33 @@ def test_get_reward_embeddings():
     reward_embeddings = decision_transformer.get_reward_embeddings(rtgs)
     assert reward_embeddings.shape == (1, 1, 64)
 
-def test_get_time_embeddings():
+def test_get_time_embeddings_linear():
     
     env = gym.make('MiniGrid-Empty-8x8-v0')
     env = RGBImgPartialObsWrapper(env) # Get pixel observations
     env = ImgObsWrapper(env) # Get rid of the 'mission' field
     obs, _ = env.reset() # This now produces an RGB tensor only
 
-    decision_transformer = DecisionTransformer(env)
+    decision_transformer = DecisionTransformer(env, time_embedding_type='linear')
     assert decision_transformer is not None
 
     # get time embeddings
-    times = t.tensor([0], dtype=t.long).unsqueeze(0).unsqueeze(0) # add block, add batch
+    times = t.tensor([0.0]).unsqueeze(0).unsqueeze(0) # add block, add batch
+    time_embeddings = decision_transformer.get_time_embeddings(times)
+    assert time_embeddings.shape == (1, 1, 64)
+
+def test_get_time_embeddings_categorical():
+    
+    env = gym.make('MiniGrid-Empty-8x8-v0')
+    env = RGBImgPartialObsWrapper(env) # Get pixel observations
+    env = ImgObsWrapper(env) # Get rid of the 'mission' field
+    obs, _ = env.reset() # This now produces an RGB tensor only
+
+    decision_transformer = DecisionTransformer(env, time_embedding_type='learned')
+    assert decision_transformer is not None
+
+    # get time embeddings
+    times = t.tensor([0], dtype = t.long).unsqueeze(0).unsqueeze(0) # add block, add batch
     time_embeddings = decision_transformer.get_time_embeddings(times)
     assert time_embeddings.shape == (1, 1, 64)
 

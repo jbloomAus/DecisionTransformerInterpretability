@@ -60,6 +60,9 @@ def train(
         rtg.to(device)
         timesteps.to(device)
 
+        if dt.time_embedding_type == "linear":
+            timesteps = timesteps.to(t.float32)
+
         a[a == -10] = env.action_space.n  # dummy action for padding
 
         optimizer.zero_grad()
@@ -149,6 +152,9 @@ def test(
         timesteps.to(device)
         mask.to(device)
 
+        if dt.time_embedding_type == "linear":
+            timesteps = timesteps.to(t.float32)
+
         a[a == -10] = env.action_space.n  # dummy action for padding
 
         state_preds, action_preds, reward_preds = dt.forward(
@@ -236,6 +242,10 @@ def evaluate_dt_agent(
         rtg = rtg.to(device)
         a = a.to(device)
         timesteps = timesteps.to(device)
+    
+        if dt.time_embedding_type == "linear":
+            timesteps = timesteps.to(t.float32)
+
         
         # get first action
         state_preds, action_preds, reward_preds = dt.forward(
@@ -258,6 +268,10 @@ def evaluate_dt_agent(
             # add new timesteps
             timesteps = t.cat([timesteps, t.tensor(
                 [timesteps[-1][-1].item()+1]).unsqueeze(0).unsqueeze(0).to(device)], dim=1)
+        
+            if dt.time_embedding_type == "linear":
+                timesteps = timesteps.to(t.float32)
+
             a = t.cat(
                 [a, t.tensor([new_action]).unsqueeze(0).unsqueeze(0).to(device)], dim=1)
 

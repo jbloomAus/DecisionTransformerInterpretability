@@ -80,6 +80,7 @@ class DecisionTransformer(nn.Module):
         n_layers: int = 2,
         layer_norm: bool = True,
         state_embedding_type: str = 'CNN',
+        time_embedding_type: str = 'learned',
         max_timestep: int = 2048,
         n_ctx: int = 3,
         seed: int = 1,
@@ -100,10 +101,14 @@ class DecisionTransformer(nn.Module):
         self.max_timestep = max_timestep
         self.n_ctx = n_ctx
         self.state_embedding_type = state_embedding_type
+        self.time_embedding_type = time_embedding_type
         self.device = torch.device(device)
 
         # Embedding layers
-        self.time_embedding = nn.Embedding(self.max_timestep+1, self.d_model)
+        if time_embedding_type == 'linear':
+            self.time_embedding = nn.Linear(1, self.d_model, bias=False)
+        else:
+            self.time_embedding = nn.Embedding(self.max_timestep+1, self.d_model)
 
         if state_embedding_type == 'CNN':
             self.state_encoder = StateEncoder(self.d_model)
@@ -218,7 +223,9 @@ class DecisionTransformer(nn.Module):
 
         block_size = timesteps.shape[1]
         timesteps = rearrange(timesteps, 'batch block time-> (batch block) time')
-        time_embeddings = self.time_embedding(timesteps).squeeze(-2)
+        time_embeddings = self.time_embedding(timesteps)
+        if self.time_embedding_type != 'linear':
+            time_embeddings = time_embeddings.squeeze(-2)
         time_embeddings = rearrange(time_embeddings, '(batch block) n_embd -> batch block n_embd', block=block_size)
         return time_embeddings
 

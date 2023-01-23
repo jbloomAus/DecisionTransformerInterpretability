@@ -1,15 +1,15 @@
-ls trajectories
 python src/run_decision_transformer.py \
     --exp_name "MiniGrid-Dynamic-Obstacles-8x8-v0" \
     --trajectory_path "trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl" \
     --d_model 128 \
-    --n_heads 4 \
+    --n_heads 2 \
     --d_mlp 256 \
-    --n_layers 2 \
+    --n_layers 1 \
     --learning_rate 0.0001 \
     --batch_size 128 \
-    --batches 101 \
+    --batches 6001 \
     --n_ctx 3 \
+    --linear_time_embedding \
     --pct_traj 1 \
     --weight_decay 0.001 \
     --seed 1 \

@@ -32,6 +32,7 @@ if __name__ == "__main__":
         d_mlp=args.d_mlp,
         n_layers=args.n_layers,
         layer_norm=args.layer_norm,
+        linear_time_embedding=args.linear_time_embedding,
         n_ctx=args.n_ctx, # we set the context and then train on sequences of lenght n_ctx // 3. 
         batches=args.batches,
         learning_rate=args.learning_rate,
@@ -73,6 +74,11 @@ if __name__ == "__main__":
         fig = trajectory_data_set.plot_reward_over_time()
         wandb.log({"dataset/reward_over_time": wandb.Plotly(fig)})
 
+    if args.linear_time_embedding:
+        time_embedding_type = "linear"
+    else:
+        time_embedding_type = "embedding"
+
     # make a decision transformer
     dt = DecisionTransformer(
         env = env, 
@@ -81,6 +87,7 @@ if __name__ == "__main__":
         d_mlp = args.d_mlp,
         n_layers = args.n_layers,
         layer_norm = args.layer_norm,
+        time_embedding_type = time_embedding_type,
         state_embedding_type="grid", # hard-coded for now to minigrid.
         max_timestep=trajectory_data_set.metadata.get("args").get("max_steps"), # so we can embed all the timesteps in the training data.
         n_ctx= args.n_ctx,
