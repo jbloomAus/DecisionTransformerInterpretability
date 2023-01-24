@@ -1,13 +1,6 @@
 import time
-from copy import deepcopy
-
-import gymnasium as gym
-import numpy as np
-import pandas as pd
-import plotly.express as px
 import streamlit as st
-
-import torch as t
+import os
 
 from streamlit_app.visualizations import action_string_to_id
 from streamlit_app.setup import initialize_playground
@@ -25,8 +18,7 @@ initial_rtg = hyperpar_side_bar()
 
 
 
-# model_path = "models/demo_model.pt"
-model_path = "models/linear_model_not_performant.pt"
+model_path = "models/demo_model_overnight_training.pt"
 action_string_to_id = {"left": 0, "right": 1, "forward": 2, "pickup": 3, "drop": 4, "toggle": 5, "done": 6}
 action_id_to_string = {v: k for k, v in action_string_to_id.items()}
 
