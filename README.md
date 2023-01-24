@@ -100,7 +100,7 @@ streamlit run app.py
 
 ## Setting up the environment
 
-I haven't been too careful about this yet. Using python 3.9.15 with the requirements.txt and requirements_dev.txt files. We're using the V2 branch of transformer lens and Minigrid 2.1.0.
+I haven't been too careful about this yet. Using python 3.9.15 with the requirements.txt file. We're using the V2 branch of transformer lens and Minigrid 2.1.0.
 
 The docker file should work and we can make use of it more when the project is further ahead/if we are alternativing developers frequently and have any differential behavior. 
 
