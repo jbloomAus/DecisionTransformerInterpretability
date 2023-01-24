@@ -103,6 +103,7 @@ class DecisionTransformer(nn.Module):
         self.state_embedding_type = state_embedding_type
         self.time_embedding_type = time_embedding_type
         self.device = torch.device(device)
+        self.layer_norm = layer_norm
 
         # Embedding layers
         if time_embedding_type == 'linear':

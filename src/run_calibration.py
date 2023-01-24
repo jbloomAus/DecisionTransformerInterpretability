@@ -1,4 +1,5 @@
 from environments import make_env
+from utils import load_decision_transformer
 from decision_transformer.model import DecisionTransformer
 from decision_transformer.calibration import calibration_statistics, plot_calibration_statistics
 import argparse 
@@ -32,21 +33,7 @@ if __name__ == "__main__":
     env = make_env(args.env_id, seed = 1, idx = 0, capture_video=False, run_name = "dev", fully_observed=False, max_steps=300)
     env = env()
 
-    n_ctx = 3
-    max_len = n_ctx // 3
-    dt = DecisionTransformer(
-        env = env, 
-        d_model = 128,
-        n_heads = 4,
-        d_mlp = 256,
-        n_layers = 1,
-        n_ctx=n_ctx,
-        layer_norm=False,
-        state_embedding_type="grid", # hard-coded for now to minigrid.
-        max_timestep=300
-    ) 
-
-    dt.load_state_dict(t.load(args.model_path))
+    dt = load_decision_transformer(args.model_path, env)
 
     warnings.filterwarnings("ignore", category=UserWarning)
     statistics = calibration_statistics(
@@ -59,8 +46,10 @@ if __name__ == "__main__":
     
     fig = plot_calibration_statistics(statistics)
     # add all the hyperparameters to the title (env id, d_model, n_heads, d_mlp, n_ctx, n_layers, max_timestep, layernorm)
+    # make font title smaller
     fig.update_layout(
-        title=f"{args.env_id} - d_model: {dt.d_model} - n_heads: {dt.n_heads} - d_mlp: {dt.d_mlp} - n_ctx: {dt.n_ctx} - n_layers: {dt.n_layers} - max_timestep: {dt.max_timestep} - layernorm: {dt.layer_norm}"
+        title=f"{args.env_id} - d_model: {dt.d_model} - n_heads: {dt.n_heads} - d_mlp: {dt.d_mlp} - n_ctx: {dt.n_ctx} - n_layers: {dt.n_layers} - max_timestep: {dt.max_timestep}",
+        title_font_size=10
     )
 
     if not os.path.exists("figures"):

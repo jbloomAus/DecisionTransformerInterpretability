@@ -8,7 +8,7 @@ import wandb
 import re
 import torch as t
 from typeguard import typechecked
-from src.decision_transformer.model import DecisionTransformer
+from decision_transformer.model import DecisionTransformer
 
 class TrajectoryWriter():
     '''
