@@ -189,18 +189,21 @@ def show_rtg_scan(dt, logit_dir):
 
 def render_observation_view(dt, env, tokens, logit_dir):
     
-    obs = st.session_state.obs[0]
-    last_obs = obs[-1]
-
     weights = dt.state_encoder.weight.detach().cpu()
-    last_obs = st.session_state.obs[0][-1]
 
     weights_objects = weights[:,:49]#.reshape(128, 7, 7)
     weights_colors = weights[:,49:98]#.reshape(128, 7, 7)
     weights_states = weights[:,98:]#.reshape(128, 7, 7)
 
-    last_obs_reshaped = rearrange(last_obs, "h w c -> (c h w)").to(t.float32).contiguous()
-    state_encoding = last_obs_reshaped @  dt.state_encoder.weight.detach().cpu().T
+    last_obs = st.session_state.obs[0][-1]
+    
+    last_obs_reshaped = rearrange(last_obs, "h w c -> c h w")
+    st.write(last_obs_reshaped.shape
+    )
+
+    obj_embedding = weights_objects @ last_obs_reshaped[0].flatten().to(t.float32)
+    col_embedding = weights_colors @ last_obs_reshaped[1].flatten().to(t.float32)
+    state_embedding = weights_states @ last_obs_reshaped[2].flatten().to(t.float32)
 
 
     timesteps = st.session_state.timesteps[0][-1]
@@ -211,26 +214,10 @@ def render_observation_view(dt, env, tokens, logit_dir):
 
     time_embedding = dt.time_embedding(timesteps)
 
-    st.write("time embedding shape is", time_embedding.shape)
-    st.write(tokens[0][1].shape)
-    
-    if st.session_state.timestep_adjustment == 0: # don't test otherwise, unnecessary
-        t.testing.assert_allclose(
-            tokens[0][1] - time_embedding[0],
-            state_encoding
-        )
+    assert_channel_decomposition_valid(
+        dt, last_obs, tokens, obj_embedding, col_embedding, state_embedding, time_embedding
+    )
 
-    last_obs_reshaped = rearrange(last_obs, "h w c -> c h w")
-    obj_embedding = weights_objects @ last_obs_reshaped[0].flatten().to(t.float32)
-    col_embedding = weights_colors @ last_obs_reshaped[1].flatten().to(t.float32)
-    state_embedding = weights_states @ last_obs_reshaped[2].flatten().to(t.float32)
-
-    # ok now we can confirm that the state embedding is the same as the object embedding + color embedding
-    if st.session_state.timestep_adjustment == 0: # don't test otherwise, unnecessary
-        t.testing.assert_allclose(
-                tokens[0][1] - time_embedding[0],
-                obj_embedding + col_embedding + state_embedding
-        )
 
 
     with st.expander("Show observation view"):
@@ -261,10 +248,10 @@ def render_observation_view(dt, env, tokens, logit_dir):
         normalize = st.checkbox("Normalize weight_projection", value=True)
 
         def plot_weights_obs_and_proj(weights, obs, logit_dir, normalize=True):
-            proj = project_weights_onto_dir(weights, logit_dir)
             fig = px.imshow(obs.T)
             fig.update_layout(coloraxis_showscale=False, margin=dict(l=0, r=0, t=0, b=0))
             st.plotly_chart(fig, use_container_width=True, autosize=False, width =900)
+            proj = project_weights_onto_dir(weights, logit_dir)
             fig = px.imshow(proj.T.detach().numpy(), color_continuous_midpoint=0)
             fig.update_layout(coloraxis_showscale=False)
             st.plotly_chart(fig, use_container_width=True)
@@ -297,3 +284,23 @@ def render_observation_view(dt, env, tokens, logit_dir):
                 logit_dir,
                 normalize=normalize
             )
+
+def assert_channel_decomposition_valid(dt, last_obs, tokens, obj_embedding, col_embedding, state_embedding, time_embedding):
+
+    last_obs_reshaped = rearrange(last_obs, "h w c -> (c h w)").to(t.float32).contiguous()
+    state_encoding = last_obs_reshaped @  dt.state_encoder.weight.detach().cpu().T
+
+    if st.session_state.timestep_adjustment == 0: # don't test otherwise, unnecessary
+        t.testing.assert_allclose(
+            tokens[0][1] - time_embedding[0],
+            state_encoding
+        )
+
+
+    # ok now we can confirm that the state embedding is the same as the object embedding + color embedding
+    if st.session_state.timestep_adjustment == 0: # don't test otherwise, unnecessary
+        t.testing.assert_allclose(
+                tokens[0][1] - time_embedding[0],
+                obj_embedding + col_embedding + state_embedding
+        )
+
