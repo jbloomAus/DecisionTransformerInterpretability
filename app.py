@@ -15,7 +15,12 @@ from streamlit_app.visualizations import action_string_to_id
 
 start = time.time()
 
+st.set_page_config(
+    page_title="Decision Transformer Interpretability",
+    page_icon="assets/logofiles/Logo_black.ico",
+)
 with st.sidebar:
+    st.image("assets/logofiles/Logo_transparent.png", use_column_width='always')
     st.title("Decision Transformer Interpretability")
 
 initial_rtg = hyperpar_side_bar()

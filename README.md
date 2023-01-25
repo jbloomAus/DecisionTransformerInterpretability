@@ -1,5 +1,8 @@
-# DecisionTransformerInterpretability
+# Decision Transformer Interpretability
 
+<!-- add logo -->
+
+![DecisionTransformerInterpretabilityLogo](assets/logofiles/Logo_transparent.png)
 
 In this project, we intend to apply a mathematical framework for transformer circuits to study transformer models trained on reinforcement tasks to create a simpler context than large language models for understanding high-level concepts, such as goal-directedness, in transformer architecture.
 
