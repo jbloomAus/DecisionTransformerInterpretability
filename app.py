@@ -1,13 +1,17 @@
 import time
-import streamlit as st
-import os
 
-from streamlit_app.visualizations import action_string_to_id
+import streamlit as st
+
+from streamlit_app.components import (hyperpar_side_bar, record_keypresses,
+                                      render_game_screen,
+                                      render_trajectory_details, reset_button)
+from streamlit_app.dynamic_analysis_components import (
+    render_observation_view, show_attention_pattern,
+    show_residual_stream_contributions_single, show_rtg_scan)
 from streamlit_app.setup import initialize_playground
-from streamlit_app.components import reset_button, show_attention_pattern, hyperpar_side_bar, record_keypresses
-from streamlit_app.components import show_residual_stream_contributions_single, render_trajectory_details, render_game_screen
-from streamlit_app.components import render_observation_view, show_ov_circuit, show_qk_circuit, show_rtg_scan
-from streamlit_app.components import show_time_embeddings
+from streamlit_app.static_analysis_components import (show_ov_circuit, show_qk_circuit,
+                                          show_time_embeddings)
+from streamlit_app.visualizations import action_string_to_id
 
 start = time.time()
 
@@ -42,13 +46,15 @@ with st.sidebar:
         logit_dir = dt.predict_actions.weight[selected_action_direction]
 
     st.subheader("Analysis Selection")
-    static_analyses =  st.multiselect("Select Static Analyses", ["Time Embeddin", "OV Circuit", "QK Circuit"])
+    static_analyses =  st.multiselect("Select Static Analyses", ["Time Embeddings", "OV Circuit", "QK Circuit"])
     dynamic_analyses =  st.multiselect("Select Dynamic Analyses", ["Show RTG Scan", "Residual Stream Contributions", "Attention Pattern", "Observation View"])
 
 analyses = dynamic_analyses + static_analyses
 
 if len(analyses) == 0:
     st.warning("Please select at least one analysis.")
+
+#show_attn_scan(dt)
 
 if "Show RTG Scan" in analyses:
     show_rtg_scan(dt, logit_dir=logit_dir)
