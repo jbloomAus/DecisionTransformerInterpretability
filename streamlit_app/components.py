@@ -29,7 +29,7 @@ def render_game_screen(dt, env):
 
 def hyperpar_side_bar():
     with st.sidebar:
-        st.subheader("Hyperparameters:")
+        st.subheader("Hyperparameters")
         allow_extrapolation = st.checkbox("Allow extrapolation")
         st.session_state.allow_extrapolation = allow_extrapolation
         if allow_extrapolation:
@@ -47,31 +47,7 @@ def hyperpar_side_bar():
 def show_attention_pattern(dt, cache):
 
     
-    with st.expander("show attention pattern"):
-
-
-        st.write(cache.keys())
-
-        # QK_circuit = einsum('head d_mod1 d_mod2, d_mod2 d_mod3, d_mod3 d_mod1 -> head d_mod1 d_mod1', W_QK, W_E_state, W_E_rtg)
-        # QK_circuit_full = W_E.T @ W_OV @ W_U.T
-        # st.write(OV_circuit_full.shape)
-
-        # a, b = st.columns(2)
-
-        # with a:
-        #     st.write("Q")
-        #     q_cache = cache['blocks.0.attn.hook_q']
-        #     fig = px.line(q_cache[:,0].detach().numpy().T)
-        #     st.plotly_chart(fig, use_container_width=True)
-
-        # with b:
-        #     st.write("K")
-        #     k_cache = cache['blocks.0.attn.hook_k']
-        #     fig = px.line(k_cache[:,0].detach().numpy().T)
-        #     st.plotly_chart(fig, use_container_width=True)
-
-
-        st.write('---')
+    with st.expander("Attention Pattern at at current Reward-to-Go"):
 
         st.latex(
             r'''
@@ -93,7 +69,6 @@ def show_attention_pattern(dt, cache):
         else:
             layer = st.slider("Layer", min_value=0, max_value=dt.n_layers-1, value=0, step=1)
             plot_attention_pattern(cache,layer, softmax=softmax, specific_heads=heads)
-
 
 def show_qk_circuit(dt):
 
@@ -143,7 +118,6 @@ def show_qk_circuit(dt):
                 st.plotly_chart(px.imshow(W_QK_full_reshaped[head,0,1].T.detach().numpy(), color_continuous_midpoint=0), use_container_width=True)
             with c:
                 st.plotly_chart(px.imshow(W_QK_full_reshaped[head,0,2].T.detach().numpy(), color_continuous_midpoint=0), use_container_width=True)
-
 
 def show_ov_circuit(dt):
 
@@ -211,7 +185,7 @@ def show_time_embeddings(dt, logit_dir):
         st.plotly_chart(fig, use_container_width=True)
 
 def show_residual_stream_contributions_single(dt, cache, logit_dir):
-    with st.expander("Show residual stream contributions:"):
+    with st.expander("Show Residual Stream Contributions at current Reward-to-Go"):
 
 
         residual_decomp = get_residual_decomp(dt, cache, logit_dir)
@@ -235,7 +209,7 @@ def show_residual_stream_contributions_single(dt, cache, logit_dir):
     return logit_dir
 
 def show_rtg_scan(dt, logit_dir):
-    with st.expander("Show RTG Scan"):
+    with st.expander("Scan Reward-to-Go and Show Residual Contributions"):
 
         
         batch_size = 1028

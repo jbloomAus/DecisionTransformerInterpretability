@@ -60,8 +60,14 @@ def plot_attention_pattern(cache, layer, softmax=True, specific_heads: List = No
 
     fig = px.imshow(
         attention_pattern,
-        facet_col=0, range_color=[0,1])
-    st.plotly_chart(fig)
+        facet_col=0, 
+        range_color=[0,1],
+        x = ["RTG","State"],
+        y = ["RTG","State"]
+    )
+    # fig.update_xaxes(showticklabels=False).update_yaxes(showticklabels=False)
+
+    st.plotly_chart(fig, use_container_width=True)
 
 def render_env(env):
     img = env.render()
