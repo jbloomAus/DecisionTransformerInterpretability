@@ -7,9 +7,8 @@ python src/run_decision_transformer.py \
     --n_layers 1 \
     --learning_rate 0.0001 \
     --batch_size 128 \
-    --batches 6001 \
+    --batches 126001 \
     --n_ctx 3 \
-    --linear_time_embedding \
     --pct_traj 1 \
     --weight_decay 0.001 \
     --seed 1 \
@@ -23,3 +22,4 @@ python src/run_decision_transformer.py \
     --eval_max_time_steps 1000 \
     --cuda True \
     --track False 
+    # --linear_time_embedding \
