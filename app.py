@@ -36,13 +36,20 @@ with st.sidebar:
         negative_action_direction = action_string_to_id[negative_action_direction]
         logit_dir =  dt.predict_actions.weight[positive_action_direction] - dt.predict_actions.weight[negative_action_direction]
     else: 
+        st.warning("Single Logit Analysis may be misleading.")
         selected_action_direction = st.selectbox("Selected Action Direction", ["left", "right", "forward", "pickup", "drop", "toggle", "done"], index = 2)
         selected_action_direction = action_string_to_id[selected_action_direction]
         logit_dir = dt.predict_actions.weight[selected_action_direction]
 
-    analyses =  st.multiselect("Select Analyses", ["Residual Stream Contributions", "Attention Pattern", "Observation View", "OV Circuit", "QK Circuit", "Show RTG Scan"])
+    st.subheader("Analysis Selection")
+    static_analyses =  st.multiselect("Select Static Analyses", ["Time Embeddin", "OV Circuit", "QK Circuit"])
+    dynamic_analyses =  st.multiselect("Select Dynamic Analyses", ["Residual Stream Contributions", "Attention Pattern", "Observation View", "OV Circuit", "QK Circuit", "Show RTG Scan"])
 
-show_time_embeddings(dt, logit_dir)
+analyses = dynamic_analyses + static_analyses
+
+if len(analyses) == 0:
+    st.warning("Please select at least one analysis.")
+
 if "Show RTG Scan" in analyses:
     show_rtg_scan(dt, logit_dir=logit_dir)
 if "Residual Stream Contributions" in analyses:
@@ -51,10 +58,14 @@ if "Attention Pattern" in analyses:
     show_attention_pattern(dt, cache)
 if "Observation View" in analyses:
     render_observation_view(dt, env, tokens, logit_dir)
-if "OV Circuit" in analyses:
-    show_ov_circuit(dt)
+
+if "time embeddings" in analyses:
+    show_time_embeddings(dt, logit_dir)
 if "QK Circuit" in analyses:
     show_qk_circuit(dt)
+if "OV Circuit" in analyses:
+    show_ov_circuit(dt)
+
 
 
 st.markdown("""---""")
