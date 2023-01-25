@@ -8,7 +8,7 @@ action_id_to_string = {v: k for k, v in action_string_to_id.items()}
 def initialize_playground(model_path, initial_rtg):
 
     if "env" not in st.session_state or "dt" not in st.session_state:
-        st.write("Loading environment and decision transformer...")
+
         env, dt = get_env_and_dt(model_path)
         obs, _ = env.reset()
 
