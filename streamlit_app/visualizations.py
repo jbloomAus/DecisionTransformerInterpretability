@@ -44,7 +44,7 @@ def plot_action_preds(action_preds):
 
     st.plotly_chart(fig, use_container_width=True)
 
-def plot_attention_pattern(cache, layer, softmax=True, specific_heads: List = None):
+def plot_attention_patter_single(cache, layer, softmax=True, specific_heads: List = None):
 
     n_tokens = st.session_state.dt.n_ctx - 1
     if softmax:

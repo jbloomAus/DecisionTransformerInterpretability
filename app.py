@@ -54,8 +54,6 @@ analyses = dynamic_analyses + static_analyses
 if len(analyses) == 0:
     st.warning("Please select at least one analysis.")
 
-#show_attn_scan(dt)
-
 if "Show RTG Scan" in analyses:
     show_rtg_scan(dt, logit_dir=logit_dir)
 if "Residual Stream Contributions" in analyses:
@@ -65,7 +63,7 @@ if "Attention Pattern" in analyses:
 if "Observation View" in analyses:
     render_observation_view(dt, env, tokens, logit_dir)
 
-if "time embeddings" in analyses:
+if "Time Embeddings" in analyses:
     show_time_embeddings(dt, logit_dir)
 if "QK Circuit" in analyses:
     show_qk_circuit(dt)

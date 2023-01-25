@@ -1,16 +1,10 @@
-import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-import streamlit.components.v1 as components
 import torch as t
 from einops import rearrange
-from fancy_einsum import einsum
 
-from .environment import get_action_preds
-from .utils import read_index_html
-from .visualizations import (plot_action_preds, plot_attention_pattern,
-                             render_env)
+from .visualizations import plot_attention_patter_single
 from .analysis import get_residual_decomp
 
 def show_attention_pattern(dt, cache):
@@ -33,10 +27,10 @@ def show_attention_pattern(dt, cache):
         heads = st.multiselect("Select Heads", options=list(range(dt.n_heads)), default=list(range(dt.n_heads)), key="heads")
 
         if dt.n_layers == 1:
-            plot_attention_pattern(cache,0, softmax=softmax, specific_heads=heads)
+            plot_attention_patter_single(cache,0, softmax=softmax, specific_heads=heads)
         else:
             layer = st.slider("Layer", min_value=0, max_value=dt.n_layers-1, value=0, step=1)
-            plot_attention_pattern(cache,layer, softmax=softmax, specific_heads=heads)
+            plot_attention_patter_single(cache,layer, softmax=softmax, specific_heads=heads)
 
 def show_residual_stream_contributions_single(dt, cache, logit_dir):
     with st.expander("Show Residual Stream Contributions at current Reward-to-Go"):
@@ -165,6 +159,23 @@ def show_rtg_scan(dt, logit_dir):
         # add a little more margin to the top
         st.plotly_chart(fig, use_container_width=True)
 
+        columns = st.columns(2)
+        with columns[0]:
+            attention_pattern = cache["attn_scores", 0, "attn"]
+            layer = st.selectbox("Layer", list(range(dt.n_layers)))
+        with columns[1]:
+            head = st.selectbox("Head", list(range(attention_pattern.shape[1])))
+
+        fig = px.line(
+            x = t.linspace(min_rtg, max_rtg, batch_size),
+            y = attention_pattern[:,head,1,0],
+            title=f"Attention State to RTG for Layer {layer} Head {head}",
+            labels={
+                "x": "RTG",
+                "y": "Attention"
+            },
+        )
+        st.plotly_chart(fig, use_container_width=True)
 
         st.plotly_chart(
             px.imshow(
