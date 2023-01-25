@@ -34,6 +34,7 @@ action_id_to_string = {v: k for k, v in action_string_to_id.items()}
 st.session_state.max_len = 1
 env, dt = initialize_playground(model_path, initial_rtg)
 x, cache, tokens = render_game_screen(dt, env)
+record_keypresses()
 
 with st.sidebar:
     st.subheader("Directional Analysis")
