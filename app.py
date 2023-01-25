@@ -43,7 +43,7 @@ with st.sidebar:
 
     st.subheader("Analysis Selection")
     static_analyses =  st.multiselect("Select Static Analyses", ["Time Embeddin", "OV Circuit", "QK Circuit"])
-    dynamic_analyses =  st.multiselect("Select Dynamic Analyses", ["Residual Stream Contributions", "Attention Pattern", "Observation View", "OV Circuit", "QK Circuit", "Show RTG Scan"])
+    dynamic_analyses =  st.multiselect("Select Dynamic Analyses", ["Show RTG Scan", "Residual Stream Contributions", "Attention Pattern", "Observation View"])
 
 analyses = dynamic_analyses + static_analyses
 
