@@ -198,6 +198,12 @@ def show_time_embeddings(dt, logit_dir):
             yaxis_title="Dot Product",
             legend_title="",
         )
+        fig.add_vline(
+            x=st.session_state.timesteps[0][-1].item() +  st.session_state.timestep_adjustment, 
+            line_dash="dash", 
+            line_color="red", 
+            annotation_text="Current timestep"
+            )
         st.plotly_chart(fig, use_container_width=True)
 
 def show_residual_stream_contributions_single(dt, cache, logit_dir):
@@ -209,7 +215,7 @@ def show_residual_stream_contributions_single(dt, cache, logit_dir):
         # this plot assumes you only have a single dim
         for key in residual_decomp.keys():
             residual_decomp[key] = residual_decomp[key].squeeze(0)
-            st.write(key, residual_decomp[key].shape)
+            # st.write(key, residual_decomp[key].shape)
 
         fig = px.bar(
             pd.DataFrame(residual_decomp, index = [0]).T
@@ -251,7 +257,12 @@ def show_rtg_scan(dt, logit_dir):
             else:
                 st.info("Timestep noise only works when we have more than one timestep.")
 
-        tokens = dt.to_tokens(obs, a, rtg, timesteps.to(dtype=t.long))
+        if dt.time_embedding_type == "linear":
+            timesteps = timesteps.to(t.float32)
+        else:
+            timesteps = timesteps.to(t.long)
+
+        tokens = dt.to_tokens(obs, a, rtg, timesteps)
 
         x, cache = dt.transformer.run_with_cache(tokens, remove_batch_dim=False)
         state_preds, action_preds, reward_preds = dt.get_logits(x, batch_size=batch_size, seq_length=max_len)
@@ -330,8 +341,19 @@ def render_observation_view(dt, env, tokens, logit_dir):
 
     last_obs_reshaped = rearrange(last_obs, "h w c -> (c h w)").to(t.float32).contiguous()
     state_encoding = last_obs_reshaped @  dt.state_encoder.weight.detach().cpu().T
-    time_embedding = dt.time_embedding(st.session_state.timesteps[0][-1])
 
+
+    timesteps = st.session_state.timesteps[0][-1]
+    if dt.time_embedding_type == "linear":
+        timesteps = timesteps.to(t.float32)
+    else:
+        timesteps = timesteps.to(t.long)
+
+    time_embedding = dt.time_embedding(timesteps)
+
+    st.write("time embedding shape is", time_embedding.shape)
+    st.write(tokens[0][1].shape)
+    
     if st.session_state.timestep_adjustment == 0: # don't test otherwise, unnecessary
         t.testing.assert_allclose(
             tokens[0][1] - time_embedding[0],
@@ -358,11 +380,14 @@ def render_observation_view(dt, env, tokens, logit_dir):
         col_contribution = (col_embedding @ logit_dir).item()
         st.write("dot production of colour embedding with forward:", col_contribution) # tokens 
 
-        time_contribution = (time_embedding[0] @ logit_dir).item()
-        st.write("dot production of time embedding with forward:", time_contribution) # tokens 
-
         state_contribution = (state_embedding @ logit_dir).item()
         st.write("dot production of state embedding with forward:", state_contribution) # tokens
+
+        if dt.time_embedding_type == "linear":
+            time_contribution = (time_embedding @ logit_dir).item()
+        else:
+            time_contribution = (time_embedding[0] @ logit_dir).item()
+        st.write("dot production of time embedding with forward:", time_contribution) # tokens 
 
         st.write("Sum of contributions", obj_contribution + col_contribution + time_contribution + state_contribution)
 
