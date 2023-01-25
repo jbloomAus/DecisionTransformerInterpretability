@@ -20,7 +20,29 @@ def plot_action_preds(action_preds):
         action_preds, 
         index=list(action_id_to_string.values())[:3]
         )
-    st.bar_chart(action_preds)
+    fig = px.bar(action_preds, orientation='h',
+        labels={"index": "", "value": "Probability"},
+        height=320,
+        width= 320,
+        # labels={"index": "Action", "value": "Probability"},
+        text = action_preds[0].astype(float).round(2),
+    )
+    fig.update_layout(
+        margin=dict(l=0, r=0, t=10, b=20),
+        showlegend=False,
+        font = dict(size=18)
+    )
+    # fig.update_xaxes(
+    #     range=[0,1]
+    # )
+    fig.update_yaxes(
+        # ticktext=action_preds,
+        tickfont=dict(size=18, color = "white"),
+        ticklabelposition="inside",
+        automargin = True
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
 
 def plot_attention_pattern(cache, layer, softmax=True, specific_heads: List = None):
 
