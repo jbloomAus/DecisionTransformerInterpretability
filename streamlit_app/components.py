@@ -31,6 +31,7 @@ def hyperpar_side_bar():
     with st.sidebar:
         st.subheader("Hyperparameters:")
         allow_extrapolation = st.checkbox("Allow extrapolation")
+        st.session_state.allow_extrapolation = allow_extrapolation
         if allow_extrapolation:
             initial_rtg = st.slider("Initial RTG", min_value=-10.0, max_value=10.0, value=0.91, step=0.01)
         else:
@@ -238,9 +239,21 @@ def show_rtg_scan(dt, logit_dir):
 
         
         batch_size = 1028
-        min_rtg = st.slider("Min RTG", min_value=-10, max_value=10, value=-1, step=1)
-        max_rtg = st.slider("Max RTG", min_value=-10, max_value=10, value=1, step=1)
-
+        if st.session_state.allow_extrapolation:
+            min_value = -10
+            max_value = 10
+        else:
+            min_value = -1
+            max_value = 1
+        rtg_range = st.slider(
+            "Min RTG", 
+            min_value=min_value, 
+            max_value=max_value, 
+            value=(-1,1), 
+            step=1
+        )
+        min_rtg = rtg_range[0]
+        max_rtg = rtg_range[1]
         max_len = dt.n_ctx // 3
 
         if "timestep_adjustment" in st.session_state:
@@ -255,7 +268,13 @@ def show_rtg_scan(dt, logit_dir):
         if st.checkbox("add timestep noise"):
             # we want to add random integers in the range of a slider to the the timestep, the min/max on slider should be the max timesteps
             if timesteps.max().item() > 0:
-                timestep_noise = st.slider("Timestep Noise", min_value=0.0, max_value=timesteps.max().item(), value=st.session_state.timestep_adjustment, step=1.0)
+                timestep_noise = st.slider(
+                    "Timestep Noise", 
+                    min_value=1.0, 
+                    max_value=timesteps.max().item(), 
+                    value=1.0, 
+                    step=1.0
+                )
                 timesteps = timesteps + t.randint(low = int(-1*timestep_noise), high = int(timestep_noise), size=timesteps.shape, device=timesteps.device)
             else:
                 st.info("Timestep noise only works when we have more than one timestep.")
@@ -292,8 +311,7 @@ def show_rtg_scan(dt, logit_dir):
         fig.add_vline(x=0, line_dash="dot", line_width=1, line_color="white")
         fig.add_vline(x=1, line_dash="dot", line_width=1, line_color="white")
 
-        if st.checkbox("Show RTG Scan"):
-            st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True)
 
         total_dir = x[:,1,:] @ logit_dir
 
@@ -316,19 +334,19 @@ def show_rtg_scan(dt, logit_dir):
         fig.add_vline(x=0, line_dash="dot", line_width=1, line_color="white")
         fig.add_vline(x=1, line_dash="dot", line_width=1, line_color="white")
 
-
+        # add a little more margin to the top
         st.plotly_chart(fig, use_container_width=True)
 
-        if st.checkbox("Show Correlation"):
-            st.plotly_chart(
-                px.imshow(
-                    df[set(list(decomp.keys()) + ["Total Dir"]) - {"Positional Embedding", "Attention Bias Layer 0"}].corr(),
-                    color_continuous_midpoint=0,
-                    title="Correlation between RTG and Residual Stream Components",
-                    color_continuous_scale="RdBu"
-                ),
-                use_container_width=True
-            )
+
+        st.plotly_chart(
+            px.imshow(
+                df[set(list(decomp.keys()) + ["Total Dir"]) - {"Positional Embedding", "Attention Bias Layer 0"}].corr(),
+                color_continuous_midpoint=0,
+                title="Correlation between RTG and Residual Stream Components",
+                color_continuous_scale="RdBu"
+            ),
+            use_container_width=True
+        )
 
 def render_observation_view(dt, env, tokens, logit_dir):
     
