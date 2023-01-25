@@ -13,14 +13,16 @@
     const toggle_button = buttons.find(el => el.innerText === 'Toggle');
     const done_button = buttons.find(el => el.innerText === 'Done');
     
-    left_button.style.backgroundColor = "coral"
-    right_button.style.backgroundColor = "lightblue"
-    forward_button.style.backgroundColor = "yellow"
-    pickup_button.style.backgroundColor = "lightgreen"
-    drop_button.style.backgroundColor = "pink"
-    toggle_button.style.backgroundColor = "lightgray"
-    done_button.style.backgroundColor = "orange"
-    
+
+    // set all button display to none
+    left_button.style.display = "none"
+    right_button.style.display = "none"
+    forward_button.style.display = "none"
+    pickup_button.style.display = "none"
+    drop_button.style.display = "none"
+    toggle_button.style.display = "none"
+    done_button.style.display = "none"
+
     streamlitDoc.addEventListener('keydown', function(e) {
         switch (e.key) {
             case 'ArrowLeft':
