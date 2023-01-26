@@ -10,7 +10,7 @@ from streamlit_app.dynamic_analysis_components import (
     show_residual_stream_contributions_single, show_rtg_scan)
 from streamlit_app.setup import initialize_playground
 from streamlit_app.static_analysis_components import (show_ov_circuit, show_qk_circuit,
-                                          show_time_embeddings)
+                                          show_time_embeddings, show_rtg_embeddings)
 from streamlit_app.visualizations import action_string_to_id
 
 start = time.time()
@@ -52,7 +52,7 @@ with st.sidebar:
         logit_dir = dt.predict_actions.weight[selected_action_direction]
 
     st.subheader("Analysis Selection")
-    static_analyses =  st.multiselect("Select Static Analyses", ["Time Embeddings", "OV Circuit", "QK Circuit"])
+    static_analyses =  st.multiselect("Select Static Analyses", ["RTG Embeddings", "Time Embeddings", "OV Circuit", "QK Circuit"])
     dynamic_analyses =  st.multiselect("Select Dynamic Analyses", ["Show RTG Scan", "Residual Stream Contributions", "Attention Pattern", "Observation View"])
 
 analyses = dynamic_analyses + static_analyses
@@ -69,6 +69,8 @@ if "Attention Pattern" in analyses:
 if "Observation View" in analyses:
     render_observation_view(dt, env, tokens, logit_dir)
 
+if "RTG Embeddings" in analyses:
+    show_rtg_embeddings(dt, logit_dir)
 if "Time Embeddings" in analyses:
     show_time_embeddings(dt, logit_dir)
 if "QK Circuit" in analyses:

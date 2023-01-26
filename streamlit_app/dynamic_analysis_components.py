@@ -69,7 +69,7 @@ def show_rtg_scan(dt, logit_dir):
             min_value = -1
             max_value = 1
         rtg_range = st.slider(
-            "Min RTG", 
+            "RTG Range", 
             min_value=min_value, 
             max_value=max_value, 
             value=(-1,1), 
