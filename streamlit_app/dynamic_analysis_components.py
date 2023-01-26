@@ -135,7 +135,8 @@ def show_rtg_scan(dt, logit_dir):
         fig.add_vline(x=0, line_dash="dot", line_width=1, line_color="white")
         fig.add_vline(x=1, line_dash="dot", line_width=1, line_color="white")
 
-        st.plotly_chart(fig, use_container_width=True)
+        if st.checkbox("Show Logit Scan"):
+            st.plotly_chart(fig, use_container_width=True)
 
         total_dir = x[:,1,:] @ logit_dir
 
@@ -149,45 +150,48 @@ def show_rtg_scan(dt, logit_dir):
         # total dir is pretty much accurate
         assert (total_dir.squeeze(0).detach() - df[list(decomp.keys())].sum(axis=1)).mean() < 1e-5
         
-        # make a multiselect to choose the decomp keys to compare
-        decomp_keys = st.multiselect("Choose components to compare", list(decomp.keys()) + ["Total Dir"], default=list(decomp.keys())+ ["Total Dir"])
+        if st.checkbox("Show component contributions"):
+            # make a multiselect to choose the decomp keys to compare
+            decomp_keys = st.multiselect("Choose components to compare", list(decomp.keys()) + ["Total Dir"], default=list(decomp.keys())+ ["Total Dir"])
 
-        fig = px.line(df, x="RTG", y=decomp_keys, title="Residual Stream Contributions in Directional Analysis")
+            fig = px.line(df, x="RTG", y=decomp_keys, title="Residual Stream Contributions in Directional Analysis")
 
-        fig.add_vline(x=-1, line_dash="dot", line_width=1, line_color="white")
-        fig.add_vline(x=0, line_dash="dot", line_width=1, line_color="white")
-        fig.add_vline(x=1, line_dash="dot", line_width=1, line_color="white")
+            fig.add_vline(x=-1, line_dash="dot", line_width=1, line_color="white")
+            fig.add_vline(x=0, line_dash="dot", line_width=1, line_color="white")
+            fig.add_vline(x=1, line_dash="dot", line_width=1, line_color="white")
 
-        # add a little more margin to the top
-        st.plotly_chart(fig, use_container_width=True)
+            # add a little more margin to the top
+            st.plotly_chart(fig, use_container_width=True)
 
-        columns = st.columns(2)
-        with columns[0]:
-            attention_pattern = cache["attn_scores", 0, "attn"]
-            layer = st.selectbox("Layer", list(range(dt.n_layers)))
-        with columns[1]:
-            head = st.selectbox("Head", list(range(attention_pattern.shape[1])))
+        if st.checkbox("Show Attention Scan"):
+            columns = st.columns(2)
+            with columns[0]:
+                attention_pattern = cache["attn_scores", 0, "attn"]
+                layer = st.selectbox("Layer", list(range(dt.n_layers)))
+            with columns[1]:
+                head = st.selectbox("Head", list(range(attention_pattern.shape[1])))
 
-        fig = px.line(
-            x = t.linspace(min_rtg, max_rtg, batch_size),
-            y = attention_pattern[:,head,1,0],
-            title=f"Attention State to RTG for Layer {layer} Head {head}",
-            labels={
-                "x": "RTG",
-                "y": "Attention"
-            },
-        )
-        st.plotly_chart(fig, use_container_width=True)
+            fig = px.line(
+                x = t.linspace(min_rtg, max_rtg, batch_size),
+                y = attention_pattern[:,head,1,0],
+                title=f"Attention State to RTG for Layer {layer} Head {head}",
+                labels={
+                    "x": "RTG",
+                    "y": "Attention"
+                },
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
-        st.plotly_chart(
-            px.imshow(
-                df[set(list(decomp.keys()) + ["Total Dir"]) - {"Positional Embedding", "Attention Bias Layer 0"}].corr(),
-                color_continuous_midpoint=0,
-                title="Correlation between RTG and Residual Stream Components",
-                color_continuous_scale="RdBu"
-            ),
-            use_container_width=True
-        )
+        if st.checkbox("Show Correlation"):
+            st.plotly_chart(
+                px.imshow(
+                    df[set(list(decomp.keys()) + ["Total Dir"]) - {"Positional Embedding", "Attention Bias Layer 0"}].corr(),
+                    color_continuous_midpoint=0,
+                    title="Correlation between RTG and Residual Stream Components",
+                    color_continuous_scale="RdBu"
+                ),
+                use_container_width=True
+            )
 
 def render_observation_view(dt, env, tokens, logit_dir):
 
@@ -225,8 +229,7 @@ def render_observation_view(dt, env, tokens, logit_dir):
 
     with st.expander("Show observation view"):
 
-        show_input_channels = st.checkbox("Show input channels", value=True)
-        if show_input_channels:
+        if st.checkbox("Show input channels", value=True):
             a,b,c = st.columns(3)
             with a:
                 fancy_imshow(obs_obj)
@@ -237,8 +240,6 @@ def render_observation_view(dt, env, tokens, logit_dir):
             with c:
                 fancy_imshow(obs_state)
 
-            
-        
         if st.checkbox("Show channel weight proj onto logit dir", value=True):
             a,b,c = st.columns(3)
             with a:
@@ -258,16 +259,25 @@ def render_observation_view(dt, env, tokens, logit_dir):
                 obs = last_obs_reshaped.reshape(3,7,7)[0].detach().numpy()
                 weight_proj = proj * obs
                 fancy_imshow(weight_proj.T)
+                st.write(weight_proj.sum())
+                fig = px.histogram(weight_proj.flatten())
+                st.plotly_chart(fig, use_container_width=True)
             with b:
                 proj = project_weights_onto_dir(weights_colors, logit_dir)
                 obs = last_obs_reshaped.reshape(3,7,7)[1].detach().numpy()
                 weight_proj = proj * obs
                 fancy_imshow(weight_proj.T)
+                st.write(weight_proj.sum())
+                fig = px.histogram(weight_proj.flatten())
+                st.plotly_chart(fig, use_container_width=True)
             with c:
                 proj = project_weights_onto_dir(weights_states, logit_dir)
                 obs = last_obs_reshaped.reshape(3,7,7)[2].detach().numpy()
                 weight_proj = proj * obs
                 fancy_imshow(weight_proj.T)
+                st.write(weight_proj.sum())
+                fig = px.histogram(weight_proj.flatten())
+                st.plotly_chart(fig, use_container_width=True)
 
         obj_contribution = (obj_embedding @ logit_dir).item()
         col_contribution = (col_embedding @ logit_dir).item()
