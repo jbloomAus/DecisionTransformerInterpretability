@@ -53,6 +53,7 @@ def show_residual_stream_contributions_single(dt, cache, logit_dir):
             yaxis_title="Contribution to Action Prediction",
             legend_title="",
         )
+        fig.update_yaxes(range=[-13,13])
         st.plotly_chart(fig, use_container_width=True)
 
     return logit_dir
@@ -300,6 +301,7 @@ def render_observation_view(dt, env, tokens, logit_dir):
         # add the value to the bar
         fig.update_traces(texttemplate='%{text:.3f}', textposition='auto')
         fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+        fig.update_yaxes(range=[-8,8])
         st.plotly_chart(fig, use_container_width=True)
 
 
