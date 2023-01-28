@@ -1,6 +1,7 @@
 import time
 
 import streamlit as st
+from streamlit_modal import Modal
 
 from streamlit_app.components import (hyperpar_side_bar, record_keypresses,
                                       render_game_screen,
@@ -24,7 +25,6 @@ with st.sidebar:
     st.title("Decision Transformer Interpretability")
 
 initial_rtg = hyperpar_side_bar()
-
 
 
 model_path = "models/demo_model_overnight_training.pt"
@@ -92,3 +92,29 @@ with st.sidebar:
     st.write(f"Time taken: {end - start}")
 
 record_keypresses()
+
+st.subheader("Help")
+
+st.write(
+    """
+    - Use the arrow keys to move the agent.
+        - The agent will move forward if you press the up key.
+        - The agent will rotate left if you press the left key.
+        - The agent will rotate right if you press the right key.
+        - No other keys are supported on this environment. 
+        - The agent receives a positive reward if it reaches the goal.
+        - The agent receives a negative reward if it hits a wall or obstacle.
+        - Please press reset if either of these happens as the RTG will be incorrect if you terminate the episode and keep playing. 
+    - Use the sidebar hyperparameters to configure the agent
+        - Use the RTG hyperparameter to select the RTG you want to use. This will determine whether the Decision Transformer will simulate a trajectory that achieves high or low reward.
+        - Select "Allow Extrapolation" to select RTG's that are not in the training set.
+        - Use the timestep adjustment to pretend your trajectory is longer or shorter than it actually is.
+    - Use the directional analysis to select the direction you want to analyze when performing directional analyses.
+    - Use the sidebar to select the analysis you want to see.
+        - Static analyses interpret the agents weights. 
+        - Dynamic analyses interpret the agents activations.
+
+    - Click reset to start a new trajectory.
+    - Click on the trajectory details to see the trajectory details.
+    """
+)
