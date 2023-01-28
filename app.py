@@ -1,7 +1,6 @@
 import time
 
 import streamlit as st
-from streamlit_modal import Modal
 
 from streamlit_app.components import (hyperpar_side_bar, record_keypresses,
                                       render_game_screen,
@@ -116,5 +115,6 @@ st.write(
 
     - Click reset to start a new trajectory.
     - Click on the trajectory details to see the trajectory details.
+    - Please use *dark* mode as I haven't made all the plots look good in light mode yet.
     """
 )
