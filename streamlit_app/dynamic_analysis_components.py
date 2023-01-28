@@ -340,7 +340,7 @@ def assert_channel_decomposition_valid(dt, last_obs, tokens, obj_embedding, col_
 def project_weights_onto_dir(weights, dir):
     return t.einsum("d, d h w -> h w", dir, weights.reshape(128,7,7)).detach()
 
-def fancy_imshow(img):
-    fig = px.imshow(img)
+def fancy_imshow(img, color_continuous_midpoint=0):
+    fig = px.imshow(img, color_continuous_midpoint=color_continuous_midpoint)
     fig.update_layout(coloraxis_showscale=False, margin=dict(l=0, r=0, t=0, b=0))
     st.plotly_chart(fig, use_container_width=True, autosize=False, width =900)
