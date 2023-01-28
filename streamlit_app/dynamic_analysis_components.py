@@ -7,6 +7,7 @@ from minigrid.core.constants import IDX_TO_OBJECT, IDX_TO_COLOR
 
 from .visualizations import plot_attention_patter_single
 from .analysis import get_residual_decomp
+from .utils import fancy_histogram, fancy_imshow
 
 def show_attention_pattern(dt, cache):
 
@@ -232,7 +233,11 @@ def render_observation_view(dt, env, tokens, logit_dir):
 
     with st.expander("Show observation view"):
 
-        if st.checkbox("Show input channels", value=True):
+        input_channel_check = st.checkbox("Show input channels", value=True)
+
+
+
+        if input_channel_check:
             a,b,c = st.columns(3)
             with a:
                 fancy_imshow(obs_obj)
@@ -242,20 +247,25 @@ def render_observation_view(dt, env, tokens, logit_dir):
                 st.write(IDX_TO_COLOR)
             with c:
                 fancy_imshow(obs_state)
+        weight_proj_check = st.checkbox("Show channel weight proj onto logit dir", value=True)
 
-        if st.checkbox("Show channel weight proj onto logit dir", value=True):
+        if weight_proj_check:
             a,b,c = st.columns(3)
             with a:
                 proj = project_weights_onto_dir(weights_objects, logit_dir)
                 fancy_imshow(proj.T)
+                fancy_histogram(proj.flatten())
             with b:
                 proj = project_weights_onto_dir(weights_colors, logit_dir)
                 fancy_imshow(proj.T)
+                fancy_histogram(proj.flatten())
             with c:
                 proj = project_weights_onto_dir(weights_states, logit_dir)
                 fancy_imshow(proj.T)
-        
-        if st.checkbox("Show channel activation proj onto logit dir", value=True):
+                fancy_histogram(proj.flatten())
+
+        activ_proj_check = st.checkbox("Show channel activation proj onto logit dir", value=True)
+        if activ_proj_check:
             a,b,c = st.columns(3)
             with a:
                 proj = project_weights_onto_dir(weights_objects, logit_dir)
@@ -263,24 +273,21 @@ def render_observation_view(dt, env, tokens, logit_dir):
                 weight_proj = proj * obs
                 fancy_imshow(weight_proj.T)
                 st.write(weight_proj.sum())
-                fig = px.histogram(weight_proj.flatten())
-                st.plotly_chart(fig, use_container_width=True)
+                fancy_histogram(weight_proj.flatten())
             with b:
                 proj = project_weights_onto_dir(weights_colors, logit_dir)
                 obs = last_obs_reshaped.reshape(3,7,7)[1].detach().numpy()
                 weight_proj = proj * obs
                 fancy_imshow(weight_proj.T)
                 st.write(weight_proj.sum())
-                fig = px.histogram(weight_proj.flatten())
-                st.plotly_chart(fig, use_container_width=True)
+                fancy_histogram(weight_proj.flatten())
             with c:
                 proj = project_weights_onto_dir(weights_states, logit_dir)
                 obs = last_obs_reshaped.reshape(3,7,7)[2].detach().numpy()
                 weight_proj = proj * obs
                 fancy_imshow(weight_proj.T)
                 st.write(weight_proj.sum())
-                fig = px.histogram(weight_proj.flatten())
-                st.plotly_chart(fig, use_container_width=True)
+                fancy_histogram(weight_proj.flatten())
 
         obj_contribution = (obj_embedding @ logit_dir).item()
         col_contribution = (col_embedding @ logit_dir).item()
@@ -340,7 +347,3 @@ def assert_channel_decomposition_valid(dt, last_obs, tokens, obj_embedding, col_
 def project_weights_onto_dir(weights, dir):
     return t.einsum("d, d h w -> h w", dir, weights.reshape(128,7,7)).detach()
 
-def fancy_imshow(img, color_continuous_midpoint=0):
-    fig = px.imshow(img, color_continuous_midpoint=color_continuous_midpoint)
-    fig.update_layout(coloraxis_showscale=False, margin=dict(l=0, r=0, t=0, b=0))
-    st.plotly_chart(fig, use_container_width=True, autosize=False, width =900)

@@ -1,11 +1,8 @@
 import plotly.express as px
 import streamlit as st
-import streamlit.components.v1 as components
 import torch as t
 from fancy_einsum import einsum
-
-from .utils import read_index_html
-
+from .utils import fancy_histogram, fancy_imshow
 
 def show_qk_circuit(dt):
 
@@ -50,12 +47,12 @@ def show_qk_circuit(dt):
         for head in heads:
             st.write("Head", head)
             with a:
-                st.plotly_chart(px.imshow(W_QK_full_reshaped[head,0,0].T.detach().numpy(), color_continuous_midpoint=0), use_container_width=True)
+                fancy_imshow(W_QK_full_reshaped[head,0,0].T.detach().numpy(), color_continuous_midpoint=0)
             with b:
-                st.plotly_chart(px.imshow(W_QK_full_reshaped[head,0,1].T.detach().numpy(), color_continuous_midpoint=0), use_container_width=True)
+                fancy_imshow(W_QK_full_reshaped[head,0,1].T.detach().numpy(), color_continuous_midpoint=0)
             with c:
-                st.plotly_chart(px.imshow(W_QK_full_reshaped[head,0,2].T.detach().numpy(), color_continuous_midpoint=0), use_container_width=True)
-
+                fancy_imshow(W_QK_full_reshaped[head,0,2].T.detach().numpy(), color_continuous_midpoint=0)
+                
 def show_ov_circuit(dt):
 
     with st.expander("Show OV Circuit"):
