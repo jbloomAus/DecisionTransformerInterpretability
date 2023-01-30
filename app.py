@@ -12,7 +12,7 @@ from streamlit_app.setup import initialize_playground
 from streamlit_app.static_analysis_components import (show_ov_circuit, show_qk_circuit,
                                           show_time_embeddings, show_rtg_embeddings)
 from streamlit_app.visualizations import action_string_to_id
-
+from streamlit_app.causal_analysis_components import show_ablation
 start = time.time()
 
 st.set_page_config(
@@ -59,15 +59,6 @@ analyses = dynamic_analyses + static_analyses
 if len(analyses) == 0:
     st.warning("Please select at least one analysis.")
 
-if "Show RTG Scan" in analyses:
-    show_rtg_scan(dt, logit_dir=logit_dir)
-if "Residual Stream Contributions" in analyses:
-    show_residual_stream_contributions_single(dt, cache, logit_dir=logit_dir)
-if "Attention Pattern" in analyses:
-    show_attention_pattern(dt, cache)
-if "Observation View" in analyses:
-    render_observation_view(dt, env, tokens, logit_dir)
-
 if "RTG Embeddings" in analyses:
     show_rtg_embeddings(dt, logit_dir)
 if "Time Embeddings" in analyses:
@@ -76,6 +67,17 @@ if "QK Circuit" in analyses:
     show_qk_circuit(dt)
 if "OV Circuit" in analyses:
     show_ov_circuit(dt)
+
+show_ablation(dt, logit_dir=logit_dir)
+
+if "Show RTG Scan" in analyses:
+    show_rtg_scan(dt, logit_dir=logit_dir)
+if "Residual Stream Contributions" in analyses:
+    show_residual_stream_contributions_single(dt, cache, logit_dir=logit_dir)
+if "Attention Pattern" in analyses:
+    show_attention_pattern(dt, cache)
+if "Observation View" in analyses:
+    render_observation_view(dt, env, tokens, logit_dir)
 
 
 

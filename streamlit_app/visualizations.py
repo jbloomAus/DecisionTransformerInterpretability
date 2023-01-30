@@ -79,3 +79,25 @@ def render_env(env):
                 hspace = 0, wspace = 0)
     plt.margins(0,0)
     return fig
+
+def plot_single_residual_stream_contributions(residual_decomp):
+
+    # this plot assumes you only have a single dim
+    for key in residual_decomp.keys():
+        residual_decomp[key] = residual_decomp[key].squeeze(0)
+        # st.write(key, residual_decomp[key].shape)
+
+    fig = px.bar(
+        pd.DataFrame(residual_decomp,index = [0]).T,
+        text= residual_decomp.values(),
+    )
+    fig.update_layout(
+        title="Residual Decomposition",
+        xaxis_title="Residual Stream Component",
+        yaxis_title="Contribution to Action Prediction",
+        legend_title="",
+    )
+    fig.update_yaxes(range=[-13,13])
+    fig.update_traces(texttemplate='%{text:.3f}', textposition='auto')
+    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+    st.plotly_chart(fig, use_container_width=True)

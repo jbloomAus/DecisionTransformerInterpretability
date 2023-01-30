@@ -5,7 +5,7 @@ import torch as t
 from einops import rearrange
 from minigrid.core.constants import IDX_TO_OBJECT, IDX_TO_COLOR
 
-from .visualizations import plot_attention_patter_single
+from .visualizations import plot_attention_patter_single, plot_single_residual_stream_contributions
 from .analysis import get_residual_decomp
 from .utils import fancy_histogram, fancy_imshow
 
@@ -41,26 +41,9 @@ def show_residual_stream_contributions_single(dt, cache, logit_dir):
         residual_decomp = get_residual_decomp(dt, cache, logit_dir)
 
         # this plot assumes you only have a single dim
-        for key in residual_decomp.keys():
-            residual_decomp[key] = residual_decomp[key].squeeze(0)
-            # st.write(key, residual_decomp[key].shape)
+        plot_single_residual_stream_contributions(residual_decomp)
 
-        fig = px.bar(
-            pd.DataFrame(residual_decomp,index = [0]).T,
-            text= residual_decomp.values(),
-        )
-        fig.update_layout(
-            title="Residual Decomposition",
-            xaxis_title="Residual Stream Component",
-            yaxis_title="Contribution to Action Prediction",
-            legend_title="",
-        )
-        fig.update_yaxes(range=[-13,13])
-        fig.update_traces(texttemplate='%{text:.3f}', textposition='auto')
-        fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
-        st.plotly_chart(fig, use_container_width=True)
-
-    return logit_dir
+    return 
 
 def show_rtg_scan(dt, logit_dir):
     with st.expander("Scan Reward-to-Go and Show Residual Contributions"):
