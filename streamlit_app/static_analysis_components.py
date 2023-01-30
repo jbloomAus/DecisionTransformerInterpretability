@@ -15,7 +15,7 @@ def show_qk_circuit(dt):
         )
         st.latex(
             r'''
-            QK_{circuit} = W_E^T W_Q^T W_K W_E
+            QK_{circuit} = W_{E(state)}^T W_Q^T W_K W_{E(RTG)}
             '''
         )
 
@@ -60,7 +60,7 @@ def show_ov_circuit(dt):
 
         st.latex(
             r'''
-            OV_{circuit} = W_U \cdot (W_V \cdot W_O) \cdot W_E
+            OV_{circuit} = W_{U(action)} W_O W_V W_{E(State)}
             '''
         )
 
