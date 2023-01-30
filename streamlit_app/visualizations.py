@@ -37,7 +37,7 @@ def plot_action_preds(action_preds):
     # )
     fig.update_yaxes(
         # ticktext=action_preds,
-        tickfont=dict(size=18, color = "white"),
+        tickfont=dict(size=18),
         ticklabelposition="inside",
         automargin = True
     )
