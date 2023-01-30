@@ -101,3 +101,38 @@ def plot_single_residual_stream_contributions(residual_decomp):
     fig.update_traces(texttemplate='%{text:.3f}', textposition='auto')
     fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
     st.plotly_chart(fig, use_container_width=True)
+
+def plot_single_residual_stream_contributions_comparison(residual_decomp_1, residual_decomp_2):
+
+    # this plot assumes you only have a single dim
+    for key in residual_decomp_1.keys():
+        residual_decomp_1[key] = residual_decomp_1[key].squeeze(0)
+        residual_decomp_2[key] = residual_decomp_2[key].squeeze(0)
+        # st.write(key, residual_decomp[key].shape)
+
+    # make a df out of both dicts, one column each
+    df1 = pd.DataFrame(residual_decomp_1,index = [0]).T
+    df2 = pd.DataFrame(residual_decomp_2,index = [0]).T
+    # rename df
+    df1.columns = ["Original"]
+    df2.columns = ["Ablation"]
+    df = pd.concat([df1,df2], axis=1)
+
+
+    texts=[df1.values, df2.values]
+    fig = px.bar(df, barmode='group')
+    
+    for i, t in enumerate(texts):
+        fig.data[i].text = t
+        fig.data[i].textposition = 'auto'
+
+    fig.update_layout(
+        title="Residual Decomposition",
+        xaxis_title="Residual Stream Component",
+        yaxis_title="Contribution to Action Prediction",
+        legend_title="",
+    )
+    fig.update_yaxes(range=[-13,13])
+    fig.update_traces(texttemplate='%{text:.3f}', textposition='auto')
+    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+    st.plotly_chart(fig, use_container_width=True)

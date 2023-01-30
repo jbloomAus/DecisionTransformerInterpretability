@@ -69,7 +69,7 @@ if "OV Circuit" in analyses:
     show_ov_circuit(dt)
 
 if "Ablation" in analyses:
-    show_ablation(dt, logit_dir=logit_dir)
+    show_ablation(dt, logit_dir=logit_dir, original_cache=cache)
 
 if "Show RTG Scan" in analyses:
     show_rtg_scan(dt, logit_dir=logit_dir)

@@ -3,10 +3,10 @@ import streamlit as st
 from torchtyping import TensorType as TT
 from transformer_lens.hook_points import HookPoint
 from .environment import get_action_preds
-from .visualizations import plot_action_preds, plot_single_residual_stream_contributions
+from .visualizations import plot_action_preds, plot_single_residual_stream_contributions, plot_single_residual_stream_contributions_comparison
 from .analysis import get_residual_decomp
 
-def show_ablation(dt, logit_dir):
+def show_ablation(dt, logit_dir, original_cache):
 
     with st.expander("Ablation Experiment"):
         st.write("ablation experiment here")
@@ -39,9 +39,9 @@ def show_ablation(dt, logit_dir):
         if st.checkbox("show action predictions"):
             plot_action_preds(action_preds) 
         if st.checkbox("show counterfactual residual contributions"):
-            residual_decomp = get_residual_decomp(dt, cache, logit_dir)
-            plot_single_residual_stream_contributions(residual_decomp)
-
+            original_residual_decomp = get_residual_decomp(dt, original_cache, logit_dir)
+            ablation_residual_decomp = get_residual_decomp(dt, cache, logit_dir)
+            plot_single_residual_stream_contributions_comparison(original_residual_decomp, ablation_residual_decomp)
 
     # then, render a single residual stream contribution with the ablation
 
