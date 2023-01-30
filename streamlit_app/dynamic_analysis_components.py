@@ -307,7 +307,6 @@ def render_observation_view(dt, env, tokens, logit_dir):
         fig.update_yaxes(range=[-8,8])
         st.plotly_chart(fig, use_container_width=True)
 
-
 def assert_channel_decomposition_valid(dt, last_obs, tokens, obj_embedding, col_embedding, state_embedding, time_embedding):
 
     last_obs_reshaped = rearrange(last_obs, "h w c -> (c h w)").to(t.float32).contiguous()

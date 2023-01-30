@@ -30,23 +30,22 @@ def show_ablation(dt, logit_dir):
         if component == "HEAD":
             ablation_func = get_ablation_function(ablate_to_mean, head)
             dt.transformer.blocks[layer].attn.hook_z.add_hook(ablation_func)
-            st.write(dt.transformer.blocks[layer].attn.hook_z)
-            action_preds, x, cache, tokens = get_action_preds(dt)
+        elif component == "MLP":
+            ablation_func = get_ablation_function(ablate_to_mean, layer, component = "MLP")
+            dt.transformer.blocks[layer].hook_mlp_out.add_hook(ablation_func)
+        
+        action_preds, x, cache, tokens = get_action_preds(dt)
+
+        if st.checkbox("show action predictions"):
             plot_action_preds(action_preds) 
-            if st.checkbox("show counterfactual residual contributions"):
-                residual_decomp = get_residual_decomp(dt, cache, logit_dir)
-                plot_single_residual_stream_contributions(residual_decomp)
-
-
-
-
-        # once selected, do a forward pass with the ablation
-
+        if st.checkbox("show counterfactual residual contributions"):
+            residual_decomp = get_residual_decomp(dt, cache, logit_dir)
+            plot_single_residual_stream_contributions(residual_decomp)
 
 
     # then, render a single residual stream contribution with the ablation
 
-def get_ablation_function(ablate_to_mean, head_to_ablate):
+def get_ablation_function(ablate_to_mean, head_to_ablate, component = "HEAD"):
 
     def head_ablation_hook(
         value: TT["batch", "pos", "head_index", "d_head"],
@@ -60,4 +59,20 @@ def get_ablation_function(ablate_to_mean, head_to_ablate):
             value[:, :, head_to_ablate, :] = 0.
         return value
 
-    return head_ablation_hook
+    def mlp_ablation_hook(
+        value: TT["batch", "pos", "d_model"],
+        hook: HookPoint
+    ) -> TT["batch", "pos", "d_model"]:
+        print(f"Shape of the value tensor: {value.shape}")
+
+        if ablate_to_mean:
+            value[:, :-1, :] = value[:, :-1, :].mean(dim = 2, keepdim = True)
+        else:
+            value[:, :-1, :] = 0 # ablate all but the last token
+        return value
+
+    if component == "HEAD":
+        return head_ablation_hook
+    elif component == "MLP":
+        return mlp_ablation_hook
+

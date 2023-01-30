@@ -53,8 +53,8 @@ with st.sidebar:
     st.subheader("Analysis Selection")
     static_analyses =  st.multiselect("Select Static Analyses", ["RTG Embeddings", "Time Embeddings", "OV Circuit", "QK Circuit"])
     dynamic_analyses =  st.multiselect("Select Dynamic Analyses", ["Show RTG Scan", "Residual Stream Contributions", "Attention Pattern", "Observation View"])
-
-analyses = dynamic_analyses + static_analyses
+    causal_analyses = st.multiselect("Select Causal Analyses", ["Ablation"])
+analyses = dynamic_analyses + static_analyses + causal_analyses
 
 if len(analyses) == 0:
     st.warning("Please select at least one analysis.")
@@ -68,7 +68,8 @@ if "QK Circuit" in analyses:
 if "OV Circuit" in analyses:
     show_ov_circuit(dt)
 
-show_ablation(dt, logit_dir=logit_dir)
+if "Ablation" in analyses:
+    show_ablation(dt, logit_dir=logit_dir)
 
 if "Show RTG Scan" in analyses:
     show_rtg_scan(dt, logit_dir=logit_dir)
