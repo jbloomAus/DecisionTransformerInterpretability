@@ -103,6 +103,7 @@ def show_time_embeddings(dt, logit_dir):
 
         dot_prod = dot_prod.detach()
 
+        show_initial = st.checkbox("Show initial time embedding", value=True)
         fig = px.line(dot_prod)
         fig.update_layout(
             title="Time Embedding Dot Product",
@@ -110,12 +111,15 @@ def show_time_embeddings(dt, logit_dir):
             yaxis_title="Dot Product",
             legend_title="",
         )
-        fig.add_vline(
-            x=st.session_state.timesteps[0][-1].item() +  st.session_state.timestep_adjustment, 
-            line_dash="dash", 
-            line_color="red", 
-            annotation_text="Current timestep"
-            )
+        # remove legend
+        fig.update_layout(showlegend=False)
+        if show_initial:
+            fig.add_vline(
+                x=st.session_state.timesteps[0][-1].item() +  st.session_state.timestep_adjustment, 
+                line_dash="dash", 
+                line_color="red", 
+                annotation_text="Current timestep"
+                )
         st.plotly_chart(fig, use_container_width=True)
 
 
@@ -149,6 +153,8 @@ def show_rtg_embeddings(dt, logit_dir):
         dot_prod = rtg_embeddings @ logit_dir
         dot_prod = dot_prod.detach()
 
+        show_initial = st.checkbox("Show initial RTG embedding", value=True)
+
         fig = px.line(
             x= rtg_range.squeeze(1).detach().numpy(),
             y= dot_prod)
@@ -158,11 +164,14 @@ def show_rtg_embeddings(dt, logit_dir):
             yaxis_title="Dot Product",
             legend_title="",
         )
-        fig.add_vline(
-            x=st.session_state.rtg[0][0].item(), 
-            line_dash="dash", 
-            line_color="red", 
-            annotation_text="Initial RTG"
-            )
+        # remove legend
+        fig.update_layout(showlegend=False)
+        if show_initial:
+            fig.add_vline(
+                x=st.session_state.rtg[0][0].item(), 
+                line_dash="dash", 
+                line_color="red", 
+                annotation_text="Initial RTG"
+                )
         st.plotly_chart(fig, use_container_width=True)
 
