@@ -78,18 +78,30 @@ def show_ov_circuit(dt):
 
     
         heads = st.multiselect("Select Heads", options=list(range(dt.n_heads)), key="head ov")
-
         for head in heads:
             st.write("Head", head)
             for i in range(dt.env.action_space.n):
                 st.write("action: ", i)
-                st.plotly_chart(
-                    px.imshow(
-                        OV_circuit_full_reshaped[head][:,:,:,i].transpose(-1,-2).detach().numpy(), 
-                        facet_col=0,
-                        color_continuous_midpoint=0
-                    ), 
-                    use_container_width=True)
+                # st.plotly_chart(
+                #     px.imshow(
+                #         OV_circuit_full_reshaped[head][:,:,:,i].transpose(-1,-2).detach().numpy(), 
+                #         facet_col=0,
+                #         color_continuous_midpoint=0
+                #     ), 
+                #     use_container_width=True)
+                a, b, c = st.columns(3)
+                with a:
+                    st.write("Object")
+                with b:
+                    st.write("Color")
+                with c:
+                    st.write("State")
+                with a:
+                    fancy_imshow(OV_circuit_full_reshaped[head,0,:,:,i].T.detach().numpy(), color_continuous_midpoint=0)
+                with b:
+                    fancy_imshow(OV_circuit_full_reshaped[head,1,:,:,i].T.detach().numpy(), color_continuous_midpoint=0)
+                with c:
+                    fancy_imshow(OV_circuit_full_reshaped[head,2,:,:,i].T.detach().numpy(), color_continuous_midpoint=0)
 
 def show_time_embeddings(dt, logit_dir):
     with st.expander("Show Time Embeddings"):
@@ -121,7 +133,6 @@ def show_time_embeddings(dt, logit_dir):
                 annotation_text="Current timestep"
                 )
         st.plotly_chart(fig, use_container_width=True)
-
 
 def show_rtg_embeddings(dt, logit_dir):
     with st.expander("Show RTG Embeddings"):
