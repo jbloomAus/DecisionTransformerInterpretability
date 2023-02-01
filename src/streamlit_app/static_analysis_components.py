@@ -3,6 +3,8 @@ import streamlit as st
 import torch as t
 from fancy_einsum import einsum
 from .utils import fancy_histogram, fancy_imshow
+from minigrid.core.constants import IDX_TO_COLOR, IDX_TO_OBJECT, STATE_TO_IDX
+from .constants import IDX_TO_STATE, IDX_TO_ACTION, three_channel_schema, twenty_idx_format_func
 
 def show_qk_circuit(dt):
 
@@ -30,29 +32,52 @@ def show_qk_circuit(dt):
 
         # W_QK_full = W_E_rtg.T @ W_QK @ W_E_state 
         W_QK_full = W_E_state.T @ W_QK @  W_E_rtg
-        # st.write(W_QK_full.shape)
 
-        W_QK_full_reshaped = W_QK_full.reshape(2, 1, 3, 7, 7)
-        # st.write(W_QK_full_reshaped.shape)
+        channels = dt.env.observation_space['image'].shape[-1]
+        height = dt.env.observation_space['image'].shape[0]
+        width = dt.env.observation_space['image'].shape[1]
+        W_QK_full_reshaped = W_QK_full.reshape(dt.n_heads, 1, channels, height, width)
 
-        heads = st.multiselect("Select Heads", options=list(range(dt.n_heads)), key="head qk")
 
-        a, b, c = st.columns(3)
-        with a:
-            st.write("Object")
-        with b:
-            st.write("Color")
-        with c:
-            st.write("State")
+        selection_columns = st.columns(2)
+
+        with selection_columns[0]:
+            heads = st.multiselect(
+                "Select Heads", 
+                options=list(range(dt.n_heads)), 
+                key="head qk", default=[0]
+            )
+        if channels == 3: 
+            format_func = lambda x: three_channel_schema[x] 
+        else: 
+            format_func = twenty_idx_format_func
+
+        with selection_columns[1]:
+            selected_channels = st.multiselect(
+                "Select Observation Channels", 
+                options=list(range(channels)), 
+                format_func= format_func,
+                key="channels qk", 
+                default=[0,1,2]
+            )
+
+        columns = st.columns(len(selected_channels))
+        for i,channel in enumerate(selected_channels):
+            with columns[i]:
+                if channels == 3:
+                    st.write(three_channel_schema[channel])
+                elif channels == 20:
+                    st.write(twenty_idx_format_func(channel))
+
         for head in heads:
             st.write("Head", head)
-            with a:
-                fancy_imshow(W_QK_full_reshaped[head,0,0].T.detach().numpy(), color_continuous_midpoint=0)
-            with b:
-                fancy_imshow(W_QK_full_reshaped[head,0,1].T.detach().numpy(), color_continuous_midpoint=0)
-            with c:
-                fancy_imshow(W_QK_full_reshaped[head,0,2].T.detach().numpy(), color_continuous_midpoint=0)
-                
+            columns = st.columns(len(selected_channels))
+            for i,channel in enumerate(selected_channels):
+                with columns[i]:
+                    fancy_imshow(W_QK_full_reshaped[head,0,channel].T.detach().numpy(), color_continuous_midpoint=0)
+
+
+
 def show_ov_circuit(dt):
 
     with st.expander("Show OV Circuit"):
@@ -73,35 +98,61 @@ def show_ov_circuit(dt):
         # st.plotly_chart(px.imshow(W_OV.detach().numpy(), facet_col=0), use_container_width=True)
         OV_circuit_full = W_E.T @ W_OV @ W_U.T
 
-        #reshape the ov circuit
-        OV_circuit_full_reshaped = OV_circuit_full.reshape(2, 3, 7, 7, 3)
-
+        channels = dt.env.observation_space['image'].shape[-1]
+        height = dt.env.observation_space['image'].shape[0]
+        width = dt.env.observation_space['image'].shape[1]
+        n_actions = W_U.shape[0]
+        OV_circuit_full_reshaped = OV_circuit_full.reshape(dt.n_heads, channels, height, width, n_actions)
     
-        heads = st.multiselect("Select Heads", options=list(range(dt.n_heads)), key="head ov")
+
+        if channels == 3: 
+            format_func = lambda x: three_channel_schema[x] 
+        else: 
+            format_func = twenty_idx_format_func
+
+        selection_columns = st.columns(3)
+        with selection_columns[0]:
+
+            heads = st.multiselect(
+                "Select Heads", 
+                options=list(range(dt.n_heads)), 
+                key="head ov", default=[0]
+            )
+
+        with selection_columns[1]:
+            selected_channels = st.multiselect(
+                "Select Observation Channels", 
+                options=list(range(channels)), 
+                format_func= format_func,
+                key="channels ov", 
+                default=[0,1,2]
+            )
+
+        with selection_columns[2]:
+            selected_actions = st.multiselect(
+                "Select Actions", 
+                options=list(range(n_actions)), 
+                key="actions ov", 
+                format_func= lambda x: IDX_TO_ACTION[x],
+                default=[0,1,2]
+            )
+
+        columns = st.columns(len(selected_channels))
+        for i,channel in enumerate(selected_channels):
+            with columns[i]:
+                if channels == 3:
+                    st.write(three_channel_schema[channel])
+                elif channels == 20:
+                    st.write(twenty_idx_format_func(channel))
+
         for head in heads:
-            st.write("Head", head)
-            for i in range(dt.env.action_space.n):
-                st.write("action: ", i)
-                # st.plotly_chart(
-                #     px.imshow(
-                #         OV_circuit_full_reshaped[head][:,:,:,i].transpose(-1,-2).detach().numpy(), 
-                #         facet_col=0,
-                #         color_continuous_midpoint=0
-                #     ), 
-                #     use_container_width=True)
-                a, b, c = st.columns(3)
-                with a:
-                    st.write("Object")
-                with b:
-                    st.write("Color")
-                with c:
-                    st.write("State")
-                with a:
-                    fancy_imshow(OV_circuit_full_reshaped[head,0,:,:,i].T.detach().numpy(), color_continuous_midpoint=0)
-                with b:
-                    fancy_imshow(OV_circuit_full_reshaped[head,1,:,:,i].T.detach().numpy(), color_continuous_midpoint=0)
-                with c:
-                    fancy_imshow(OV_circuit_full_reshaped[head,2,:,:,i].T.detach().numpy(), color_continuous_midpoint=0)
+            for action in selected_actions:
+                st.write(f"Head {head} - {IDX_TO_ACTION[action]}")
+                columns = st.columns(len(selected_channels))
+                for i,channel in enumerate(selected_channels):
+                    with columns[i]:
+                        fancy_imshow(OV_circuit_full_reshaped[head,channel,:,:,action].T.detach().numpy(), color_continuous_midpoint=0)
+
 
 def show_time_embeddings(dt, logit_dir):
     with st.expander("Show Time Embeddings"):

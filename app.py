@@ -28,6 +28,7 @@ initial_rtg = hyperpar_side_bar()
 
 
 model_path = "models/demo_model_overnight_training.pt"
+# model_path="models/demo_model_one_hot_overnight.pt"
 action_string_to_id = {"left": 0, "right": 1, "forward": 2, "pickup": 3, "drop": 4, "toggle": 5, "done": 6}
 action_id_to_string = {v: k for k, v in action_string_to_id.items()}
 

@@ -104,6 +104,7 @@ class DecisionTransformer(nn.Module):
         self.time_embedding_type = time_embedding_type
         self.device = torch.device(device)
         self.layer_norm = layer_norm
+        self.one_hot_obs = self.env.observation_space["image"].shape[-1]==20 # this checks if the observations are one hot encoded
 
         # Embedding layers
         if time_embedding_type == 'linear':
@@ -118,6 +119,7 @@ class DecisionTransformer(nn.Module):
             self.state_encoder = nn.Linear(n_obs, self.d_model, bias=False)
             nn.init.normal_(self.state_encoder.weight, mean=0.0, std=0.02)
 
+       
         self.action_embedding = nn.Sequential(nn.Embedding(env.action_space.n + 1, self.d_model))
         self.reward_embedding = nn.Sequential(nn.Linear(1, self.d_model, bias=False))
 
