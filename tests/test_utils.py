@@ -1,5 +1,5 @@
 import pytest 
-
+import os
 import torch as t 
 from dataclasses import dataclass
 import numpy as np
@@ -13,7 +13,7 @@ def test_trajectory_writer_numpy():
 
     @dataclass
     class DummyArgs:
-        pass
+        path = "tmp/test_trajectory_writer_output.pkl"
 
     args = DummyArgs()
 
@@ -30,8 +30,13 @@ def test_trajectory_writer_numpy():
         info={"a": 1, "b": 2, "c": 3},
     )
 
+
     trajectory_writer.write()
 
+    # get the size of the file in bytes
+    assert os.path.getsize("tmp/test_trajectory_writer_writer.pkl") > 0
+    # make sure it's less than 200 bytes
+    assert os.path.getsize("tmp/test_trajectory_writer_writer.pkl") < 700
 
     with open("tmp/test_trajectory_writer_writer.pkl", "rb") as f:
         data = pickle.load(f)
@@ -76,6 +81,7 @@ def test_trajectory_writer_numpy():
         assert infos[0]["b"] == 2
         assert infos[0]["c"] == 3
     
+    
 def test_trajectory_writer_torch():
 
     @dataclass
@@ -97,6 +103,37 @@ def test_trajectory_writer_torch():
             action=torch.tensor([1, 2, 3], dtype=torch.int64),
             info=[{"a": 1, "b": 2, "c": 3}],
         )
+
+
+def test_trajectory_writer_lzma():
+
+    @dataclass
+    class DummyArgs:
+        path = "tmp/test_trajectory_writer_output.xz"
+
+    args = DummyArgs()
+
+    trajectory_writer = TrajectoryWriter("tmp/test_trajectory_writer_writer.xz", args)
+
+    # test accumulate trajectory when all the objects are initialized as np arrays
+
+    trajectory_writer.accumulate_trajectory(
+        next_obs=np.array([1, 2, 3]),
+        reward=np.array([1, 2, 3]),
+        done=np.array([1, 0, 0]),
+        truncated=np.array([1, 0, 0]),
+        action=np.array([1, 2, 3]),
+        info={"a": 1, "b": 2, "c": 3},
+    )
+
+
+    trajectory_writer.write()
+
+    # get the size of the file in bytes
+    assert os.path.getsize("tmp/test_trajectory_writer_writer.xz") > 0
+    # make sure it's less than 200 bytes
+    assert os.path.getsize("tmp/test_trajectory_writer_writer.xz") < 400
+
 
 def test_load_decision_transformer():
 

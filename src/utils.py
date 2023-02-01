@@ -1,9 +1,8 @@
+import lzma
 import os
 import pickle
 import re
 import time
-import numpy as np
-from typing import Dict
 from dataclasses import asdict, dataclass
 from typing import Dict
 
@@ -77,11 +76,19 @@ class TrajectoryWriter():
         if not os.path.exists(os.path.dirname(self.path)):
             os.makedirs(os.path.dirname(self.path))
 
-        with open(self.path, 'wb') as f:
-            pickle.dump({
-                'data': data,
-                'metadata': metadata
-            }, f)
+        # use lzma to compress the file
+        if self.path.endswith(".xz"):
+            with lzma.open(self.path, 'wb') as f:
+                pickle.dump({
+                    'data': data,
+                    'metadata': metadata
+                }, f)
+        else:
+            with open(self.path, 'wb') as f:
+                pickle.dump({
+                    'data': data,
+                    'metadata': metadata
+                }, f)
 
         if upload_to_wandb:
             artifact = wandb.Artifact(self.path.split("/")[-1], type = "trajectory")
