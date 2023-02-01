@@ -60,7 +60,16 @@ if __name__ == "__main__":
 
     # make an environment 
     env_id = trajectory_data_set.metadata['args']['env_id']
-    env = make_env(env_id, seed = 0, idx = 0, capture_video=False, run_name = "dev", fully_observed=False)
+    print("observation type: ", trajectory_data_set.observation_type)
+    env = make_env(
+        env_id, 
+        seed = 0, 
+        idx = 0, 
+        capture_video=False, 
+        run_name = "dev", 
+        fully_observed=False,
+        flat_one_hot= (trajectory_data_set.observation_type == "one_hot"), # detect if we are using flat one-hot observations.
+    )
     env = env()
 
     if args.track:

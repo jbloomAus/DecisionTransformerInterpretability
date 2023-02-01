@@ -106,16 +106,26 @@ def train(
                 track = track,
                 batch_number = batch)
 
+        eval_env_func = make_env(
+            env_id = env.spec.id,
+            seed=batch, 
+            idx=0, 
+            capture_video=True,
+            max_steps = min(dt.max_timestep, eval_max_time_steps),
+            run_name = f"dt_eval_videos_{batch}",
+            fully_observed=False,
+            flat_one_hot= (trajectory_data_set.observation_type == "one_hot"),
+        )
+
         if batch % eval_frequency == 0:
             evaluate_dt_agent(
                 env_id = env.spec.id,
                 dt = dt, 
-                make_env = make_env, 
+                env_func= eval_env_func, 
                 trajectories = eval_episodes,
                 track=track,
                 batch_number = batch,
                 initial_rtg = initial_rtg,
-                max_time_step=eval_max_time_steps,
                 device = device)
 
     return dt
@@ -193,24 +203,18 @@ def test(
 def evaluate_dt_agent(
     env_id: str,
     dt: DecisionTransformer, 
-    make_env, 
+    env_func, 
     trajectories=300,
     track=False,
     batch_number=0,
     initial_rtg=0.98,
-    max_time_step=100,
-    capture_video=True,
     use_tqdm=True,
     device = "cpu"):
 
     dt.eval()
-    run_name = f"dt_eval_videos_{batch_number}"
-    video_path = os.path.join("videos", run_name)
 
-    env = make_env(env_id, seed=batch_number, idx=0, capture_video=capture_video,
-                    max_steps = min(dt.max_timestep, max_time_step),
-                   run_name=run_name, fully_observed=False)
-    env = env()
+    env = env_func()
+    video_path = os.path.join("videos", env.run_name)
 
     assert dt.n_ctx % 3 == 0, "n_ctx must be divisible by 3"
     max_len= dt.n_ctx // 3

@@ -48,6 +48,7 @@ def make_env(
         obs = env.reset(seed=seed)
         env.action_space.seed(seed)
         env.observation_space.seed(seed)
+        env.run_name = run_name
         return env
 
     return thunk

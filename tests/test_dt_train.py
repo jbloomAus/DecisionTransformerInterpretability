@@ -37,14 +37,25 @@ def test_evaluate_dt_agent():
         device = "cuda" if torch.cuda.is_available() else "cpu",
         )  # Our DT must have a context window large enough
 
+    batch = 0
+    eval_env_func = make_env(
+        env_id = env.spec.id,
+        seed=batch, 
+        idx=0, 
+        capture_video=True,
+        max_steps = min(dt.max_timestep, 10),
+        run_name = f"dt_eval_videos_{batch}",
+        fully_observed=False,
+        flat_one_hot= (trajectory_data_set.observation_type == "one_hot"),
+    )
+
     statistics = evaluate_dt_agent(
         env_id=env_id,
         dt=dt,
-        make_env=make_env,
+        env_func=eval_env_func,
         track=False,
         initial_rtg=1,
         trajectories=10,
-        max_time_step=10,
         device = "cuda" if torch.cuda.is_available() else "cpu")
 
     assert statistics["prop_completed"] == 0.0

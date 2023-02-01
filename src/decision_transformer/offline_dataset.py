@@ -40,14 +40,14 @@ class TrajectoryLoader():
         infos = np.array(infos, dtype=np.ndarray)
 
         # check whether observations are flat or an image
-        if len(observations.shape) == 5:
-            self.observation_type = 'image'
-        elif len(observations.shape) == 3:
-            self.observation_type = 'flat'
+        if observations.shape[-1] == 3:
+            self.observation_type = 'index'
+        elif observations.shape[-1] == 20:
+            self.observation_type = 'one_hot'
         else:
             raise ValueError("Observations are not flat or images, check the shape of the observations: ", observations.shape)
 
-        if self.observation_type == 'image':
+        if self.observation_type != 'flat':
             t_observations = rearrange(t.tensor(observations), "t b h w c -> (b t) h w c")
         else: 
             t_observations = rearrange(t.tensor(observations), "t b f -> (b t) f")
