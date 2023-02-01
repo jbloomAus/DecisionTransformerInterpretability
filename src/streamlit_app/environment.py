@@ -1,7 +1,7 @@
 import streamlit as st 
 import torch as t
 
-from src.utils import load_decision_transformer
+from src.decision_transformer.utils import load_decision_transformer
 from src.environments import make_env
 
 @st.cache(allow_output_mutation=True)

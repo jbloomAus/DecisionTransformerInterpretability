@@ -11,7 +11,6 @@ import torch as t
 from typeguard import typechecked
 
 import wandb
-from src.decision_transformer.model import DecisionTransformer
 
 
 class TrajectoryWriter():
@@ -78,12 +77,14 @@ class TrajectoryWriter():
 
         # use lzma to compress the file
         if self.path.endswith(".xz"):
+            print(f"Writing to {self.path}, using lzma compression")
             with lzma.open(self.path, 'wb') as f:
                 pickle.dump({
                     'data': data,
                     'metadata': metadata
                 }, f)
         else:
+            print(f"Writing to {self.path}")
             with open(self.path, 'wb') as f:
                 pickle.dump({
                     'data': data,
@@ -98,40 +99,3 @@ class TrajectoryWriter():
         print(f"Trajectory written to {self.path}")
 
 
-def load_decision_transformer(model_path, env):
-
-    state_dict = t.load(model_path)
-
-    # get number of layers from the state dict
-    num_layers = max([int(re.findall(r'\d+', k)[0]) for k in state_dict.keys() if "transformer.blocks" in k]) + 1
-    d_model = state_dict['reward_embedding.0.weight'].shape[0]
-    d_mlp = state_dict['transformer.blocks.0.mlp.W_out'].shape[0]
-    n_heads = state_dict['transformer.blocks.0.attn.W_O'].shape[0]
-    max_timestep = state_dict['time_embedding.weight'].shape[0] - 1
-    n_ctx = state_dict['transformer.pos_embed.W_pos'].shape[0]
-    layer_norm = 'transformer.blocks.0.ln1.w' in state_dict
-
-    if 'state_encoder.weight' in state_dict:
-        state_embedding_type = 'grid' # otherwise it would be a sequential and wouldn't have this 
-    
-    if state_dict['time_embedding.weight'].shape[1] == 1:
-        time_embedding_type = "linear"
-    else:
-        time_embedding_type = "learned"
-
-    # now we can create the model 
-    model = DecisionTransformer(
-        env = env,
-        n_layers = num_layers,
-        d_model = d_model,
-        d_mlp = d_mlp,
-        state_embedding_type = state_embedding_type,
-        time_embedding_type= time_embedding_type,
-        n_heads = n_heads,
-        max_timestep = max_timestep,
-        n_ctx = n_ctx,
-        layer_norm = layer_norm
-    )
-
-    model.load_state_dict(state_dict)
-    return model

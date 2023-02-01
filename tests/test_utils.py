@@ -5,7 +5,8 @@ from dataclasses import dataclass
 import numpy as np
 import pickle 
 import torch
-from src.utils import TrajectoryWriter, load_decision_transformer
+from src.utils import TrajectoryWriter
+from src.decision_transformer.utils import load_decision_transformer
 from src.environments import make_env
 
 

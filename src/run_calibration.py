@@ -1,6 +1,5 @@
 from environments import make_env
-from utils import load_decision_transformer
-from decision_transformer.model import DecisionTransformer
+from decision_transformer.utils import load_decision_transformer
 from decision_transformer.calibration import calibration_statistics, plot_calibration_statistics
 import argparse 
 import warnings
