@@ -220,10 +220,14 @@ def evaluate_dt_agent(
     max_len= dt.n_ctx // 3
 
     traj_lengths = []
+    rewards = []
     n_terminated = 0
     n_truncated = 0
     reward_total = 0
     n_positive = 0
+
+    if not os.path.exists(video_path):
+        os.makedirs(video_path)
 
     videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
     for video in videos:
@@ -296,6 +300,7 @@ def evaluate_dt_agent(
                 pbar.set_description(f"Evaluating DT: Episode {seed} at timestep {i} for reward {new_reward}")
         
         traj_lengths.append(i)
+        rewards.append(new_reward)
 
         n_positive = n_positive + (new_reward > 0)
         reward_total = reward_total + new_reward
@@ -321,7 +326,9 @@ def evaluate_dt_agent(
         "prop_truncated": n_truncated / trajectories,
         "mean_reward": reward_total / trajectories,
         "prop_positive_reward": n_positive / trajectories,
-        "mean_traj_length": sum(traj_lengths) / trajectories
+        "mean_traj_length": sum(traj_lengths) / trajectories,
+        "traj_lengths": traj_lengths,
+        "rewards": rewards
     }
 
     env.close()

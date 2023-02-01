@@ -4,14 +4,14 @@ from tqdm import tqdm
 import numpy as np
 from .train import evaluate_dt_agent
 
-def calibration_statistics(dt, env_id, make_env, initial_rtg_range = np.linspace(-1,1,21), trajectories=100):
+def calibration_statistics(dt, env_id, env_func, initial_rtg_range = np.linspace(-1,1,21), trajectories=100):
     statistics = []
     pbar = tqdm(initial_rtg_range, desc="initial_rtg")
     for initial_rtg in pbar:
         statistics.append(evaluate_dt_agent(
             env_id = env_id,
             dt = dt,
-            make_env=make_env,
+            env_func=env_func,
             track = False,
             batch_number = 0,
             initial_rtg=initial_rtg,
@@ -20,16 +20,16 @@ def calibration_statistics(dt, env_id, make_env, initial_rtg_range = np.linspace
         pbar.set_description(f"initial_rtg: {initial_rtg}")
     return statistics
 
-def plot_calibration_statistics(statistics):
+def plot_calibration_statistics(statistics, show_spread=False, CI = 0.95):
 
     df = pd.DataFrame(statistics)
 
-    fig = px.line(df, x="initial_rtg", y="mean_reward", title="Calibration Plot",
-        template="plotly_white")
+    # add line to legend
+    fig = px.line(df, x="initial_rtg", y="mean_reward", title="Calibration Plot", template="plotly_white")
     fig.update_layout(
         xaxis_title="Initial RTG",
-        yaxis_title="Mean Reward",
-        legend_title="Proportion Completed",
+        yaxis_title="Reward",
+        legend_title="",
     )
     fig.add_shape(
         type="line",
@@ -44,5 +44,36 @@ def plot_calibration_statistics(statistics):
         )
     )
 
-    # fig.show()
+    if show_spread:
+        upper = (1-CI)/2
+        lower = 1 - upper
+        # add 95% CI
+        # also show 97.5 percentile and 2.5 percentile
+        df["percentile_975"] = df.rewards.apply(lambda x: np.percentile(x,100*upper))
+        df["percentile_025"] = df.rewards.apply(lambda x: np.percentile(x,100*lower))
+        # shade between 97.5 and 2.5 percentile
+        fig.add_trace(
+            go.Scatter(
+                x=df.initial_rtg,
+                y=df.percentile_975,
+                mode="lines",
+                name=f"{(int(CI*100))}% CI",
+                showlegend=False,
+                line=dict(color='rgba(0,0,0,0)', width=0.5), # then use light blue fill color
+                fillcolor="rgba(0,100,80,0.2)",
+            )
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=df.initial_rtg,
+                y=df.percentile_025,
+                mode="lines",
+                name=f"{(int(CI*100))}% CI",
+                line=dict(color='rgba(0,0,0,0)', width=0.5), # then use light blue fill color
+                fillcolor="rgba(0,100,80,0.2)",
+                fill="tonexty"
+            )   
+        )
+
     return fig 

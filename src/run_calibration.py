@@ -28,17 +28,22 @@ if __name__ == "__main__":
 
     logger.info(f"Loading model from {args.model_path}")
     logger.info(f"Using environment {args.env_id}")
-    print(args)
-    env = make_env(args.env_id, seed = 1, idx = 0, capture_video=False, run_name = "dev", fully_observed=False, max_steps=300)
-    env = env()
+    state_dict = t.load(args.model_path)
+    one_hot_encoded = state_dict["state_encoder.weight"].shape[-1] == 980
+    max_time_steps = state_dict["time_embedding.weight"].shape[0]
+    env_func = make_env(
+        args.env_id, seed = 1, idx = 0, capture_video=False, 
+        run_name = "dev", fully_observed=False, flat_one_hot = one_hot_encoded, 
+        max_steps=max_time_steps
+    )
 
-    dt = load_decision_transformer(args.model_path, env)
+    dt = load_decision_transformer(args.model_path, env_func())
 
     warnings.filterwarnings("ignore", category=UserWarning)
     statistics = calibration_statistics(
         dt, 
         args.env_id, 
-        make_env,
+        env_func,
         initial_rtg_range=np.linspace(args.initial_rtg_min, args.initial_rtg_max, int((args.initial_rtg_max - args.initial_rtg_min) / args.initial_rtg_step)),
         trajectories=args.n_trajectories
     )

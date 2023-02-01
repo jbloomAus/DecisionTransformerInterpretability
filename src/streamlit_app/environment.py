@@ -6,11 +6,24 @@ from src.environments import make_env
 
 @st.cache(allow_output_mutation=True)
 def get_env_and_dt(model_path):
+    
+    # we need to one if the env was one hot encoded. Some tech debt here. 
+    state_dict = t.load(model_path)
+    one_hot_encoded = state_dict["state_encoder.weight"].shape[-1] == 980
+
     env_id = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
-    env = make_env(env_id, seed = 4200, idx = 0, capture_video=False, run_name = "dev", fully_observed=False, max_steps=30)
+    env = make_env(
+        env_id, 
+        seed = 4200, 
+        idx = 0, 
+        capture_video=False, 
+        run_name = "dev", 
+        fully_observed=False, 
+        flat_one_hot = one_hot_encoded, 
+        max_steps=30
+    )
     env = env()
 
-    # dt.load_state_dict(t.load(model_path))
     dt = load_decision_transformer(
         model_path, env
     )
