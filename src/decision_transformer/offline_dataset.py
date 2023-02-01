@@ -1,9 +1,12 @@
+import lzma
 import pickle
-import numpy as np
-import torch as t 
-from einops import rearrange
-import plotly.express as px
 import random
+
+import numpy as np
+import plotly.express as px
+import torch as t
+from einops import rearrange
+
 
 # not technically a data loader, rework later to work as one.
 class TrajectoryLoader():
@@ -36,7 +39,19 @@ class TrajectoryLoader():
         dones = np.array(dones)
         infos = np.array(infos, dtype=np.ndarray)
 
-        t_observations = rearrange(t.tensor(observations), "t b h w c -> (b t) h w c")
+        # check whether observations are flat or an image
+        if len(observations.shape) == 5:
+            self.observation_type = 'image'
+        elif len(observations.shape) == 3:
+            self.observation_type = 'flat'
+        else:
+            raise ValueError("Observations are not flat or images, check the shape of the observations: ", observations.shape)
+
+        if self.observation_type == 'image':
+            t_observations = rearrange(t.tensor(observations), "t b h w c -> (b t) h w c")
+        else: 
+            t_observations = rearrange(t.tensor(observations), "t b f -> (b t) f")
+
         t_actions = rearrange(t.tensor(actions), "t b -> (b t)")
         t_rewards = rearrange(t.tensor(rewards), "t b -> (b t)")
         t_dones = rearrange(t.tensor(dones), "t b -> (b t)")
