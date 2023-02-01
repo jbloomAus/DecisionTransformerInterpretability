@@ -43,6 +43,7 @@ python src/run_ppo.py --exp_name "MiniGrid-Dynamic-Obstacles-8x8-v0" \
     --ent_coef 0.25 \
     --vf_coef 0.5 \
     --max_grad_norm 2 \
-    --max_steps 300 
+    --max_steps 300 \
+    --one_hot_obs
     # --trajectory_path None 
     # --fully_observed False

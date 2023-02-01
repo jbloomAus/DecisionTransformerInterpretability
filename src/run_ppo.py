@@ -42,6 +42,7 @@ if __name__ == "__main__":
         vf_coef=args.vf_coef,
         max_grad_norm=args.max_grad_norm,
         max_steps=args.max_steps,
+        one_hot_obs=args.one_hot_obs,
         trajectory_path=args.trajectory_path,
         fully_observed=args.fully_observed,
     )
@@ -87,12 +88,18 @@ if __name__ == "__main__":
     if args.env_id in ["Probe1-v0", "Probe2-v0", "Probe3-v0", "Probe4-v0", "Probe5-v0"]:
         envs = gym.vector.SyncVectorEnv(
             [make_env(args.env_id, args.seed + i, i, args.capture_video, run_name, 
-            render_mode=None, max_steps = args.max_steps, fully_observed = args.fully_observed) for i in range(args.num_envs)]
+            render_mode=None, max_steps = args.max_steps, 
+            fully_observed = args.fully_observed,
+            flat_one_hot=args.one_hot_obs
+            ) for i in range(args.num_envs)]
         )
     else:
         envs = gym.vector.SyncVectorEnv(
             [make_env(args.env_id, args.seed + i, i, args.capture_video, run_name,
-            max_steps = args.max_steps, fully_observed = args.fully_observed) for i in range(args.num_envs)]
+            max_steps = args.max_steps, 
+            fully_observed = args.fully_observed,
+            flat_one_hot=args.one_hot_obs
+            ) for i in range(args.num_envs)]
         )
     assert envs.single_action_space.shape is not None
     assert isinstance(envs.single_action_space, Discrete), "only discrete action space is supported"

@@ -135,6 +135,9 @@ def parse_args():
                         help='the path to the trajectory file')
     parser.add_argument('--fully_observed', action='store_true', default=False,
                         help='if toggled, the environment will be fully observed')
+    parser.add_argument('--one_hot_obs', action='store_true', default=False,
+                        help='if toggled, the environment will be partially observed one hot encoded')
+
     args = parser.parse_args()
     return args
     
@@ -162,6 +165,7 @@ class PPOArgs:
     vf_coef: float = 0.5
     max_grad_norm: float = 2
     max_steps: int = 1000
+    one_hot_obs: bool = False
     trajectory_path: str = None
     fully_observed: bool = False
 
