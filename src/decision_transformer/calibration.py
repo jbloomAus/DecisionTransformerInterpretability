@@ -3,6 +3,7 @@ import plotly.express as px
 from tqdm import tqdm
 import numpy as np
 from .train import evaluate_dt_agent
+import plotly.graph_objects as go
 
 def calibration_statistics(dt, env_id, env_func, initial_rtg_range = np.linspace(-1,1,21), trajectories=100):
     statistics = []
