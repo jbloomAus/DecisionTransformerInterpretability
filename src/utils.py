@@ -1,14 +1,19 @@
 import os
 import pickle
+import re
 import time
 import numpy as np
 from typing import Dict
 from dataclasses import asdict, dataclass
-import wandb
-import re
+from typing import Dict
+
+import numpy as np
 import torch as t
 from typeguard import typechecked
-from decision_transformer.model import DecisionTransformer
+
+import wandb
+from src.decision_transformer.model import DecisionTransformer
+
 
 class TrajectoryWriter():
     '''
