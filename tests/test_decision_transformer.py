@@ -3,9 +3,8 @@ import torch as t
 import numpy as np 
 from einops import rearrange
 import gymnasium as gym
-from minigrid.wrappers import RGBImgPartialObsWrapper, ImgObsWrapper
+from minigrid.wrappers import RGBImgPartialObsWrapper, ImgObsWrapper, OneHotPartialObsWrapper
 from src.decision_transformer.model import DecisionTransformer, StateEncoder
-
 
 def test_state_encoder():
 
@@ -71,6 +70,20 @@ def test_get_state_embeddings_grid():
     env = gym.make('MiniGrid-Empty-8x8-v0')
     # env = RGBImgPartialObsWrapper(env) # Get pixel observations
     # env = ImgObsWrapper(env) # Get rid of the 'mission' field
+    obs, _ = env.reset() # This now produces an RGB tensor only
+
+    decision_transformer = DecisionTransformer(env, state_embedding_type='grid')
+    assert decision_transformer is not None
+
+    # get state embeddings
+    obs = t.tensor(obs['image']).unsqueeze(0).unsqueeze(0) # add block, add batch
+    state_embeddings = decision_transformer.get_state_embeddings(obs)
+    assert state_embeddings.shape == (1, 1, 64)
+
+def test_get_state_embeddings_grid_one_hot():
+        
+    env = gym.make('MiniGrid-Empty-8x8-v0')
+    env = OneHotPartialObsWrapper(env)
     obs, _ = env.reset() # This now produces an RGB tensor only
 
     decision_transformer = DecisionTransformer(env, state_embedding_type='grid')
