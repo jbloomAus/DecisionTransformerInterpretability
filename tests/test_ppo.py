@@ -44,6 +44,57 @@ def test_probe_envs(env_name):
     # eventually.
     ppo = train_ppo(args, envs = envs)
 
+def test_empty_env():
+
+    env_name = "MiniGrid-Empty-5x5-v0"
+
+    envs = gym.vector.SyncVectorEnv(
+        [make_env(env_name, i, i, False, "test", 
+        render_mode=None, max_steps = None, fully_observed = False, flat_one_hot=False) for i in range(4)]
+    )
+
+    args = PPOArgs(
+        exp_name = 'Test',
+        env_id = env_name,
+        num_envs = 4, # batch size is derived from num environments * minibatch size
+        num_minibatches=4,
+        num_steps=128,
+        track = False,
+        capture_video=False,
+        cuda = False,
+        total_timesteps=10000,
+        max_steps=None)
+
+    # currently, ppo has tests which run inside main if it 
+    # detects "Probe" in the env name. We will fix this 
+    # eventually.
+    ppo = train_ppo(args, envs = envs)
+
+def test_empty_env_flat_one_hot():
+
+    env_name = "MiniGrid-Empty-5x5-v0"
+
+    envs = gym.vector.SyncVectorEnv(
+        [make_env(env_name, i, i, False, "test", 
+        render_mode=None, max_steps = None, fully_observed = False, flat_one_hot=True) for i in range(4)]
+    )
+
+    args = PPOArgs(
+        exp_name = 'Test',
+        env_id = env_name,
+        num_envs = 4, # batch size is derived from num environments * minibatch size
+        num_minibatches=4,
+        num_steps=128,
+        track = False,
+        capture_video=False,
+        cuda = False,
+        total_timesteps=10000,
+        max_steps=None)
+
+    # currently, ppo has tests which run inside main if it 
+    # detects "Probe" in the env name. We will fix this 
+    # eventually.
+    ppo = train_ppo(args, envs = envs)
 
 def test_ppo_agent_gym():
     
