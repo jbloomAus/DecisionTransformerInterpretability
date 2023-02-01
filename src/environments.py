@@ -1,13 +1,5 @@
-
-import operator
-from functools import reduce
-
 import gymnasium as gym
-import minigrid
-import numpy as np
-from gymnasium import spaces
-from minigrid.wrappers import ObservationWrapper
-from minigrid.core.constants import COLOR_TO_IDX, OBJECT_TO_IDX, STATE_TO_IDX
+from minigrid.wrappers import OneHotPartialObsWrapper, FullyObsWrapper
 
 def make_env(
     env_id: str, 
@@ -49,9 +41,9 @@ def make_env(
         # hard code for now!
         if env_id.startswith("MiniGrid"):
             if fully_observed:
-                env = minigrid.wrappers.FullyObsWrapper(env)
+                env = FullyObsWrapper(env)
             elif flat_one_hot:
-                env = FlatOneHotObsWrapper(env)
+                env = OneHotPartialObsWrapper(env)
 
         obs = env.reset(seed=seed)
         env.action_space.seed(seed)
@@ -59,46 +51,3 @@ def make_env(
         return env
 
     return thunk
-
-
-# I decided to rewrite the flat obs wrapper since it bugs me 
-# that they only one hot encoded the mission string and not the image.
-class FlatOneHotObsWrapper(ObservationWrapper):
-    """
-    Encode observed "image" state (not image, minigrid schema) using a one-hot scheme and flatten.
-    This wrapper is not applicable to BabyAI environments, given that these have their own language component.
-    """
-
-    def __init__(self, env, maxStrLen=96):
-        super().__init__(env)
-
-        self.maxStrLen = maxStrLen
-        self.numCharCodes = 28
-
-        imgSpace = env.observation_space.spaces["image"]
-        imgSize = reduce(operator.mul, imgSpace.shape, 1)
-
-        max_one_hot_dim_idx = max(
-            [max(OBJECT_TO_IDX.values()), 
-            max(STATE_TO_IDX.values()), 
-            max(COLOR_TO_IDX.values())]
-            )
-
-
-        self.observation_space = spaces.Box(
-            low=0,
-            high=1,
-            shape=(imgSize*max_one_hot_dim_idx,),
-            dtype="uint8",
-        )
-
-    def observation(self, obs):
-        image = obs["image"]
-        
-
-        obs = image.flatten()
-        # one hot encode the image and flatten again us vectorization
-        obs = np.eye(len(OBJECT_TO_IDX))[image.flatten()]
-        obs = obs.flatten()
-
-        return obs

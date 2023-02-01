@@ -87,7 +87,7 @@ def test_make_env_flat_one_hot():
 
     obs, info = env_func().reset()
 
-    assert isinstance(obs, np.ndarray)
-    assert obs.shape == (7*7*3*11,)
-    assert obs.max() == 1
+    assert isinstance(obs, dict)
+    assert obs["image"].shape== (7,7,20,)
+    assert obs["image"].max() == 1
     assert env_func is not None
