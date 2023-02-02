@@ -28,7 +28,7 @@ def show_attention_pattern(dt, cache):
         )
 
         softmax = st.checkbox("softmax", value=True)
-        heads = st.multiselect("Select Heads", options=list(range(dt.n_heads)), default=list(range(dt.n_heads)), key="heads")
+        heads = st.multiselect("Select Heads", options=list(range(dt.n_heads)), default=list(range(dt.n_heads)), key="heads attention")
 
         if dt.n_layers == 1:
             plot_attention_patter_single(cache,0, softmax=softmax, specific_heads=heads)
@@ -231,7 +231,7 @@ def render_observation_view(dt, tokens, logit_dir):
             "Select Observation Channels", 
             options=list(range(n_channels)), 
             format_func= format_func,
-            key="channels qk", 
+            key="channels obs", 
             default=[0,1,2]
         )
         n_selected_channels = len(selected_channels)
