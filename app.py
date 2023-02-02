@@ -80,7 +80,7 @@ if "Residual Stream Contributions" in analyses:
 if "Attention Pattern" in analyses:
     show_attention_pattern(dt, cache)
 if "Observation View" in analyses:
-    render_observation_view(dt, env, tokens, logit_dir)
+    render_observation_view(dt, tokens, logit_dir)
 
 
 

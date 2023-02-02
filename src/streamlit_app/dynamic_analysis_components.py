@@ -3,7 +3,9 @@ import plotly.express as px
 import streamlit as st
 import torch as t
 from einops import rearrange
+from fancy_einsum import einsum
 from minigrid.core.constants import IDX_TO_OBJECT, IDX_TO_COLOR
+from .constants import IDX_TO_STATE, IDX_TO_ACTION, three_channel_schema, twenty_idx_format_func
 
 from .visualizations import plot_attention_patter_single, plot_single_residual_stream_contributions
 from .analysis import get_residual_decomp
@@ -180,27 +182,33 @@ def show_rtg_scan(dt, logit_dir):
                 use_container_width=True
             )
 
-def render_observation_view(dt, env, tokens, logit_dir):
+def render_observation_view(dt, tokens, logit_dir):
 
     last_obs = st.session_state.obs[0][-1]
     
     last_obs_reshaped = rearrange(last_obs, "h w c -> c h w")
 
-    obs_obj = last_obs_reshaped.reshape(3,7,7)[0].detach().numpy().T
-    obs_col = last_obs_reshaped.reshape(3,7,7)[1].detach().numpy().T
-    obs_state = last_obs_reshaped.reshape(3,7,7)[2].detach().numpy().T
+    n_channels = dt.env.observation_space['image'].shape[-1]
+    height = dt.env.observation_space['image'].shape[0]
+    width = dt.env.observation_space['image'].shape[1]
     
     weights = dt.state_encoder.weight.detach().cpu()
 
-    weights_objects = weights[:,:49]#.reshape(128, 7, 7)
-    weights_colors = weights[:,49:98]#.reshape(128, 7, 7)
-    weights_states = weights[:,98:]#.reshape(128, 7, 7)
+    weights_reshaped = rearrange(weights, "d (c h w) -> c d h w",c=n_channels, h=height, w=width)
 
+    embeddings = einsum(
+        "c d h w, c h w -> c d",
+        weights_reshaped,
+        last_obs_reshaped.to(t.float32)
+    )
 
-    obj_embedding = weights_objects @ last_obs_reshaped[0].flatten().to(t.float32)
-    col_embedding = weights_colors @ last_obs_reshaped[1].flatten().to(t.float32)
-    state_embedding = weights_states @ last_obs_reshaped[2].flatten().to(t.float32)
+    weight_projections = einsum(
+        "d, c d h w -> c h w",
+        logit_dir,
+        weights_reshaped
+    )
 
+    activation_projection = weight_projections * last_obs_reshaped
 
     timesteps = st.session_state.timesteps[0][-1]
     if dt.time_embedding_type == "linear":
@@ -210,121 +218,98 @@ def render_observation_view(dt, env, tokens, logit_dir):
 
     time_embedding = dt.time_embedding(timesteps)
 
-    assert_channel_decomposition_valid(
-        dt, last_obs, tokens, obj_embedding, col_embedding, state_embedding, time_embedding
-    )
 
     with st.expander("Show observation view"):
 
-        input_channel_check = st.checkbox("Show input channels", value=True)
+        st.subheader("Observation View")
+        if n_channels == 3: 
+            format_func = lambda x: three_channel_schema[x] 
+        else: 
+            format_func = twenty_idx_format_func
 
+        selected_channels = st.multiselect(
+            "Select Observation Channels", 
+            options=list(range(n_channels)), 
+            format_func= format_func,
+            key="channels qk", 
+            default=[0,1,2]
+        )
+        n_selected_channels = len(selected_channels)
 
+        check_columns = st.columns(4)
+        with check_columns[0]:
+            contributions_check = st.checkbox("Show contributions", value=True)
+        with check_columns[1]:
+            input_channel_check = st.checkbox("Show input channels", value=True)
+        with check_columns[2]:
+            weight_proj_check = st.checkbox("Show channel weight proj onto logit dir", value=True)
+        with check_columns[3]:
+            activ_proj_check = st.checkbox("Show channel activation proj onto logit dir", value=True)
+            
+        if contributions_check:
+
+            contributions = {
+                format_func(i): (embeddings[i] @ logit_dir).item() for i in selected_channels
+            }
+
+            if dt.time_embedding_type == "linear":
+                time_contribution = (time_embedding @ logit_dir).item()
+            else:
+                time_contribution = (time_embedding[0] @ logit_dir).item()
+
+            token_contribution = (tokens[0][1] @ logit_dir).item()
+
+            contributions = {**contributions,  "time": time_contribution, "token": token_contribution}
+
+            fig = px.bar(
+                contributions.items(),
+                x=0,
+                y=1,
+                labels={
+                    "0": "Channel",
+                    "1": "Contribution"
+                },
+                text=1
+            )
+
+            # add the value to the bar
+            fig.update_traces(texttemplate='%{text:.3f}', textposition='auto')
+            fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+            fig.update_yaxes(range=[-8,8])
+            st.plotly_chart(fig, use_container_width=True)
 
         if input_channel_check:
-            a,b,c = st.columns(3)
-            with a:
-                fancy_imshow(obs_obj)
-                st.write(IDX_TO_OBJECT)
-            with b:
-                fancy_imshow(obs_col)
-                st.write(IDX_TO_COLOR)
-            with c:
-                fancy_imshow(obs_state)
-        weight_proj_check = st.checkbox("Show channel weight proj onto logit dir", value=True)
+            columns = st.columns(n_selected_channels)
+            for i, channel in enumerate(selected_channels):
+                with columns[i]:
+                    st.write(format_func(channel))
+                    fancy_imshow(last_obs_reshaped[channel].detach().numpy().T)
+
+                    if n_channels == 3:
+                        if i == 0:
+                            st.write(IDX_TO_OBJECT)
+                        elif i == 1:
+                            st.write(IDX_TO_COLOR)
+                        else:
+                            st.write(IDX_TO_STATE)
 
         if weight_proj_check:
-            a,b,c = st.columns(3)
-            with a:
-                proj = project_weights_onto_dir(weights_objects, logit_dir)
-                fancy_imshow(proj.T)
-                fancy_histogram(proj.flatten())
-            with b:
-                proj = project_weights_onto_dir(weights_colors, logit_dir)
-                fancy_imshow(proj.T)
-                fancy_histogram(proj.flatten())
-            with c:
-                proj = project_weights_onto_dir(weights_states, logit_dir)
-                fancy_imshow(proj.T)
-                fancy_histogram(proj.flatten())
+            columns = st.columns(n_selected_channels)
+            for i, channel in enumerate(selected_channels):
+                with columns[i]:
+                    st.write(format_func(channel))
+                    fancy_imshow(weight_projections[channel].detach().numpy().T)
+                    fancy_histogram(weight_projections[channel].detach().numpy().flatten())
 
-        activ_proj_check = st.checkbox("Show channel activation proj onto logit dir", value=True)
         if activ_proj_check:
-            a,b,c = st.columns(3)
-            with a:
-                proj = project_weights_onto_dir(weights_objects, logit_dir)
-                obs = last_obs_reshaped.reshape(3,7,7)[0].detach().numpy()
-                weight_proj = proj * obs
-                fancy_imshow(weight_proj.T)
-                st.write(weight_proj.sum())
-                fancy_histogram(weight_proj.flatten())
-            with b:
-                proj = project_weights_onto_dir(weights_colors, logit_dir)
-                obs = last_obs_reshaped.reshape(3,7,7)[1].detach().numpy()
-                weight_proj = proj * obs
-                fancy_imshow(weight_proj.T)
-                st.write(weight_proj.sum())
-                fancy_histogram(weight_proj.flatten())
-            with c:
-                proj = project_weights_onto_dir(weights_states, logit_dir)
-                obs = last_obs_reshaped.reshape(3,7,7)[2].detach().numpy()
-                weight_proj = proj * obs
-                fancy_imshow(weight_proj.T)
-                st.write(weight_proj.sum())
-                fancy_histogram(weight_proj.flatten())
+            columns = st.columns(n_selected_channels)
+            for i, channel in enumerate(selected_channels):
+                with columns[i]:
+                    st.write(format_func(channel))
+                    fancy_imshow(activation_projection[channel].detach().numpy().T)
+                    fancy_histogram(activation_projection[channel].detach().numpy().flatten())
 
-        obj_contribution = (obj_embedding @ logit_dir).item()
-        col_contribution = (col_embedding @ logit_dir).item()
-        state_contribution = (state_embedding @ logit_dir).item()
-        if dt.time_embedding_type == "linear":
-            time_contribution = (time_embedding @ logit_dir).item()
-        else:
-            time_contribution = (time_embedding[0] @ logit_dir).item()
-        token_contribution = (tokens[0][1] @ logit_dir).item()
-
-        # take each of the contributions and add them to a dictionary, make a bar chart of them
-        contributions = {
-            "object": obj_contribution,
-            "colour": col_contribution,
-            "state": state_contribution,
-            "time": time_contribution,
-            "token": token_contribution
-        }
-
-        fig = px.bar(
-            contributions.items(),
-            x=0,
-            y=1,
-            labels={
-                "0": "Channel",
-                "1": "Contribution"
-            },
-            text=1
-        )
-
-        # add the value to the bar
-        fig.update_traces(texttemplate='%{text:.3f}', textposition='auto')
-        fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
-        fig.update_yaxes(range=[-8,8])
-        st.plotly_chart(fig, use_container_width=True)
-
-def assert_channel_decomposition_valid(dt, last_obs, tokens, obj_embedding, col_embedding, state_embedding, time_embedding):
-
-    last_obs_reshaped = rearrange(last_obs, "h w c -> (c h w)").to(t.float32).contiguous()
-    state_encoding = last_obs_reshaped @  dt.state_encoder.weight.detach().cpu().T
-
-    if st.session_state.timestep_adjustment == 0: # don't test otherwise, unnecessary
-        t.testing.assert_allclose(
-            tokens[0][1] - time_embedding[0],
-            state_encoding
-        )
-
-
-    # ok now we can confirm that the state embedding is the same as the object embedding + color embedding
-    if st.session_state.timestep_adjustment == 0: # don't test otherwise, unnecessary
-        t.testing.assert_allclose(
-                tokens[0][1] - time_embedding[0],
-                obj_embedding + col_embedding + state_embedding
-        )
+        
 
 def project_weights_onto_dir(weights, dir):
     return t.einsum("d, d h w -> h w", dir, weights.reshape(128,7,7)).detach()
