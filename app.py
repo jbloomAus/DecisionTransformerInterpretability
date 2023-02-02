@@ -13,7 +13,7 @@ from src.streamlit_app.static_analysis_components import (show_ov_circuit, show_
                                           show_time_embeddings, show_rtg_embeddings)
 from src.streamlit_app.visualizations import action_string_to_id
 from src.streamlit_app.causal_analysis_components import show_ablation
-from src.streamlit_app.content import help_page, analysis_help
+from src.streamlit_app.content import help_page, analysis_help, reference_tables
 start = time.time()
 
 st.set_page_config(
@@ -99,3 +99,4 @@ record_keypresses()
 
 help_page()
 analysis_help()
+reference_tables()
