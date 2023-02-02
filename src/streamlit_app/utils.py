@@ -12,7 +12,8 @@ def fancy_imshow(img, color_continuous_midpoint=0):
         color_continuous_scale=px.colors.diverging.RdBu
     )
     fig.update_layout(coloraxis_showscale=False, margin=dict(l=0, r=0, t=0, b=0))
-    st.plotly_chart(fig, use_container_width=True, autosize=False, width =900)
+    fig.update_layout(height=180, width=400)
+    st.plotly_chart(fig, use_container_width=True, autosize=True)
 
 def fancy_histogram(vector):
     fig = px.histogram(vector)

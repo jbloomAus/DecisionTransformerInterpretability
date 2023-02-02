@@ -14,11 +14,11 @@ IDX_TO_ACTION = {
 three_channel_schema = ["Object", "Color", "State"]
 
 def twenty_idx_format_func(idx):
-    if idx < 10:
+    if idx < 11:
         return IDX_TO_OBJECT[idx]
-    elif idx < 16:
-        return IDX_TO_COLOR[idx-10]
-    elif idx < 19:
-        return IDX_TO_STATE[idx-16]
+    elif idx < 17:
+        return IDX_TO_COLOR[idx-11]
+    elif idx < 20:
+        return IDX_TO_STATE[idx-17]
     else:
         return idx
