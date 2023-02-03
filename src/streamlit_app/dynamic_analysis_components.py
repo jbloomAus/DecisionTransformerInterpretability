@@ -7,7 +7,7 @@ from fancy_einsum import einsum
 from minigrid.core.constants import IDX_TO_OBJECT, IDX_TO_COLOR
 from .constants import IDX_TO_STATE, IDX_TO_ACTION, three_channel_schema, twenty_idx_format_func
 
-from .visualizations import plot_attention_patter_single, plot_single_residual_stream_contributions
+from .visualizations import plot_attention_pattern_single, plot_single_residual_stream_contributions
 from .analysis import get_residual_decomp
 from .utils import fancy_histogram, fancy_imshow
 
@@ -31,10 +31,10 @@ def show_attention_pattern(dt, cache):
         heads = st.multiselect("Select Heads", options=list(range(dt.n_heads)), default=list(range(dt.n_heads)), key="heads attention")
 
         if dt.n_layers == 1:
-            plot_attention_patter_single(cache,0, softmax=softmax, specific_heads=heads)
+            plot_attention_pattern_single(cache,0, softmax=softmax, specific_heads=heads)
         else:
             layer = st.slider("Layer", min_value=0, max_value=dt.n_layers-1, value=0, step=1)
-            plot_attention_patter_single(cache,layer, softmax=softmax, specific_heads=heads)
+            plot_attention_pattern_single(cache,layer, softmax=softmax, specific_heads=heads)
 
 def show_residual_stream_contributions_single(dt, cache, logit_dir):
     with st.expander("Show Residual Stream Contributions at current Reward-to-Go"):

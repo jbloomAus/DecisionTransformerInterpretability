@@ -16,9 +16,11 @@ def plot_action_preds(action_preds):
     action_preds = action_preds.detach().numpy()
     # softmax
     action_preds = np.exp(action_preds) / np.sum(np.exp(action_preds), axis=0)
+
+    n_actions = len(action_preds)
     action_preds = pd.DataFrame(
         action_preds, 
-        index=list(action_id_to_string.values())[:3]
+        index=list(action_id_to_string.values())[:n_actions]
         )
     fig = px.bar(action_preds, orientation='h',
         labels={"index": "", "value": "Probability"},
@@ -44,7 +46,7 @@ def plot_action_preds(action_preds):
 
     st.plotly_chart(fig, use_container_width=True)
 
-def plot_attention_patter_single(cache, layer, softmax=True, specific_heads: List = None):
+def plot_attention_pattern_single(cache, layer, softmax=True, specific_heads: List = None):
 
     n_tokens = st.session_state.dt.n_ctx - 1
     if softmax:
@@ -58,12 +60,15 @@ def plot_attention_patter_single(cache, layer, softmax=True, specific_heads: Lis
     if specific_heads is not None:
         attention_pattern = attention_pattern[specific_heads]
 
+    # st.write(attention_pattern.shape)
+    # st.write("n tokens", n_tokens)
+    # x_label = ["RTG","State","Action"]*((n_tokens+1)//3)
+
+    
     fig = px.imshow(
         attention_pattern,
         facet_col=0, 
         range_color=[0,1],
-        x = ["RTG","State"],
-        y = ["RTG","State"]
     )
     # fig.update_xaxes(showticklabels=False).update_yaxes(showticklabels=False)
 
