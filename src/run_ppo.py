@@ -31,6 +31,7 @@ if __name__ == "__main__":
         env_id=args.env_id,
         total_timesteps=args.total_timesteps,
         learning_rate=args.learning_rate,
+        decay_lr=args.decay_lr,
         num_envs=args.num_envs,
         num_steps=args.num_steps,
         gamma=args.gamma,

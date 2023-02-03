@@ -39,7 +39,11 @@ def train_ppo(args: PPOArgs, envs, trajectory_writer = None, probe_idx = None):
     memory = Memory(envs, args, device)
     agent = Agent(envs, device)
     num_updates = args.total_timesteps // args.batch_size
-    optimizer, scheduler = agent.make_optimizer(num_updates, initial_lr=args.learning_rate, end_lr=0.0)
+    if not args.decay_lr:
+        end_lr = args.learning_rate
+    else:
+        end_lr = 0.0
+    optimizer, scheduler = agent.make_optimizer(num_updates, initial_lr=args.learning_rate, end_lr=end_lr)
     
     # out = wg.Output(layout={"padding": "15px"})
     # display(out)

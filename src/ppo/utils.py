@@ -109,6 +109,8 @@ def parse_args():
                         help='the total number of timesteps to train for')
     parser.add_argument('--learning_rate', type=float, default=0.00025,
                         help='the learning rate of the optimizer')
+    parser.add_argument('--decay_lr', action='store_true', default=False,
+                        help='if toggled, the learning rate will decay linearly')
     parser.add_argument('--num_envs', type=int, default=10,
                         help='the number of parallel environments')
     parser.add_argument('--num_steps', type=int, default=128,
@@ -154,6 +156,7 @@ class PPOArgs:
     env_id: str = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
     total_timesteps: int = 1800000
     learning_rate: float = 0.00025
+    decay_lr: bool = False,
     num_envs: int = 4
     num_steps: int = 128
     gamma: float = 0.99
