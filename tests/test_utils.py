@@ -138,7 +138,7 @@ def test_trajectory_writer_lzma():
 
 def test_load_decision_transformer():
 
-    model_path = "models/demo_model.pt"
+    model_path = "models/MiniGrid-Dynamic-Obstacles-8x8-v0/demo_model_overnight_training.pt"
     env = make_env('MiniGrid-Dynamic-Obstacles-8x8-v0', 0, 0, False, "test")()
     model = load_decision_transformer(model_path, env)
 

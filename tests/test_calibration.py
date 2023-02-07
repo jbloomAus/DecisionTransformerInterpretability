@@ -10,7 +10,7 @@ from src.decision_transformer.calibration import calibration_statistics, plot_ca
 def test_calibration_end_to_end():
 
     env_id = "MiniGrid-Dynamic-Obstacles-8x8-v0"
-    model_path = "models/demo_model_overnight_training.pt"
+    model_path = "models/MiniGrid-Dynamic-Obstacles-8x8-v0/demo_model_overnight_training.pt"
     state_dict = t.load(model_path)
     one_hot_encoded = state_dict["state_encoder.weight"].shape[-1] == 980
     max_time_steps = state_dict["time_embedding.weight"].shape[0]
