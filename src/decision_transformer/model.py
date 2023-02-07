@@ -104,7 +104,11 @@ class DecisionTransformer(nn.Module):
         self.time_embedding_type = time_embedding_type
         self.device = torch.device(device)
         self.layer_norm = layer_norm
-        self.one_hot_obs = self.env.observation_space["image"].shape[-1]==20 # this checks if the observations are one hot encoded
+        # check if self.env.observation_space is subscribed to the gym.spaces.Dict class
+        if isinstance(self.env.observation_space, Dict):
+            self.one_hot_obs = self.env.observation_space["image"].shape[-1]==20 # this checks if the observations are one hot encoded
+        else:
+            self.one_hot_obs = False
 
         # Embedding layers
         if time_embedding_type == 'linear':
