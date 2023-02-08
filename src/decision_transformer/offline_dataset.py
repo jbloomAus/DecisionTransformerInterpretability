@@ -1,3 +1,4 @@
+import gzip
 import lzma
 import pickle
 import random
@@ -246,6 +247,9 @@ class TrajectoryReader():
         # if path ends in .xz, read as lzma
         elif self.path.endswith('.xz'):
             with lzma.open(self.path, 'rb') as f:
+                data = pickle.load(f)
+        elif self.path.endswith('.gz'):
+            with gzip.open(self.path, 'rb') as f:
                 data = pickle.load(f)
         else:
             raise ValueError(f"Path {self.path} is not a valid trajectory file")

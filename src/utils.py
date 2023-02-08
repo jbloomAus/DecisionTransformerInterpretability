@@ -1,7 +1,7 @@
+import gzip
 import lzma
 import os
 import pickle
-import re
 import time
 from dataclasses import asdict, dataclass
 from typing import Dict
@@ -79,6 +79,13 @@ class TrajectoryWriter():
         if self.path.endswith(".xz"):
             print(f"Writing to {self.path}, using lzma compression")
             with lzma.open(self.path, 'wb') as f:
+                pickle.dump({
+                    'data': data,
+                    'metadata': metadata
+                }, f)
+        elif self.path.endswith(".gz"):
+            print(f"Writing to {self.path}, using gzip compression")
+            with gzip.open(self.path, 'wb') as f:
                 pickle.dump({
                     'data': data,
                     'metadata': metadata
