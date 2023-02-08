@@ -1,4 +1,3 @@
-P
 # A list of packages that installed by default in the pytorch/pytorch docker image
 # torch==1.13.0
 # torchtext==0.14.0
@@ -45,6 +44,8 @@ wandb==0.13.7
 #numpy
 numpy==1.23.5
 
+#moviepy
+moviepy=1.0.3
 
 # streamlit
 streamlit==1.16.0
