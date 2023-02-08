@@ -14,6 +14,10 @@ Interpretability of such circuits may be a valuable step towards understanding h
 
 Future work may include attempting to manually edit decision transformers to modify goals and behavior.
 
+## Write Up
+
+You can find an initial technical report for this project [here](https://www.lesswrong.com/posts/bBuBDJBYHt39Q5zZy/decision-transformer-interpretability).
+
 ## Package Overview
 
 Currently the package has 3 important components:
