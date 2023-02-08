@@ -45,7 +45,7 @@ wandb==0.13.7
 numpy==1.23.5
 
 #moviepy
-moviepy=1.0.3
+moviepy==1.0.3
 
 # streamlit
 streamlit==1.16.0
