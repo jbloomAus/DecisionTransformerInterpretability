@@ -15,12 +15,13 @@ from .utils import PPOArgs, get_obs_preprocessor
 
 @dataclass
 class Minibatch:
-    obs: TT["batch", "obs_shape"] # noqa: F821
-    actions: TT["batch"] # noqa: F821
-    logprobs: TT["batch"] # noqa: F821
-    advantages: TT["batch"] # noqa: F821
-    values: TT["batch"] # noqa: F821
-    returns: TT["batch"] # noqa: F821
+    obs: TT["batch", "obs_shape"]  # noqa: F821
+    actions: TT["batch"]  # noqa: F821
+    logprobs: TT["batch"]  # noqa: F821
+    advantages: TT["batch"]  # noqa: F821
+    values: TT["batch"]  # noqa: F821
+    returns: TT["batch"]  # noqa: F821
+
 
 class Memory():
 
@@ -49,8 +50,8 @@ class Memory():
                             self.episode_lengths.append(item["episode"]["l"])
                             self.episode_returns.append(item["episode"]["r"])
                             self.add_vars_to_log(
-                                episode_length = item["episode"]["l"],
-                                episode_return = item["episode"]["r"],
+                                episode_length=item["episode"]["l"],
+                                episode_return=item["episode"]["r"],
                             )
 
                     self.global_step += 1
@@ -70,7 +71,8 @@ class Memory():
         '''
         assert batch_size % minibatch_size == 0
         indices = np.random.permutation(batch_size)
-        indices = rearrange(indices, "(mb_num mb_size) -> mb_num mb_size", mb_size=minibatch_size)
+        indices = rearrange(
+            indices, "(mb_num mb_size) -> mb_num mb_size", mb_size=minibatch_size)
         return list(indices)
 
     def compute_advantages(
@@ -83,7 +85,7 @@ class Memory():
         device: t.device,
         gamma: float,
         gae_lambda: float
-    ) -> TT["T", "env"]: # noqa: F821
+    ) -> TT["T", "env"]:  # noqa: F821
         '''Compute advantages using Generalized Advantage Estimation.
         '''
         T = values.shape[0]
@@ -93,17 +95,21 @@ class Memory():
         advantages = t.zeros_like(deltas).to(device)
         advantages[-1] = deltas[-1]
         for t_ in reversed(range(1, T)):
-            advantages[t_-1] = deltas[t_-1] + gamma * gae_lambda * (1.0 - dones[t_]) * advantages[t_]
+            advantages[t_-1] = deltas[t_-1] + gamma * \
+                gae_lambda * (1.0 - dones[t_]) * advantages[t_]
         return advantages
 
     def get_minibatches(self) -> List[Minibatch]:
         '''Computes advantages, and returns minibatches to be used in the
         learning phase.
         '''
-        obs, dones, actions, logprobs, values, rewards = [t.stack(arr) for arr in zip(*self.experiences)]
-        advantages = self.compute_advantages(self.next_value, self.next_done, rewards, values, dones, self.device, self.args.gamma, self.args.gae_lambda)
+        obs, dones, actions, logprobs, values, rewards = [
+            t.stack(arr) for arr in zip(*self.experiences)]
+        advantages = self.compute_advantages(
+            self.next_value, self.next_done, rewards, values, dones, self.device, self.args.gamma, self.args.gae_lambda)
         returns = advantages + values
-        indexes = self.get_minibatch_indexes(self.args.batch_size, self.args.minibatch_size)
+        indexes = self.get_minibatch_indexes(
+            self.args.batch_size, self.args.minibatch_size)
         return [
             Minibatch(*[
                 arr.flatten(0, 1)[ind]
@@ -134,7 +140,8 @@ class Memory():
             (obs, info) = self.envs.reset()
             obs = self.obs_preprocessor(obs)
             self.next_obs = t.tensor(obs).to(self.device)
-            self.next_done = t.zeros(self.envs.num_envs).to(self.device, dtype=t.float)
+            self.next_done = t.zeros(self.envs.num_envs).to(
+                self.device, dtype=t.float)
 
     def add_vars_to_log(self, **kwargs):
         '''Add variables to storage, for eventual logging (if args.track=True).

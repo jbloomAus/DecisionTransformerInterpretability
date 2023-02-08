@@ -11,23 +11,23 @@ from .trainer import Trainer
 
 
 def train(
-    dt: DecisionTransformer,
-    trajectory_data_set: TrajectoryLoader,
-    env,
-    make_env,
-    batch_size=128,
-    batches=1000,
-    lr=0.0001,
-    weight_decay=0.0,
-    device="cpu",
-    track=False,
-    test_frequency=10,
-    test_batches=10,
-    eval_frequency=10,
-    eval_episodes=10,
-    initial_rtg=1.0,
-    prob_go_from_end=0.1,
-    eval_max_time_steps=100):
+        dt: DecisionTransformer,
+        trajectory_data_set: TrajectoryLoader,
+        env,
+        make_env,
+        batch_size=128,
+        batches=1000,
+        lr=0.0001,
+        weight_decay=0.0,
+        device="cpu",
+        track=False,
+        test_frequency=10,
+        test_batches=10,
+        eval_frequency=10,
+        eval_episodes=10,
+        initial_rtg=1.0,
+        prob_go_from_end=0.1,
+        eval_max_time_steps=100):
 
     loss_fn = nn.CrossEntropyLoss()
 
@@ -97,48 +97,49 @@ def train(
         # # at test frequency
         if batch % test_frequency == 0:
             test(
-                dt = dt,
-                trajectory_data_set = trajectory_data_set,
-                env = env,
-                batch_size = batch_size,
-                batches = test_batches,
-                device = device,
-                track = track,
-                batch_number = batch)
+                dt=dt,
+                trajectory_data_set=trajectory_data_set,
+                env=env,
+                batch_size=batch_size,
+                batches=test_batches,
+                device=device,
+                track=track,
+                batch_number=batch)
 
         eval_env_func = make_env(
-            env_id = env.spec.id,
+            env_id=env.spec.id,
             seed=batch,
             idx=0,
             capture_video=True,
-            max_steps = min(dt.max_timestep, eval_max_time_steps),
-            run_name = f"dt_eval_videos_{batch}",
+            max_steps=min(dt.max_timestep, eval_max_time_steps),
+            run_name=f"dt_eval_videos_{batch}",
             fully_observed=False,
-            flat_one_hot= (trajectory_data_set.observation_type == "one_hot"),
+            flat_one_hot=(trajectory_data_set.observation_type == "one_hot"),
         )
 
         if batch % eval_frequency == 0:
             evaluate_dt_agent(
-                env_id = env.spec.id,
-                dt = dt,
-                env_func= eval_env_func,
-                trajectories = eval_episodes,
+                env_id=env.spec.id,
+                dt=dt,
+                env_func=eval_env_func,
+                trajectories=eval_episodes,
                 track=track,
-                batch_number = batch,
-                initial_rtg = initial_rtg,
-                device = device)
+                batch_number=batch,
+                initial_rtg=initial_rtg,
+                device=device)
 
     return dt
 
+
 def test(
-    dt: DecisionTransformer,
-    trajectory_data_set: TrajectoryLoader,
-    env,
-    batch_size=128,
-    batches=10,
-    device="cpu",
-    track=False,
-    batch_number=0):
+        dt: DecisionTransformer,
+        trajectory_data_set: TrajectoryLoader,
+        env,
+        batch_size=128,
+        batches=10,
+        device="cpu",
+        track=False,
+        batch_number=0):
 
     dt.eval()
 
@@ -152,7 +153,7 @@ def test(
     for i in pbar:
 
         s, a, r, d, rtg, timesteps, mask = trajectory_data_set.get_batch(
-            batch_size, max_len= dt.n_ctx // 3)
+            batch_size, max_len=dt.n_ctx // 3)
 
         s.to(device)
         a.to(device)
@@ -177,7 +178,6 @@ def test(
         action_preds = rearrange(action_preds, 'b t a -> (b t) a')
         a_exp = rearrange(a, 'b t -> (b t)').to(t.int64)
 
-
         a_hat = t.argmax(action_preds, dim=-1)
         a_exp = rearrange(a, 'b t -> (b t)').to(t.int64)
 
@@ -200,16 +200,17 @@ def test(
 
     return mean_loss, accuracy
 
+
 def evaluate_dt_agent(
-    env_id: str,
-    dt: DecisionTransformer,
-    env_func,
-    trajectories=300,
-    track=False,
-    batch_number=0,
-    initial_rtg=0.98,
-    use_tqdm=True,
-    device = "cpu"):
+        env_id: str,
+        dt: DecisionTransformer,
+        env_func,
+        trajectories=300,
+        track=False,
+        batch_number=0,
+        initial_rtg=0.98,
+        use_tqdm=True,
+        device="cpu"):
 
     dt.eval()
 
@@ -217,7 +218,7 @@ def evaluate_dt_agent(
     video_path = os.path.join("videos", env.run_name)
 
     assert dt.n_ctx % 3 == 0, "n_ctx must be divisible by 3"
-    max_len= dt.n_ctx // 3
+    max_len = dt.n_ctx // 3
 
     traj_lengths = []
     rewards = []
@@ -240,7 +241,7 @@ def evaluate_dt_agent(
         pbar = range(trajectories)
 
     for seed in pbar:
-        obs, _ = env.reset(seed = seed)
+        obs, _ = env.reset(seed=seed)
         obs = t.tensor(obs['image']).unsqueeze(0).unsqueeze(0)
         rtg = t.tensor([initial_rtg]).unsqueeze(0).unsqueeze(0)
         a = t.tensor([0]).unsqueeze(0).unsqueeze(0)
@@ -253,7 +254,6 @@ def evaluate_dt_agent(
 
         if dt.time_embedding_type == "linear":
             timesteps = timesteps.to(t.float32)
-
 
         # get first action
         state_preds, action_preds, reward_preds = dt.forward(
@@ -297,7 +297,8 @@ def evaluate_dt_agent(
             i = i + 1
 
             if use_tqdm:
-                pbar.set_description(f"Evaluating DT: Episode {seed} at timestep {i} for reward {new_reward}")
+                pbar.set_description(
+                    f"Evaluating DT: Episode {seed} at timestep {i} for reward {new_reward}")
 
         traj_lengths.append(i)
         rewards.append(new_reward)
@@ -307,10 +308,12 @@ def evaluate_dt_agent(
         n_terminated = n_terminated + terminated
         n_truncated = n_truncated + truncated
 
-        current_videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
-        if track and (len(current_videos) > len(videos)): # we have a new video
+        current_videos = [i for i in os.listdir(
+            video_path) if i.endswith(".mp4")]
+        if track and (len(current_videos) > len(videos)):  # we have a new video
             new_videos = [i for i in current_videos if i not in videos]
-            assert len(new_videos) == 1, "more than one new video found, new videos: {}".format(new_videos)
+            assert len(new_videos) == 1, "more than one new video found, new videos: {}".format(
+                new_videos)
             path_to_video = os.path.join(video_path, new_videos[0])
             wandb.log({"media/video": wandb.Video(
                 path_to_video,
@@ -318,7 +321,7 @@ def evaluate_dt_agent(
                 format="mp4",
                 caption=f"{env_id}, after {batch_number} batch, episode length {i}, reward {new_reward}"
             )}, step=batch_number)
-        videos = current_videos # update videos
+        videos = current_videos  # update videos
 
     statistics = {
         "initial_rtg": initial_rtg,

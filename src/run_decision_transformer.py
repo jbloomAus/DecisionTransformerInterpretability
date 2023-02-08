@@ -33,7 +33,8 @@ if __name__ == "__main__":
         n_layers=args.n_layers,
         layer_norm=args.layer_norm,
         linear_time_embedding=args.linear_time_embedding,
-        n_ctx=args.n_ctx, # we set the context and then train on sequences of lenght n_ctx // 3.
+        # we set the context and then train on sequences of lenght n_ctx // 3.
+        n_ctx=args.n_ctx,
         batches=args.batches,
         learning_rate=args.learning_rate,
         weight_decay=args.weight_decay,
@@ -63,12 +64,13 @@ if __name__ == "__main__":
     print("observation type: ", trajectory_data_set.observation_type)
     env = make_env(
         env_id,
-        seed = 0,
-        idx = 0,
+        seed=0,
+        idx=0,
         capture_video=False,
-        run_name = "dev",
+        run_name="dev",
         fully_observed=False,
-        flat_one_hot= (trajectory_data_set.observation_type == "one_hot"), # detect if we are using flat one-hot observations.
+        # detect if we are using flat one-hot observations.
+        flat_one_hot=(trajectory_data_set.observation_type == "one_hot"),
     )
     env = env()
 
@@ -90,26 +92,27 @@ if __name__ == "__main__":
 
     # make a decision transformer
     dt = DecisionTransformer(
-        env = env,
-        d_model = args.d_model,
-        n_heads = args.n_heads,
-        d_mlp = args.d_mlp,
-        n_layers = args.n_layers,
-        layer_norm = args.layer_norm,
-        time_embedding_type = time_embedding_type,
-        state_embedding_type="grid", # hard-coded for now to minigrid.
-        max_timestep=trajectory_data_set.metadata.get("args").get("max_steps"), # so we can embed all the timesteps in the training data.
-        n_ctx= args.n_ctx,
-        device = device
+        env=env,
+        d_model=args.d_model,
+        n_heads=args.n_heads,
+        d_mlp=args.d_mlp,
+        n_layers=args.n_layers,
+        layer_norm=args.layer_norm,
+        time_embedding_type=time_embedding_type,
+        state_embedding_type="grid",  # hard-coded for now to minigrid.
+        # so we can embed all the timesteps in the training data.
+        max_timestep=trajectory_data_set.metadata.get("args").get("max_steps"),
+        n_ctx=args.n_ctx,
+        device=device
     )
 
     if args.track:
         wandb.watch(dt, log="parameters")
 
     dt = train(
-        dt = dt,
-        trajectory_data_set = trajectory_data_set,
-        env = env,
+        dt=dt,
+        trajectory_data_set=trajectory_data_set,
+        env=env,
         make_env=make_env,
         device=device,
         batches=args.batches,
@@ -118,7 +121,7 @@ if __name__ == "__main__":
         batch_size=args.batch_size,
         track=args.track,
         test_frequency=args.test_frequency,
-        test_batches = args.test_batches,
+        test_batches=args.test_batches,
         eval_frequency=args.eval_frequency,
         eval_episodes=args.eval_episodes,
         initial_rtg=args.initial_rtg,

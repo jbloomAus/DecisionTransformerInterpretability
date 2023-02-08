@@ -1,6 +1,7 @@
 import gymnasium as gym
 from minigrid.wrappers import OneHotPartialObsWrapper, FullyObsWrapper
 
+
 def make_env(
     env_id: str,
     seed: int,
@@ -12,11 +13,12 @@ def make_env(
     fully_observed=False,
     flat_one_hot=False,
     video_frequency=50
-    ):
+):
     """Return a function that returns an environment after setting up boilerplate."""
 
     # only one of fully observed or flat one hot can be true.
-    assert not (fully_observed and flat_one_hot), "Can't have both fully_observed and flat_one_hot."
+    assert not (
+        fully_observed and flat_one_hot), "Can't have both fully_observed and flat_one_hot."
 
     def thunk():
 
@@ -34,7 +36,8 @@ def make_env(
                 env = gym.wrappers.RecordVideo(
                     env,
                     f"videos/{run_name}",
-                    episode_trigger=lambda x: x % video_frequency == 0,  # Video every 50 runs for env #1
+                    # Video every 50 runs for env #1
+                    episode_trigger=lambda x: x % video_frequency == 0,
                     disable_logger=True
                 )
 

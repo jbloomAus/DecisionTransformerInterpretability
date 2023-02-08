@@ -11,7 +11,8 @@ Arr = np.ndarray
 ObsType = np.ndarray
 ActType = int
 
-## %
+# %
+
 
 class Probe1(gym.Env):
     """One action, observation of [0.0], one timestep long, +1 reward.
@@ -74,7 +75,6 @@ class Probe2(gym.Env):
         return np.array([self.reward])
 
 
-
 # %%
 class Probe3(gym.Env):
     """One action, [0.0] then [1.0] observation, two timesteps, +1 reward at the end.
@@ -108,7 +108,6 @@ class Probe3(gym.Env):
         return np.array([0.0])
 
 
-
 # %%
 class Probe4(gym.Env):
     """Two actions, [0.0] observation, one timestep, reward is -1.0 or +1.0 dependent on the action.
@@ -135,8 +134,6 @@ class Probe4(gym.Env):
         if return_info:
             return np.array([0.0]), {}
         return np.array([0.0])
-
-
 
 
 # %%

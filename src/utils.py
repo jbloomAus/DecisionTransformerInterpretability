@@ -24,6 +24,7 @@ class TrajectoryWriter():
         - the infos
     And store them in a set of lists, indexed by batch b and time t.
     '''
+
     def __init__(self, path, args: dataclass):
         self.observations = []
         self.actions = []
@@ -59,17 +60,17 @@ class TrajectoryWriter():
     def write(self, upload_to_wandb: bool = False):
 
         data = {
-            'observations': np.array(self.observations, dtype = np.float64),
-            'actions': np.array(self.actions, dtype = np.int64),
-            'rewards': np.array(self.rewards, dtype = np.float64),
-            'dones': np.array(self.dones, dtype = bool),
-            'truncated': np.array(self.truncated, dtype = bool),
-            'infos': np.array(self.infos, dtype = object)
+            'observations': np.array(self.observations, dtype=np.float64),
+            'actions': np.array(self.actions, dtype=np.int64),
+            'rewards': np.array(self.rewards, dtype=np.float64),
+            'dones': np.array(self.dones, dtype=bool),
+            'truncated': np.array(self.truncated, dtype=bool),
+            'infos': np.array(self.infos, dtype=object)
         }
 
         metadata = {
-            "args": asdict(self.args), # Args such as ppo args
-            "time": time.time() # Time of writing
+            "args": asdict(self.args),  # Args such as ppo args
+            "time": time.time()  # Time of writing
         }
 
         if not os.path.exists(os.path.dirname(self.path)):
@@ -99,22 +100,25 @@ class TrajectoryWriter():
                 }, f)
 
         if upload_to_wandb:
-            artifact = wandb.Artifact(self.path.split("/")[-1], type = "trajectory")
+            artifact = wandb.Artifact(
+                self.path.split("/")[-1], type="trajectory")
             artifact.add_file(self.path)
             wandb.log_artifact(artifact)
 
         print(f"Trajectory written to {self.path}")
 
 
-def pad_tensor(tensor, length = 100, ignore_first_dim=True, pad_token = 0):
+def pad_tensor(tensor, length=100, ignore_first_dim=True, pad_token=0):
 
     if ignore_first_dim:
         if tensor.shape[1] < length:
-            pad = t.ones((tensor.shape[0], length - tensor.shape[1], *tensor.shape[2:])) * pad_token
+            pad = t.ones(
+                (tensor.shape[0], length - tensor.shape[1], *tensor.shape[2:])) * pad_token
             tensor = t.cat([tensor, pad], dim=1)
         return tensor
     else:
         if tensor.shape[0] < length:
-            pad = t.ones((length - tensor.shape[0], *tensor.shape[1:])) * pad_token
+            pad = t.ones(
+                (length - tensor.shape[0], *tensor.shape[1:])) * pad_token
             tensor = t.cat([tensor, pad], dim=0)
         return tensor

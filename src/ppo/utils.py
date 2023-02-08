@@ -24,18 +24,18 @@ ObsType = np.ndarray
 ActType = int
 
 
-
-
 def set_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
     t.manual_seed(seed)
+
 
 def window_avg(arr: Arr, window: int):
     """
     Computes sliding window average
     """
     return np.convolve(arr, np.ones(window), mode="valid") / window
+
 
 def cummean(arr: Arr):
     """
@@ -45,7 +45,9 @@ def cummean(arr: Arr):
 
 # Taken from https://stackoverflow.com/questions/42869495/numpy-version-of-exponential-weighted-moving-average-equivalent-to-pandas-ewm
 # See https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
-def ewma(arr : Arr, alpha : float):
+
+
+def ewma(arr: Arr, alpha: float):
     '''
     Returns the exponentially weighted moving average of x.
     Parameters:
@@ -60,12 +62,12 @@ def ewma(arr : Arr, alpha : float):
     # Coerce x to an array
     s = np.zeros_like(arr)
     s[0] = arr[0]
-    for i in range(1,len(arr)):
+    for i in range(1, len(arr)):
         s[i] = alpha * arr[i] + (1-alpha)*s[i-1]
     return s
 
 
-def sum_rewards(rewards : List[int], gamma : float = 1):
+def sum_rewards(rewards: List[int], gamma: float = 1):
     """
     Computes the total discounted sum of rewards for an episode.
     By default, assume no discount
@@ -77,7 +79,7 @@ def sum_rewards(rewards : List[int], gamma : float = 1):
         r1 + gamma*r2 + gamma^2 r3 + ...
     """
     total_reward = 0
-    for r in rewards[:0:-1]: #reverse, excluding first
+    for r in rewards[:0:-1]:  # reverse, excluding first
         total_reward += r
         total_reward *= gamma
     total_reward += rewards[0]
@@ -86,9 +88,9 @@ def sum_rewards(rewards : List[int], gamma : float = 1):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-                    prog = 'PPO',
-                    description = 'Proximal Policy Optimization',
-                    epilog = "'You are personally responsible for becoming more ethical than the society you grew up in.'― Eliezer Yudkowsky")
+        prog='PPO',
+        description='Proximal Policy Optimization',
+        epilog="'You are personally responsible for becoming more ethical than the society you grew up in.'― Eliezer Yudkowsky")
     parser.add_argument('--exp_name', type=str, default='MiniGrid-Dynamic-Obstacles-8x8-v0',
                         help='the name of this experiment')
     parser.add_argument('--seed', type=int, default=1,
@@ -173,35 +175,37 @@ class PPOArgs:
     fully_observed: bool = False
 
     def __post_init__(self):
-            self.batch_size = int(self.num_envs * self.num_steps)
-            self.minibatch_size = self.batch_size // self.num_minibatches
-            if self.trajectory_path is None:
-                self.trajectory_path = os.path.join("trajectories", self.env_id + str(uuid.uuid4()) + ".gz")
+        self.batch_size = int(self.num_envs * self.num_steps)
+        self.minibatch_size = self.batch_size // self.num_minibatches
+        if self.trajectory_path is None:
+            self.trajectory_path = os.path.join(
+                "trajectories", self.env_id + str(uuid.uuid4()) + ".gz")
+
 
 arg_help_strings = dict(
-    exp_name = "the name of this experiment",
-    seed = "seed of the experiment",
-    cuda = "if toggled, cuda will be enabled by default",
-    track = "if toggled, this experiment will be tracked with Weights and Biases",
-    wandb_project_name = "the wandb's project name",
-    wandb_entity = "the entity (team) of wandb's project",
-    capture_video = "whether to capture videos of the agent performances (check out `videos` folder)",
-    env_id = "the id of the environment",
-    total_timesteps = "total timesteps of the experiments",
-    learning_rate = "the learning rate of the optimizer",
-    num_envs = "number of synchronized vector environments in our `envs` object",
-    num_steps = "number of steps taken in the rollout phase",
-    gamma = "the discount factor gamma",
-    gae_lambda = "the discount factor used in our GAE estimation",
-    update_epochs = "how many times you loop through the data generated in rollout",
-    clip_coef = "the epsilon term used in the policy loss function",
-    ent_coef = "coefficient of entropy bonus term",
-    vf_coef = "cofficient of value loss function",
-    max_grad_norm = "value used in gradient clipping",
+    exp_name="the name of this experiment",
+    seed="seed of the experiment",
+    cuda="if toggled, cuda will be enabled by default",
+    track="if toggled, this experiment will be tracked with Weights and Biases",
+    wandb_project_name="the wandb's project name",
+    wandb_entity="the entity (team) of wandb's project",
+    capture_video="whether to capture videos of the agent performances (check out `videos` folder)",
+    env_id="the id of the environment",
+    total_timesteps="total timesteps of the experiments",
+    learning_rate="the learning rate of the optimizer",
+    num_envs="number of synchronized vector environments in our `envs` object",
+    num_steps="number of steps taken in the rollout phase",
+    gamma="the discount factor gamma",
+    gae_lambda="the discount factor used in our GAE estimation",
+    update_epochs="how many times you loop through the data generated in rollout",
+    clip_coef="the epsilon term used in the policy loss function",
+    ent_coef="coefficient of entropy bonus term",
+    vf_coef="cofficient of value loss function",
+    max_grad_norm="value used in gradient clipping",
     # batch_size = "number of random samples we take from the rollout data",
     # minibatch_size = "size of each minibatch we perform a gradient step on",
-    max_steps = "maximum number of steps in an episode",
-    trajectory_path = "path to save the trajectories",
+    max_steps="maximum number of steps in an episode",
+    trajectory_path="path to save the trajectories",
 )
 
 
@@ -212,14 +216,16 @@ def arg_help(args: Optional[PPOArgs], print_df=False):
         changed_args = []
     else:
         default_args = PPOArgs()
-        changed_args = [key for key in default_args.__dict__ if getattr(default_args, key) != getattr(args, key)]
+        changed_args = [key for key in default_args.__dict__ if getattr(
+            default_args, key) != getattr(args, key)]
     df = pd.DataFrame([arg_help_strings]).T
     df.columns = ["description"]
     df["default value"] = [repr(getattr(args, name)) for name in df.index]
     df.index.name = "arg"
     df = df[["default value", "description"]]
     if print_df:
-        df.insert(1, "changed?", ["yes" if i in changed_args else "" for i in df.index])
+        df.insert(1, "changed?", [
+                  "yes" if i in changed_args else "" for i in df.index])
         with pd.option_context(
             'max_colwidth', 0,
             'display.width', 150,
@@ -240,6 +246,7 @@ def arg_help(args: Optional[PPOArgs], print_df=False):
 
 # %%
 
+
 def plot_cartpole_obs_and_dones(obs: t.Tensor, done: t.Tensor):
     """
     obs: shape (n_steps, n_envs, n_obs)
@@ -250,8 +257,10 @@ def plot_cartpole_obs_and_dones(obs: t.Tensor, done: t.Tensor):
     obs = rearrange(obs, "step env ... -> (env step) ...").cpu().numpy()
     done = rearrange(done, "step env -> (env step)").cpu().numpy()
     done_indices = np.nonzero(done)[0]
-    fig = make_subplots(rows=2, cols=1, subplot_titles=["Cart x-position", "Cart angle"])
-    fig.update_layout(template="simple_white", title="CartPole experiences (dotted lines = termination)", showlegend=False)
+    fig = make_subplots(rows=2, cols=1, subplot_titles=[
+                        "Cart x-position", "Cart angle"])
+    fig.update_layout(template="simple_white",
+                      title="CartPole experiences (dotted lines = termination)", showlegend=False)
     d = dict(zip(['posn', 'speed', 'angle', 'angular_velocity'], obs.T))
     d["posn_min"] = np.full_like(d["posn"], -2.4)
     d["posn_max"] = np.full_like(d["posn"], +2.4)
@@ -259,13 +268,17 @@ def plot_cartpole_obs_and_dones(obs: t.Tensor, done: t.Tensor):
     d["angle_max"] = np.full_like(d["posn"], +0.2095)
     for i, (name0, color, y) in enumerate(zip(["posn", "angle"], px.colors.qualitative.D3, [2.4, 0.2095]), 1):
         for name1 in ["", "_min", "_max"]:
-            fig.add_trace(go.Scatter(y=d[name0+name1], name=name0+name1, mode="lines", marker_color=color), col=1, row=i)
+            fig.add_trace(go.Scatter(
+                y=d[name0+name1], name=name0+name1, mode="lines", marker_color=color), col=1, row=i)
         for x in done_indices:
-            fig.add_vline(x=x, y1=1, y0=0, line_width=2, line_color="black", line_dash="dash", col=1, row=i)
+            fig.add_vline(x=x, y1=1, y0=0, line_width=2,
+                          line_color="black", line_dash="dash", col=1, row=i)
     for sign, text0 in zip([-1, 1], ["Min", "Max"]):
         for row, (y, text1) in enumerate(zip([2.4, 0.2095], ["posn", "angle"]), 1):
-            fig.add_annotation(text=" ".join([text0, text1]), xref="paper", yref="paper", x=550, y=sign*y, showarrow=False, row=row, col=1)
+            fig.add_annotation(text=" ".join(
+                [text0, text1]), xref="paper", yref="paper", x=550, y=sign*y, showarrow=False, row=row, col=1)
     fig.show()
+
 
 def set_global_seeds(seed):
     '''Sets random seeds in several different ways (to guarantee reproducibility)
@@ -276,9 +289,6 @@ def set_global_seeds(seed):
     np.random.seed(seed)
     t.backends.cudnn.deterministic = True
 
-
-import gymnasium as gym
-import numpy as np
 
 def get_obs_preprocessor(obs_space):
 
@@ -291,6 +301,7 @@ def get_obs_preprocessor(obs_space):
         obs_space = obs_space.spaces
         if 'image' in obs_space:
             return lambda x: preprocess_images(x['image'])
+
 
 def preprocess_images(images, device=None):
     # Bug of Pytorch: very slow if not first converted to numpy array

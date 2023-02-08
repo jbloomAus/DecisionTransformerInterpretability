@@ -7,6 +7,7 @@ from src.environments import make_env
 from src.decision_transformer.utils import load_decision_transformer
 from src.decision_transformer.calibration import calibration_statistics, plot_calibration_statistics
 
+
 def test_calibration_end_to_end():
 
     env_id = "MiniGrid-Dynamic-Obstacles-8x8-v0"
@@ -15,11 +16,10 @@ def test_calibration_end_to_end():
     one_hot_encoded = state_dict["state_encoder.weight"].shape[-1] == 980
     max_time_steps = state_dict["time_embedding.weight"].shape[0]
     env_func = make_env(
-        env_id, seed = 1, idx = 0,
-        capture_video=False, run_name = "dev",
-        fully_observed=False, flat_one_hot = one_hot_encoded, max_steps= max_time_steps)
+        env_id, seed=1, idx=0,
+        capture_video=False, run_name="dev",
+        fully_observed=False, flat_one_hot=one_hot_encoded, max_steps=max_time_steps)
     env = env_func()
-
 
     state_dict = t.load(model_path)
     one_hot_encoded = state_dict["state_encoder.weight"].shape[-1] == 980
@@ -41,6 +41,7 @@ def test_calibration_end_to_end():
 
     assert fig is not None
 
+
 def test_calibration_end_to_end_one_hot_model():
 
     env_id = "MiniGrid-Dynamic-Obstacles-8x8-v0"
@@ -49,9 +50,9 @@ def test_calibration_end_to_end_one_hot_model():
     one_hot_encoded = state_dict["state_encoder.weight"].shape[-1] == 980
     max_time_steps = state_dict["time_embedding.weight"].shape[0]
     env_func = make_env(
-        env_id, seed = 1, idx = 0,
-        capture_video=False, run_name = "dev",
-        fully_observed=False, flat_one_hot = one_hot_encoded, max_steps= max_time_steps)
+        env_id, seed=1, idx=0,
+        capture_video=False, run_name="dev",
+        fully_observed=False, flat_one_hot=one_hot_encoded, max_steps=max_time_steps)
     env = env_func()
 
     state_dict = t.load(model_path)

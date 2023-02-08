@@ -13,6 +13,7 @@ IDX_TO_ACTION = {
 
 three_channel_schema = ["Object", "Color", "State"]
 
+
 def twenty_idx_format_func(idx):
     if idx < 11:
         return IDX_TO_OBJECT[idx]

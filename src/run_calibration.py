@@ -15,15 +15,21 @@ logging.basicConfig(level=logging.INFO)
 if __name__ == "__main__":
     logger = logging.getLogger(__name__)
     parser = argparse.ArgumentParser(
-        prog = "Get Calibration of Decision Transformer",
+        prog="Get Calibration of Decision Transformer",
         description="Assess the RTG calibration of a decision transformer")
 
-    parser.add_argument("--env_id", type=str, default="MiniGrid-Dynamic-Obstacles-8x8-v0", help="Environment ID")
-    parser.add_argument("--model_path", type=str, default="models/dt.pt", help="Path to model")
-    parser.add_argument("--n_trajectories", type=int, default=100, help="Number of trajectories to evaluate")
-    parser.add_argument("--initial_rtg_min", type=float, default=-1, help="Minimum initial RTG")
-    parser.add_argument("--initial_rtg_max", type=float, default=1, help="Maximum initial RTG")
-    parser.add_argument("--initial_rtg_step", type=float, default=0.1, help="Step size for initial RTG")
+    parser.add_argument(
+        "--env_id", type=str, default="MiniGrid-Dynamic-Obstacles-8x8-v0", help="Environment ID")
+    parser.add_argument("--model_path", type=str,
+                        default="models/dt.pt", help="Path to model")
+    parser.add_argument("--n_trajectories", type=int,
+                        default=100, help="Number of trajectories to evaluate")
+    parser.add_argument("--initial_rtg_min", type=float,
+                        default=-1, help="Minimum initial RTG")
+    parser.add_argument("--initial_rtg_max", type=float,
+                        default=1, help="Maximum initial RTG")
+    parser.add_argument("--initial_rtg_step", type=float,
+                        default=0.1, help="Step size for initial RTG")
     args = parser.parse_args()
 
     logger.info(f"Loading model from {args.model_path}")
@@ -32,8 +38,8 @@ if __name__ == "__main__":
     one_hot_encoded = state_dict["state_encoder.weight"].shape[-1] == 980
     max_time_steps = state_dict["time_embedding.weight"].shape[0]
     env_func = make_env(
-        args.env_id, seed = 1, idx = 0, capture_video=False,
-        run_name = "dev", fully_observed=False, flat_one_hot = one_hot_encoded,
+        args.env_id, seed=1, idx=0, capture_video=False,
+        run_name="dev", fully_observed=False, flat_one_hot=one_hot_encoded,
         max_steps=max_time_steps
     )
 
@@ -44,11 +50,12 @@ if __name__ == "__main__":
         dt,
         args.env_id,
         env_func,
-        initial_rtg_range=np.linspace(args.initial_rtg_min, args.initial_rtg_max, int((args.initial_rtg_max - args.initial_rtg_min) / args.initial_rtg_step)),
+        initial_rtg_range=np.linspace(args.initial_rtg_min, args.initial_rtg_max, int(
+            (args.initial_rtg_max - args.initial_rtg_min) / args.initial_rtg_step)),
         trajectories=args.n_trajectories
     )
 
-    fig = plot_calibration_statistics(statistics, show_spread=True,CI=0.95)
+    fig = plot_calibration_statistics(statistics, show_spread=True, CI=0.95)
     # add all the hyperparameters to the title (env id, d_model, n_heads, d_mlp, n_ctx, n_layers, max_timestep, layernorm)
     # make font title smaller
     fig.update_layout(

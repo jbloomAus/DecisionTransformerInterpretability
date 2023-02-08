@@ -9,12 +9,15 @@ from .utils import PPOArgs
 
 device = t.device("cuda" if t.cuda.is_available() else "cpu")
 
+
 def get_printable_output_for_probe_envs(args: PPOArgs, agent: Agent, probe_idx: int, update: int, num_updates: int):
     """Tests a probe environment, by printing output in the form of a widget.
     We should see rapid convergence in both actions and observations.
     """
-    obs_for_probes = [[[0.0]], [[-1.0], [+1.0]], [[0.0], [1.0]], [[0.0]], [[0.0], [1.0]]]
-    expected_value_for_probes = [1.0, [-1.0, +1.0], [args.gamma, 1.0], 1.0, [1.0, 1.0]]
+    obs_for_probes = [[[0.0]], [[-1.0], [+1.0]],
+                      [[0.0], [1.0]], [[0.0]], [[0.0], [1.0]]]
+    expected_value_for_probes = [
+        1.0, [-1.0, +1.0], [args.gamma, 1.0], 1.0, [1.0, 1.0]]
     expected_actions_for_probs = [None, None, None, 1, [0, 1]]
 
     obs = t.tensor(obs_for_probes[probe_idx]).to(device)
@@ -34,7 +37,8 @@ def get_printable_output_for_probe_envs(args: PPOArgs, agent: Agent, probe_idx: 
 
     return output
 
-def train_ppo(args: PPOArgs, envs, trajectory_writer = None, probe_idx = None):
+
+def train_ppo(args: PPOArgs, envs, trajectory_writer=None, probe_idx=None):
 
     memory = Memory(envs, args, device)
     agent = Agent(envs, device)
@@ -43,14 +47,15 @@ def train_ppo(args: PPOArgs, envs, trajectory_writer = None, probe_idx = None):
         end_lr = args.learning_rate
     else:
         end_lr = 0.0
-    optimizer, scheduler = agent.make_optimizer(num_updates, initial_lr=args.learning_rate, end_lr=end_lr)
+    optimizer, scheduler = agent.make_optimizer(
+        num_updates, initial_lr=args.learning_rate, end_lr=end_lr)
 
     # out = wg.Output(layout={"padding": "15px"})
     # display(out)
     progress_bar = tqdm(range(num_updates), position=0, leave=True)
 
     if args.track:
-        video_path  = os.path.join("videos", args.run_name)
+        video_path = os.path.join("videos", args.run_name)
         videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
         for video in videos:
             os.remove(os.path.join(video_path, video))
@@ -63,14 +68,16 @@ def train_ppo(args: PPOArgs, envs, trajectory_writer = None, probe_idx = None):
 
         if args.track:
             memory.log()
-            videos = check_and_upload_new_video(video_path=video_path, videos=videos, step=update)
+            videos = check_and_upload_new_video(
+                video_path=video_path, videos=videos, step=update)
 
         # Print output (different behaviour for probe envs vs normal envs)
         if probe_idx is None:
             output = memory.get_printable_output()
 
         else:
-            output = get_printable_output_for_probe_envs(args, agent, probe_idx, update, num_updates)
+            output = get_printable_output_for_probe_envs(
+                args, agent, probe_idx, update, num_updates)
         if output:
             # with out:
             #     # print(output)
@@ -79,12 +86,12 @@ def train_ppo(args: PPOArgs, envs, trajectory_writer = None, probe_idx = None):
 
         memory.reset()
 
-
     if trajectory_writer is not None:
         trajectory_writer.tag_terminated_trajectories()
-        trajectory_writer.write(upload_to_wandb= args.track)
+        trajectory_writer.write(upload_to_wandb=args.track)
 
     envs.close()
+
 
 def check_and_upload_new_video(video_path, videos, step=None):
 
@@ -96,7 +103,7 @@ def check_and_upload_new_video(video_path, videos, step=None):
             wandb.log({"video": wandb.Video(
                 path_to_video,
                 fps=4,
-                caption = new_video,
+                caption=new_video,
                 format="mp4",
             )}, step=step)
     return current_videos

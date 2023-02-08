@@ -18,7 +18,8 @@ def test_trajectory_writer_numpy():
 
     args = DummyArgs()
 
-    trajectory_writer = TrajectoryWriter("tmp/test_trajectory_writer_writer.pkl", args)
+    trajectory_writer = TrajectoryWriter(
+        "tmp/test_trajectory_writer_writer.pkl", args)
 
     # test accumulate trajectory when all the objects are initialized as np arrays
 
@@ -30,7 +31,6 @@ def test_trajectory_writer_numpy():
         action=np.array([1, 2, 3]),
         info={"a": 1, "b": 2, "c": 3},
     )
-
 
     trajectory_writer.write()
 
@@ -91,7 +91,8 @@ def test_trajectory_writer_torch():
 
     args = DummyArgs()
 
-    trajectory_writer = TrajectoryWriter("tmp/test_trajectory_writer_writer.pkl", args)
+    trajectory_writer = TrajectoryWriter(
+        "tmp/test_trajectory_writer_writer.pkl", args)
 
     # test accumulate trajectory when all the objects are initialized as pytorch tensors
 
@@ -114,7 +115,8 @@ def test_trajectory_writer_lzma():
 
     args = DummyArgs()
 
-    trajectory_writer = TrajectoryWriter("tmp/test_trajectory_writer_writer.xz", args)
+    trajectory_writer = TrajectoryWriter(
+        "tmp/test_trajectory_writer_writer.xz", args)
 
     # test accumulate trajectory when all the objects are initialized as np arrays
 
@@ -126,7 +128,6 @@ def test_trajectory_writer_lzma():
         action=np.array([1, 2, 3]),
         info={"a": 1, "b": 2, "c": 3},
     )
-
 
     trajectory_writer.write()
 
@@ -149,6 +150,7 @@ def test_load_decision_transformer():
     assert model.n_heads == 2
     assert model.n_layers == 1
     assert model.normalization_type is None
+
 
 def test_load_decision_transformer_linear_time():
 

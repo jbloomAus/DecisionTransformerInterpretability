@@ -14,7 +14,7 @@ from utils import TrajectoryWriter
 from environments import make_env
 from gymnasium.spaces import Discrete
 
-warnings.filterwarnings("ignore", category= DeprecationWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 device = t.device("cuda" if t.cuda.is_available() else "cpu")
 
 if __name__ == "__main__":
@@ -50,7 +50,8 @@ if __name__ == "__main__":
 
     for i in range(5):
         probes = [Probe1, Probe2, Probe3, Probe4, Probe5]
-        gym.envs.registration.register(id=f"Probe{i+1}-v0", entry_point=probes[i])
+        gym.envs.registration.register(
+            id=f"Probe{i+1}-v0", entry_point=probes[i])
 
     if args.trajectory_path:
         trajectory_writer = TrajectoryWriter(args.trajectory_path, args)
@@ -73,7 +74,7 @@ if __name__ == "__main__":
         run = wandb.init(
             project=args.wandb_project_name,
             entity=args.wandb_entity,
-            config=vars(args), # vars is equivalent to args.__dict__
+            config=vars(args),  # vars is equivalent to args.__dict__
             name=run_name,
             # monitor_gym=True,
             save_code=True,
@@ -89,21 +90,22 @@ if __name__ == "__main__":
     if args.env_id in ["Probe1-v0", "Probe2-v0", "Probe3-v0", "Probe4-v0", "Probe5-v0"]:
         envs = gym.vector.SyncVectorEnv(
             [make_env(args.env_id, args.seed + i, i, args.capture_video, run_name,
-            render_mode=None, max_steps = args.max_steps,
-            fully_observed = args.fully_observed,
-            flat_one_hot=args.one_hot_obs
-            ) for i in range(args.num_envs)]
+                      render_mode=None, max_steps=args.max_steps,
+                      fully_observed=args.fully_observed,
+                      flat_one_hot=args.one_hot_obs
+                      ) for i in range(args.num_envs)]
         )
     else:
         envs = gym.vector.SyncVectorEnv(
             [make_env(args.env_id, args.seed + i, i, args.capture_video, run_name,
-            max_steps = args.max_steps,
-            fully_observed = args.fully_observed,
-            flat_one_hot=args.one_hot_obs
-            ) for i in range(args.num_envs)]
+                      max_steps=args.max_steps,
+                      fully_observed=args.fully_observed,
+                      flat_one_hot=args.one_hot_obs
+                      ) for i in range(args.num_envs)]
         )
     assert envs.single_action_space.shape is not None
-    assert isinstance(envs.single_action_space, Discrete), "only discrete action space is supported"
+    assert isinstance(envs.single_action_space,
+                      Discrete), "only discrete action space is supported"
 
     train_ppo(
         args,

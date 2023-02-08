@@ -12,7 +12,7 @@ from einops import rearrange
 # not technically a data loader, rework later to work as one.
 class TrajectoryLoader():
 
-    def __init__(self, trajectory_path, pct_traj=1.0, rtg_scale = 1, normalize_state = False, device = 'cpu'):
+    def __init__(self, trajectory_path, pct_traj=1.0, rtg_scale=1, normalize_state=False, device='cpu'):
         self.trajectory_path = trajectory_path
         self.pct_traj = pct_traj
         self.load_trajectories()
@@ -46,12 +46,15 @@ class TrajectoryLoader():
         elif observations.shape[-1] == 20:
             self.observation_type = 'one_hot'
         else:
-            raise ValueError("Observations are not flat or images, check the shape of the observations: ", observations.shape)
+            raise ValueError(
+                "Observations are not flat or images, check the shape of the observations: ", observations.shape)
 
         if self.observation_type != 'flat':
-            t_observations = rearrange(t.tensor(observations), "t b h w c -> (b t) h w c")
+            t_observations = rearrange(
+                t.tensor(observations), "t b h w c -> (b t) h w c")
         else:
-            t_observations = rearrange(t.tensor(observations), "t b f -> (b t) f")
+            t_observations = rearrange(
+                t.tensor(observations), "t b f -> (b t) f")
 
         t_actions = rearrange(t.tensor(actions), "t b -> (b t)")
         t_rewards = rearrange(t.tensor(rewards), "t b -> (b t)")
@@ -59,7 +62,7 @@ class TrajectoryLoader():
         t_truncated = rearrange(t.tensor(truncated), "t b -> (b t)")
 
         t_done_or_truncated = t.logical_or(t_dones, t_truncated)
-        done_indices = t.where(t_done_or_truncated )[0]
+        done_indices = t.where(t_done_or_truncated)[0]
 
         self.actions = t.tensor_split(t_actions, done_indices+1)
         self.rewards = t.tensor_split(t_rewards, done_indices+1)
@@ -101,7 +104,8 @@ class TrajectoryLoader():
 
     def get_sampling_probabilities(self):
         sorted_inds = self.get_indices_of_top_p_trajectories(self.pct_traj)
-        p_sample = self.traj_lens[sorted_inds] / sum(self.traj_lens[sorted_inds])
+        p_sample = self.traj_lens[sorted_inds] / \
+            sum(self.traj_lens[sorted_inds])
         return p_sample
 
     def discount_cumsum(self, x, gamma):
@@ -114,7 +118,8 @@ class TrajectoryLoader():
     def get_state_mean_std(self):
         # used for input normalization
         all_states = np.concatenate(self.states, axis=0)
-        state_mean, state_std = np.mean(all_states, axis=0), np.std(all_states, axis=0) + 1e-6
+        state_mean, state_std = np.mean(
+            all_states, axis=0), np.std(all_states, axis=0) + 1e-6
         return state_mean, state_std
 
     def get_batch(self, batch_size=256, max_len=100, prob_go_from_end=None):
@@ -125,7 +130,8 @@ class TrajectoryLoader():
         dones = self.dones
 
         # asset first dim is same for all inputs
-        assert len(rewards) == len(states) == len(actions) == len(dones), f"shapes are not the same: {len(rewards)} {len(states)} {len(actions)} {len(dones)}"
+        assert len(rewards) == len(states) == len(actions) == len(
+            dones), f"shapes are not the same: {len(rewards)} {len(states)} {len(actions)} {len(dones)}"
         p_sample = self.get_sampling_probabilities()
         sorted_inds = self.get_indices_of_top_p_trajectories(self.pct_traj)
         state_mean, state_std = self.get_state_mean_std()
@@ -152,54 +158,77 @@ class TrajectoryLoader():
             if prob_go_from_end is not None:
                 if random.random() < prob_go_from_end:
                     si = traj_rewards.shape[0] - max_len
-                    si = max(0, si) # make sure it's not negative
+                    si = max(0, si)  # make sure it's not negative
 
             # get sequences from dataset
-            s.append(traj_states[si:si + max_len].reshape(1, -1, *self.state_dim))
-            a.append(traj_actions[si:si + max_len].reshape(1, -1, *self.act_dim))
+            s.append(
+                traj_states[si:si + max_len].reshape(1, -1, *self.state_dim))
+            a.append(
+                traj_actions[si:si + max_len].reshape(1, -1, *self.act_dim))
             r.append(traj_rewards[si:si + max_len].reshape(1, -1, 1))
             d.append(traj_dones[si:si + max_len].reshape(1, -1))
 
             # get timesteps
             timesteps.append(np.arange(si, si + s[-1].shape[1]).reshape(1, -1))
-            timesteps[-1][timesteps[-1] >= self.max_ep_len] = self.max_ep_len-1  # padding cutoff
+            timesteps[-1][timesteps[-1] >=
+                          self.max_ep_len] = self.max_ep_len-1  # padding cutoff
 
             # assrt min timesteps is greater than -1
             if timesteps[-1].min() <= -1:
-                assert timesteps[-1].min() >= -1, f"min timesteps is {timesteps[-1].min()}"
+                assert timesteps[-1].min() >= - \
+                    1, f"min timesteps is {timesteps[-1].min()}"
 
             # get rewards to go
-            rtg.append(self.discount_cumsum(traj_rewards[si:], gamma=1.)[:s[-1].shape[1] + 1].reshape(1, -1, 1))
+            rtg.append(self.discount_cumsum(traj_rewards[si:], gamma=1.)[
+                       :s[-1].shape[1] + 1].reshape(1, -1, 1))
 
             # if the trajectory is shorter than max_len, pad it
             if rtg[-1].shape[1] <= s[-1].shape[1]:
-                rtg[-1] = np.concatenate([rtg[-1], np.zeros((1, 1, 1))], axis=1)
+                rtg[-1] = np.concatenate([rtg[-1],
+                                          np.zeros((1, 1, 1))], axis=1)
 
             # padding and state + reward normalization
-            tlen = s[-1].shape[1] # sometime the trajectory is shorter than max_len (due to random start index or end of episode)
+            # sometime the trajectory is shorter than max_len (due to random start index or end of episode)
+            tlen = s[-1].shape[1]
             if a[-1].shape[1] != tlen:
-                a[-1] = np.concatenate([a[-1], np.ones((1, 1, *self.act_dim)) * -10.], axis=1)
+                a[-1] = np.concatenate([a[-1], np.ones((1,
+                                                        1, *self.act_dim)) * -10.], axis=1)
 
-            assert tlen <= max_len, f"tlen: {tlen} max_len: {max_len}" # sanity check
+            # sanity check
+            assert tlen <= max_len, f"tlen: {tlen} max_len: {max_len}"
 
-            s[-1] = np.concatenate([np.zeros((1, max_len - tlen, *self.state_dim)), s[-1]], axis=1)
+            s[-1] = np.concatenate([np.zeros((1, max_len -
+                                              tlen, *self.state_dim)), s[-1]], axis=1)
             if self.normalize_state:
                 s[-1] = (s[-1] - state_mean) / state_std
 
-            a[-1] = np.concatenate([np.ones((1, max_len - tlen, *self.act_dim)) * -10., a[-1]], axis=1)
-            r[-1] = np.concatenate([np.zeros((1, max_len - tlen, 1)), r[-1]], axis=1)
-            d[-1] = np.concatenate([np.ones((1, max_len - tlen)) * 2, d[-1]], axis=1)
-            rtg[-1] = np.concatenate([np.zeros((1, max_len - tlen, 1)), rtg[-1]], axis=1) / self.rtg_scale
-            timesteps[-1] = np.concatenate([np.zeros((1, max_len - tlen)), timesteps[-1]], axis=1)
-            mask.append(np.concatenate([np.zeros((1, max_len - tlen)), np.ones((1, tlen))], axis=1))
+            a[-1] = np.concatenate([np.ones((1, max_len -
+                                             tlen, *self.act_dim)) * -10., a[-1]], axis=1)
+            r[-1] = np.concatenate([np.zeros((1, max_len -
+                                              tlen, 1)), r[-1]], axis=1)
+            d[-1] = np.concatenate([np.ones((1, max_len - tlen))
+                                    * 2, d[-1]], axis=1)
+            rtg[-1] = np.concatenate([np.zeros((1, max_len - tlen, 1)),
+                                      rtg[-1]], axis=1) / self.rtg_scale
+            timesteps[-1] = np.concatenate(
+                [np.zeros((1, max_len - tlen)), timesteps[-1]], axis=1)
+            mask.append(np.concatenate(
+                [np.zeros((1, max_len - tlen)), np.ones((1, tlen))], axis=1))
 
-        s = t.from_numpy(np.concatenate(s, axis=0)).to(dtype=t.float32, device=self.device)
-        a = t.from_numpy(np.concatenate(a, axis=0)).to(dtype=t.float32, device=self.device)
-        r = t.from_numpy(np.concatenate(r, axis=0)).to(dtype=t.float32, device=self.device)
-        d = t.from_numpy(np.concatenate(d, axis=0)).to(dtype=t.long,    device=self.device)
-        rtg = t.from_numpy(np.concatenate(rtg, axis=0)).to(dtype=t.float32, device= self.device)
-        timesteps = t.from_numpy(np.concatenate(timesteps, axis=0)).to(dtype=t.long, device=self.device)
-        mask = t.from_numpy(np.concatenate(mask, axis=0)).to(device=self.device)
+        s = t.from_numpy(np.concatenate(s, axis=0)).to(
+            dtype=t.float32, device=self.device)
+        a = t.from_numpy(np.concatenate(a, axis=0)).to(
+            dtype=t.float32, device=self.device)
+        r = t.from_numpy(np.concatenate(r, axis=0)).to(
+            dtype=t.float32, device=self.device)
+        d = t.from_numpy(np.concatenate(d, axis=0)).to(
+            dtype=t.long,    device=self.device)
+        rtg = t.from_numpy(np.concatenate(rtg, axis=0)).to(
+            dtype=t.float32, device=self.device)
+        timesteps = t.from_numpy(np.concatenate(timesteps, axis=0)).to(
+            dtype=t.long, device=self.device)
+        mask = t.from_numpy(np.concatenate(mask, axis=0)
+                            ).to(device=self.device)
 
         return s, a, r, d, rtg, timesteps, mask
 
@@ -215,11 +244,10 @@ class TrajectoryLoader():
 
         color_map = {-1: "Negative", 0: "Zero", 1: "Positive"}
 
-
         fig = px.scatter(
             y=reward,
             x=timesteps,
-            color= [color_map[i] for i in colors],
+            color=[color_map[i] for i in colors],
             title="Reward vs Timesteps",
             template="plotly_white",
             labels={
@@ -232,10 +260,12 @@ class TrajectoryLoader():
 
         return fig
 
+
 class TrajectoryReader():
     '''
     The trajectory reader is responsible for reading trajectories from a file.
     '''
+
     def __init__(self, path):
         self.path = path
 
@@ -252,6 +282,7 @@ class TrajectoryReader():
             with gzip.open(self.path, 'rb') as f:
                 data = pickle.load(f)
         else:
-            raise ValueError(f"Path {self.path} is not a valid trajectory file")
+            raise ValueError(
+                f"Path {self.path} is not a valid trajectory file")
 
         return data

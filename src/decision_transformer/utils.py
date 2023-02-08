@@ -5,6 +5,7 @@ import torch as t
 import re
 from .model import DecisionTransformer
 
+
 @dataclass
 class DTArgs:
     exp_name: str = "Dev"
@@ -34,11 +35,12 @@ class DTArgs:
     eval_max_time_steps: int = 1000
     cuda: bool = True
 
+
 def parse_args():
     parser = argparse.ArgumentParser(
-        prog = "Decision Transformer",
+        prog="Decision Transformer",
         description="Train a decision transformer on a trajectory dataset.",
-        epilog = "The last enemy that shall be defeated is death.")
+        epilog="The last enemy that shall be defeated is death.")
     parser.add_argument("--exp_name", type=str, default="Dev")
     parser.add_argument("--d_model", type=int, default=128)
     parser.add_argument("--trajectory_path", type=str)
@@ -50,12 +52,14 @@ def parse_args():
     parser.add_argument("--batches", type=int, default=401)
     parser.add_argument("--n_ctx", type=int, default=3)
     parser.add_argument("--layer_norm", type=bool, default=False)
-    parser.add_argument("--linear_time_embedding", type=bool, default=False, action = argparse.BooleanOptionalAction)
+    parser.add_argument("--linear_time_embedding", type=bool,
+                        default=False, action=argparse.BooleanOptionalAction)
     parser.add_argument("--pct_traj", type=float, default=1)
     parser.add_argument("--weight_decay", type=float, default=0.001)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--track", type=bool, default=False)
-    parser.add_argument("--wandb_project_name", type=str, default="DecisionTransformerInterpretability")
+    parser.add_argument("--wandb_project_name", type=str,
+                        default="DecisionTransformerInterpretability")
     parser.add_argument("--wandb_entity", type=str, default=None)
     parser.add_argument("--test_frequency", type=int, default=100)
     parser.add_argument("--test_batches", type=int, default=10)
@@ -74,7 +78,8 @@ def load_decision_transformer(model_path, env):
     state_dict = t.load(model_path)
 
     # get number of layers from the state dict
-    num_layers = max([int(re.findall(r'\d+', k)[0]) for k in state_dict.keys() if "transformer.blocks" in k]) + 1
+    num_layers = max([int(re.findall(r'\d+', k)[0])
+                      for k in state_dict.keys() if "transformer.blocks" in k]) + 1
     d_model = state_dict['reward_embedding.0.weight'].shape[0]
     d_mlp = state_dict['transformer.blocks.0.mlp.W_out'].shape[0]
     n_heads = state_dict['transformer.blocks.0.attn.W_O'].shape[0]
@@ -83,7 +88,8 @@ def load_decision_transformer(model_path, env):
     layer_norm = 'transformer.blocks.0.ln1.w' in state_dict
 
     if 'state_encoder.weight' in state_dict:
-        state_embedding_type = 'grid' # otherwise it would be a sequential and wouldn't have this
+        # otherwise it would be a sequential and wouldn't have this
+        state_embedding_type = 'grid'
 
     if state_dict['time_embedding.weight'].shape[1] == 1:
         time_embedding_type = "linear"
@@ -92,16 +98,16 @@ def load_decision_transformer(model_path, env):
 
     # now we can create the model
     model = DecisionTransformer(
-        env = env,
-        n_layers = num_layers,
-        d_model = d_model,
-        d_mlp = d_mlp,
-        state_embedding_type = state_embedding_type,
-        time_embedding_type= time_embedding_type,
-        n_heads = n_heads,
-        max_timestep = max_timestep,
-        n_ctx = n_ctx,
-        layer_norm = layer_norm
+        env=env,
+        n_layers=num_layers,
+        d_model=d_model,
+        d_mlp=d_mlp,
+        state_embedding_type=state_embedding_type,
+        time_embedding_type=time_embedding_type,
+        n_heads=n_heads,
+        max_timestep=max_timestep,
+        n_ctx=n_ctx,
+        layer_norm=layer_norm
     )
 
     model.load_state_dict(state_dict)

@@ -12,6 +12,7 @@ from src.streamlit_app.constants import twenty_idx_format_func
 #     else:
 #         return idx
 
+
 def test_twenty_idx_format_func():
 
     assert twenty_idx_format_func(0) == "unseen"

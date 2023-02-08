@@ -6,6 +6,7 @@ from .utils import fancy_histogram, fancy_imshow
 from minigrid.core.constants import IDX_TO_COLOR, IDX_TO_OBJECT, STATE_TO_IDX
 from .constants import IDX_TO_STATE, IDX_TO_ACTION, three_channel_schema, twenty_idx_format_func
 
+
 def show_qk_circuit(dt):
 
     with st.expander("show QK circuit"):
@@ -26,8 +27,8 @@ def show_qk_circuit(dt):
         W_Q = dt.transformer.blocks[0].attn.W_Q
         W_K = dt.transformer.blocks[0].attn.W_K
 
-
-        W_QK = einsum('head d_mod_Q d_head, head d_mod_K d_head -> head d_mod_Q d_mod_K', W_Q, W_K)
+        W_QK = einsum(
+            'head d_mod_Q d_head, head d_mod_K d_head -> head d_mod_Q d_mod_K', W_Q, W_K)
         # st.write(W_QK.shape)
 
         # W_QK_full = W_E_rtg.T @ W_QK @ W_E_state
@@ -36,8 +37,8 @@ def show_qk_circuit(dt):
         channels = dt.env.observation_space['image'].shape[-1]
         height = dt.env.observation_space['image'].shape[0]
         width = dt.env.observation_space['image'].shape[1]
-        W_QK_full_reshaped = W_QK_full.reshape(dt.n_heads, 1, channels, height, width)
-
+        W_QK_full_reshaped = W_QK_full.reshape(
+            dt.n_heads, 1, channels, height, width)
 
         selection_columns = st.columns(2)
 
@@ -48,7 +49,7 @@ def show_qk_circuit(dt):
                 key="head qk", default=[0]
             )
         if channels == 3:
-            format_func = lambda x: three_channel_schema[x]
+            def format_func(x): return three_channel_schema[x]
         else:
             format_func = twenty_idx_format_func
 
@@ -56,13 +57,13 @@ def show_qk_circuit(dt):
             selected_channels = st.multiselect(
                 "Select Observation Channels",
                 options=list(range(channels)),
-                format_func= format_func,
+                format_func=format_func,
                 key="channels qk",
-                default=[0,1,2]
+                default=[0, 1, 2]
             )
 
         columns = st.columns(len(selected_channels))
-        for i,channel in enumerate(selected_channels):
+        for i, channel in enumerate(selected_channels):
             with columns[i]:
                 if channels == 3:
                     st.write(three_channel_schema[channel])
@@ -72,10 +73,10 @@ def show_qk_circuit(dt):
         for head in heads:
             st.write("Head", head)
             columns = st.columns(len(selected_channels))
-            for i,channel in enumerate(selected_channels):
+            for i, channel in enumerate(selected_channels):
                 with columns[i]:
-                    fancy_imshow(W_QK_full_reshaped[head,0,channel].T.detach().numpy(), color_continuous_midpoint=0)
-
+                    fancy_imshow(W_QK_full_reshaped[head, 0, channel].T.detach(
+                    ).numpy(), color_continuous_midpoint=0)
 
 
 def show_ov_circuit(dt):
@@ -102,11 +103,11 @@ def show_ov_circuit(dt):
         height = dt.env.observation_space['image'].shape[0]
         width = dt.env.observation_space['image'].shape[1]
         n_actions = W_U.shape[0]
-        OV_circuit_full_reshaped = OV_circuit_full.reshape(dt.n_heads, channels, height, width, n_actions)
-
+        OV_circuit_full_reshaped = OV_circuit_full.reshape(
+            dt.n_heads, channels, height, width, n_actions)
 
         if channels == 3:
-            format_func = lambda x: three_channel_schema[x]
+            def format_func(x): return three_channel_schema[x]
         else:
             format_func = twenty_idx_format_func
 
@@ -123,9 +124,9 @@ def show_ov_circuit(dt):
             selected_channels = st.multiselect(
                 "Select Observation Channels",
                 options=list(range(channels)),
-                format_func= format_func,
+                format_func=format_func,
                 key="channels ov",
-                default=[0,1,2]
+                default=[0, 1, 2]
             )
 
         with selection_columns[2]:
@@ -133,12 +134,12 @@ def show_ov_circuit(dt):
                 "Select Actions",
                 options=list(range(n_actions)),
                 key="actions ov",
-                format_func= lambda x: IDX_TO_ACTION[x],
-                default=[0,1,2]
+                format_func=lambda x: IDX_TO_ACTION[x],
+                default=[0, 1, 2]
             )
 
         columns = st.columns(len(selected_channels))
-        for i,channel in enumerate(selected_channels):
+        for i, channel in enumerate(selected_channels):
             with columns[i]:
                 if channels == 3:
                     st.write(three_channel_schema[channel])
@@ -149,9 +150,10 @@ def show_ov_circuit(dt):
             for action in selected_actions:
                 st.write(f"Head {head} - {IDX_TO_ACTION[action]}")
                 columns = st.columns(len(selected_channels))
-                for i,channel in enumerate(selected_channels):
+                for i, channel in enumerate(selected_channels):
                     with columns[i]:
-                        fancy_imshow(OV_circuit_full_reshaped[head,channel,:,:,action].T.detach().numpy(), color_continuous_midpoint=0)
+                        fancy_imshow(OV_circuit_full_reshaped[head, channel, :, :, action].T.detach(
+                        ).numpy(), color_continuous_midpoint=0)
 
 
 def show_time_embeddings(dt, logit_dir):
@@ -178,16 +180,17 @@ def show_time_embeddings(dt, logit_dir):
         fig.update_layout(showlegend=False)
         if show_initial:
             fig.add_vline(
-                x=st.session_state.timesteps[0][-1].item() +  st.session_state.timestep_adjustment,
+                x=st.session_state.timesteps[0][-1].item() +
+                st.session_state.timestep_adjustment,
                 line_dash="dash",
                 line_color="red",
                 annotation_text="Current timestep"
-                )
+            )
         st.plotly_chart(fig, use_container_width=True)
+
 
 def show_rtg_embeddings(dt, logit_dir):
     with st.expander("Show RTG Embeddings"):
-
 
         batch_size = 1028
         if st.session_state.allow_extrapolation:
@@ -200,7 +203,7 @@ def show_rtg_embeddings(dt, logit_dir):
             "RTG Range",
             min_value=min_value,
             max_value=max_value,
-            value=(-1,1),
+            value=(-1, 1),
             step=1
         )
 
@@ -211,15 +214,14 @@ def show_rtg_embeddings(dt, logit_dir):
 
         rtg_embeddings = dt.reward_embedding(rtg_range).squeeze(0)
 
-
         dot_prod = rtg_embeddings @ logit_dir
         dot_prod = dot_prod.detach()
 
         show_initial = st.checkbox("Show initial RTG embedding", value=True)
 
         fig = px.line(
-            x= rtg_range.squeeze(1).detach().numpy(),
-            y= dot_prod)
+            x=rtg_range.squeeze(1).detach().numpy(),
+            y=dot_prod)
         fig.update_layout(
             title="RTG Embedding Dot Product",
             xaxis_title="RTG",
@@ -234,5 +236,5 @@ def show_rtg_embeddings(dt, logit_dir):
                 line_dash="dash",
                 line_color="red",
                 annotation_text="Initial RTG"
-                )
+            )
         st.plotly_chart(fig, use_container_width=True)

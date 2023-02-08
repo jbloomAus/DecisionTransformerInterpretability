@@ -2,7 +2,6 @@ import streamlit as st
 import torch as t
 
 
-
 def name_residual_components(dt, cache):
     '''
     Returns a list of keys for the residual components of the decision transformer which contribute to the final residual decomp
@@ -24,7 +23,8 @@ def name_residual_components(dt, cache):
 
     return result
 
-def get_residual_decomp(dt, cache, logit_dir, nice_names = True, seq_pos = -2):
+
+def get_residual_decomp(dt, cache, logit_dir, nice_names=True, seq_pos=-2):
     '''
     Returns the residual decomposition for the decision transformer
     '''
@@ -36,17 +36,19 @@ def get_residual_decomp(dt, cache, logit_dir, nice_names = True, seq_pos = -2):
 
     for component in residual_components:
         if component == "hook_pos_embed":
-            decomp[component] = cache[component][:,seq_pos] @ logit_dir
+            decomp[component] = cache[component][:, seq_pos] @ logit_dir
         elif component == "input_tokens":
-            decomp[component] = ((cache['blocks.0.hook_resid_pre'] - cache["hook_pos_embed"]) @ logit_dir)[:,seq_pos]
+            decomp[component] = (
+                (cache['blocks.0.hook_resid_pre'] - cache["hook_pos_embed"]) @ logit_dir)[:, seq_pos]
         elif component.endswith(".hook_z"):
             for head in range(n_heads):
                 layer = int(component.split(".")[1])
-                output = cache[component][:,seq_pos,head,:] @ dt.transformer.blocks[layer].attn.W_O[head]
+                output = cache[component][:, seq_pos, head,
+                                          :] @ dt.transformer.blocks[layer].attn.W_O[head]
                 decomp[component+f".{head}"] = output @ logit_dir
 
         elif component.endswith(".hook_mlp_out"):
-            decomp[component] = cache[component][:,seq_pos,:] @ logit_dir
+            decomp[component] = cache[component][:, seq_pos, :] @ logit_dir
         elif component.endswith(".b_O"):
             decomp[component] = state_dict[component] @ logit_dir
 
@@ -56,8 +58,8 @@ def get_residual_decomp(dt, cache, logit_dir, nice_names = True, seq_pos = -2):
     if nice_names:
         decomp = get_nice_names(decomp)
 
-
     return decomp
+
 
 def get_nice_names(decomp):
     '''

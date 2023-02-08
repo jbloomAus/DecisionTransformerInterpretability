@@ -27,7 +27,9 @@ class PPOScheduler:
         frac = self.n_step_calls / self.num_updates
         assert frac <= 1
         for param_group in self.optimizer.param_groups:
-            param_group["lr"] = self.initial_lr + frac * (self.end_lr - self.initial_lr)
+            param_group["lr"] = self.initial_lr + \
+                frac * (self.end_lr - self.initial_lr)
+
 
 class Agent(nn.Module):
     critic: nn.Sequential
@@ -77,11 +79,12 @@ class Agent(nn.Module):
     def make_optimizer(self, num_updates: int, initial_lr: float, end_lr: float) -> Tuple[optim.Optimizer, PPOScheduler]:
         '''Return an appropriately configured Adam with its attached scheduler.
         '''
-        optimizer = optim.Adam(self.parameters(), lr=initial_lr, eps=1e-5, maximize=True)
+        optimizer = optim.Adam(
+            self.parameters(), lr=initial_lr, eps=1e-5, maximize=True)
         scheduler = PPOScheduler(optimizer, initial_lr, end_lr, num_updates)
         return (optimizer, scheduler)
 
-    def rollout(self, memory: Memory, args: PPOArgs, envs: gym.vector.SyncVectorEnv, trajectory_writer = None) -> None:
+    def rollout(self, memory: Memory, args: PPOArgs, envs: gym.vector.SyncVectorEnv, trajectory_writer=None) -> None:
         '''Performs the rollout phase, as described in '37 Implementational Details'.
         '''
         device = memory.device
@@ -99,7 +102,8 @@ class Agent(nn.Module):
             probs = Categorical(logits=logits)
             action = probs.sample()
             logprob = probs.log_prob(action)
-            next_obs, reward, next_done, next_truncated, info = envs.step(action.cpu().numpy())
+            next_obs, reward, next_done, next_truncated, info = envs.step(
+                action.cpu().numpy())
             next_obs = memory.obs_preprocessor(next_obs)
             reward = t.from_numpy(reward).to(device)
 
@@ -108,35 +112,34 @@ class Agent(nn.Module):
                 if not args.cuda:
                     trajectory_writer.accumulate_trajectory(
                         # the observation stored with an action and reward is the observation which the agent responded to.
-                        next_obs = obs.detach().numpy(),
+                        next_obs=obs.detach().numpy(),
                         # the reward stored with an action and observation is the reward the agent received for taking that action in that state
-                        reward = reward.detach().numpy(),
+                        reward=reward.detach().numpy(),
                         # the action stored with an observation and reward is the action the agent took to get to that reward
-                        action = action.detach().numpy(),
+                        action=action.detach().numpy(),
                         # the done stored with an action and observation is the done the agent received for taking that action in that state
-                        done = next_done,
-                        truncated = next_truncated,
-                        info = info
+                        done=next_done,
+                        truncated=next_truncated,
+                        info=info
                     )
                 else:
                     trajectory_writer.accumulate_trajectory(
                         # the observation stored with an action and reward is the observation which the agent responded to.
-                        next_obs = obs.detach().cpu().numpy(),
+                        next_obs=obs.detach().cpu().numpy(),
                         # the reward stored with an action and observation is the reward the agent received for taking that action in that state
-                        reward = reward.detach().cpu().numpy(),
+                        reward=reward.detach().cpu().numpy(),
                         # the action stored with an observation and reward is the action the agent took to get to that reward
-                        action = action.detach().cpu().numpy(),
+                        action=action.detach().cpu().numpy(),
                         # the done stored with an action and observation is the done the agent received for taking that action in that state
-                        done = next_done,
-                        truncated = next_truncated,
-                        info = info
+                        done=next_done,
+                        truncated=next_truncated,
+                        info=info
                     )
 
             # Store (s_t, d_t, a_t, logpi(a_t|s_t), v(s_t), r_t+1)
             memory.add(info, obs, done, action, logprob, value, reward)
             obs = t.from_numpy(next_obs).to(device)
             done = t.from_numpy(next_done).to(device, dtype=t.float)
-
 
         # Store last (obs, done, value) tuple, since we need it to compute advantages
         memory.next_obs = obs
@@ -154,8 +157,10 @@ class Agent(nn.Module):
                 logits = self.actor(mb.obs)
                 probs = Categorical(logits=logits)
                 values = self.critic(mb.obs).squeeze()
-                clipped_surrogate_objective = calc_clipped_surrogate_objective(probs, mb.actions, mb.advantages, mb.logprobs, args.clip_coef)
-                value_loss = calc_value_function_loss(values, mb.returns, args.vf_coef)
+                clipped_surrogate_objective = calc_clipped_surrogate_objective(
+                    probs, mb.actions, mb.advantages, mb.logprobs, args.clip_coef)
+                value_loss = calc_value_function_loss(
+                    values, mb.returns, args.vf_coef)
                 entropy_bonus = calc_entropy_bonus(probs, args.ent_coef)
                 total_objective_function = clipped_surrogate_objective - value_loss + entropy_bonus
                 optimizer.zero_grad()
@@ -173,18 +178,21 @@ class Agent(nn.Module):
                 logratio = newlogprob - mb.logprobs
                 ratio = logratio.exp()
                 approx_kl = (ratio - 1 - logratio).mean().item()
-                clipfracs = [((ratio - 1.0).abs() > args.clip_coef).float().mean().item()]
+                clipfracs = [
+                    ((ratio - 1.0).abs() > args.clip_coef).float().mean().item()]
             memory.add_vars_to_log(
-                learning_rate = optimizer.param_groups[0]["lr"],
-                avg_value = values.mean().item(),
-                value_loss = value_loss.item(),
-                clipped_surrogate_objective = clipped_surrogate_objective.item(),
-                entropy = entropy_bonus.item(),
-                approx_kl = approx_kl,
-                clipfrac = np.mean(clipfracs)
+                learning_rate=optimizer.param_groups[0]["lr"],
+                avg_value=values.mean().item(),
+                value_loss=value_loss.item(),
+                clipped_surrogate_objective=clipped_surrogate_objective.item(),
+                entropy=entropy_bonus.item(),
+                approx_kl=approx_kl,
+                clipfrac=np.mean(clipfracs)
             )
 
+
 patch_typeguard()
+
 
 def calc_clipped_surrogate_objective(
     probs: Categorical, mb_action: t.Tensor, mb_advantages: t.Tensor, mb_logprobs: t.Tensor, clip_coef: float
@@ -198,20 +206,23 @@ def calc_clipped_surrogate_objective(
 
     r_theta = t.exp(logits_diff)
 
-    mb_advantages = (mb_advantages - mb_advantages.mean()) / (mb_advantages.std() + 10e-8)
+    mb_advantages = (mb_advantages - mb_advantages.mean()) / \
+        (mb_advantages.std() + 10e-8)
 
     non_clipped = r_theta * mb_advantages
     clipped = t.clip(r_theta, 1-clip_coef, 1+clip_coef) * mb_advantages
 
     return t.minimum(non_clipped, clipped).mean()
 
+
 @typechecked
-def calc_value_function_loss(values: TT["batch"], mb_returns: TT["batch"], vf_coef: float) -> t.Tensor: # noqa: F821
+def calc_value_function_loss(values: TT["batch"], mb_returns: TT["batch"], vf_coef: float) -> t.Tensor:  # noqa: F821
     '''Compute the value function portion of the loss function.
 
     vf_coef: the coefficient for the value loss, which weights its contribution to the overall loss. Denoted by c_1 in the paper.
     '''
     return 0.5 * vf_coef * (values - mb_returns).pow(2).mean()
+
 
 def calc_entropy_bonus(probs: Categorical, ent_coef: float):
     '''Return the entropy bonus term, suitable for gradient ascent.
