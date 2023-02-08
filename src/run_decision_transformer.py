@@ -33,7 +33,7 @@ if __name__ == "__main__":
         n_layers=args.n_layers,
         layer_norm=args.layer_norm,
         linear_time_embedding=args.linear_time_embedding,
-        n_ctx=args.n_ctx, # we set the context and then train on sequences of lenght n_ctx // 3. 
+        n_ctx=args.n_ctx, # we set the context and then train on sequences of lenght n_ctx // 3.
         batches=args.batches,
         learning_rate=args.learning_rate,
         weight_decay=args.weight_decay,
@@ -58,15 +58,15 @@ if __name__ == "__main__":
     trajectory_data_set = TrajectoryLoader(
         args.trajectory_path, pct_traj=args.pct_traj, device=device)
 
-    # make an environment 
+    # make an environment
     env_id = trajectory_data_set.metadata['args']['env_id']
     print("observation type: ", trajectory_data_set.observation_type)
     env = make_env(
-        env_id, 
-        seed = 0, 
-        idx = 0, 
-        capture_video=False, 
-        run_name = "dev", 
+        env_id,
+        seed = 0,
+        idx = 0,
+        capture_video=False,
+        run_name = "dev",
         fully_observed=False,
         flat_one_hot= (trajectory_data_set.observation_type == "one_hot"), # detect if we are using flat one-hot observations.
     )
@@ -75,8 +75,8 @@ if __name__ == "__main__":
     if args.track:
         run_name = f"{env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
         wandb.init(
-            project=args.wandb_project_name, 
-            entity=args.wandb_entity, 
+            project=args.wandb_project_name,
+            entity=args.wandb_entity,
             name=run_name,
             config=args)
 
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     # make a decision transformer
     dt = DecisionTransformer(
-        env = env, 
+        env = env,
         d_model = args.d_model,
         n_heads = args.n_heads,
         d_mlp = args.d_mlp,
@@ -107,15 +107,15 @@ if __name__ == "__main__":
         wandb.watch(dt, log="parameters")
 
     dt = train(
-        dt = dt, 
-        trajectory_data_set = trajectory_data_set, 
-        env = env, 
+        dt = dt,
+        trajectory_data_set = trajectory_data_set,
+        env = env,
         make_env=make_env,
-        device=device, 
-        batches=args.batches, 
-        lr=args.learning_rate, 
+        device=device,
+        batches=args.batches,
+        lr=args.learning_rate,
         weight_decay=args.weight_decay,
-        batch_size=args.batch_size, 
+        batch_size=args.batch_size,
         track=args.track,
         test_frequency=args.test_frequency,
         test_batches = args.test_batches,

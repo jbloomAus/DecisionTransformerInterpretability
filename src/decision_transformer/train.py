@@ -11,12 +11,12 @@ from .trainer import Trainer
 
 
 def train(
-    dt: DecisionTransformer, 
-    trajectory_data_set: TrajectoryLoader, 
-    env, 
+    dt: DecisionTransformer,
+    trajectory_data_set: TrajectoryLoader,
+    env,
     make_env,
-    batch_size=128, 
-    batches=1000, 
+    batch_size=128,
+    batches=1000,
     lr=0.0001,
     weight_decay=0.0,
     device="cpu",
@@ -35,10 +35,10 @@ def train(
 
     optimizer = t.optim.Adam(dt.parameters(), lr=lr, weight_decay=weight_decay)
     # trainer = Trainer(
-    #     model = dt, 
-    #     optimizer = optimizer, 
-    #     batch_size=batch_size, 
-    #     max_len=max_len, 
+    #     model = dt,
+    #     optimizer = optimizer,
+    #     batch_size=batch_size,
+    #     max_len=max_len,
     #     get_batch = trajectory_data_set.get_batch,
     #     scheduler=None, # no scheduler for now
     #     track = track,
@@ -49,9 +49,9 @@ def train(
     for batch in pbar:
 
         dt.train()
-        
+
         s, a, _, _, rtg, timesteps, _ = trajectory_data_set.get_batch(
-            batch_size, 
+            batch_size,
             max_len=dt.n_ctx // 3,
             prob_go_from_end=prob_go_from_end)
 
@@ -97,19 +97,19 @@ def train(
         # # at test frequency
         if batch % test_frequency == 0:
             test(
-                dt = dt, 
+                dt = dt,
                 trajectory_data_set = trajectory_data_set,
-                env = env, 
+                env = env,
                 batch_size = batch_size,
-                batches = test_batches, 
-                device = device, 
+                batches = test_batches,
+                device = device,
                 track = track,
                 batch_number = batch)
 
         eval_env_func = make_env(
             env_id = env.spec.id,
-            seed=batch, 
-            idx=0, 
+            seed=batch,
+            idx=0,
             capture_video=True,
             max_steps = min(dt.max_timestep, eval_max_time_steps),
             run_name = f"dt_eval_videos_{batch}",
@@ -120,8 +120,8 @@ def train(
         if batch % eval_frequency == 0:
             evaluate_dt_agent(
                 env_id = env.spec.id,
-                dt = dt, 
-                env_func= eval_env_func, 
+                dt = dt,
+                env_func= eval_env_func,
                 trajectories = eval_episodes,
                 track=track,
                 batch_number = batch,
@@ -131,11 +131,11 @@ def train(
     return dt
 
 def test(
-    dt: DecisionTransformer, 
-    trajectory_data_set: TrajectoryLoader, 
-    env, 
-    batch_size=128, 
-    batches=10, 
+    dt: DecisionTransformer,
+    trajectory_data_set: TrajectoryLoader,
+    env,
+    batch_size=128,
+    batches=10,
     device="cpu",
     track=False,
     batch_number=0):
@@ -202,8 +202,8 @@ def test(
 
 def evaluate_dt_agent(
     env_id: str,
-    dt: DecisionTransformer, 
-    env_func, 
+    dt: DecisionTransformer,
+    env_func,
     trajectories=300,
     track=False,
     batch_number=0,
@@ -250,11 +250,11 @@ def evaluate_dt_agent(
         rtg = rtg.to(device)
         a = a.to(device)
         timesteps = timesteps.to(device)
-    
+
         if dt.time_embedding_type == "linear":
             timesteps = timesteps.to(t.float32)
 
-        
+
         # get first action
         state_preds, action_preds, reward_preds = dt.forward(
             states=obs, actions=a, rtgs=rtg, timesteps=timesteps)
@@ -276,7 +276,7 @@ def evaluate_dt_agent(
             # add new timesteps
             timesteps = t.cat([timesteps, t.tensor(
                 [timesteps[-1][-1].item()+1]).unsqueeze(0).unsqueeze(0).to(device)], dim=1)
-        
+
             if dt.time_embedding_type == "linear":
                 timesteps = timesteps.to(t.float32)
 
@@ -298,7 +298,7 @@ def evaluate_dt_agent(
 
             if use_tqdm:
                 pbar.set_description(f"Evaluating DT: Episode {seed} at timestep {i} for reward {new_reward}")
-        
+
         traj_lengths.append(i)
         rewards.append(new_reward)
 
@@ -313,8 +313,8 @@ def evaluate_dt_agent(
             assert len(new_videos) == 1, "more than one new video found, new videos: {}".format(new_videos)
             path_to_video = os.path.join(video_path, new_videos[0])
             wandb.log({"media/video": wandb.Video(
-                path_to_video, 
-                fps=4, 
+                path_to_video,
+                fps=4,
                 format="mp4",
                 caption=f"{env_id}, after {batch_number} batch, episode length {i}, reward {new_reward}"
             )}, step=batch_number)

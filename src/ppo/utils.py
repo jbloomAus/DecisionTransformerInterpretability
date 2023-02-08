@@ -73,7 +73,7 @@ def sum_rewards(rewards : List[int], gamma : float = 1):
         rewards [r1, r2, r3, ...] The rewards obtained during an episode
         gamma: Discount factor
     Output:
-        The sum of discounted rewards 
+        The sum of discounted rewards
         r1 + gamma*r2 + gamma^2 r3 + ...
     """
     total_reward = 0
@@ -92,12 +92,12 @@ def parse_args():
     parser.add_argument('--exp_name', type=str, default='MiniGrid-Dynamic-Obstacles-8x8-v0',
                         help='the name of this experiment')
     parser.add_argument('--seed', type=int, default=1,
-                        help='seed of the experiment')      
+                        help='seed of the experiment')
     parser.add_argument('--cuda', action='store_true', default=True,
                         help='if toggled, cuda will be enabled by default')
     parser.add_argument('--track', action='store_true', default=False,
                         help='if toggled, this experiment will be tracked with Weights and Biases')
-    parser.add_argument('--wandb_project_name', type=str, default="PPO-MiniGrid",   
+    parser.add_argument('--wandb_project_name', type=str, default="PPO-MiniGrid",
                         help="the wandb's project name")
     parser.add_argument('--wandb_entity', type=str, default=None,
                         help="the entity (team) of wandb's project")
@@ -129,7 +129,7 @@ def parse_args():
                         help='value loss coefficient')
     parser.add_argument('--ent_coef', type=float, default=0.01,
                         help='entropy term coefficient')
-    parser.add_argument('--max_grad_norm', type=float, default=0.5, 
+    parser.add_argument('--max_grad_norm', type=float, default=0.5,
                         help='the maximum norm for the gradient clipping')
     parser.add_argument('--max_steps', type=int, default=1000,
                         help='the maximum number of steps total')
@@ -142,7 +142,7 @@ def parse_args():
 
     args = parser.parse_args()
     return args
-    
+
 
 @dataclass
 class PPOArgs:
@@ -221,8 +221,8 @@ def arg_help(args: Optional[PPOArgs], print_df=False):
     if print_df:
         df.insert(1, "changed?", ["yes" if i in changed_args else "" for i in df.index])
         with pd.option_context(
-            'max_colwidth', 0, 
-            'display.width', 150, 
+            'max_colwidth', 0,
+            'display.width', 150,
             'display.colheader_justify', 'left'
         ):
             print(df)

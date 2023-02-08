@@ -1,4 +1,4 @@
-import pytest 
+import pytest
 
 from src.environments import make_env
 import numpy as np
@@ -13,7 +13,7 @@ def test_make_env():
     max_steps = 100
     fully_observed = False
     video_frequency = 50
-    
+
     env_func = make_env(
         env_id = env_id,
         seed = seed,

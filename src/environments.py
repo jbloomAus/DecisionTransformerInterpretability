@@ -2,14 +2,14 @@ import gymnasium as gym
 from minigrid.wrappers import OneHotPartialObsWrapper, FullyObsWrapper
 
 def make_env(
-    env_id: str, 
-    seed: int, 
-    idx: int, 
-    capture_video: bool, 
-    run_name: str, 
-    render_mode="rgb_array", 
-    max_steps=100, 
-    fully_observed=False, 
+    env_id: str,
+    seed: int,
+    idx: int,
+    capture_video: bool,
+    run_name: str,
+    render_mode="rgb_array",
+    max_steps=100,
+    fully_observed=False,
     flat_one_hot=False,
     video_frequency=50
     ):

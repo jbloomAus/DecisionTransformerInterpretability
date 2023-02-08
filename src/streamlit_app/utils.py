@@ -1,4 +1,4 @@
-import plotly.express as px 
+import plotly.express as px
 import streamlit as st
 
 def read_index_html():
@@ -7,8 +7,8 @@ def read_index_html():
 
 
 def fancy_imshow(img, color_continuous_midpoint=0):
-    fig = px.imshow(img, 
-        color_continuous_midpoint=color_continuous_midpoint, 
+    fig = px.imshow(img,
+        color_continuous_midpoint=color_continuous_midpoint,
         color_continuous_scale=px.colors.diverging.RdBu
     )
     fig.update_layout(coloraxis_showscale=False, margin=dict(l=0, r=0, t=0, b=0))

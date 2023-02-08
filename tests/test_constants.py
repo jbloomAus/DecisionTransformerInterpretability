@@ -1,4 +1,4 @@
-import pytest 
+import pytest
 
 from src.streamlit_app.constants import twenty_idx_format_func
 
@@ -22,5 +22,3 @@ def test_twenty_idx_format_func():
     assert twenty_idx_format_func(17) == "open"
     assert twenty_idx_format_func(18) == "closed"
     assert twenty_idx_format_func(19) == "locked"
-
-

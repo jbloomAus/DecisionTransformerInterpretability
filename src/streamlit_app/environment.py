@@ -1,4 +1,4 @@
-import streamlit as st 
+import streamlit as st
 import torch as t
 
 import gymnasium as gym
@@ -10,13 +10,13 @@ from src.utils import pad_tensor
 
 @st.cache(allow_output_mutation=True)
 def get_env_and_dt(model_path):
-    
-    # we need to one if the env was one hot encoded. Some tech debt here. 
+
+    # we need to one if the env was one hot encoded. Some tech debt here.
     state_dict = t.load(model_path)
     one_hot_encoded = state_dict["state_encoder.weight"].shape[-1] == 980
     # list all mini grid envs
     minigrid_envs = [i for i in gym.envs.registry.keys() if "MiniGrid" in i]
-    # find the env id in the path 
+    # find the env id in the path
     env_ids = [i for i in minigrid_envs if i in model_path]
     if len(env_ids) == 0:
         raise ValueError(f"Could not find the env id in the model path: {model_path}")
@@ -26,13 +26,13 @@ def get_env_and_dt(model_path):
         env_id = env_ids[0]
     # env_id = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
     env = make_env(
-        env_id, 
-        seed = 4200, 
-        idx = 0, 
-        capture_video=False, 
-        run_name = "dev", 
-        fully_observed=False, 
-        flat_one_hot = one_hot_encoded, 
+        env_id,
+        seed = 4200,
+        idx = 0,
+        capture_video=False,
+        run_name = "dev",
+        fully_observed=False,
+        flat_one_hot = one_hot_encoded,
         max_steps=30
     )
     env = env()
@@ -55,16 +55,16 @@ def get_action_preds(dt):
     if obs.shape[1] < max_len:
         obs = pad_tensor(obs, max_len)
         actions = pad_tensor(
-            actions, max_len, 
+            actions, max_len,
             pad_token=dt.env.action_space.n)
         rtg = pad_tensor(rtg, max_len, pad_token=0)
         timesteps = pad_tensor(timesteps, max_len, pad_token=0)
 
-    
+
 
     if dt.time_embedding_type == "linear":
         timesteps = timesteps.to(dtype=t.float32)
-    else: 
+    else:
         timesteps= timesteps.to(dtype=t.long)
 
     tokens = dt.to_tokens(

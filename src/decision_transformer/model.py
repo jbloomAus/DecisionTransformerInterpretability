@@ -1,6 +1,6 @@
 from typing import Dict, Union
 
-from gymnasium.spaces import Box, Dict  
+from gymnasium.spaces import Box, Dict
 import einops
 import numpy as np
 import torch
@@ -16,7 +16,7 @@ def seed_everything(seed: int):
     import random, os
     import numpy as np
     import torch
-    
+
     random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
@@ -24,7 +24,7 @@ def seed_everything(seed: int):
     torch.cuda.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = True
-    
+
 seed_everything(42)
 
 class StateEncoder(nn.Module):
@@ -118,12 +118,12 @@ class DecisionTransformer(nn.Module):
 
         if state_embedding_type == 'CNN':
             self.state_encoder = StateEncoder(self.d_model)
-        else: 
+        else:
             n_obs = np.prod(env.observation_space['image'].shape)
             self.state_encoder = nn.Linear(n_obs, self.d_model, bias=False)
             nn.init.normal_(self.state_encoder.weight, mean=0.0, std=0.02)
 
-       
+
         self.action_embedding = nn.Sequential(nn.Embedding(env.action_space.n + 1, self.d_model))
         self.reward_embedding = nn.Sequential(nn.Linear(1, self.d_model, bias=False))
 
@@ -143,7 +143,7 @@ class DecisionTransformer(nn.Module):
             d_head=self.d_head,
             n_heads=self.n_heads,
             d_mlp=self.d_mlp,
-            d_vocab= self.d_model, 
+            d_vocab= self.d_model,
             n_ctx= self.n_ctx, # 3x the max timestep so we have room for an action, reward, and state per timestep
             act_fn="relu",
             normalization_type=self.normalization_type,
@@ -201,9 +201,9 @@ class DecisionTransformer(nn.Module):
         reward_embeddings = self.get_reward_embeddings(rtgs) # batch_size, block_size, n_embd
         time_embeddings = self.get_time_embeddings(timesteps) # batch_size, block_size, n_embd
 
-        # use state_embeddings, actions, rewards to go and 
+        # use state_embeddings, actions, rewards to go and
         token_embeddings = self.get_token_embeddings(
-            state_embeddings = state_embeddings, 
+            state_embeddings = state_embeddings,
             action_embeddings = action_embeddings,
             reward_embeddings = reward_embeddings,
             time_embeddings = time_embeddings
@@ -211,7 +211,7 @@ class DecisionTransformer(nn.Module):
         return token_embeddings
 
     def get_logits(self, x, batch_size, seq_length):
-        
+
         x = x.reshape(batch_size, seq_length, 3, self.d_model).permute(0, 2, 1, 3)
 
         reward_preds = self.predict_rewards(x[:,2]) # predict next return given state and action
@@ -242,7 +242,7 @@ class DecisionTransformer(nn.Module):
         if self.state_embedding_type == "CNN":
             states = rearrange(states, 'batch block height width channel -> (batch block) channel height width')
             state_embeddings = self.state_encoder(states.type(torch.float32).contiguous()) # (batch * block_size, n_embd)
-        else: 
+        else:
             states = rearrange(states, 'batch block height width channel -> (batch block) (channel height width)')
             state_embeddings = self.state_encoder(states.type(torch.float32).contiguous()) # (batch * block_size, n_embd)
         state_embeddings = rearrange(state_embeddings, '(batch block) n_embd -> batch block n_embd', block=block_size)
@@ -263,11 +263,11 @@ class DecisionTransformer(nn.Module):
         rtg_embeddings = rearrange(rtg_embeddings, '(batch block) n_embd -> batch block n_embd', block=block_size)
         return rtg_embeddings
 
-    def get_token_embeddings(self, 
-        state_embeddings, 
-        time_embeddings, 
-        action_embeddings, 
-        reward_embeddings, 
+    def get_token_embeddings(self,
+        state_embeddings,
+        time_embeddings,
+        action_embeddings,
+        reward_embeddings,
         targets = None):
         '''
         We need to compose the embeddings for:
@@ -282,16 +282,16 @@ class DecisionTransformer(nn.Module):
             2. we have (action, state, reward)...
         2. we are evaluating:
             1. we have a target "a reward" followed by state
-        
+
         1.1 and 2.1 are the same, but we need to handle the target as the initial reward.
-        
+
         '''
         batches = state_embeddings.shape[0]
         block_size = state_embeddings.shape[1]
 
         reward_embeddings = reward_embeddings + time_embeddings
         state_embeddings = state_embeddings   + time_embeddings
-        
+
         if action_embeddings is not None:
             action_embeddings = action_embeddings + time_embeddings
         if targets:
@@ -302,18 +302,18 @@ class DecisionTransformer(nn.Module):
         # 2. if we don't have actions, we have 2 tokens per timestep (and one time step)
         timesteps = time_embeddings.shape[1] # number of timesteps
         if action_embeddings is not None:
-            trajectory_length = timesteps*3 
+            trajectory_length = timesteps*3
         else:
             trajectory_length = 2 # one timestep, no action yet
 
         # create the token embeddings
         token_embeddings = torch.zeros(
-            (batches, trajectory_length, self.d_model),  
+            (batches, trajectory_length, self.d_model),
             dtype=torch.float32, device=state_embeddings.device) # batches, blocksize, n_embd
- 
+
         if action_embeddings is not None:
             token_embeddings[:,::3,:] = reward_embeddings
-            token_embeddings[:,1::3,:] = state_embeddings 
+            token_embeddings[:,1::3,:] = state_embeddings
             token_embeddings[:,2::3,:] = action_embeddings
         else:
             token_embeddings[:,0,:] = reward_embeddings[:,0,:]

@@ -3,7 +3,7 @@ import argparse
 import warnings
 import gymnasium as gym
 import torch as t
-import re 
+import re
 import wandb
 import time
 
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     all_envs = [env_spec for env_spec in gym.envs.registry]
     assert args.env_id in all_envs, f"Environment {args.env_id} not registered."
 
-    # wandb initialisation, 
+    # wandb initialisation,
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
     if args.track:
         run = wandb.init(
@@ -88,8 +88,8 @@ if __name__ == "__main__":
 
     if args.env_id in ["Probe1-v0", "Probe2-v0", "Probe3-v0", "Probe4-v0", "Probe5-v0"]:
         envs = gym.vector.SyncVectorEnv(
-            [make_env(args.env_id, args.seed + i, i, args.capture_video, run_name, 
-            render_mode=None, max_steps = args.max_steps, 
+            [make_env(args.env_id, args.seed + i, i, args.capture_video, run_name,
+            render_mode=None, max_steps = args.max_steps,
             fully_observed = args.fully_observed,
             flat_one_hot=args.one_hot_obs
             ) for i in range(args.num_envs)]
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     else:
         envs = gym.vector.SyncVectorEnv(
             [make_env(args.env_id, args.seed + i, i, args.capture_video, run_name,
-            max_steps = args.max_steps, 
+            max_steps = args.max_steps,
             fully_observed = args.fully_observed,
             flat_one_hot=args.one_hot_obs
             ) for i in range(args.num_envs)]
@@ -106,11 +106,10 @@ if __name__ == "__main__":
     assert isinstance(envs.single_action_space, Discrete), "only discrete action space is supported"
 
     train_ppo(
-        args, 
+        args,
         envs,
-        trajectory_writer=trajectory_writer, 
+        trajectory_writer=trajectory_writer,
         probe_idx=probe_idx
     )
     if args.track:
         run.finish()
-

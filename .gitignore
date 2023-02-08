@@ -133,7 +133,7 @@ videos/
 wandb/
 runs/
 .vscode
-**.pt 
+**.pt
 tmp/
 trajectories/
 .DS_Store

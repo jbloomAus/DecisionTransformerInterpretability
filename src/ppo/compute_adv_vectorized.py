@@ -31,8 +31,8 @@ def compute_advantages_vectorized(
     rewards: TT["T", "env"], # noqa: F821
     values: TT["T", "env"],  # noqa: F821
     dones: TT["T", "env"],  # noqa: F821
-    device: t.device, 
-    gamma: float, 
+    device: t.device,
+    gamma: float,
     gae_lambda: float
 ) -> TT["T", "env"]: # noqa: F821
     """

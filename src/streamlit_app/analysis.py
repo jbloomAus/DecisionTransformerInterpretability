@@ -14,7 +14,7 @@ def name_residual_components(dt, cache):
 
     n_layers = dt.n_layers
 
-    # start with input 
+    # start with input
     for layer in range(n_layers):
         # add the residual components from the attention layer
         result.append(f"blocks.{layer}.attn.hook_z")
@@ -33,7 +33,7 @@ def get_residual_decomp(dt, cache, logit_dir, nice_names = True, seq_pos = -2):
     state_dict = dt.state_dict()
     # get the residual components
     residual_components = name_residual_components(dt, cache)
-    
+
     for component in residual_components:
         if component == "hook_pos_embed":
             decomp[component] = cache[component][:,seq_pos] @ logit_dir
@@ -79,5 +79,5 @@ def get_nice_names(decomp):
         elif k.endswith(".b_O"):
             layer = int(k.split(".")[2])
             new_decomp[f"Attention Bias Layer {layer}"] = decomp[k]
-    
+
     return new_decomp

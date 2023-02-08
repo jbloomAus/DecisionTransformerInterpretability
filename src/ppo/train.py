@@ -16,7 +16,7 @@ def get_printable_output_for_probe_envs(args: PPOArgs, agent: Agent, probe_idx: 
     obs_for_probes = [[[0.0]], [[-1.0], [+1.0]], [[0.0], [1.0]], [[0.0]], [[0.0], [1.0]]]
     expected_value_for_probes = [1.0, [-1.0, +1.0], [args.gamma, 1.0], 1.0, [1.0, 1.0]]
     expected_actions_for_probs = [None, None, None, 1, [0, 1]]
-    
+
     obs = t.tensor(obs_for_probes[probe_idx]).to(device)
     output = ""
 
@@ -44,11 +44,11 @@ def train_ppo(args: PPOArgs, envs, trajectory_writer = None, probe_idx = None):
     else:
         end_lr = 0.0
     optimizer, scheduler = agent.make_optimizer(num_updates, initial_lr=args.learning_rate, end_lr=end_lr)
-    
+
     # out = wg.Output(layout={"padding": "15px"})
     # display(out)
     progress_bar = tqdm(range(num_updates), position=0, leave=True)
-    
+
     if args.track:
         video_path  = os.path.join("videos", args.run_name)
         videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
@@ -60,7 +60,7 @@ def train_ppo(args: PPOArgs, envs, trajectory_writer = None, probe_idx = None):
 
         agent.rollout(memory, args, envs, trajectory_writer)
         agent.learn(memory, args, optimizer, scheduler)
-        
+
         if args.track:
             memory.log()
             videos = check_and_upload_new_video(video_path=video_path, videos=videos, step=update)
@@ -94,8 +94,8 @@ def check_and_upload_new_video(video_path, videos, step=None):
         for new_video in new_videos:
             path_to_video = os.path.join(video_path, new_video)
             wandb.log({"video": wandb.Video(
-                path_to_video, 
-                fps=4, 
+                path_to_video,
+                fps=4,
                 caption = new_video,
                 format="mp4",
             )}, step=step)

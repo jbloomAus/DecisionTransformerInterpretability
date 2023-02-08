@@ -1,7 +1,7 @@
 from environments import make_env
 from decision_transformer.utils import load_decision_transformer
 from decision_transformer.calibration import calibration_statistics, plot_calibration_statistics
-import argparse 
+import argparse
 import warnings
 import torch as t
 import numpy as np
@@ -32,8 +32,8 @@ if __name__ == "__main__":
     one_hot_encoded = state_dict["state_encoder.weight"].shape[-1] == 980
     max_time_steps = state_dict["time_embedding.weight"].shape[0]
     env_func = make_env(
-        args.env_id, seed = 1, idx = 0, capture_video=False, 
-        run_name = "dev", fully_observed=False, flat_one_hot = one_hot_encoded, 
+        args.env_id, seed = 1, idx = 0, capture_video=False,
+        run_name = "dev", fully_observed=False, flat_one_hot = one_hot_encoded,
         max_steps=max_time_steps
     )
 
@@ -41,14 +41,14 @@ if __name__ == "__main__":
 
     warnings.filterwarnings("ignore", category=UserWarning)
     statistics = calibration_statistics(
-        dt, 
-        args.env_id, 
+        dt,
+        args.env_id,
         env_func,
         initial_rtg_range=np.linspace(args.initial_rtg_min, args.initial_rtg_max, int((args.initial_rtg_max - args.initial_rtg_min) / args.initial_rtg_step)),
         trajectories=args.n_trajectories
     )
-    
-    fig = plot_calibration_statistics(statistics)
+
+    fig = plot_calibration_statistics(statistics, show_spread=True,CI=0.95)
     # add all the hyperparameters to the title (env id, d_model, n_heads, d_mlp, n_ctx, n_layers, max_timestep, layernorm)
     # make font title smaller
     fig.update_layout(

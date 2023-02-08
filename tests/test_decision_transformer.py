@@ -1,6 +1,6 @@
 import pytest
 import torch as t
-import numpy as np 
+import numpy as np
 from einops import rearrange
 import gymnasium as gym
 from minigrid.wrappers import RGBImgPartialObsWrapper, ImgObsWrapper, OneHotPartialObsWrapper
@@ -51,7 +51,7 @@ def test_decision_transformer_init():
     assert type(decision_transformer.transformer).__name__ == 'HookedTransformer'
 
 def test_get_state_embeddings_image():
-    
+
     env = gym.make('MiniGrid-Empty-8x8-v0')
     env = RGBImgPartialObsWrapper(env) # Get pixel observations
     env = ImgObsWrapper(env) # Get rid of the 'mission' field
@@ -66,7 +66,7 @@ def test_get_state_embeddings_image():
     assert state_embeddings.shape == (1, 1, 64)
 
 def test_get_state_embeddings_grid():
-    
+
     env = gym.make('MiniGrid-Empty-8x8-v0')
     # env = RGBImgPartialObsWrapper(env) # Get pixel observations
     # env = ImgObsWrapper(env) # Get rid of the 'mission' field
@@ -81,7 +81,7 @@ def test_get_state_embeddings_grid():
     assert state_embeddings.shape == (1, 1, 64)
 
 def test_get_state_embeddings_grid_one_hot():
-        
+
     env = gym.make('MiniGrid-Empty-8x8-v0')
     env = OneHotPartialObsWrapper(env)
     obs, _ = env.reset() # This now produces an RGB tensor only
@@ -95,7 +95,7 @@ def test_get_state_embeddings_grid_one_hot():
     assert state_embeddings.shape == (1, 1, 64)
 
 def test_get_action_embeddings():
-        
+
     env = gym.make('MiniGrid-Empty-8x8-v0')
     env = RGBImgPartialObsWrapper(env) # Get pixel observations
     env = ImgObsWrapper(env) # Get rid of the 'mission' field
@@ -125,7 +125,7 @@ def test_get_reward_embeddings():
     assert reward_embeddings.shape == (1, 1, 64)
 
 def test_get_time_embeddings_linear():
-    
+
     env = gym.make('MiniGrid-Empty-8x8-v0')
     env = RGBImgPartialObsWrapper(env) # Get pixel observations
     env = ImgObsWrapper(env) # Get rid of the 'mission' field
@@ -140,7 +140,7 @@ def test_get_time_embeddings_linear():
     assert time_embeddings.shape == (1, 1, 64)
 
 def test_get_time_embeddings_categorical():
-    
+
     env = gym.make('MiniGrid-Empty-8x8-v0')
     env = RGBImgPartialObsWrapper(env) # Get pixel observations
     env = ImgObsWrapper(env) # Get rid of the 'mission' field
@@ -155,7 +155,7 @@ def test_get_time_embeddings_categorical():
     assert time_embeddings.shape == (1, 1, 64)
 
 def test_get_token_embeddings_single_batch():
-        
+
     env = gym.make('MiniGrid-Empty-8x8-v0')
     env = RGBImgPartialObsWrapper(env) # Get pixel observations
     env = ImgObsWrapper(env) # Get rid of the 'mission' field
@@ -191,7 +191,7 @@ def test_get_token_embeddings_single_batch():
     t.testing.assert_close(token_embeddings[0][2]- time_embedding, action_embedding)
 
 def test_get_token_embeddings_multi_batch():
-        
+
     env = gym.make('MiniGrid-Empty-8x8-v0')
     env = RGBImgPartialObsWrapper(env) # Get pixel observations
     env = ImgObsWrapper(env) # Get rid of the 'mission' field
@@ -219,7 +219,7 @@ def test_get_token_embeddings_multi_batch():
     all_returns = t.randn((10, 1))
     all_returns_to_go = all_returns.flip(0).cumsum(0).flip(0).reshape(-1, 1).unsqueeze(0)
     all_timesteps = t.tensor(all_timesteps).reshape(-1, 1).unsqueeze(0)
-    
+
     state_embedding = decision_transformer.get_state_embeddings(all_obs)
     action_embedding = decision_transformer.get_action_embeddings(all_actions)
     reward_embedding = decision_transformer.get_reward_embeddings(all_returns_to_go)
@@ -269,7 +269,7 @@ def test_forward():
     all_returns = t.randn((10, 1))
     all_returns_to_go = all_returns.flip(0).cumsum(0).flip(0).reshape(-1, 1).unsqueeze(0)
     all_timesteps = t.tensor(all_timesteps).reshape(-1, 1).unsqueeze(0)
-    
+
     # context window must be 3 * max sequence length
     decision_transformer = DecisionTransformer(env, n_ctx=3*10, d_model=64)
 

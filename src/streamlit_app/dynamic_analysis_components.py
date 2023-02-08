@@ -45,12 +45,12 @@ def show_residual_stream_contributions_single(dt, cache, logit_dir):
         # this plot assumes you only have a single dim
         plot_single_residual_stream_contributions(residual_decomp)
 
-    return 
+    return
 
 def show_rtg_scan(dt, logit_dir):
     with st.expander("Scan Reward-to-Go and Show Residual Contributions"):
 
-        
+
         batch_size = 1028
         if st.session_state.allow_extrapolation:
             min_value = -10
@@ -59,10 +59,10 @@ def show_rtg_scan(dt, logit_dir):
             min_value = -1
             max_value = 1
         rtg_range = st.slider(
-            "RTG Range", 
-            min_value=min_value, 
-            max_value=max_value, 
-            value=(-1,1), 
+            "RTG Range",
+            min_value=min_value,
+            max_value=max_value,
+            value=(-1,1),
             step=1
         )
         min_rtg = rtg_range[0]
@@ -82,10 +82,10 @@ def show_rtg_scan(dt, logit_dir):
             # we want to add random integers in the range of a slider to the the timestep, the min/max on slider should be the max timesteps
             if timesteps.max().item() > 0:
                 timestep_noise = st.slider(
-                    "Timestep Noise", 
-                    min_value=1.0, 
-                    max_value=timesteps.max().item(), 
-                    value=1.0, 
+                    "Timestep Noise",
+                    min_value=1.0,
+                    max_value=timesteps.max().item(),
+                    value=1.0,
                     step=1.0
                 )
                 timesteps = timesteps + t.randint(low = int(-1*timestep_noise), high = int(timestep_noise), size=timesteps.shape, device=timesteps.device)
@@ -108,7 +108,7 @@ def show_rtg_scan(dt, logit_dir):
             "Right": action_preds[:,0,1].detach().cpu().numpy(),
             "Forward": action_preds[:,0,2].detach().cpu().numpy()
         })
-        
+
         # st.write(df.head())
 
         # draw a line graph with left,right forward over RTG
@@ -131,14 +131,14 @@ def show_rtg_scan(dt, logit_dir):
 
         # Now let's do the inner product with the logit dir of the components.
         decomp = get_residual_decomp(dt, cache,logit_dir)
-        
+
         df = pd.DataFrame(decomp)
         df["RTG"] = rtg.squeeze(1).squeeze(1).detach().cpu().numpy()
         df["Total Dir"] = total_dir.squeeze(0).detach().cpu().numpy()
-        
+
         # total dir is pretty much accurate
         assert (total_dir.squeeze(0).detach() - df[list(decomp.keys())].sum(axis=1)).mean() < 1e-5
-        
+
         if st.checkbox("Show component contributions"):
             # make a multiselect to choose the decomp keys to compare
             decomp_keys = st.multiselect("Choose components to compare", list(decomp.keys()) + ["Total Dir"], default=list(decomp.keys())+ ["Total Dir"])
@@ -185,13 +185,13 @@ def show_rtg_scan(dt, logit_dir):
 def render_observation_view(dt, tokens, logit_dir):
 
     last_obs = st.session_state.obs[0][-1]
-    
+
     last_obs_reshaped = rearrange(last_obs, "h w c -> c h w")
 
     n_channels = dt.env.observation_space['image'].shape[-1]
     height = dt.env.observation_space['image'].shape[0]
     width = dt.env.observation_space['image'].shape[1]
-    
+
     weights = dt.state_encoder.weight.detach().cpu()
 
     weights_reshaped = rearrange(weights, "d (c h w) -> c d h w",c=n_channels, h=height, w=width)
@@ -222,16 +222,16 @@ def render_observation_view(dt, tokens, logit_dir):
     with st.expander("Show observation view"):
 
         st.subheader("Observation View")
-        if n_channels == 3: 
-            format_func = lambda x: three_channel_schema[x] 
-        else: 
+        if n_channels == 3:
+            format_func = lambda x: three_channel_schema[x]
+        else:
             format_func = twenty_idx_format_func
 
         selected_channels = st.multiselect(
-            "Select Observation Channels", 
-            options=list(range(n_channels)), 
+            "Select Observation Channels",
+            options=list(range(n_channels)),
             format_func= format_func,
-            key="channels obs", 
+            key="channels obs",
             default=[0,1,2]
         )
         n_selected_channels = len(selected_channels)
@@ -245,7 +245,7 @@ def render_observation_view(dt, tokens, logit_dir):
             weight_proj_check = st.checkbox("Show channel weight proj onto logit dir", value=True)
         with check_columns[3]:
             activ_proj_check = st.checkbox("Show channel activation proj onto logit dir", value=True)
-            
+
         if contributions_check:
 
             contributions = {
@@ -309,8 +309,7 @@ def render_observation_view(dt, tokens, logit_dir):
                     fancy_imshow(activation_projection[channel].detach().numpy().T)
                     fancy_histogram(activation_projection[channel].detach().numpy().flatten())
 
-        
+
 
 def project_weights_onto_dir(weights, dir):
     return t.einsum("d, d h w -> h w", dir, weights.reshape(128,7,7)).detach()
-

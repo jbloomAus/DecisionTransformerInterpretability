@@ -1,5 +1,5 @@
 
-import plotly.express as px 
+import plotly.express as px
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -19,7 +19,7 @@ def plot_action_preds(action_preds):
 
     n_actions = len(action_preds)
     action_preds = pd.DataFrame(
-        action_preds, 
+        action_preds,
         index=list(action_id_to_string.values())[:n_actions]
         )
     fig = px.bar(action_preds, orientation='h',
@@ -52,7 +52,7 @@ def plot_attention_pattern_single(cache, layer, softmax=True, specific_heads: Li
     if softmax:
         if cache["pattern", layer, "attn"].shape[0] == 1:
             attention_pattern = cache["pattern", layer, "attn"][0]
-    else: 
+    else:
         if cache["pattern", layer, "attn"].shape[0] == 1:
             attention_pattern = cache["attn_scores", layer, "attn"][0]
 
@@ -64,10 +64,10 @@ def plot_attention_pattern_single(cache, layer, softmax=True, specific_heads: Li
     # st.write("n tokens", n_tokens)
     # x_label = ["RTG","State","Action"]*((n_tokens+1)//3)
 
-    
+
     fig = px.imshow(
         attention_pattern,
-        facet_col=0, 
+        facet_col=0,
         range_color=[0,1],
     )
     # fig.update_xaxes(showticklabels=False).update_yaxes(showticklabels=False)
@@ -80,7 +80,7 @@ def render_env(env):
     fig, ax = plt.subplots()
     ax.imshow(img)
     plt.axis('off')
-    plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, 
+    plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0,
                 hspace = 0, wspace = 0)
     plt.margins(0,0)
     return fig
@@ -126,7 +126,7 @@ def plot_single_residual_stream_contributions_comparison(residual_decomp_1, resi
 
     texts=[df1.values, df2.values]
     fig = px.bar(df, barmode='group')
-    
+
     for i, t in enumerate(texts):
         fig.data[i].text = t
         fig.data[i].textposition = 'auto'

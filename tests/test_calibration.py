@@ -1,4 +1,4 @@
-import pytest 
+import pytest
 
 import warnings
 import torch as t
@@ -15,8 +15,8 @@ def test_calibration_end_to_end():
     one_hot_encoded = state_dict["state_encoder.weight"].shape[-1] == 980
     max_time_steps = state_dict["time_embedding.weight"].shape[0]
     env_func = make_env(
-        env_id, seed = 1, idx = 0, 
-        capture_video=False, run_name = "dev", 
+        env_id, seed = 1, idx = 0,
+        capture_video=False, run_name = "dev",
         fully_observed=False, flat_one_hot = one_hot_encoded, max_steps= max_time_steps)
     env = env_func()
 
@@ -28,8 +28,8 @@ def test_calibration_end_to_end():
 
     warnings.filterwarnings("ignore", category=UserWarning)
     statistics = calibration_statistics(
-        dt, 
-        env_id, 
+        dt,
+        env_id,
         env_func=env_func,
         initial_rtg_range=np.linspace(-1, 1, 10),
         trajectories=3,
@@ -42,15 +42,15 @@ def test_calibration_end_to_end():
     assert fig is not None
 
 def test_calibration_end_to_end_one_hot_model():
-    
+
     env_id = "MiniGrid-Dynamic-Obstacles-8x8-v0"
     model_path = "models/MiniGrid-Dynamic-Obstacles-8x8-v0/demo_model_one_hot_overnight.pt"
     state_dict = t.load(model_path)
     one_hot_encoded = state_dict["state_encoder.weight"].shape[-1] == 980
     max_time_steps = state_dict["time_embedding.weight"].shape[0]
     env_func = make_env(
-        env_id, seed = 1, idx = 0, 
-        capture_video=False, run_name = "dev", 
+        env_id, seed = 1, idx = 0,
+        capture_video=False, run_name = "dev",
         fully_observed=False, flat_one_hot = one_hot_encoded, max_steps= max_time_steps)
     env = env_func()
 
@@ -61,8 +61,8 @@ def test_calibration_end_to_end_one_hot_model():
 
     warnings.filterwarnings("ignore", category=UserWarning)
     statistics = calibration_statistics(
-        dt, 
-        env_id, 
+        dt,
+        env_id,
         env_func=env_func,
         initial_rtg_range=np.linspace(-1, 1, 10),
         trajectories=3,

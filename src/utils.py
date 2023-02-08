@@ -22,7 +22,7 @@ class TrajectoryWriter():
         - the rewards
         - the dones
         - the infos
-    And store them in a set of lists, indexed by batch b and time t. 
+    And store them in a set of lists, indexed by batch b and time t.
     '''
     def __init__(self, path, args: dataclass):
         self.observations = []
@@ -33,7 +33,7 @@ class TrajectoryWriter():
         self.infos = []
         self.path = path
         self.args = args
-    
+
     @typechecked
     def accumulate_trajectory(self, next_obs: np.ndarray, reward: np.ndarray, done: np.ndarray, truncated: np.ndarray, action: np.ndarray, info: Dict):
         self.observations.append(next_obs)
@@ -55,7 +55,7 @@ class TrajectoryWriter():
         n_envs = len(self.dones[-1])
         for i in range(n_envs):
             self.truncated[-1][i] = True
-    
+
     def write(self, upload_to_wandb: bool = False):
 
         data = {
@@ -118,4 +118,3 @@ def pad_tensor(tensor, length = 100, ignore_first_dim=True, pad_token = 0):
             pad = t.ones((length - tensor.shape[0], *tensor.shape[1:])) * pad_token
             tensor = t.cat([tensor, pad], dim=0)
         return tensor
-    

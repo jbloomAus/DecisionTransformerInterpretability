@@ -23,7 +23,7 @@ def test_probe_envs(env_name):
         gym.envs.registration.register(id=f"Probe{i+1}-v0", entry_point=probes[i])
 
     envs = gym.vector.SyncVectorEnv(
-        [make_env(env_name, i, i, False, "test", 
+        [make_env(env_name, i, i, False, "test",
         render_mode=None, max_steps = None, fully_observed = False) for i in range(4)]
     )
 
@@ -39,8 +39,8 @@ def test_probe_envs(env_name):
         total_timesteps=10000,
         max_steps=None)
 
-    # currently, ppo has tests which run inside main if it 
-    # detects "Probe" in the env name. We will fix this 
+    # currently, ppo has tests which run inside main if it
+    # detects "Probe" in the env name. We will fix this
     # eventually.
     ppo = train_ppo(args, envs = envs)
 
@@ -49,7 +49,7 @@ def test_empty_env():
     env_name = "MiniGrid-Empty-5x5-v0"
 
     envs = gym.vector.SyncVectorEnv(
-        [make_env(env_name, i, i, False, "test", 
+        [make_env(env_name, i, i, False, "test",
         render_mode=None, max_steps = None, fully_observed = False, flat_one_hot=False) for i in range(4)]
     )
 
@@ -65,8 +65,8 @@ def test_empty_env():
         total_timesteps=10000,
         max_steps=None)
 
-    # currently, ppo has tests which run inside main if it 
-    # detects "Probe" in the env name. We will fix this 
+    # currently, ppo has tests which run inside main if it
+    # detects "Probe" in the env name. We will fix this
     # eventually.
     ppo = train_ppo(args, envs = envs)
 
@@ -75,7 +75,7 @@ def test_empty_env_flat_one_hot():
     env_name = "MiniGrid-Empty-5x5-v0"
 
     envs = gym.vector.SyncVectorEnv(
-        [make_env(env_name, i, i, False, "test", 
+        [make_env(env_name, i, i, False, "test",
         render_mode=None, max_steps = None, fully_observed = False, flat_one_hot=True) for i in range(4)]
     )
 
@@ -91,13 +91,13 @@ def test_empty_env_flat_one_hot():
         total_timesteps=10000,
         max_steps=None)
 
-    # currently, ppo has tests which run inside main if it 
-    # detects "Probe" in the env name. We will fix this 
+    # currently, ppo has tests which run inside main if it
+    # detects "Probe" in the env name. We will fix this
     # eventually.
     ppo = train_ppo(args, envs = envs)
 
 def test_ppo_agent_gym():
-    
+
     envs = gym.vector.SyncVectorEnv(
         [make_env('CartPole-v1', 1, i+1, False, "test", max_steps=None) for i in range(2)]
     )
@@ -112,7 +112,7 @@ def test_ppo_agent_gym():
 
 
 def test_ppo_agent_minigrid():
-    
+
     envs = gym.vector.SyncVectorEnv(
         [make_env('MiniGrid-Empty-8x8-v0', 1, i+1, False, "test") for i in range(2)]
     )
@@ -122,6 +122,6 @@ def test_ppo_agent_minigrid():
     # memory = Memory(envs, args, "cpu")
     agent = Agent(envs, "cpu")
 
-    
+
     assert agent.num_obs == 7*7*3 # depends on whether you wrapped in Fully observed or not
     assert agent.num_actions == 7

@@ -40,8 +40,8 @@ def test_evaluate_dt_agent():
     batch = 0
     eval_env_func = make_env(
         env_id = env.spec.id,
-        seed=batch, 
-        idx=0, 
+        seed=batch,
+        idx=0,
         capture_video=True,
         max_steps = min(dt.max_timestep, 10),
         run_name = f"dt_eval_videos_{batch}",
@@ -64,4 +64,3 @@ def test_evaluate_dt_agent():
     assert statistics["prop_positive_reward"] == 0.0
     # traj length approx 10
     assert statistics["mean_traj_length"]  == pytest.approx(10.0, 1.0)
-

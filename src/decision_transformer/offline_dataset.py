@@ -21,7 +21,7 @@ class TrajectoryLoader():
         self.rtg_scale = rtg_scale
 
     def load_trajectories(self) -> None:
-        
+
         traj_reader = TrajectoryReader(self.trajectory_path)
         data = traj_reader.read()
 
@@ -50,7 +50,7 @@ class TrajectoryLoader():
 
         if self.observation_type != 'flat':
             t_observations = rearrange(t.tensor(observations), "t b h w c -> (b t) h w c")
-        else: 
+        else:
             t_observations = rearrange(t.tensor(observations), "t b f -> (b t) f")
 
         t_actions = rearrange(t.tensor(actions), "t b -> (b t)")
@@ -79,7 +79,7 @@ class TrajectoryLoader():
 
     def get_indices_of_top_p_trajectories(self, pct_traj):
         num_timesteps = max(int(pct_traj*self.num_timesteps), 1)
-        sorted_inds = np.argsort(self.returns) 
+        sorted_inds = np.argsort(self.returns)
 
         num_trajectories = 1
         timesteps = self.traj_lens[sorted_inds[-1]]
@@ -159,12 +159,12 @@ class TrajectoryLoader():
             a.append(traj_actions[si:si + max_len].reshape(1, -1, *self.act_dim))
             r.append(traj_rewards[si:si + max_len].reshape(1, -1, 1))
             d.append(traj_dones[si:si + max_len].reshape(1, -1))
-            
+
             # get timesteps
             timesteps.append(np.arange(si, si + s[-1].shape[1]).reshape(1, -1))
             timesteps[-1][timesteps[-1] >= self.max_ep_len] = self.max_ep_len-1  # padding cutoff
-            
-            # assrt min timesteps is greater than -1 
+
+            # assrt min timesteps is greater than -1
             if timesteps[-1].min() <= -1:
                 assert timesteps[-1].min() >= -1, f"min timesteps is {timesteps[-1].min()}"
 
@@ -255,5 +255,3 @@ class TrajectoryReader():
             raise ValueError(f"Path {self.path} is not a valid trajectory file")
 
         return data
-
-        

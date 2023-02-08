@@ -1,4 +1,4 @@
-import streamlit as st 
+import streamlit as st
 
 from torchtyping import TensorType as TT
 from transformer_lens.hook_points import HookPoint
@@ -33,11 +33,11 @@ def show_ablation(dt, logit_dir, original_cache):
         elif component == "MLP":
             ablation_func = get_ablation_function(ablate_to_mean, layer, component = "MLP")
             dt.transformer.blocks[layer].hook_mlp_out.add_hook(ablation_func)
-        
+
         action_preds, x, cache, tokens = get_action_preds(dt)
 
         if st.checkbox("show action predictions"):
-            plot_action_preds(action_preds) 
+            plot_action_preds(action_preds)
         if st.checkbox("show counterfactual residual contributions"):
             original_residual_decomp = get_residual_decomp(dt, original_cache, logit_dir)
             ablation_residual_decomp = get_residual_decomp(dt, cache, logit_dir)
@@ -75,4 +75,3 @@ def get_ablation_function(ablate_to_mean, head_to_ablate, component = "HEAD"):
         return head_ablation_hook
     elif component == "MLP":
         return mlp_ablation_hook
-

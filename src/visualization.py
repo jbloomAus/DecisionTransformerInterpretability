@@ -25,10 +25,10 @@ def render_minigrid_observation(env, observation):
     observation[agent_pos[0], agent_pos[1]] = [0,0,0]
 
     grid, _ = env.grid.decode(observation.astype(np.uint8))
-    
+
     i = agent_pos[0]
     j = agent_pos[1]
-    
+
     return grid.render(32, (i,j), agent_dir=agent_dir)
 
 def render_minigrid_observations(env, observations):

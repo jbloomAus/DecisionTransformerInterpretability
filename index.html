@@ -1,10 +1,10 @@
 
 <script>
     const streamlitDoc = window.parent.document;
-    
+
     const buttons = Array.from(streamlitDoc.querySelectorAll('.stButton > button'));
     //console.log(buttons) // find buttons in console tab
-    
+
     const left_button = buttons.find(el => el.innerText === 'Left');
     const right_button = buttons.find(el => el.innerText === 'Right');
     const forward_button = buttons.find(el => el.innerText === 'Forward');
@@ -12,7 +12,7 @@
     const drop_button = buttons.find(el => el.innerText === 'Drop');
     const toggle_button = buttons.find(el => el.innerText === 'Toggle');
     const done_button = buttons.find(el => el.innerText === 'Done');
-    
+
 
     // set all button display to none
     left_button.style.display = "none"
@@ -64,6 +64,3 @@
 <!-- let's rewrite the above script to work with buttons "left", "right", "forward", "pickup", "drop", "toggle", "done" -->
 
 <!-- Path: index.html -->
-
-
-

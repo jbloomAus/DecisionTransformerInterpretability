@@ -38,7 +38,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
         prog = "Decision Transformer",
         description="Train a decision transformer on a trajectory dataset.",
-        epilog = "The last enemy that shall be defeated is death.") 
+        epilog = "The last enemy that shall be defeated is death.")
     parser.add_argument("--exp_name", type=str, default="Dev")
     parser.add_argument("--d_model", type=int, default=128)
     parser.add_argument("--trajectory_path", type=str)
@@ -83,14 +83,14 @@ def load_decision_transformer(model_path, env):
     layer_norm = 'transformer.blocks.0.ln1.w' in state_dict
 
     if 'state_encoder.weight' in state_dict:
-        state_embedding_type = 'grid' # otherwise it would be a sequential and wouldn't have this 
-    
+        state_embedding_type = 'grid' # otherwise it would be a sequential and wouldn't have this
+
     if state_dict['time_embedding.weight'].shape[1] == 1:
         time_embedding_type = "linear"
     else:
         time_embedding_type = "learned"
 
-    # now we can create the model 
+    # now we can create the model
     model = DecisionTransformer(
         env = env,
         n_layers = num_layers,

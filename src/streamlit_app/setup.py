@@ -28,7 +28,7 @@ def initialize_playground(model_path, initial_rtg):
         if isinstance(action, str):
             action = action_string_to_id[action]
         st.write(f"just took action '{action_id_to_string[st.session_state.action]}'")
-        del action 
+        del action
         del st.session_state.action
     else:
         get_action_from_user(env, initial_rtg)

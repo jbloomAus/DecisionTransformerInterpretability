@@ -1,9 +1,9 @@
-import pytest 
+import pytest
 import os
-import torch as t 
+import torch as t
 from dataclasses import dataclass
 import numpy as np
-import pickle 
+import pickle
 import torch
 from src.utils import TrajectoryWriter
 from src.decision_transformer.utils import load_decision_transformer
@@ -62,7 +62,7 @@ def test_trajectory_writer_numpy():
         assert type(dones) == np.ndarray
         assert dones.dtype == bool
 
-        assert dones[0][0] 
+        assert dones[0][0]
         assert dones[0][1] == False
         assert dones[0][2] == False
 
@@ -81,8 +81,8 @@ def test_trajectory_writer_numpy():
         assert infos[0]["a"] == 1
         assert infos[0]["b"] == 2
         assert infos[0]["c"] == 3
-    
-    
+
+
 def test_trajectory_writer_torch():
 
     @dataclass
@@ -95,7 +95,7 @@ def test_trajectory_writer_torch():
 
     # test accumulate trajectory when all the objects are initialized as pytorch tensors
 
-    # assert raises type error 
+    # assert raises type error
     with pytest.raises(TypeError):
         trajectory_writer.accumulate_trajectory(
             next_obs=torch.tensor([1, 2, 3], dtype=torch.float64),

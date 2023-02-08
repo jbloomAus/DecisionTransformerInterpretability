@@ -1,7 +1,7 @@
-import numpy as np 
-import torch as t 
+import numpy as np
+import torch as t
 import torch.nn as nn
-import time 
+import time
 import wandb
 
 from typing import Callable
@@ -13,19 +13,19 @@ class Trainer:
 
     def __init__(
          self,
-         model: DecisionTransformer, 
-         optimizer: t.optim.Optimizer, 
-         batch_size: int, 
+         model: DecisionTransformer,
+         optimizer: t.optim.Optimizer,
+         batch_size: int,
          max_len: int,
          mask_action: int,
-         get_batch: Callable, 
+         get_batch: Callable,
          action_loss_fn: Callable = nn.CrossEntropyLoss(),
          state_loss_fn: Callable = nn.CrossEntropyLoss(),
-         reward_loss_fn: Callable = nn.MSELoss(), 
+         reward_loss_fn: Callable = nn.MSELoss(),
          action_coef = 1.0,
          state_coef = 1.0,
          reward_coef = 1.0,
-         scheduler=None, 
+         scheduler=None,
          track = False,
          ):
 
@@ -55,9 +55,9 @@ class Trainer:
         state_target, action_target, rtg_target = t.clone(states), t.clone(actions), t.clone(rtgs)
 
         state_preds, action_preds, reward_preds = self.model.forward(
-            states = state_target, 
-            actions = action_target.to(t.int32).unsqueeze(-1), 
-            rtgs = rtg_target[:, 1:, :], 
+            states = state_target,
+            actions = action_target.to(t.int32).unsqueeze(-1),
+            rtgs = rtg_target[:, 1:, :],
             timesteps=timesteps.unsqueeze(-1)
         )
 

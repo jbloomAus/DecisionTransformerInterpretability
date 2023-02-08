@@ -12,7 +12,7 @@ def show_qk_circuit(dt):
 
         st.write(
             '''
-            Usually the QK circuit uses the embedding twice but since we are interested in Atten to 
+            Usually the QK circuit uses the embedding twice but since we are interested in Atten to
             '''
         )
         st.latex(
@@ -30,7 +30,7 @@ def show_qk_circuit(dt):
         W_QK = einsum('head d_mod_Q d_head, head d_mod_K d_head -> head d_mod_Q d_mod_K', W_Q, W_K)
         # st.write(W_QK.shape)
 
-        # W_QK_full = W_E_rtg.T @ W_QK @ W_E_state 
+        # W_QK_full = W_E_rtg.T @ W_QK @ W_E_state
         W_QK_full = W_E_state.T @ W_QK @  W_E_rtg
 
         channels = dt.env.observation_space['image'].shape[-1]
@@ -43,21 +43,21 @@ def show_qk_circuit(dt):
 
         with selection_columns[0]:
             heads = st.multiselect(
-                "Select Heads", 
-                options=list(range(dt.n_heads)), 
+                "Select Heads",
+                options=list(range(dt.n_heads)),
                 key="head qk", default=[0]
             )
-        if channels == 3: 
-            format_func = lambda x: three_channel_schema[x] 
-        else: 
+        if channels == 3:
+            format_func = lambda x: three_channel_schema[x]
+        else:
             format_func = twenty_idx_format_func
 
         with selection_columns[1]:
             selected_channels = st.multiselect(
-                "Select Observation Channels", 
-                options=list(range(channels)), 
+                "Select Observation Channels",
+                options=list(range(channels)),
                 format_func= format_func,
-                key="channels qk", 
+                key="channels qk",
                 default=[0,1,2]
             )
 
@@ -103,36 +103,36 @@ def show_ov_circuit(dt):
         width = dt.env.observation_space['image'].shape[1]
         n_actions = W_U.shape[0]
         OV_circuit_full_reshaped = OV_circuit_full.reshape(dt.n_heads, channels, height, width, n_actions)
-    
 
-        if channels == 3: 
-            format_func = lambda x: three_channel_schema[x] 
-        else: 
+
+        if channels == 3:
+            format_func = lambda x: three_channel_schema[x]
+        else:
             format_func = twenty_idx_format_func
 
         selection_columns = st.columns(3)
         with selection_columns[0]:
 
             heads = st.multiselect(
-                "Select Heads", 
-                options=list(range(dt.n_heads)), 
+                "Select Heads",
+                options=list(range(dt.n_heads)),
                 key="head ov", default=[0]
             )
 
         with selection_columns[1]:
             selected_channels = st.multiselect(
-                "Select Observation Channels", 
-                options=list(range(channels)), 
+                "Select Observation Channels",
+                options=list(range(channels)),
                 format_func= format_func,
-                key="channels ov", 
+                key="channels ov",
                 default=[0,1,2]
             )
 
         with selection_columns[2]:
             selected_actions = st.multiselect(
-                "Select Actions", 
-                options=list(range(n_actions)), 
-                key="actions ov", 
+                "Select Actions",
+                options=list(range(n_actions)),
+                key="actions ov",
                 format_func= lambda x: IDX_TO_ACTION[x],
                 default=[0,1,2]
             )
@@ -159,7 +159,7 @@ def show_time_embeddings(dt, logit_dir):
 
         if dt.time_embedding_type == "linear":
             time_steps = t.arange(100).unsqueeze(0).unsqueeze(-1).to(t.float32)
-            time_embeddings = dt.get_time_embeddings(time_steps).squeeze(0) 
+            time_embeddings = dt.get_time_embeddings(time_steps).squeeze(0)
             dot_prod = time_embeddings @ logit_dir
         else:
             dot_prod = dt.time_embedding.weight @ logit_dir
@@ -178,9 +178,9 @@ def show_time_embeddings(dt, logit_dir):
         fig.update_layout(showlegend=False)
         if show_initial:
             fig.add_vline(
-                x=st.session_state.timesteps[0][-1].item() +  st.session_state.timestep_adjustment, 
-                line_dash="dash", 
-                line_color="red", 
+                x=st.session_state.timesteps[0][-1].item() +  st.session_state.timestep_adjustment,
+                line_dash="dash",
+                line_color="red",
                 annotation_text="Current timestep"
                 )
         st.plotly_chart(fig, use_container_width=True)
@@ -188,7 +188,7 @@ def show_time_embeddings(dt, logit_dir):
 def show_rtg_embeddings(dt, logit_dir):
     with st.expander("Show RTG Embeddings"):
 
-        
+
         batch_size = 1028
         if st.session_state.allow_extrapolation:
             min_value = -10
@@ -197,19 +197,19 @@ def show_rtg_embeddings(dt, logit_dir):
             min_value = -1
             max_value = 1
         rtg_range = st.slider(
-            "RTG Range", 
-            min_value=min_value, 
-            max_value=max_value, 
-            value=(-1,1), 
+            "RTG Range",
+            min_value=min_value,
+            max_value=max_value,
+            value=(-1,1),
             step=1
         )
-        
+
         min_rtg = rtg_range[0]
         max_rtg = rtg_range[1]
 
         rtg_range = t.linspace(min_rtg, max_rtg, 100).unsqueeze(-1)
 
-        rtg_embeddings = dt.reward_embedding(rtg_range).squeeze(0) 
+        rtg_embeddings = dt.reward_embedding(rtg_range).squeeze(0)
 
 
         dot_prod = rtg_embeddings @ logit_dir
@@ -230,10 +230,9 @@ def show_rtg_embeddings(dt, logit_dir):
         fig.update_layout(showlegend=False)
         if show_initial:
             fig.add_vline(
-                x=st.session_state.rtg[0][0].item(), 
-                line_dash="dash", 
-                line_color="red", 
+                x=st.session_state.rtg[0][0].item(),
+                line_dash="dash",
+                line_color="red",
                 annotation_text="Initial RTG"
                 )
         st.plotly_chart(fig, use_container_width=True)
-

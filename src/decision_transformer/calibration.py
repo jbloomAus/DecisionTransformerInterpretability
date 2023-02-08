@@ -1,4 +1,4 @@
-import pandas as pd 
+import pandas as pd
 import plotly.express as px
 from tqdm import tqdm
 import numpy as np
@@ -34,9 +34,9 @@ def plot_calibration_statistics(statistics, show_spread=False, CI = 0.95):
     )
     fig.add_shape(
         type="line",
-        x0=df.initial_rtg.min(), 
+        x0=df.initial_rtg.min(),
         y0=df.initial_rtg.min(),
-        x1=df.initial_rtg.max(), 
+        x1=df.initial_rtg.max(),
         y1=df.initial_rtg.max(),
         line=dict(
             color="LightSeaGreen",
@@ -74,7 +74,7 @@ def plot_calibration_statistics(statistics, show_spread=False, CI = 0.95):
                 line=dict(color='rgba(0,0,0,0)', width=0.5), # then use light blue fill color
                 fillcolor="rgba(0,100,80,0.2)",
                 fill="tonexty"
-            )   
+            )
         )
 
-    return fig 
+    return fig

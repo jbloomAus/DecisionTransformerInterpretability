@@ -12,4 +12,3 @@ WORKDIR /home
 
 # install requirements
 RUN apt-get update && apt-get install -y git && pip install -r requirements.txt
-

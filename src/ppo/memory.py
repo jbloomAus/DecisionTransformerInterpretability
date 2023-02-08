@@ -53,8 +53,8 @@ class Memory():
                                 episode_return = item["episode"]["r"],
                             )
 
-                    self.global_step += 1 
-                
+                    self.global_step += 1
+
     def sample_experiences(self):
         '''Helper function to print out experiences, as a sanity check!
         '''
@@ -73,16 +73,16 @@ class Memory():
         indices = rearrange(indices, "(mb_num mb_size) -> mb_num mb_size", mb_size=minibatch_size)
         return list(indices)
 
-    def compute_advantages( 
-        self,  
+    def compute_advantages(
+        self,
         next_value: TT["env"],  # noqa: F821
         next_done: TT["env"],  # noqa: F821
         rewards: TT["T", "env"],  # noqa: F821
         values: TT["T", "env"],  # noqa: F821
         dones: TT["T", "env"],  # noqa: F821
-        device: t.device,  
-        gamma: float, 
-        gae_lambda: float 
+        device: t.device,
+        gamma: float,
+        gae_lambda: float
     ) -> TT["T", "env"]: # noqa: F821
         '''Compute advantages using Generalized Advantage Estimation.
         '''
@@ -97,7 +97,7 @@ class Memory():
         return advantages
 
     def get_minibatches(self) -> List[Minibatch]:
-        '''Computes advantages, and returns minibatches to be used in the 
+        '''Computes advantages, and returns minibatches to be used in the
         learning phase.
         '''
         obs, dones, actions, logprobs, values, rewards = [t.stack(arr) for arr in zip(*self.experiences)]
@@ -106,14 +106,14 @@ class Memory():
         indexes = self.get_minibatch_indexes(self.args.batch_size, self.args.minibatch_size)
         return [
             Minibatch(*[
-                arr.flatten(0, 1)[ind] 
+                arr.flatten(0, 1)[ind]
                 for arr in [obs, actions, logprobs, advantages, values, returns]
             ])
             for ind in indexes
         ]
 
     def get_printable_output(self) -> str:
-        '''Sets a new progress bar description, if any episodes have terminated. 
+        '''Sets a new progress bar description, if any episodes have terminated.
         If not, then the bar's description won't change.
         '''
         if self.episode_lengths:
@@ -123,7 +123,7 @@ class Memory():
             return f"{global_step=:<06}\n{avg_episode_length=:<3.2f}\n{avg_episode_return=:<3.2f}"
 
     def reset(self) -> None:
-        '''Function to be called at the end of each rollout period, to make 
+        '''Function to be called at the end of each rollout period, to make
         space for new experiences to be generated.
         '''
         self.experiences = []
@@ -146,4 +146,3 @@ class Memory():
         '''
         for step, vars_to_log in self.vars_to_log.items():
             wandb.log(vars_to_log, step=step)
-

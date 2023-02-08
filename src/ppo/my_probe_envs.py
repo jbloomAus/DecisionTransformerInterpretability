@@ -166,5 +166,3 @@ class Probe5(gym.Env):
         if return_info:
             return np.array([self.obs], dtype=float), {}
         return np.array([self.obs], dtype=float)
-
-

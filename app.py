@@ -27,8 +27,9 @@ with st.sidebar:
 initial_rtg = hyperpar_side_bar()
 
 model_path = "models/MiniGrid-Dynamic-Obstacles-8x8-v0/demo_model_overnight_training.pt"
-# model_path = "models/demo_model_overnight_training.pt"
-# model_path="models/demo_model_one_hot_overnight.pt"
+# model_path="models/MiniGrid-Dynamic-Obstacles-8x8-v0/demo_model_one_hot_overnight.pt"
+# model_path = "artifacts/MiniGrid-DoorKey-8x8-v0__Dev__1__1673268725:v0/MiniGrid-DoorKey-8x8-v0__Dev__1__1673268725.pt"
+# model_path = "artifacts/MiniGrid-MemoryS13Random-v0__MiniGrid-MemoryS13Random__1__1675311480:v0/MiniGrid-MemoryS13Random-v0__MiniGrid-MemoryS13Random__1__1675311480.pt"
 action_string_to_id = {"left": 0, "right": 1, "forward": 2, "pickup": 3, "drop": 4, "toggle": 5, "done": 6}
 action_id_to_string = {v: k for k, v in action_string_to_id.items()}
 
@@ -46,7 +47,7 @@ with st.sidebar:
         positive_action_direction = action_string_to_id[positive_action_direction]
         negative_action_direction = action_string_to_id[negative_action_direction]
         logit_dir =  dt.predict_actions.weight[positive_action_direction] - dt.predict_actions.weight[negative_action_direction]
-    else: 
+    else:
         st.warning("Single Logit Analysis may be misleading.")
         selected_action_direction = st.selectbox("Selected Action Direction", ["left", "right", "forward", "pickup", "drop", "toggle", "done"], index = 2)
         selected_action_direction = action_string_to_id[selected_action_direction]

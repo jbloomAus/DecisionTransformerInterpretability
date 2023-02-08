@@ -8,9 +8,9 @@
 
 In this project, we intend to apply a mathematical framework for transformer circuits to study transformer models trained on reinforcement tasks to create a simpler context than large language models for understanding high-level concepts, such as goal-directedness, in transformer architecture.
 
- To begin, we hope to train a small transformer model (maximum of two layers, implemented via the Transformer Lens interpretability library) to solve MiniGrid RL tasks. Once we achieve good performance, we will attempt to find mechanistic explanations for the agent's behaviour, such as how it decides whether to move toward the door or the key. 
- 
-Interpretability of such circuits may be a valuable step towards understanding high-level concepts such as deception or goal-directedness in transformer circuits. 
+ To begin, we hope to train a small transformer model (maximum of two layers, implemented via the Transformer Lens interpretability library) to solve MiniGrid RL tasks. Once we achieve good performance, we will attempt to find mechanistic explanations for the agent's behaviour, such as how it decides whether to move toward the door or the key.
+
+Interpretability of such circuits may be a valuable step towards understanding high-level concepts such as deception or goal-directedness in transformer circuits.
 
 Future work may include attempting to manually edit decision transformers to modify goals and behavior.
 
@@ -21,19 +21,19 @@ You can find an initial technical report for this project [here](https://www.les
 ## Package Overview
 
 Currently the package has 3 important components:
-- The ppo subpackage. This package enables users to train a PPO agent on a gym environment and store the trajectories generated *during training*. 
+- The ppo subpackage. This package enables users to train a PPO agent on a gym environment and store the trajectories generated *during training*.
 - The decision_transformer subpackage. This package contains the decision transformer implementation.
-- the streamlit app. This app (currently in development) enables researchers to play minigrid games whilst observing the decision transformer's predictions/activations. 
+- the streamlit app. This app (currently in development) enables researchers to play minigrid games whilst observing the decision transformer's predictions/activations.
 
 ## Current Results
 
-We've successfully trained a decision transformer on several games including [DoorKey](https://minigrid.farama.org/environments/minigrid/DoorKeyEnv/) and [Dynamic Obstacles](https://minigrid.farama.org/environments/minigrid/DynamicObstaclesEnv/). 
+We've successfully trained a decision transformer on several games including [DoorKey](https://minigrid.farama.org/environments/minigrid/DoorKeyEnv/) and [Dynamic Obstacles](https://minigrid.farama.org/environments/minigrid/DynamicObstaclesEnv/).
 
 Calibration Plot            |  MiniGrid-Dynamic-Obstacles-8x8-v0, after 6000 batch, episode length 14, RTG 1.0, reward 0.955
 :-------------------------:|:-------------------------:
 ![](assets/example_calibration_dynamic%20obstacles.png)  |  ![](assets/dynamic_obstacles_example.gif)
 
-The streamlit app is coming along and can show attention patterns, and decompose the residual stream of a decision transformer while a human plays the game. 
+The streamlit app is coming along and can show attention patterns, and decompose the residual stream of a decision transformer while a human plays the game.
 
 <img src="assets/streamlit_screenshot.png" width = 600>
 
@@ -65,7 +65,7 @@ python src/run_ppo.py --exp_name "MiniGrid-Dynamic-Obstacles-8x8-v0" \
     --ent_coef 0.25 \
     --vf_coef 0.5 \
     --max_grad_norm 2 \
-    --max_steps 300 
+    --max_steps 300
 ```
 
 ### Training a decision transformer
@@ -96,7 +96,7 @@ python src/run_decision_transformer.py \
     --prob_go_from_end 0.1 \
     --eval_max_time_steps 1000 \
     --cuda True \
-    --track False 
+    --track False
 ```
 
 ### Running the streamlit app
@@ -111,7 +111,7 @@ streamlit run app.py
 
 I haven't been too careful about this yet. Using python 3.9.15 with the requirements.txt file. We're using the V2 branch of transformer lens and Minigrid 2.1.0.
 
-The docker file should work and we can make use of it more when the project is further ahead/if we are alternativing developers frequently and have any differential behavior. 
+The docker file should work and we can make use of it more when the project is further ahead/if we are alternativing developers frequently and have any differential behavior.
 
 ```bash
 ./scripts/build_docker.sh
@@ -159,17 +159,17 @@ TOTAL                                 758    190    75%
 
 # Next Steps
 
-- I'm currently completing the first sprint which will end with a technical write up of the Dynamic Obstacles trained decision tranformer circuit. 
-    - This is mostly done except that I am trying to complete my understanding of the circuits and internal representations used by the agent. 
+- I'm currently completing the first sprint which will end with a technical write up of the Dynamic Obstacles trained decision tranformer circuit.
+    - This is mostly done except that I am trying to complete my understanding of the circuits and internal representations used by the agent.
 - After this there are several possible next steps including:
-    - Trying to make non-trivial edits to the dynamic obstacles model. 
-    - Trying to see if a larger agent may be better calibrated and/or implement more interesting circuits. 
+    - Trying to make non-trivial edits to the dynamic obstacles model.
+    - Trying to see if a larger agent may be better calibrated and/or implement more interesting circuits.
     - Moving on to other environments (such as the KeyDoor environment)
 
-In the long run, we would like to study more complicated environments which involve instrumental goals or the need for search or searchlike behavior. 
+In the long run, we would like to study more complicated environments which involve instrumental goals or the need for search or searchlike behavior.
 
-# References: 
+# References:
 
 - [decision transformers](https://arxiv.org/pdf/2106.01345.pdf)
-- [gym-minigrid](https://github.com/Farama-Foundation/Minigrid) 
-- [transformerlens](https://github.com/neelnanda-io/TransformerLens) 
+- [gym-minigrid](https://github.com/Farama-Foundation/Minigrid)
+- [transformerlens](https://github.com/neelnanda-io/TransformerLens)
