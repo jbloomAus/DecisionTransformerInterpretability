@@ -1,8 +1,10 @@
 # Decision Transformer Interpretability
 
-<!-- add logo -->
+<p align="center">
+    <img src="assets/logofiles/Logo_transparent.png"  width="300" height="300" class="centre">
+</p>
 
-![DecisionTransformerInterpretabilityLogo](assets/logofiles/Logo_transparent.png)
+[![build](https://github.com/jbloomAus/DecisionTransformerInterpretability/actions/workflows/build.yml/badge.svg)](https://github.com/jbloomAus/DecisionTransformerInterpretability/actions/workflows/build.yml)
 
 In this project, we intend to apply a mathematical framework for transformer circuits to study transformer models trained on reinforcement tasks to create a simpler context than large language models for understanding high-level concepts, such as goal-directedness, in transformer architecture.
 
