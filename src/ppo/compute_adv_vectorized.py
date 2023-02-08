@@ -26,15 +26,15 @@ def shift_rows(arr):
     return output
 
 def compute_advantages_vectorized(
-    next_value: TT["env"], 
-    next_done: TT["env"], 
-    rewards: TT["T", "env"], 
-    values: TT["T", "env"], 
-    dones: TT["T", "env"], 
+    next_value: TT["env"],  # noqa: F821
+    next_done: TT["env"],  # noqa: F821
+    rewards: TT["T", "env"], # noqa: F821
+    values: TT["T", "env"],  # noqa: F821
+    dones: TT["T", "env"],  # noqa: F821
     device: t.device, 
     gamma: float, 
     gae_lambda: float
-) -> TT["T", "env"]:
+) -> TT["T", "env"]: # noqa: F821
     """
     Basic idea (assuming num_envs=1 in this description, but the case generalises):
 

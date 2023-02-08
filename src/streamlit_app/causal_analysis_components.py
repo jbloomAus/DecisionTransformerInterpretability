@@ -48,9 +48,9 @@ def show_ablation(dt, logit_dir, original_cache):
 def get_ablation_function(ablate_to_mean, head_to_ablate, component = "HEAD"):
 
     def head_ablation_hook(
-        value: TT["batch", "pos", "head_index", "d_head"],
+        value: TT["batch", "pos", "head_index", "d_head"], # noqa: F821
         hook: HookPoint
-    ) -> TT["batch", "pos", "head_index", "d_head"]:
+    ) -> TT["batch", "pos", "head_index", "d_head"]: # noqa: F821
         print(f"Shape of the value tensor: {value.shape}")
 
         if ablate_to_mean:
@@ -60,9 +60,9 @@ def get_ablation_function(ablate_to_mean, head_to_ablate, component = "HEAD"):
         return value
 
     def mlp_ablation_hook(
-        value: TT["batch", "pos", "d_model"],
+        value: TT["batch", "pos", "d_model"], # noqa: F821
         hook: HookPoint
-    ) -> TT["batch", "pos", "d_model"]:
+    ) -> TT["batch", "pos", "d_model"]: # noqa: F821
         print(f"Shape of the value tensor: {value.shape}")
 
         if ablate_to_mean:

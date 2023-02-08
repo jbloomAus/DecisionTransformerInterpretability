@@ -206,7 +206,7 @@ def calc_clipped_surrogate_objective(
     return t.minimum(non_clipped, clipped).mean()
 
 @typechecked
-def calc_value_function_loss(values: TT["batch"], mb_returns: TT["batch"], vf_coef: float) -> t.Tensor:
+def calc_value_function_loss(values: TT["batch"], mb_returns: TT["batch"], vf_coef: float) -> t.Tensor: # noqa: F821
     '''Compute the value function portion of the loss function.
 
     vf_coef: the coefficient for the value loss, which weights its contribution to the overall loss. Denoted by c_1 in the paper.

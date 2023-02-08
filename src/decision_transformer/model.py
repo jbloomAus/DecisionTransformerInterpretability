@@ -57,8 +57,8 @@ class PosEmbedTokens(nn.Module):
         self.W_pos = nn.Parameter(torch.empty(self.cfg.n_ctx, self.cfg.d_model))
 
     def forward(
-        self, tokens: TT["batch", "position"], past_kv_pos_offset: int = 0
-    ) -> TT["batch", "position", "d_model"]:
+        self, tokens: TT["batch", "position"], past_kv_pos_offset: int = 0 # noqa: F821
+    ) -> TT["batch", "position", "d_model"]: # noqa: F821
         """Tokens have shape [batch, pos]
         Output shape [pos, d_model] - will be broadcast along batch dim"""
 

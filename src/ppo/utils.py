@@ -176,7 +176,7 @@ class PPOArgs:
             self.batch_size = int(self.num_envs * self.num_steps)
             self.minibatch_size = self.batch_size // self.num_minibatches
             if self.trajectory_path is None:
-                self.trajectory_path = os.path.join("trajectories", self.env_id + str(uuid.uuid4()) + ".xz")
+                self.trajectory_path = os.path.join("trajectories", self.env_id + str(uuid.uuid4()) + ".gz")
 
 arg_help_strings = dict(
     exp_name = "the name of this experiment",

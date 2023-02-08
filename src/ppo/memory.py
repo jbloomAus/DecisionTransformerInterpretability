@@ -15,12 +15,12 @@ from .utils import PPOArgs, get_obs_preprocessor
 
 @dataclass
 class Minibatch:
-    obs: TT["batch", "obs_shape"]
-    actions: TT["batch"]
-    logprobs: TT["batch"]
-    advantages: TT["batch"]
-    values: TT["batch"]
-    returns: TT["batch"]
+    obs: TT["batch", "obs_shape"] # noqa: F821
+    actions: TT["batch"] # noqa: F821
+    logprobs: TT["batch"] # noqa: F821
+    advantages: TT["batch"] # noqa: F821
+    values: TT["batch"] # noqa: F821
+    returns: TT["batch"] # noqa: F821
 
 class Memory():
 
@@ -75,15 +75,15 @@ class Memory():
 
     def compute_advantages( 
         self,  
-        next_value: TT["env"], 
-        next_done: TT["env"], 
-        rewards: TT["T", "env"], 
-        values: TT["T", "env"], 
-        dones: TT["T", "env"], 
-        device: t.device, 
+        next_value: TT["env"],  # noqa: F821
+        next_done: TT["env"],  # noqa: F821
+        rewards: TT["T", "env"],  # noqa: F821
+        values: TT["T", "env"],  # noqa: F821
+        dones: TT["T", "env"],  # noqa: F821
+        device: t.device,  
         gamma: float, 
         gae_lambda: float 
-    ) -> TT["T", "env"]:
+    ) -> TT["T", "env"]: # noqa: F821
         '''Compute advantages using Generalized Advantage Estimation.
         '''
         T = values.shape[0]
