@@ -8,8 +8,9 @@ import plotly.express as px
 import torch as t
 from einops import rearrange
 
-
 # not technically a data loader, rework later to work as one.
+
+
 class TrajectoryLoader():
 
     def __init__(self, trajectory_path, pct_traj=1.0, rtg_scale=1, normalize_state=False, device='cpu'):
@@ -256,6 +257,22 @@ class TrajectoryLoader():
             },
             marginal_x="histogram",
             marginal_y="histogram",
+        )
+
+        return fig
+
+    def plot_base_action_frequencies(self):
+
+        fig = px.bar(
+            y=t.concat(self.actions).bincount()
+            # x=[IDX_TO_ACTION[i] for i in range(7)],
+            # color=[IDX_TO_ACTION[i] for i in range(7)],
+        )
+
+        fig.update_layout(
+            title="Base Action Frequencies",
+            xaxis_title="Action",
+            yaxis_title="Frequency",
         )
 
         return fig

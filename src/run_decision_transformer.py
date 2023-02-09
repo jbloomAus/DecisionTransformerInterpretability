@@ -84,6 +84,10 @@ if __name__ == "__main__":
 
         fig = trajectory_data_set.plot_reward_over_time()
         wandb.log({"dataset/reward_over_time": wandb.Plotly(fig)})
+        fig = trajectory_data_set.plot_base_action_frequencies()
+        wandb.log({"dataset/base_action_frequencies": wandb.Plotly(fig)})
+        wandb.log(
+            {"dataset/num_trajectories": trajectory_data_set.num_trajectories})
 
     if args.linear_time_embedding:
         time_embedding_type = "linear"
