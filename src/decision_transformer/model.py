@@ -163,6 +163,7 @@ class DecisionTransformer(nn.Module):
             attention_dir="causal",
             d_vocab_out=self.d_model,
             seed=seed,
+            device=self.device,
         )
 
         assert cfg.attention_dir == "causal", "Attention direction must be causal"

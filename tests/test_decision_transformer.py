@@ -303,6 +303,7 @@ def test_forward():
 
     if t.cuda.is_available():
         decision_transformer = decision_transformer.cuda()
+        decision_transformer.transformer = decision_transformer.transformer.cuda()
         all_obs = all_obs.cuda()
         all_actions = all_actions.cuda()
         all_returns_to_go = all_returns_to_go.cuda()
