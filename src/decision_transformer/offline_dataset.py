@@ -16,10 +16,10 @@ class TrajectoryLoader():
     def __init__(self, trajectory_path, pct_traj=1.0, rtg_scale=1, normalize_state=False, device='cpu'):
         self.trajectory_path = trajectory_path
         self.pct_traj = pct_traj
-        self.load_trajectories()
         self.device = device
         self.normalize_state = normalize_state
         self.rtg_scale = rtg_scale
+        self.load_trajectories()
 
     def load_trajectories(self) -> None:
 
@@ -81,6 +81,16 @@ class TrajectoryLoader():
         self.max_ep_len = max([len(i) for i in self.states])
         self.metadata = data['metadata']
 
+        self.sorted_inds = self.get_indices_of_top_p_trajectories(
+            self.pct_traj)
+        self.sampling_probabilities = self.get_sampling_probabilities()
+
+        if self.normalize_state:
+            self.state_mean, self.state_std = self.get_state_mean_std()
+        else:
+            self.state_mean = 0
+            self.state_std = 1
+
     def get_indices_of_top_p_trajectories(self, pct_traj):
         num_timesteps = max(int(pct_traj*self.num_timesteps), 1)
         sorted_inds = np.argsort(self.returns)
@@ -104,9 +114,8 @@ class TrajectoryLoader():
         return sorted_inds
 
     def get_sampling_probabilities(self):
-        sorted_inds = self.get_indices_of_top_p_trajectories(self.pct_traj)
-        p_sample = self.traj_lens[sorted_inds] / \
-            sum(self.traj_lens[sorted_inds])
+        p_sample = self.traj_lens[self.sorted_inds] / \
+            sum(self.traj_lens[self.sorted_inds])
         return p_sample
 
     def discount_cumsum(self, x, gamma):
@@ -125,34 +134,25 @@ class TrajectoryLoader():
 
     def get_batch(self, batch_size=256, max_len=100, prob_go_from_end=None):
 
-        rewards = self.rewards
-        states = self.states
-        actions = self.actions
-        dones = self.dones
-
-        # asset first dim is same for all inputs
-        assert len(rewards) == len(states) == len(actions) == len(
-            dones), f"shapes are not the same: {len(rewards)} {len(states)} {len(actions)} {len(dones)}"
-        p_sample = self.get_sampling_probabilities()
-        sorted_inds = self.get_indices_of_top_p_trajectories(self.pct_traj)
-        state_mean, state_std = self.get_state_mean_std()
+        sorted_inds = self.sorted_inds
 
         batch_inds = np.random.choice(
             np.arange(len(sorted_inds)),
             size=batch_size,
             replace=True,
-            p=p_sample,  # reweights so we sample according to timesteps
+            p=self.sampling_probabilities,  # reweights so we sample according to timesteps
         )
 
         # initialize lists
-        s, a, r, d, rtg, timesteps, mask = [], [], [], [], [], [], []
+        states, actions, rewards, dones, rewards_to_gos, timesteps, mask = [], [], [], [], [], [], []
         for i in range(batch_size):
 
             # get the trajectory
-            traj_rewards = rewards[sorted_inds[batch_inds[i]]]
-            traj_states = states[sorted_inds[batch_inds[i]]]
-            traj_actions = actions[sorted_inds[batch_inds[i]]]
-            traj_dones = dones[sorted_inds[batch_inds[i]]]
+            batch_index = sorted_inds[batch_inds[i]]
+            traj_rewards = self.rewards[batch_index]
+            traj_states = self.states[batch_index]
+            traj_actions = self.actions[batch_index]
+            traj_dones = self.dones[batch_index]
 
             # start index
             si = random.randint(0, traj_rewards.shape[0] - 1)
@@ -162,74 +162,92 @@ class TrajectoryLoader():
                     si = max(0, si)  # make sure it's not negative
 
             # get sequences from dataset
-            s.append(
+            states.append(
                 traj_states[si:si + max_len].reshape(1, -1, *self.state_dim))
-            a.append(
+            actions.append(
                 traj_actions[si:si + max_len].reshape(1, -1, *self.act_dim))
-            r.append(traj_rewards[si:si + max_len].reshape(1, -1, 1))
-            d.append(traj_dones[si:si + max_len].reshape(1, -1))
+            rewards.append(traj_rewards[si:si + max_len].reshape(1, -1, 1))
+            dones.append(traj_dones[si:si + max_len].reshape(1, -1))
+            rewards_to_gos.append(self.discount_cumsum(traj_rewards[si:], gamma=1.)[
+                                  :states[-1].shape[1] + 1].reshape(1, -1, 1))
 
             # get timesteps
-            timesteps.append(np.arange(si, si + s[-1].shape[1]).reshape(1, -1))
+            timesteps.append(
+                np.arange(si, si + states[-1].shape[1]).reshape(1, -1))
             timesteps[-1][timesteps[-1] >=
                           self.max_ep_len] = self.max_ep_len-1  # padding cutoff
 
-            # assrt min timesteps is greater than -1
-            if timesteps[-1].min() <= -1:
-                assert timesteps[-1].min() >= - \
-                    1, f"min timesteps is {timesteps[-1].min()}"
-
-            # get rewards to go
-            rtg.append(self.discount_cumsum(traj_rewards[si:], gamma=1.)[
-                       :s[-1].shape[1] + 1].reshape(1, -1, 1))
-
             # if the trajectory is shorter than max_len, pad it
-            if rtg[-1].shape[1] <= s[-1].shape[1]:
-                rtg[-1] = np.concatenate([rtg[-1],
-                                          np.zeros((1, 1, 1))], axis=1)
+            if rewards_to_gos[-1].shape[1] <= states[-1].shape[1]:
+                rewards_to_gos[-1] = np.concatenate(
+                    [rewards_to_gos[-1], np.zeros((1, 1, 1))], axis=1)
 
-            # padding and state + reward normalization
             # sometime the trajectory is shorter than max_len (due to random start index or end of episode)
-            tlen = s[-1].shape[1]
-            if a[-1].shape[1] != tlen:
-                a[-1] = np.concatenate([a[-1], np.ones((1,
-                                                        1, *self.act_dim)) * -10.], axis=1)
+            tlen = states[-1].shape[1]
 
             # sanity check
             assert tlen <= max_len, f"tlen: {tlen} max_len: {max_len}"
 
-            s[-1] = np.concatenate([np.zeros((1, max_len -
-                                              tlen, *self.state_dim)), s[-1]], axis=1)
-            if self.normalize_state:
-                s[-1] = (s[-1] - state_mean) / state_std
+            # I don't like this line. This is right padding the action token. I think it should be left padding
+            # if actions[-1].shape[1] != tlen:
+            #     actions[-1] = np.concatenate([actions[-1], np.ones((1, 1, *self.act_dim)) * -10.], axis=1)
 
-            a[-1] = np.concatenate([np.ones((1, max_len -
-                                             tlen, *self.act_dim)) * -10., a[-1]], axis=1)
-            r[-1] = np.concatenate([np.zeros((1, max_len -
-                                              tlen, 1)), r[-1]], axis=1)
-            d[-1] = np.concatenate([np.ones((1, max_len - tlen))
-                                    * 2, d[-1]], axis=1)
-            rtg[-1] = np.concatenate([np.zeros((1, max_len - tlen, 1)),
-                                      rtg[-1]], axis=1) / self.rtg_scale
-            timesteps[-1] = np.concatenate(
-                [np.zeros((1, max_len - tlen)), timesteps[-1]], axis=1)
-            mask.append(np.concatenate(
-                [np.zeros((1, max_len - tlen)), np.ones((1, tlen))], axis=1))
+            padding_required = max_len - tlen
+            # states[-1] = np.concatenate([np.zeros((1, padding_required, *self.state_dim)), states[-1]], axis=1)
+            states[-1] = self.add_padding(states[-1], 0, padding_required)
+            # actions[-1] = np.concatenate([np.ones((1, padding_required, *self.act_dim)) * -10., actions[-1]], axis=1)
+            actions[-1] = self.add_padding(actions[-1], -10, padding_required)
+            # rewards[-1] = np.concatenate([np.zeros((1, padding_required, 1)), rewards[-1]], axis=1)
+            rewards[-1] = self.add_padding(rewards[-1], 0, padding_required)
+            # dones[-1] = np.concatenate([np.ones((1, padding_required)) * 2, dones[-1]], axis=1)
+            dones[-1] = self.add_padding(dones[-1], 2, padding_required)
+            # rewards_to_gos[-1] = np.concatenate([np.zeros((1, padding_required, 1)), rewards_to_gos[-1]], axis=1)
+            rewards_to_gos[-1] = self.add_padding(
+                rewards_to_gos[-1], 0, padding_required)
+            # timesteps[-1] = np.concatenate([np.zeros((1, padding_required)), timesteps[-1]], axis=1)
+            timesteps[-1] = self.add_padding(timesteps[-1],
+                                             0, padding_required)
+            # mask.append(np.concatenate([np.zeros((1, padding_required)), np.ones((1, tlen))], axis=1))
+            mask.append(self.add_padding(
+                np.ones((1, tlen)), 0, padding_required))
 
-        s = t.from_numpy(np.concatenate(s, axis=0)).to(
-            dtype=t.float32, device=self.device)
-        a = t.from_numpy(np.concatenate(a, axis=0)).to(
-            dtype=t.float32, device=self.device)
-        r = t.from_numpy(np.concatenate(r, axis=0)).to(
-            dtype=t.float32, device=self.device)
-        d = t.from_numpy(np.concatenate(d, axis=0)).to(
-            dtype=t.long,    device=self.device)
-        rtg = t.from_numpy(np.concatenate(rtg, axis=0)).to(
-            dtype=t.float32, device=self.device)
-        timesteps = t.from_numpy(np.concatenate(timesteps, axis=0)).to(
+            # padding and state + reward normalization
+            states[-1] = (states[-1] - self.state_mean) / self.state_std
+            rewards_to_gos[-1] = rewards_to_gos[-1] / self.rtg_scale
+
+        return self.return_tensors(states, actions, rewards, rewards_to_gos, dones, timesteps, mask)
+
+    def add_padding(self, tokens, padding_token, padding_required):
+        # np.concatenate([np.zeros((1, padding_required, *self.state_dim)), states[-1]], axis=1)
+        if padding_required > 0:
+            return np.concatenate([np.ones((1, padding_required, *tokens.shape[2:])) * padding_token, tokens], axis=1)
+        return tokens
+
+    def probabilisitcally_sample_from_end(self, si, prob_go_from_end=None):
+        if prob_go_from_end is not None:
+            if random.random() < prob_go_from_end:
+                si = traj_rewards.shape[0] - max_len
+                si = max(0, si)  # make sure it's not negative
+        return si
+
+    def return_tensors(self, s, a, r, rtg, d, timesteps, mask):
+
+        s = np.concatenate(s, axis=0)
+        a = np.concatenate(a, axis=0)
+        r = np.concatenate(r, axis=0)
+        rtg = np.concatenate(rtg, axis=0)
+        d = np.concatenate(d, axis=0)
+        timesteps = np.concatenate(timesteps, axis=0)
+        mask = np.concatenate(mask, axis=0)
+
+        s = t.from_numpy(s).to(dtype=t.float32, device=self.device)
+        a = t.from_numpy(a).to(dtype=t.float32, device=self.device)
+        r = t.from_numpy(r).to(dtype=t.float32, device=self.device)
+        rtg = t.from_numpy(rtg).to(dtype=t.float32, device=self.device)
+        d = t.from_numpy(d).to(dtype=t.long, device=self.device)
+        timesteps = t.from_numpy(timesteps).to(
             dtype=t.long, device=self.device)
-        mask = t.from_numpy(np.concatenate(mask, axis=0)
-                            ).to(device=self.device)
+        mask = t.from_numpy(mask).to(device=self.device)
 
         return s, a, r, d, rtg, timesteps, mask
 
