@@ -34,21 +34,23 @@
             case 'ArrowUp':
                 forward_button.click();
                 break;
-            // case 'Enter':
-            //     pickup_button.click();
-            //     break;
-            // case 'Shift':
-            //     drop_button.click();
-            //     break;
-            // case 'Backspace':
-            //     toggle_button.click();
-            //     break;
-            // case ' ':
-            //     done_button.click();
-            //     break;
-            // case 'c':
-            //     window.parent.navigator.clipboard.writeText(python_string)
-                //window.parent.navigator.clipboard.readText().then((d) => {console.log(d)})
+            case 'p':
+                pickup_button.click();
+                console.log("pickup")
+                break;
+            case 'd':
+                drop_button.click();
+                console.log("drop")
+                break;
+            case 't':
+                toggle_button.click();
+                console.log("toggle")
+                break;
+            // shift + d
+            case 'D':
+                done_button.click();
+                console.log("done")
+                break;
         }
     });
 
