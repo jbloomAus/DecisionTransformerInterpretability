@@ -8,7 +8,7 @@ transformer-lens @ git+https://github.com/neelnanda-io/TransformerLens@25b9e076f
 protobuf==3.20
 
 # Minigrid
-Minigrid==2.1.0
+minigrid @ git+https://github.com/jbloomAus/Minigrid.git@Order-Placeholders-BugFix#egg=minigrid
 
 # torch optimizer (for lamb)
 torch-optimizer==0.3.0
