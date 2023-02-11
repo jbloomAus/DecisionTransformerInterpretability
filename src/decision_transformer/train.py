@@ -125,6 +125,16 @@ def train(
                 trajectories=eval_episodes,
                 track=track,
                 batch_number=batch,
+                initial_rtg=0,
+                device=device)
+
+            evaluate_dt_agent(
+                env_id=env.spec.id,
+                dt=dt,
+                env_func=eval_env_func,
+                trajectories=eval_episodes,
+                track=track,
+                batch_number=batch,
                 initial_rtg=initial_rtg,
                 device=device)
 
@@ -319,7 +329,7 @@ def evaluate_dt_agent(
                 path_to_video,
                 fps=4,
                 format="mp4",
-                caption=f"{env_id}, after {batch_number} batch, episode length {i}, reward {new_reward}"
+                caption=f"{env_id}, after {batch_number} batch, episode length {i}, reward {new_reward}, rtg {initial_rtg}"
             )}, step=batch_number)
         videos = current_videos  # update videos
 
@@ -338,6 +348,7 @@ def evaluate_dt_agent(
     if track:
         # log statistics at batch number but prefix with eval
         for key, value in statistics.items():
-            wandb.log({"eval/" + key: value}, step=batch_number)
+            wandb.log({f"eval/{str(initial_rtg)}/" +
+                       key: value}, step=batch_number)
 
     return statistics
