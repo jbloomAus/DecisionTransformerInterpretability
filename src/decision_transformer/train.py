@@ -57,7 +57,7 @@ def train(
     train_batches_per_epoch = len(train_dataloader)
     pbar = tqdm(range(train_epochs))
     for epoch in pbar:
-        for batch, (s, a, r, rtg, d, ti, m) in (enumerate(train_dataloader)):
+        for batch, (s, a, r, d, rtg, ti, m) in (enumerate(train_dataloader)):
             total_batches = epoch * train_batches_per_epoch + batch
 
             dt.train()
@@ -72,7 +72,7 @@ def train(
             _, action_preds, _ = dt.forward(
                 states=s,
                 actions=a.unsqueeze(-1),
-                rtgs=rtg.unsqueeze(-1),
+                rtgs=rtg[:, :-1],
                 timesteps=ti.unsqueeze(-1)
             )
 
@@ -163,16 +163,16 @@ def test(
     test_batches_per_epoch = len(dataloader)
 
     for epoch in pbar:
-        for batch, (s, a, r, rtg, d, ti, m) in (enumerate(dataloader)):
+        for batch, (s, a, r, d, rtg, ti, m) in (enumerate(dataloader)):
             if dt.time_embedding_type == "linear":
                 ti = ti.to(t.float32)
 
             a[a == -10] = env.action_space.n
 
-            state_preds, action_preds, reward_preds = dt.forward(
+            _, action_preds, _ = dt.forward(
                 states=s,
-                actions=a.to(t.int32).unsqueeze(-1),
-                rtgs=rtg.unsqueeze(-1),
+                actions=a.unsqueeze(-1),
+                rtgs=rtg[:, :-1],
                 timesteps=ti.unsqueeze(-1)
             )
 
@@ -316,7 +316,7 @@ def evaluate_dt_agent(
             assert len(new_videos) == 1, "more than one new video found, new videos: {}".format(
                 new_videos)
             path_to_video = os.path.join(video_path, new_videos[0])
-            wandb.log({"media/video": wandb.Video(
+            wandb.log({f"media/video/{initial_rtg}/": wandb.Video(
                 path_to_video,
                 fps=4,
                 format="mp4",
@@ -339,6 +339,14 @@ def evaluate_dt_agent(
     if track:
         # log statistics at batch number but prefix with eval
         for key, value in statistics.items():
+            if key == "initial_rtg":
+                continue
+            if key == "traj_lengths":
+                wandb.log({f"eval/{str(initial_rtg)}/traj_lengths": wandb.Histogram(
+                    value)}, step=batch_number)
+            elif key == "rewards":
+                wandb.log({f"eval/{str(initial_rtg)}/rewards": wandb.Histogram(
+                    value)}, step=batch_number)
             wandb.log({f"eval/{str(initial_rtg)}/" +
                        key: value}, step=batch_number)
 
