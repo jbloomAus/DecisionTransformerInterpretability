@@ -309,6 +309,11 @@ def test_forward():
         all_returns_to_go = all_returns_to_go.cuda()
         all_timesteps = all_timesteps.cuda()
 
+    assert all_obs.shape == (1, 10, 56, 56, 3)
+    assert all_actions.shape == (1, 10, 1)
+    assert all_returns_to_go.shape == (1, 10, 1)
+    assert all_timesteps.shape == (1, 10, 1)
+
     _, action_logits, _ = decision_transformer(
         states=all_obs,
         actions=all_actions,
