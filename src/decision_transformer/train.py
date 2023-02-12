@@ -125,6 +125,16 @@ def train(
                 trajectories=eval_episodes,
                 track=track,
                 batch_number=batch,
+                initial_rtg=-1,
+                device=device)
+
+            evaluate_dt_agent(
+                env_id=env.spec.id,
+                dt=dt,
+                env_func=eval_env_func,
+                trajectories=eval_episodes,
+                track=track,
+                batch_number=batch,
                 initial_rtg=0,
                 device=device)
 
