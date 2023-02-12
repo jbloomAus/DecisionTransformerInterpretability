@@ -165,3 +165,18 @@ def test_load_decision_transformer_linear_time():
     assert model.n_heads == 2
     assert model.n_layers == 1
     assert model.normalization_type is None
+
+
+def test_load_decision_key_door():
+
+    model_path = "models/MiniGrid-DoorKey-8x8-v0/first_pass.pt"
+    env = make_env('MiniGrid-DoorKey-8x8-v0', 0, 0, False, "test")()
+    model = load_decision_transformer(model_path, env)
+
+    assert model.env == env
+    assert model.env.action_space.n == 7
+    assert model.n_ctx == 3
+    assert model.d_model == 128
+    assert model.n_heads == 2
+    assert model.n_layers == 1
+    assert model.normalization_type is None

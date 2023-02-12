@@ -6,148 +6,148 @@ from tqdm import tqdm
 import wandb
 
 from .model import DecisionTransformer
-from .offline_dataset import TrajectoryLoader
-from .trainer import Trainer
+from .offline_dataset_new import TrajectoryDataset
+from torch.utils.data.sampler import WeightedRandomSampler
+from torch.utils.data import random_split, DataLoader
 
 
 def train(
         dt: DecisionTransformer,
-        trajectory_data_set: TrajectoryLoader,
+        trajectory_data_set: TrajectoryDataset,
         env,
         make_env,
         batch_size=128,
-        batches=1000,
         lr=0.0001,
         weight_decay=0.0,
         device="cpu",
         track=False,
+        train_epochs=100,
+        test_epochs=10,
         test_frequency=10,
-        test_batches=10,
         eval_frequency=10,
         eval_episodes=10,
         initial_rtg=1.0,
-        prob_go_from_end=0.1,
         eval_max_time_steps=100):
 
     loss_fn = nn.CrossEntropyLoss()
-
     dt = dt.to(device)
-
     optimizer = t.optim.Adam(dt.parameters(), lr=lr, weight_decay=weight_decay)
-    # trainer = Trainer(
-    #     model = dt,
-    #     optimizer = optimizer,
-    #     batch_size=batch_size,
-    #     max_len=max_len,
-    #     get_batch = trajectory_data_set.get_batch,
-    #     scheduler=None, # no scheduler for now
-    #     track = track,
-    #     mask_action=env.action_space.n,
-    #     )
 
-    pbar = tqdm(range(batches))
-    for batch in pbar:
+    train_dataset, test_dataset = random_split(
+        trajectory_data_set, [0.90, 0.10])
 
-        dt.train()
+    # Create the train DataLoader
+    train_sampler = WeightedRandomSampler(
+        weights=trajectory_data_set.sampling_probabilities[train_dataset.indices],
+        num_samples=len(train_dataset),
+        replacement=True,
+    )
+    train_dataloader = DataLoader(
+        train_dataset, batch_size=batch_size, sampler=train_sampler)
 
-        s, a, _, _, rtg, timesteps, _ = trajectory_data_set.get_batch(
-            batch_size,
-            max_len=dt.n_ctx // 3,
-            prob_go_from_end=prob_go_from_end)
+    # Create the test DataLoader
+    test_sampler = WeightedRandomSampler(
+        weights=trajectory_data_set.sampling_probabilities[test_dataset.indices],
+        num_samples=len(test_dataset),
+        replacement=True,
+    )
+    test_dataloader = DataLoader(
+        test_dataset, batch_size=batch_size, sampler=test_sampler)
 
-        s.to(device)
-        a.to(device)
-        rtg.to(device)
-        timesteps.to(device)
+    train_batches_per_epoch = len(train_dataloader)
+    pbar = tqdm(range(train_epochs))
+    for epoch in pbar:
+        for batch, (s, a, r, rtg, d, ti, m) in (enumerate(train_dataloader)):
+            total_batches = epoch * train_batches_per_epoch + batch
 
-        if dt.time_embedding_type == "linear":
-            timesteps = timesteps.to(t.float32)
+            dt.train()
 
-        a[a == -10] = env.action_space.n  # dummy action for padding
+            if dt.time_embedding_type == "linear":
+                ti = ti.to(t.float32)
 
-        optimizer.zero_grad()
+            a[a == -10] = env.action_space.n  # dummy action for padding
 
-        state_preds, action_preds, reward_preds = dt.forward(
-            states=s,
-            actions=a.to(t.int32).unsqueeze(-1),
-            rtgs=rtg[:, :-1, :],
-            timesteps=timesteps.unsqueeze(-1)
-        )
+            optimizer.zero_grad()
 
-        action_preds = rearrange(action_preds, 'b t a -> (b t) a')
-        a_exp = rearrange(a, 'b t -> (b t)').to(t.int64)
+            _, action_preds, _ = dt.forward(
+                states=s,
+                actions=a.unsqueeze(-1),
+                rtgs=rtg.unsqueeze(-1),
+                timesteps=ti.unsqueeze(-1)
+            )
 
-        # ignore dummy action
-        loss = loss_fn(
-            action_preds[a_exp != env.action_space.n],
-            a_exp[a_exp != env.action_space.n]
-        )
+            action_preds = rearrange(action_preds, 'b t a -> (b t) a')
+            a_exp = rearrange(a, 'b t -> (b t)').to(t.int64)
 
-        loss.backward()
-        optimizer.step()
-        # loss = trainer.train_step(step=batch)
+            # ignore dummy action
+            loss = loss_fn(
+                action_preds[a_exp != env.action_space.n],
+                a_exp[a_exp != env.action_space.n]
+            )
 
-        pbar.set_description(f"Training DT: {loss.item():.4f}")
+            loss.backward()
+            optimizer.step()
 
-        if track:
-            wandb.log({"train/loss": loss.item()}, step=batch)
-            tokens_seen = (batch + 1) * batch_size * (dt.n_ctx // 3)
-            wandb.log({"metrics/tokens_seen": tokens_seen}, step=batch)
+            pbar.set_description(f"Training DT: {loss.item():.4f}")
 
-        # # at test frequency
-        if batch % test_frequency == 0:
-            test(
-                dt=dt,
-                trajectory_data_set=trajectory_data_set,
-                env=env,
-                batch_size=batch_size,
-                batches=test_batches,
-                device=device,
-                track=track,
-                batch_number=batch)
+            if track:
+                wandb.log({"train/loss": loss.item()}, step=total_batches)
+                tokens_seen = (total_batches + 1) * \
+                    batch_size * (dt.n_ctx // 3)
+                wandb.log({"metrics/tokens_seen": tokens_seen},
+                          step=total_batches)
 
-        eval_env_func = make_env(
-            env_id=env.spec.id,
-            seed=batch,
-            idx=0,
-            capture_video=True,
-            max_steps=min(dt.max_timestep, eval_max_time_steps),
-            run_name=f"dt_eval_videos_{batch}",
-            fully_observed=False,
-            flat_one_hot=(trajectory_data_set.observation_type == "one_hot"),
-        )
+            # # at test frequency
+            if total_batches % test_frequency == 0:
+                test(
+                    dt=dt,
+                    dataloader=test_dataloader,
+                    env=env,
+                    epochs=test_epochs,
+                    track=track,
+                    batch_number=total_batches)
 
-        if batch % eval_frequency == 0:
-            evaluate_dt_agent(
+            eval_env_func = make_env(
                 env_id=env.spec.id,
-                dt=dt,
-                env_func=eval_env_func,
-                trajectories=eval_episodes,
-                track=track,
-                batch_number=batch,
-                initial_rtg=0,
-                device=device)
+                seed=batch,
+                idx=0,
+                capture_video=True,
+                max_steps=min(dt.max_timestep, eval_max_time_steps),
+                run_name=f"dt_eval_videos_{batch}",
+                fully_observed=False,
+                flat_one_hot=(
+                    trajectory_data_set.observation_type == "one_hot"),
+            )
 
-            evaluate_dt_agent(
-                env_id=env.spec.id,
-                dt=dt,
-                env_func=eval_env_func,
-                trajectories=eval_episodes,
-                track=track,
-                batch_number=batch,
-                initial_rtg=initial_rtg,
-                device=device)
+            if total_batches % eval_frequency == 0:
+                evaluate_dt_agent(
+                    env_id=env.spec.id,
+                    dt=dt,
+                    env_func=eval_env_func,
+                    trajectories=eval_episodes,
+                    track=track,
+                    batch_number=total_batches,
+                    initial_rtg=-1,
+                    device=device)
+
+                evaluate_dt_agent(
+                    env_id=env.spec.id,
+                    dt=dt,
+                    env_func=eval_env_func,
+                    trajectories=eval_episodes,
+                    track=track,
+                    batch_number=total_batches,
+                    initial_rtg=initial_rtg,
+                    device=device)
 
     return dt
 
 
 def test(
         dt: DecisionTransformer,
-        trajectory_data_set: TrajectoryLoader,
+        dataloader: DataLoader,
         env,
-        batch_size=128,
-        batches=10,
-        device="cpu",
+        epochs=10,
         track=False,
         batch_number=0):
 
@@ -159,50 +159,41 @@ def test(
     n_correct = 0
     n_actions = 0
 
-    pbar = tqdm(range(batches), desc="Testing DT")
-    for i in pbar:
+    pbar = tqdm(range(epochs))
+    test_batches_per_epoch = len(dataloader)
 
-        s, a, r, d, rtg, timesteps, mask = trajectory_data_set.get_batch(
-            batch_size, max_len=dt.n_ctx // 3)
+    for epoch in pbar:
+        for batch, (s, a, r, rtg, d, ti, m) in (enumerate(dataloader)):
+            if dt.time_embedding_type == "linear":
+                ti = ti.to(t.float32)
 
-        s.to(device)
-        a.to(device)
-        r.to(device)
-        d.to(device)
-        rtg.to(device)
-        timesteps.to(device)
-        mask.to(device)
+            a[a == -10] = env.action_space.n
 
-        if dt.time_embedding_type == "linear":
-            timesteps = timesteps.to(t.float32)
+            state_preds, action_preds, reward_preds = dt.forward(
+                states=s,
+                actions=a.to(t.int32).unsqueeze(-1),
+                rtgs=rtg.unsqueeze(-1),
+                timesteps=ti.unsqueeze(-1)
+            )
 
-        a[a == -10] = env.action_space.n  # dummy action for padding
+            action_preds = rearrange(action_preds, 'b t a -> (b t) a')
+            a_exp = rearrange(a, 'b t -> (b t)').to(t.int64)
 
-        state_preds, action_preds, reward_preds = dt.forward(
-            states=s,
-            actions=a.to(t.int32).unsqueeze(-1),
-            rtgs=rtg[:, :-1, :],
-            timesteps=timesteps.unsqueeze(-1)
-        )
+            a_hat = t.argmax(action_preds, dim=-1)
+            a_exp = rearrange(a, 'b t -> (b t)').to(t.int64)
 
-        action_preds = rearrange(action_preds, 'b t a -> (b t) a')
-        a_exp = rearrange(a, 'b t -> (b t)').to(t.int64)
+            action_preds = action_preds[a_exp != env.action_space.n]
+            a_hat = a_hat[a_exp != env.action_space.n]
+            a_exp = a_exp[a_exp != env.action_space.n]
 
-        a_hat = t.argmax(action_preds, dim=-1)
-        a_exp = rearrange(a, 'b t -> (b t)').to(t.int64)
+            n_actions += a_exp.shape[0]
+            n_correct += (a_hat == a_exp).sum()
+            loss += loss_fn(action_preds, a_exp)
 
-        action_preds = action_preds[a_exp != env.action_space.n]
-        a_hat = a_hat[a_exp != env.action_space.n]
-        a_exp = a_exp[a_exp != env.action_space.n]
+            accuracy = n_correct.item() / n_actions
+            pbar.set_description(f"Testing DT: Accuracy so far {accuracy:.4f}")
 
-        n_actions += a_exp.shape[0]
-        n_correct += (a_hat == a_exp).sum()
-        loss += loss_fn(action_preds, a_exp)
-
-        accuracy = n_correct.item() / n_actions
-        pbar.set_description(f"Testing DT: Accuracy so far {accuracy:.4f}")
-
-    mean_loss = loss.item() / batches
+    mean_loss = loss.item() / epochs*test_batches_per_epoch
 
     if track:
         wandb.log({"test/loss": mean_loss}, step=batch_number)

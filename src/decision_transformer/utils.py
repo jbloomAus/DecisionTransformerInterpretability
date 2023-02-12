@@ -14,11 +14,12 @@ class DTArgs:
     n_heads: int = 4
     d_mlp: int = 256
     n_layers: int = 2
-    learning_rate: float = 0.0001
-    batch_size: int = 64
-    batches: int = 401
     n_ctx: int = 3
     layer_norm: bool = False
+    batch_size: int = 64
+    train_epochs: int = 10
+    test_epochs: int = 3
+    learning_rate: float = 0.0001
     linear_time_embedding: bool = True
     pct_traj: float = 1
     weight_decay: float = 0.001
@@ -47,11 +48,12 @@ def parse_args():
     parser.add_argument("--n_heads", type=int, default=4)
     parser.add_argument("--d_mlp", type=int, default=256)
     parser.add_argument("--n_layers", type=int, default=2)
-    parser.add_argument("--learning_rate", type=float, default=0.0001)
-    parser.add_argument("--batch_size", type=int, default=64)
-    parser.add_argument("--batches", type=int, default=401)
     parser.add_argument("--n_ctx", type=int, default=3)
     parser.add_argument("--layer_norm", type=bool, default=False)
+    parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--train_epochs", type=int, default=10)
+    parser.add_argument("--test_epochs", type=int, default=3)
+    parser.add_argument("--learning_rate", type=float, default=0.0001)
     parser.add_argument("--linear_time_embedding", type=bool,
                         default=False, action=argparse.BooleanOptionalAction)
     parser.add_argument("--pct_traj", type=float, default=1)
@@ -62,7 +64,6 @@ def parse_args():
                         default="DecisionTransformerInterpretability")
     parser.add_argument("--wandb_entity", type=str, default=None)
     parser.add_argument("--test_frequency", type=int, default=100)
-    parser.add_argument("--test_batches", type=int, default=10)
     parser.add_argument("--eval_frequency", type=int, default=100)
     parser.add_argument("--eval_episodes", type=int, default=10)
     parser.add_argument("--initial_rtg", type=float, default=1)

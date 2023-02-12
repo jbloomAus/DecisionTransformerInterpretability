@@ -8,13 +8,16 @@ import plotly.express as px
 import torch as t
 from einops import rearrange
 
-# not technically a data loader, rework later to work as one.
+from torch.utils.data import Dataset
+from .offline_dataset import TrajectoryReader
 
 
-class TrajectoryLoader():
+class TrajectoryDataset(Dataset):
 
-    def __init__(self, trajectory_path, pct_traj=1.0, rtg_scale=1, normalize_state=False, device='cpu'):
+    def __init__(self, trajectory_path, max_len=1, prob_go_from_end=0, pct_traj=1.0, rtg_scale=1, normalize_state=False, device='cpu'):
         self.trajectory_path = trajectory_path
+        self.max_len = max_len
+        self.prob_go_from_end = prob_go_from_end
         self.pct_traj = pct_traj
         self.device = device
         self.normalize_state = normalize_state
@@ -25,8 +28,6 @@ class TrajectoryLoader():
 
         traj_reader = TrajectoryReader(self.trajectory_path)
         data = traj_reader.read()
-
-        print(data['metadata'])
 
         observations = data['data'].get('observations')
         actions = data['data'].get('actions')
@@ -73,6 +74,20 @@ class TrajectoryLoader():
         self.returns = [r.sum() for r in self.rewards]
         self.timesteps = [t.arange(len(i)) for i in self.states]
         self.traj_lens = np.array([len(i) for i in self.states])
+
+        # remove trajs with length 0
+        traj_len_mask = self.traj_lens > 0
+        self.actions = [i for i, m in zip(self.actions, traj_len_mask) if m]
+        self.rewards = [i for i, m in zip(self.rewards, traj_len_mask) if m]
+        self.dones = [i for i, m in zip(self.dones, traj_len_mask) if m]
+        self.truncated = [i for i, m in zip(
+            self.truncated, traj_len_mask) if m]
+        self.states = [i for i, m in zip(self.states, traj_len_mask) if m]
+        self.returns = [i for i, m in zip(self.returns, traj_len_mask) if m]
+        self.timesteps = [i for i, m in zip(
+            self.timesteps, traj_len_mask) if m]
+        self.traj_lens = self.traj_lens[traj_len_mask]
+
         self.num_timesteps = sum(self.traj_lens)
         self.num_trajectories = len(self.states)
 
@@ -81,8 +96,7 @@ class TrajectoryLoader():
         self.max_ep_len = max([len(i) for i in self.states])
         self.metadata = data['metadata']
 
-        self.sorted_inds = self.get_indices_of_top_p_trajectories(
-            self.pct_traj)
+        self.indices = self.get_indices_of_top_p_trajectories(self.pct_traj)
         self.sampling_probabilities = self.get_sampling_probabilities()
 
         if self.normalize_state:
@@ -97,13 +111,8 @@ class TrajectoryLoader():
 
         num_trajectories = 1
         timesteps = self.traj_lens[sorted_inds[-1]]
-        ind = self.num_trajectories - 2
+        ind = self.num_trajectories - 1
 
-        # this while statement checks two things:
-        # 1. that we haven't gone past the end of the array
-        # 2. that the number of timesteps we've added is less than the number of timesteps we want
-
-        # changing this line had a huge impact on performance
         while ind >= 0 and timesteps + self.traj_lens[sorted_inds[ind]] < num_timesteps:
             timesteps += self.traj_lens[sorted_inds[ind]]
             ind -= 1
@@ -114,8 +123,8 @@ class TrajectoryLoader():
         return sorted_inds
 
     def get_sampling_probabilities(self):
-        p_sample = self.traj_lens[self.sorted_inds] / \
-            sum(self.traj_lens[self.sorted_inds])
+        p_sample = self.traj_lens[self.indices] / \
+            sum(self.traj_lens[self.indices])
         return p_sample
 
     def discount_cumsum(self, x, gamma):
@@ -134,7 +143,7 @@ class TrajectoryLoader():
 
     def get_batch(self, batch_size=256, max_len=100, prob_go_from_end=None):
 
-        sorted_inds = self.sorted_inds
+        sorted_inds = self.indices
 
         batch_inds = np.random.choice(
             np.arange(len(sorted_inds)),
@@ -145,12 +154,6 @@ class TrajectoryLoader():
 
         # initialize np arrays not lists
         states, actions, rewards, dones, rewards_to_gos, timesteps, mask = [], [], [], [], [], [], []
-        # states = np.zeros((batch_size, max_len, *self.state_dim))
-        # actions = np.ones((batch_size, max_len, *self.act_dim))*-10
-        # rewards = np.zeros((batch_size, max_len))
-        # dones = np.zeros((batch_size, max_len))
-        # rewards_to_gos = np.zeros((batch_size, max_len))
-        # timesteps = np.zeros((batch_size, max_len))
         for i in range(batch_size):
 
             # get the trajectory
@@ -215,46 +218,78 @@ class TrajectoryLoader():
         s = (s - self.state_mean) / self.state_std
         rtg = rtg / self.rtg_scale
 
-        return s, a, r, d, rtg, ti, m
+        return self.return_tensors(s, a, r, rtg, d, ti, m)
 
     def add_padding(self, tokens, padding_token, padding_required):
-        # np.concatenate([np.zeros((1, padding_required, *self.state_dim)), states[-1]], axis=1)
         if padding_required > 0:
             return np.concatenate([np.ones((1, padding_required, *tokens.shape[2:])) * padding_token, tokens], axis=1)
         return tokens
 
-    # def probabilisitcally_sample_from_end(self, si, prob_go_from_end=None):
-    #     if prob_go_from_end is not None:
-    #         if random.random() < prob_go_from_end:
-    #             si = traj_rewards.shape[0] - max_len
-    #             si = max(0, si)  # make sure it's not negative
-    #     return si
-
     def return_tensors(self, s, a, r, rtg, d, timesteps, mask):
 
-        s = np.concatenate(s, axis=0)
-        a = np.concatenate(a, axis=0)
-        r = np.concatenate(r, axis=0)
-        rtg = np.concatenate(rtg, axis=0)
-        d = np.concatenate(d, axis=0)
-        timesteps = np.concatenate(timesteps, axis=0)
-        mask = np.concatenate(mask, axis=0)
+        if isinstance(s, t.Tensor):
+            s.to(dtype=t.float32, device=self.device)
+        else:
+            s = t.from_numpy(s).to(dtype=t.float32, device=self.device)
 
-        s = t.from_numpy(s).to(dtype=t.float32, device=self.device)
-        a = t.from_numpy(a).to(dtype=t.float32, device=self.device)
-        r = t.from_numpy(r).to(dtype=t.float32, device=self.device)
-        rtg = t.from_numpy(rtg).to(dtype=t.float32, device=self.device)
-        d = t.from_numpy(d).to(dtype=t.long, device=self.device)
+        if isinstance(a, t.Tensor):
+            a.to(dtype=t.long, device=self.device)
+        else:
+            a = t.from_numpy(a).to(dtype=t.long, device=self.device)
+
+        if isinstance(r, t.Tensor):
+            r.to(dtype=t.float32, device=self.device)
+        else:
+            r = t.from_numpy(r).to(dtype=t.float32, device=self.device)
+
+        if isinstance(rtg, t.Tensor):
+            rtg.to(dtype=t.float32, device=self.device)
+        else:
+            rtg = t.from_numpy(rtg).to(dtype=t.float32, device=self.device)
+
+        if isinstance(d, t.Tensor):
+            d = d.to(dtype=t.bool, device=self.device)
+        else:
+            d = t.from_numpy(d).to(dtype=t.bool, device=self.device)
         timesteps = t.from_numpy(timesteps).to(
             dtype=t.long, device=self.device)
-        mask = t.from_numpy(mask).to(device=self.device)
+        mask = t.from_numpy(mask).to(dtype=t.bool, device=self.device)
+
+        # squeeze out the batch dimension
+        s = s.squeeze(0)
+        a = a.squeeze(0)
+        r = r.squeeze(0)
+        rtg = rtg.squeeze(0)
+        d = d.squeeze(0)
+        timesteps = timesteps.squeeze(0)
+        mask = mask.squeeze(0)
 
         return s, a, r, d, rtg, timesteps, mask
 
+    def __len__(self):
+        return len(self.indices)
+
+    def __getitem__(self, idx):
+        traj_index = self.indices[idx]
+        s, a, r, d, rtg, ti, m = self.get_traj(
+            traj_index,
+            max_len=self.max_len,
+            prob_go_from_end=self.prob_go_from_end
+        )
+        return s, a, r, d, rtg, ti, m
+
+
+class TrajectoryVisualizer:
+
+    def __init__(self, trajectory_dataset: TrajectoryDataset):
+
+        self.trajectory_loader = trajectory_dataset
+
     def plot_reward_over_time(self):
 
-        reward = [i[-1] for i in self.rewards if len(i) > 0]
-        timesteps = [i.max() for i in self.timesteps if len(i) > 0]
+        reward = [i[-1] for i in self.trajectory_loader.rewards if len(i) > 0]
+        timesteps = [i.max()
+                     for i in self.trajectory_loader.timesteps if len(i) > 0]
 
         # create a categorical color array for reward <0, 0, >0
         colors = np.zeros(len(reward))
@@ -282,7 +317,7 @@ class TrajectoryLoader():
     def plot_base_action_frequencies(self):
 
         fig = px.bar(
-            y=t.concat(self.actions).bincount()
+            y=t.concat(self.trajectory_loader.actions).bincount()
             # x=[IDX_TO_ACTION[i] for i in range(7)],
             # color=[IDX_TO_ACTION[i] for i in range(7)],
         )
@@ -294,30 +329,3 @@ class TrajectoryLoader():
         )
 
         return fig
-
-
-class TrajectoryReader():
-    '''
-    The trajectory reader is responsible for reading trajectories from a file.
-    '''
-
-    def __init__(self, path):
-        self.path = path
-
-    def read(self):
-        # if path ends in .pkl, read as pickle
-        if self.path.endswith('.pkl'):
-            with open(self.path, 'rb') as f:
-                data = pickle.load(f)
-        # if path ends in .xz, read as lzma
-        elif self.path.endswith('.xz'):
-            with lzma.open(self.path, 'rb') as f:
-                data = pickle.load(f)
-        elif self.path.endswith('.gz'):
-            with gzip.open(self.path, 'rb') as f:
-                data = pickle.load(f)
-        else:
-            raise ValueError(
-                f"Path {self.path} is not a valid trajectory file")
-
-        return data
