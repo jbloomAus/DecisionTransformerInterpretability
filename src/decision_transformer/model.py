@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Dict, Union, Tuple
 
 from gymnasium.spaces import Box, Dict
 import einops
@@ -195,7 +195,14 @@ class DecisionTransformer(nn.Module):
         self.to(self.device)
 
     # state, action, and return
-    def forward(self, states, actions, rtgs, timesteps):
+    def forward(self,
+                # has variable shape, starting with batch, position
+                states: TT[...],
+                actions: TT["batch", "position"],
+                rtgs: TT["batch", "position"],
+                timesteps: TT["batch", "position"],
+                ) -> Tuple[TT[...], TT["batch", "position"], TT["batch", "position"]]:
+
         # states: (batch, block_size, 56, 56, 3)
         # actions: (batch, block_size, 1)
         # targets: (batch, block_size, 1)
