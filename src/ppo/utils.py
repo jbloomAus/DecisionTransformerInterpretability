@@ -107,6 +107,9 @@ def parse_args():
                         help='if toggled, a video will be captured during evaluation')
     parser.add_argument('--env_id', type=str, default='MiniGrid-Dynamic-Obstacles-8x8-v0',
                         help='the environment id')
+    # add argument for view size (must be odd and greater than 3)
+    parser.add_argument('--view_size', type=int, default=7,
+                        help='the size of the view')
     parser.add_argument('--total_timesteps', type=int, default=5000000,
                         help='the total number of timesteps to train for')
     parser.add_argument('--learning_rate', type=float, default=0.00025,
@@ -156,6 +159,7 @@ class PPOArgs:
     wandb_entity: str = None
     capture_video: bool = True
     env_id: str = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
+    view_size: int = 7
     total_timesteps: int = 1800000
     learning_rate: float = 0.00025
     decay_lr: bool = False,

@@ -21,12 +21,13 @@
 #     trajectory_path: str = None
 #     fully_observed: bool = False
 
-python src/run_ppo.py --exp_name "MiniGrid-DoorKey-8x8-v0" \
+python src/run_ppo.py --exp_name "MiniGrid-DoorKey-16x16-v0" \
     --seed 1 \
     --cuda \
     --track \
     --wandb_project_name "PPO-MiniGrid" \
     --env_id "MiniGrid-DoorKey-8x8-v0" \
+    --view_size 5 \
     --total_timesteps 350000 \
     --learning_rate 0.00025 \
     --num_envs 4 \

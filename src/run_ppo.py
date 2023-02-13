@@ -29,6 +29,7 @@ if __name__ == "__main__":
         wandb_entity=args.wandb_entity,
         capture_video=args.capture_video,
         env_id=args.env_id,
+        view_size=args.view_size,
         total_timesteps=args.total_timesteps,
         learning_rate=args.learning_rate,
         decay_lr=args.decay_lr,
@@ -92,7 +93,8 @@ if __name__ == "__main__":
             [make_env(args.env_id, args.seed + i, i, args.capture_video, run_name,
                       render_mode=None, max_steps=args.max_steps,
                       fully_observed=args.fully_observed,
-                      flat_one_hot=args.one_hot_obs
+                      flat_one_hot=args.one_hot_obs,
+                      agent_view_size=args.view_size
                       ) for i in range(args.num_envs)]
         )
     else:
@@ -100,7 +102,8 @@ if __name__ == "__main__":
             [make_env(args.env_id, args.seed + i, i, args.capture_video, run_name,
                       max_steps=args.max_steps,
                       fully_observed=args.fully_observed,
-                      flat_one_hot=args.one_hot_obs
+                      flat_one_hot=args.one_hot_obs,
+                      agent_view_size=args.view_size
                       ) for i in range(args.num_envs)]
         )
     assert envs.single_action_space.shape is not None
