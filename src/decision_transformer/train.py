@@ -26,7 +26,7 @@ def train(
         test_frequency=10,
         eval_frequency=10,
         eval_episodes=10,
-        initial_rtg=1.0,
+        initial_rtg=[0.0, 1.0],
         eval_max_time_steps=100):
 
     loss_fn = nn.CrossEntropyLoss()
@@ -120,25 +120,16 @@ def train(
             )
 
             if total_batches % eval_frequency == 0:
-                evaluate_dt_agent(
-                    env_id=env.spec.id,
-                    dt=dt,
-                    env_func=eval_env_func,
-                    trajectories=eval_episodes,
-                    track=track,
-                    batch_number=total_batches,
-                    initial_rtg=-1,
-                    device=device)
-
-                evaluate_dt_agent(
-                    env_id=env.spec.id,
-                    dt=dt,
-                    env_func=eval_env_func,
-                    trajectories=eval_episodes,
-                    track=track,
-                    batch_number=total_batches,
-                    initial_rtg=initial_rtg,
-                    device=device)
+                for rtg in initial_rtg:
+                    evaluate_dt_agent(
+                        env_id=env.spec.id,
+                        dt=dt,
+                        env_func=eval_env_func,
+                        trajectories=eval_episodes,
+                        track=track,
+                        batch_number=total_batches,
+                        initial_rtg=float(rtg),
+                        device=device)
 
     return dt
 

@@ -12,6 +12,14 @@ python src/run_decision_transformer.py \
     --n_ctx 3 \
     --pct_traj 1 \
     --weight_decay 0.001 \
-    --seed 1 --wandb_project_name DecisionTransformerInterpretability --test_frequency 1000 --eval_frequency 1000 \
-    --eval_episodes 10 --initial_rtg 1 --prob_go_from_end 0.1 --eval_max_time_steps 1000 \
+    --seed 1 \
+    --wandb_project_name DecisionTransformerInterpretability-Dev \
+    --test_frequency 1000 \
+    --eval_frequency 1000 \
+    --eval_episodes 10 \
+    --initial_rtg -1 \
+    --initial_rtg 0 \
+    --initial_rtg 1 \
+    --prob_go_from_end 0.1 \
+    --eval_max_time_steps 1000 \
     --track True

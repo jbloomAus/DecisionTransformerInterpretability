@@ -1,8 +1,9 @@
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import argparse
 import torch as t
 import re
+from typing import List
 from .model import DecisionTransformer
 
 
@@ -31,7 +32,7 @@ class DTArgs:
     test_batches: int = 10
     eval_frequency: int = 100
     eval_episodes: int = 10
-    initial_rtg: float = 1
+    initial_rtg: List[float] = field(default_factory=lambda: [0.0, 1.0])
     prob_go_from_end: float = 0.1
     eval_max_time_steps: int = 1000
     cuda: bool = True
@@ -66,7 +67,8 @@ def parse_args():
     parser.add_argument("--test_frequency", type=int, default=100)
     parser.add_argument("--eval_frequency", type=int, default=100)
     parser.add_argument("--eval_episodes", type=int, default=10)
-    parser.add_argument("--initial_rtg", type=float, default=1)
+    parser.add_argument("--initial_rtg", action='append',
+                        help='<Required> Set flag', required=True, default=[0, 1])
     parser.add_argument("--prob_go_from_end", type=float, default=0.1)
     parser.add_argument("--eval_max_time_steps", type=int, default=1000)
     parser.add_argument("--cuda", type=bool, default=True)
