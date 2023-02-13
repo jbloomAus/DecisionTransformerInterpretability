@@ -198,10 +198,10 @@ class DecisionTransformer(nn.Module):
     def forward(self,
                 # has variable shape, starting with batch, position
                 states: TT[...],
-                actions: TT["batch", "position"],
-                rtgs: TT["batch", "position"],
-                timesteps: TT["batch", "position"],
-                ) -> Tuple[TT[...], TT["batch", "position"], TT["batch", "position"]]:
+                actions: TT["batch", "position"],  # noqa: F821
+                rtgs: TT["batch", "position"],  # noqa: F821
+                timesteps: TT["batch", "position"],  # noqa: F821
+                ) -> Tuple[TT[...], TT["batch", "position"], TT["batch", "position"]]:  # noqa: F821
 
         # states: (batch, block_size, 56, 56, 3)
         # actions: (batch, block_size, 1)
