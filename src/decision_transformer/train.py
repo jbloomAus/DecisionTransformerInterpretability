@@ -117,6 +117,9 @@ def train(
                 fully_observed=False,
                 flat_one_hot=(
                     trajectory_data_set.observation_type == "one_hot"),
+                # defensive coding, fix later.
+                agent_view_size=env.observation_space['image'].shape[0] if "image" in list(
+                    env.observation_space.keys()) else 7,
             )
 
             if total_batches % eval_frequency == 0:

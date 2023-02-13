@@ -68,7 +68,7 @@ def parse_args():
     parser.add_argument("--eval_frequency", type=int, default=100)
     parser.add_argument("--eval_episodes", type=int, default=10)
     parser.add_argument("--initial_rtg", action='append',
-                        help='<Required> Set flag', required=True, default=[0, 1])
+                        help='<Required> Set flag', required=False, default=[0, 1])
     parser.add_argument("--prob_go_from_end", type=float, default=0.1)
     parser.add_argument("--eval_max_time_steps", type=int, default=1000)
     parser.add_argument("--cuda", type=bool, default=True)
