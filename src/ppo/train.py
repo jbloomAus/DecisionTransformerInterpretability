@@ -41,7 +41,7 @@ def get_printable_output_for_probe_envs(args: PPOArgs, agent: Agent, probe_idx: 
 def train_ppo(args: PPOArgs, envs, trajectory_writer=None, probe_idx=None):
 
     memory = Memory(envs, args, device)
-    agent = Agent(envs, device)
+    agent = Agent(envs, device=device, hidden_dim=args.hidden_dim)
     num_updates = args.total_timesteps // args.batch_size
     if not args.decay_lr:
         end_lr = args.learning_rate

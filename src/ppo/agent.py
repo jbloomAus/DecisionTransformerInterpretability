@@ -35,7 +35,7 @@ class Agent(nn.Module):
     critic: nn.Sequential
     actor: nn.Sequential
 
-    def __init__(self, envs: gym.vector.SyncVectorEnv, device: t.device):
+    def __init__(self, envs: gym.vector.SyncVectorEnv, device=t.device, hidden_dim: int = 64):
         super().__init__()
         # obs_shape will be a tuple (e.g. for RGB images this would be an array (h, w, c))
         if isinstance(envs.single_observation_space, gym.spaces.Box):
@@ -50,22 +50,24 @@ class Agent(nn.Module):
         self.num_obs = np.array(self.obs_shape).prod()
         # assuming a discrete action space
         self.num_actions = envs.single_action_space.n
+        self.hidden_dim = hidden_dim
 
         self.critic = nn.Sequential(
             nn.Flatten(),
-            self.layer_init(nn.Linear(self.num_obs, 64)),
+            self.layer_init(nn.Linear(self.num_obs, self.hidden_dim)),
             nn.Tanh(),
-            self.layer_init(nn.Linear(64, 64)),
+            self.layer_init(nn.Linear(self.hidden_dim, self.hidden_dim)),
             nn.Tanh(),
-            self.layer_init(nn.Linear(64, 1), std=1.0)
+            self.layer_init(nn.Linear(self.hidden_dim, 1), std=1.0)
         )
         self.actor = nn.Sequential(
             nn.Flatten(),
-            self.layer_init(nn.Linear(self.num_obs, 64)),
+            self.layer_init(nn.Linear(self.num_obs, self.hidden_dim)),
             nn.Tanh(),
-            self.layer_init(nn.Linear(64, 64)),
+            self.layer_init(nn.Linear(self.hidden_dim, self.hidden_dim)),
             nn.Tanh(),
-            self.layer_init(nn.Linear(64, self.num_actions), std=0.01)
+            self.layer_init(nn.Linear(self.hidden_dim,
+                                      self.num_actions), std=0.01)
         )
 
         self.device = device
