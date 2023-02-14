@@ -97,42 +97,42 @@ def train(
                 wandb.log({"metrics/tokens_seen": tokens_seen},
                           step=total_batches)
 
-            # # at test frequency
-            if total_batches % test_frequency == 0:
-                test(
+        # # at test frequency
+        if epoch % test_frequency == 0:
+            test(
+                dt=dt,
+                dataloader=test_dataloader,
+                env=env,
+                epochs=test_epochs,
+                track=track,
+                batch_number=total_batches)
+
+        eval_env_func = make_env(
+            env_id=env.spec.id,
+            seed=batch,
+            idx=0,
+            capture_video=True,
+            max_steps=min(dt.max_timestep, eval_max_time_steps),
+            run_name=f"dt_eval_videos_{batch}",
+            fully_observed=False,
+            flat_one_hot=(
+                trajectory_data_set.observation_type == "one_hot"),
+            # defensive coding, fix later.
+            agent_view_size=env.observation_space['image'].shape[0] if "image" in list(
+                env.observation_space.keys()) else 7,
+        )
+
+        if epoch % eval_frequency == 0:
+            for rtg in initial_rtg:
+                evaluate_dt_agent(
+                    env_id=env.spec.id,
                     dt=dt,
-                    dataloader=test_dataloader,
-                    env=env,
-                    epochs=test_epochs,
+                    env_func=eval_env_func,
+                    trajectories=eval_episodes,
                     track=track,
-                    batch_number=total_batches)
-
-            eval_env_func = make_env(
-                env_id=env.spec.id,
-                seed=batch,
-                idx=0,
-                capture_video=True,
-                max_steps=min(dt.max_timestep, eval_max_time_steps),
-                run_name=f"dt_eval_videos_{batch}",
-                fully_observed=False,
-                flat_one_hot=(
-                    trajectory_data_set.observation_type == "one_hot"),
-                # defensive coding, fix later.
-                agent_view_size=env.observation_space['image'].shape[0] if "image" in list(
-                    env.observation_space.keys()) else 7,
-            )
-
-            if total_batches % eval_frequency == 0:
-                for rtg in initial_rtg:
-                    evaluate_dt_agent(
-                        env_id=env.spec.id,
-                        dt=dt,
-                        env_func=eval_env_func,
-                        trajectories=eval_episodes,
-                        track=track,
-                        batch_number=total_batches,
-                        initial_rtg=float(rtg),
-                        device=device)
+                    batch_number=total_batches,
+                    initial_rtg=float(rtg),
+                    device=device)
 
     return dt
 
