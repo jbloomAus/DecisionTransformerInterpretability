@@ -69,7 +69,7 @@ def train_ppo(args: PPOArgs, envs, trajectory_writer=None, probe_idx=None):
         if args.track:
             memory.log()
             videos = check_and_upload_new_video(
-                video_path=video_path, videos=videos, step=update)
+                video_path=video_path, videos=videos, step=memory.global_step)
 
         # Print output (different behaviour for probe envs vs normal envs)
         if probe_idx is None:
