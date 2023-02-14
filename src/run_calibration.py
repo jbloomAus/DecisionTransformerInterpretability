@@ -6,6 +6,7 @@ import warnings
 import torch as t
 import numpy as np
 import os
+import math
 
 # import a  base python logger
 import logging
@@ -35,12 +36,21 @@ if __name__ == "__main__":
     logger.info(f"Loading model from {args.model_path}")
     logger.info(f"Using environment {args.env_id}")
     state_dict = t.load(args.model_path)
-    one_hot_encoded = state_dict["state_encoder.weight"].shape[-1] == 980
+    one_hot_encoded = not (
+        state_dict["state_encoder.weight"].shape[-1] % 20)  # hack for now
+
+    if one_hot_encoded:
+        view_size = int(
+            math.sqrt(state_dict["state_encoder.weight"].shape[-1] // 20))
+    else:
+        view_size = int(
+            math.sqrt(state_dict["state_encoder.weight"].shape[-1] // 3))
+
     max_time_steps = state_dict["time_embedding.weight"].shape[0]
     env_func = make_env(
         args.env_id, seed=1, idx=0, capture_video=False,
         run_name="dev", fully_observed=False, flat_one_hot=one_hot_encoded,
-        max_steps=max_time_steps
+        max_steps=max_time_steps, agent_view_size=args.view_size
     )
 
     dt = load_decision_transformer(args.model_path, env_func())

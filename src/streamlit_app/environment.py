@@ -3,6 +3,7 @@ import torch as t
 
 import gymnasium as gym
 import minigrid
+import math
 
 from src.decision_transformer.utils import load_decision_transformer
 from src.environments import make_env
@@ -14,7 +15,8 @@ def get_env_and_dt(model_path):
 
     # we need to one if the env was one hot encoded. Some tech debt here.
     state_dict = t.load(model_path)
-    one_hot_encoded = state_dict["state_encoder.weight"].shape[-1] == 980
+    one_hot_encoded = not (
+        state_dict["state_encoder.weight"].shape[-1] % 20)  # hack for now
     # list all mini grid envs
     minigrid_envs = [i for i in gym.envs.registry.keys() if "MiniGrid" in i]
     # find the env id in the path
@@ -28,6 +30,13 @@ def get_env_and_dt(model_path):
     else:
         env_id = env_ids[0]
     # env_id = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
+    if one_hot_encoded:
+        view_size = int(
+            math.sqrt(state_dict["state_encoder.weight"].shape[-1] // 20))
+    else:
+        view_size = int(
+            math.sqrt(state_dict["state_encoder.weight"].shape[-1] // 3))
+
     env = make_env(
         env_id,
         seed=4200,
@@ -36,6 +45,7 @@ def get_env_and_dt(model_path):
         run_name="dev",
         fully_observed=False,
         flat_one_hot=one_hot_encoded,
+        agent_view_size=view_size,
         max_steps=30
     )
     env = env()
