@@ -5,6 +5,7 @@ lastpage:
 ---
 
 # Decision Transformer Interpretability
+**This documentation is in progress, we haven't written most of the doc strings.**
 
 In this project, we intend to apply a mathematical framework for transformer circuits to study transformer models trained on reinforcement tasks to create a simpler context than large language models for understanding high-level concepts, such as goal-directedness, in transformer architecture.
 

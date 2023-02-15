@@ -18,7 +18,8 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinxcontrib.napoleon',
     'myst_parser',
-    'sphinx-favicon'
+    'sphinx-favicon',
+    "sphinx.ext.githubpages"
 ]
 
 source_suffix = {
