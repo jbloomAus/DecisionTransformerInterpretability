@@ -1,0 +1,109 @@
+# Path: sweeps/ppo_sweep_template.yml
+program: run_ppo.py
+method: bayes
+metric:
+  name: episode_return
+  goal: maximize
+parameters:
+  learning_rate:
+    values: [0.00025]
+  clip_coef:
+    distribution: uniform
+    min: 0.1
+    max: 0.5
+  ent_coef:
+    distribution: uniform
+    min: 0.001
+    max: 0.1
+  vf_coef:
+    min: 0.1
+    max: 0.5
+  hidden_size:
+    distribution: categorical
+    values:
+    - 64
+    - 128
+    - 256
+  view_size:
+    distribution: categorical
+    values:
+    - 3
+    - 5
+    - 7
+  num_envs:
+    value: 8
+  num_steps:
+    distribution: categorical
+    values:
+    - 64
+    - 128
+    - 256
+  num_minibatches:
+    value: 8
+  update_epochs:
+    distribution: int_uniform
+    min: 4
+    max: 8
+  total_timesteps:
+    distribution: int_uniform
+    min: 30000
+    max: 50000
+  max_steps:
+    distribution: int_uniform
+    min: 1000
+    max: 2000
+  seed:
+    distribution: int_uniform
+    min: 1
+    max: 5
+  one_hot_obs:
+    distribution: categorical
+    values:
+    - True
+    - False
+
+  track:
+    values: [True]
+  wandb_project_name:
+    values: ["PPO-MiniGrid-Sweeps"]
+  # env_id:
+  #   values: ["MiniGrid-SimpleCrossingS9N3-v0"]
+
+early_terminate:
+  type: hyperband
+  min_iter: 2
+  max_iter: 4
+
+command:
+    - python
+    - src/run_ppo.py
+    - ${args_no_boolean_flags}
+    - --wandb_project_name
+    - ${envvar:EXP_NAME}-Sweep
+    - --exp_name
+    - ${envvar:EXP_NAME}
+    - --env_id
+    - ${envvar:EXP_NAME}
+
+
+
+# python src/run_ppo.py \
+#     --exp_name "MiniGrid-SimpleCrossingS9N3-v0" \
+#     --env_id "MiniGrid-SimpleCrossingS9N3-v0" \
+#     --seed 1 \
+#     --cuda \
+#     --track \
+#     --wandb_project_name "PPO-MiniGrid" \
+#     --hidden_size 128 \
+#     --view_size 3 \
+#     --total_timesteps 700000 \
+#     --learning_rate 0.00025 \
+#     --num_envs 4 \
+#     --num_steps 128 \
+#     --num_minibatches 4 \
+#     --update_epochs 4 \
+#     --clip_coef 0.5 \
+#     --ent_coef 0.01 \
+#     --vf_coef 0.5 \
+#     --max_steps 1000 \
+#     --one_hot_obs
