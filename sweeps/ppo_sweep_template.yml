@@ -6,7 +6,9 @@ metric:
   goal: maximize
 parameters:
   learning_rate:
-    values: [0.00025]
+    distribution: uniform
+    min: 0.0001
+    max: 0.001
   clip_coef:
     distribution: uniform
     min: 0.1
@@ -14,10 +16,10 @@ parameters:
   ent_coef:
     distribution: uniform
     min: 0.001
-    max: 0.1
+    max: 0.2
   vf_coef:
-    min: 0.1
-    max: 0.5
+    min: 0.01
+    max: 0.2
   hidden_size:
     distribution: categorical
     values:
@@ -30,6 +32,7 @@ parameters:
     - 3
     - 5
     - 7
+    - 9
   num_envs:
     value: 8
   num_steps:
@@ -42,21 +45,25 @@ parameters:
     value: 8
   update_epochs:
     distribution: int_uniform
-    min: 4
-    max: 8
+    min: 2
+    max: 4
   total_timesteps:
     distribution: int_uniform
-    min: 30000
-    max: 50000
+    min: 100000
+    max: 500000
   max_steps:
     distribution: int_uniform
     min: 1000
-    max: 2000
+    max: 10000
   seed:
     distribution: int_uniform
     min: 1
     max: 5
   one_hot_obs:
+    distribution: categorical
+    values:
+    - True
+  decay_lr:
     distribution: categorical
     values:
     - True
