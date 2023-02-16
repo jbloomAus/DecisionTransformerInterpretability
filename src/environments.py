@@ -1,14 +1,17 @@
+from typing import List
+import numpy as np
 import gymnasium as gym
 from minigrid.wrappers import OneHotPartialObsWrapper, FullyObsWrapper, ObservationWrapper
 from gymnasium import spaces
 
 
 def make_env(
-    env_id: str,
-    seed: int,
-    idx: int,
-    capture_video: bool,
-    run_name: str,
+    env_ids: List[str],
+    env_prob: List[float] = None,
+    seed: int = 1,
+    idx: int = 0,
+    capture_video: bool = False,
+    run_name: str = "test",
     render_mode="rgb_array",
     max_steps=100,
     fully_observed=False,
@@ -16,7 +19,32 @@ def make_env(
     agent_view_size=7,
     video_frequency=50
 ):
-    """Return a function that returns an environment after setting up boilerplate."""
+    """Return a function that returns an environment after setting up boilerplate.
+
+    Example use:
+
+    >>>  envs = gym.vector.SyncVectorEnv(
+            [make_env(
+                env_ids = args.env_id,
+                env_prob = args.env_prob,
+                seed = args.seed + i,
+                idx = i,
+                capture_video = args.capture_video,
+                run_name = run_name,
+                max_steps=args.max_steps,
+                fully_observed=args.fully_observed,
+                flat_one_hot=args.one_hot_obs,
+                agent_view_size=args.view_size,
+                render_mode = render_mode
+                ) for i in range(args.num_envs)]
+        )
+    """
+
+    if isinstance(env_ids, str):
+        env_ids = [env_ids]
+
+    if env_prob is None:
+        env_prob = [1 / len(env_ids)] * len(env_ids)
 
     # only one of fully observed or flat one hot can be true.
     assert not (
@@ -30,6 +58,7 @@ def make_env(
         if max_steps:
             kwargs["max_steps"] = max_steps
 
+        env_id = np.random.choice(env_ids, p=env_prob)
         env = gym.make(env_id, **kwargs)
 
         env = gym.wrappers.RecordEpisodeStatistics(env)

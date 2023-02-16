@@ -62,12 +62,15 @@ if __name__ == "__main__":
     arg_help(args)
 
     # Check if running one of the probe envs
-    probe_match = re.match(r"Probe(\d)-v0", args.env_id)
+    probe_match = [re.match(r"Probe(\d)-v0", env_id) for env_id in args.env_id]
+    probe_match = [match for match in probe_match if match is not None]
+    assert len(probe_match) <= 1, "Only one probe env can be run at a time."
     probe_idx = int(probe_match.group(1)) - 1 if probe_match else None
 
     # Verify environment is registered
     all_envs = [env_spec for env_spec in gym.envs.registry]
-    assert args.env_id in all_envs, f"Environment {args.env_id} not registered."
+    for env_id in args.env_id:
+        assert env_id in all_envs, f"Environment {env_id} not registered."
 
     # wandb initialisation,
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
@@ -88,24 +91,26 @@ if __name__ == "__main__":
     set_global_seeds(args.seed)
     device = t.device("cuda" if t.cuda.is_available() and args.cuda else "cpu")
 
-    if args.env_id in ["Probe1-v0", "Probe2-v0", "Probe3-v0", "Probe4-v0", "Probe5-v0"]:
-        envs = gym.vector.SyncVectorEnv(
-            [make_env(args.env_id, args.seed + i, i, args.capture_video, run_name,
-                      render_mode=None, max_steps=args.max_steps,
-                      fully_observed=args.fully_observed,
-                      flat_one_hot=args.one_hot_obs,
-                      agent_view_size=args.view_size
-                      ) for i in range(args.num_envs)]
-        )
-    else:
-        envs = gym.vector.SyncVectorEnv(
-            [make_env(args.env_id, args.seed + i, i, args.capture_video, run_name,
-                      max_steps=args.max_steps,
-                      fully_observed=args.fully_observed,
-                      flat_one_hot=args.one_hot_obs,
-                      agent_view_size=args.view_size
-                      ) for i in range(args.num_envs)]
-        )
+    # check if any env ids are probes, if so set rendor mode to none:
+    probe_ids = ["Probe1-v0", "Probe2-v0",
+                 "Probe3-v0", "Probe4-v0", "Probe5-v0"]
+    render_mode = None if set(args.env_id) in probe_ids else "rgb_array"
+
+    envs = gym.vector.SyncVectorEnv(
+        [make_env(
+            env_ids=args.env_id,
+            env_prob=args.env_prob,
+            seed=args.seed + i,
+            idx=i,
+            capture_video=args.capture_video,
+            run_name=run_name,
+            max_steps=args.max_steps,
+            fully_observed=args.fully_observed,
+            flat_one_hot=args.one_hot_obs,
+            agent_view_size=args.view_size,
+            render_mode=render_mode
+        ) for i in range(args.num_envs)]
+    )
     assert envs.single_action_space.shape is not None
     assert isinstance(envs.single_action_space,
                       Discrete), "only discrete action space is supported"

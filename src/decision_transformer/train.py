@@ -1,14 +1,17 @@
 import os
+from typing import List
+
 import torch as t
 import torch.nn as nn
 from einops import rearrange
+from torch.utils.data import DataLoader, random_split
+from torch.utils.data.sampler import WeightedRandomSampler
 from tqdm import tqdm
+
 import wandb
 
 from .model import DecisionTransformer
 from .offline_dataset_new import TrajectoryDataset
-from torch.utils.data.sampler import WeightedRandomSampler
-from torch.utils.data import random_split, DataLoader
 
 
 def train(
@@ -197,7 +200,7 @@ def test(
 
 
 def evaluate_dt_agent(
-        env_id: str,
+        env_ids: List[str],
         dt: DecisionTransformer,
         env_func,
         trajectories=300,
@@ -206,6 +209,9 @@ def evaluate_dt_agent(
         initial_rtg=0.98,
         use_tqdm=True,
         device="cpu"):
+
+    if isinstance(env_ids, str):
+        env_ids = [env_ids]
 
     dt.eval()
 
@@ -314,7 +320,7 @@ def evaluate_dt_agent(
                 path_to_video,
                 fps=4,
                 format="mp4",
-                caption=f"{env_id}, after {batch_number} batch, episode length {i}, reward {new_reward}, rtg {initial_rtg}"
+                caption=f"{env_ids[0]}, after {batch_number} batch, episode length {i}, reward {new_reward}, rtg {initial_rtg}"
             )}, step=batch_number)
         videos = current_videos  # update videos
 

@@ -11,8 +11,13 @@ def test_get_obs_preprocessor_probe1():
 
     gym.envs.registration.register(id=f"Probe1-v0", entry_point=Probe1)
 
-    env = make_env('Probe1', 0, 0, False, "Test",
-                   render_mode=None, max_steps=None)
+    env = make_env(
+        env_ids='Probe1',
+        seed=0,
+        idx=0,
+        capture_video=False,
+        run_name="Test",
+        render_mode=None, max_steps=None)
     env = env()
     (obs, info) = env.reset()  # has shape (obs, info), where obs is an ordered dict
     obs.shape
@@ -24,7 +29,12 @@ def test_get_obs_preprocessor_probe1():
 
 def test_get_obs_preprocessor_MiniGrid():
 
-    env = make_env('MiniGrid-DoorKey-5x5-v0', 0, 0, False, "Test")
+    env = make_env(
+        env_ids='MiniGrid-DoorKey-5x5-v0',
+        seed=0,
+        idx=0,
+        capture_video=False,
+        run_name="Test")
     env = env()
     (obs, info) = env.reset()  # has shape (obs, info), where obs is an ordered dict
     obs['image'].shape
@@ -36,7 +46,12 @@ def test_get_obs_preprocessor_MiniGrid():
 
 def test_get_obs_preprocessor_MiniGrid_flat():
 
-    env = make_env('MiniGrid-DoorKey-5x5-v0', 0, 0, False, "Test")
+    env = make_env(
+        env_ids='MiniGrid-DoorKey-5x5-v0',
+        seed=0,
+        idx=0,
+        capture_video=False,
+        run_name="Test")
     env = FlatObsWrapper(env())
     (obs, info) = env.reset()  # has shape (obs, info), where obs is an ordered dict
     print(obs.shape)
@@ -48,7 +63,12 @@ def test_get_obs_preprocessor_MiniGrid_flat():
 
 def test_get_obs_preprocessor_MiniGrid_full_obs():
 
-    env = make_env('MiniGrid-DoorKey-5x5-v0', 0, 0, False, "Test")
+    env = make_env(
+        env_ids='MiniGrid-DoorKey-5x5-v0',
+        seed=0,
+        idx=0,
+        capture_video=False,
+        run_name="Test")
     env = FullyObsWrapper(env())
     (obs, info) = env.reset()  # has shape (obs, info), where obs is an ordered dict
     assert isinstance(get_obs_preprocessor(
@@ -59,7 +79,12 @@ def test_get_obs_preprocessor_MiniGrid_full_obs():
 
 def test_get_obs_preprocessor_MiniGrid_full_img_obs():
 
-    env = make_env('MiniGrid-DoorKey-5x5-v0', 0, 0, False, "Test")
+    env = make_env(
+        env_ids='MiniGrid-DoorKey-5x5-v0',
+        seed=0,
+        idx=0,
+        capture_video=False,
+        run_name="Test")
     env = ImgObsWrapper(env())
     (obs, info) = env.reset()  # has shape (obs, info), where obs is an ordered dict
     assert isinstance(get_obs_preprocessor(
@@ -70,7 +95,12 @@ def test_get_obs_preprocessor_MiniGrid_full_img_obs():
 
 def test_get_obs_preprocessor_MiniGrid_full_img_partial():
 
-    env = make_env('MiniGrid-DoorKey-5x5-v0', 0, 0, False, "Test")
+    env = make_env(
+        env_ids='MiniGrid-DoorKey-5x5-v0',
+        seed=0,
+        idx=0,
+        capture_video=False,
+        run_name="Test")
     env = RGBImgPartialObsWrapper(env())
     (obs, info) = env.reset()  # has shape (obs, info), where obs is an ordered dict
     assert isinstance(get_obs_preprocessor(

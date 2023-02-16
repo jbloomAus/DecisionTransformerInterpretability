@@ -1,6 +1,8 @@
 import pytest
-
+from collections import Counter
+from pytest import approx
 from src.environments import make_env
+import gymnasium as gym
 import numpy as np
 
 
@@ -16,7 +18,7 @@ def test_make_env():
     video_frequency = 50
 
     env_func = make_env(
-        env_id=env_id,
+        env_ids=env_id,
         seed=seed,
         idx=idx,
         capture_video=capture_video,
@@ -46,7 +48,7 @@ def test_make_env_change_view_size():
     video_frequency = 50
 
     env_func = make_env(
-        env_id=env_id,
+        env_ids=env_id,
         seed=seed,
         idx=idx,
         capture_video=capture_video,
@@ -77,7 +79,7 @@ def test_make_env_fully_observed():
     video_frequency = 50
 
     env_func = make_env(
-        env_id=env_id,
+        env_ids=env_id,
         seed=seed,
         idx=idx,
         capture_video=capture_video,
@@ -107,7 +109,7 @@ def test_make_env_flat_one_hot():
     video_frequency = 50
 
     env_func = make_env(
-        env_id=env_id,
+        env_ids=env_id,
         seed=seed,
         idx=idx,
         capture_video=capture_video,
@@ -140,7 +142,7 @@ def test_make_env_flat_one_hot_view_size_change():
     video_frequency = 50
 
     env_func = make_env(
-        env_id=env_id,
+        env_ids=env_id,
         seed=seed,
         idx=idx,
         capture_video=capture_video,
@@ -159,3 +161,30 @@ def test_make_env_flat_one_hot_view_size_change():
     assert obs["image"].shape == (5, 5, 20,)
     assert obs["image"].max() == 1
     assert env_func is not None
+
+
+def test_multi_env_sampling():
+
+    env_ids = ["MiniGrid-Dynamic-Obstacles-8x8-v0",
+               "MiniGrid-Dynamic-Obstacles-5x5-v0"]
+    seed = 1
+    idx = 0
+    capture_video = False
+    run_name = "dev"
+    fully_observed = False
+    max_steps = 30
+    num_envs = 1000
+
+    envs = gym.vector.SyncVectorEnv([
+        make_env(
+            env_ids, seed=seed, idx=idx,
+            capture_video=capture_video, run_name=run_name,
+            fully_observed=fully_observed, max_steps=max_steps
+        ) for i in range(num_envs)
+    ])
+
+    counts = Counter([env.env.spec.id for env in envs.envs])
+    ratio = counts["MiniGrid-Dynamic-Obstacles-8x8-v0"] / \
+        counts["MiniGrid-Dynamic-Obstacles-5x5-v0"]
+    assert ratio == approx(
+        1, rel=0.1), "The ratio of envs is not 50:50, it is {}".format(ratio)

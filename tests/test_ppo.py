@@ -24,8 +24,13 @@ def test_probe_envs(env_name):
             id=f"Probe{i+1}-v0", entry_point=probes[i])
 
     envs = gym.vector.SyncVectorEnv(
-        [make_env(env_name, i, i, False, "test",
-                  render_mode=None, max_steps=None, fully_observed=False) for i in range(4)]
+        [make_env(
+            env_ids=env_name,
+            idx=i,
+            seed=i,
+            capture_video=False,
+            run_name="test",
+            render_mode=None, max_steps=None, fully_observed=False) for i in range(4)]
     )
 
     args = PPOArgs(
@@ -51,8 +56,13 @@ def test_empty_env():
     env_name = "MiniGrid-Empty-5x5-v0"
 
     envs = gym.vector.SyncVectorEnv(
-        [make_env(env_name, i, i, False, "test",
-                  render_mode=None, max_steps=None, fully_observed=False, flat_one_hot=False) for i in range(4)]
+        [make_env(
+            env_ids=env_name,
+            seed=i,
+            idx=i,
+            capture_video=False,
+            run_name="test",
+            render_mode=None, max_steps=None, fully_observed=False, flat_one_hot=False) for i in range(4)]
     )
 
     args = PPOArgs(
@@ -78,8 +88,13 @@ def test_empty_env_flat_one_hot():
     env_name = "MiniGrid-Empty-5x5-v0"
 
     envs = gym.vector.SyncVectorEnv(
-        [make_env(env_name, i, i, False, "test",
-                  render_mode=None, max_steps=None, fully_observed=False, flat_one_hot=True) for i in range(4)]
+        [make_env(
+            env_ids=env_name,
+            seed=i,
+            idx=i,
+            capture_video=False,
+            run_name="test",
+            render_mode=None, max_steps=None, fully_observed=False, flat_one_hot=True) for i in range(4)]
     )
 
     args = PPOArgs(
@@ -103,7 +118,12 @@ def test_empty_env_flat_one_hot():
 def test_ppo_agent_gym():
 
     envs = gym.vector.SyncVectorEnv(
-        [make_env('CartPole-v1', 1, i+1, False, "test", max_steps=None)
+        [make_env(
+            env_ids='CartPole-v1',
+            seed=1,
+            idx=i+1,
+            capture_video=False,
+            run_name="test", max_steps=None)
          for i in range(2)]
     )
     assert envs.single_action_space.shape is not None
@@ -120,7 +140,12 @@ def test_ppo_agent_gym():
 def test_ppo_agent_minigrid():
 
     envs = gym.vector.SyncVectorEnv(
-        [make_env('MiniGrid-Empty-8x8-v0', 1, i+1, False, "test")
+        [make_env(
+            env_ids='MiniGrid-Empty-8x8-v0',
+            seed=1,
+            idx=i+1,
+            capture_video=False,
+            run_name="test")
          for i in range(2)]
     )
     assert envs.single_action_space.shape is not None

@@ -1,6 +1,7 @@
 # %%
 import argparse
 import gymnasium as gym
+from typing import List
 import minigrid
 import numpy as np
 from typing import List
@@ -8,7 +9,7 @@ import os
 import random
 import torch as t
 from typing import Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import pandas as pd
 from IPython.display import display
 import plotly.express as px
@@ -105,8 +106,11 @@ def parse_args():
                         help="the entity (team) of wandb's project")
     parser.add_argument('--capture_video', action='store_true', default=True,
                         help='if toggled, a video will be captured during evaluation')
-    parser.add_argument('--env_id', type=str, default='MiniGrid-Dynamic-Obstacles-8x8-v0',
-                        help='the environment id')
+    # parser.add_argument('--env_id', type=str, default='MiniGrid-Dynamic-Obstacles-8x8-v0',
+    #                     help='the environment id')
+    # parse a list of environment id, use action=append
+    parser.add_argument('--env_id', type=str, nargs='+', default=['MiniGrid-Dynamic-Obstacles-8x8-v0'],
+                        help='the environment id', required=True)
     parser.add_argument('--hidden_size', type=int, default=64,
                         help='the size of the hidden layers')
     parser.add_argument('--view_size', type=int, default=7,
@@ -159,7 +163,9 @@ class PPOArgs:
     wandb_project_name: str = "PPO-MiniGrid"
     wandb_entity: str = None
     capture_video: bool = True
-    env_id: str = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
+    env_id: List[str] = field(default_factory=lambda: [
+                              'MiniGrid-Dynamic-Obstacles-8x8-v0'])
+    env_prob: List[int] = None
     view_size: int = 7
     hidden_dim: int = 64
     total_timesteps: int = 1800000
@@ -185,7 +191,13 @@ class PPOArgs:
         self.minibatch_size = self.batch_size // self.num_minibatches
         if self.trajectory_path is None:
             self.trajectory_path = os.path.join(
-                "trajectories", self.env_id + str(uuid.uuid4()) + ".gz")
+                "trajectories", self.env_id[0] + str(uuid.uuid4()) + ".gz")
+        if self.env_prob is not None:
+            if len(self.env_prob) != len(self.env_id):
+                raise ValueError("Length of env_id and env_prob must match.")
+            self.env_prob = [p / sum(self.env_prob) for p in self.env_prob]
+        else:
+            self.env_prob = [1 / len(self.env_id)] * len(self.env_id)
 
 
 arg_help_strings = dict(
@@ -196,7 +208,7 @@ arg_help_strings = dict(
     wandb_project_name="the wandb's project name",
     wandb_entity="the entity (team) of wandb's project",
     capture_video="whether to capture videos of the agent performances (check out `videos` folder)",
-    env_id="the id of the environment",
+    env_id="the id of the environment, select multiple to enable multi-tasking",
     total_timesteps="total timesteps of the experiments",
     learning_rate="the learning rate of the optimizer",
     num_envs="number of synchronized vector environments in our `envs` object",

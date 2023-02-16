@@ -20,8 +20,8 @@ def test_evaluate_dt_agent():
     trajectory_data_set = TrajectoryLoader(
         trajectory_path, pct_traj=1, device="cuda" if torch.cuda.is_available() else "cpu")
 
-    env_id = trajectory_data_set.metadata['args']['env_id']
-    env = make_env(env_id, seed=1, idx=0, capture_video=False,
+    env_ids = trajectory_data_set.metadata['args']['env_id']
+    env = make_env(env_ids, seed=1, idx=0, capture_video=False,
                    run_name="dev", fully_observed=False, max_steps=30)
     env = env()
 
@@ -39,7 +39,7 @@ def test_evaluate_dt_agent():
 
     batch = 0
     eval_env_func = make_env(
-        env_id=env.spec.id,
+        env_ids=env.spec.id,
         seed=batch,
         idx=0,
         capture_video=True,
@@ -50,7 +50,7 @@ def test_evaluate_dt_agent():
     )
 
     statistics = evaluate_dt_agent(
-        env_id=env_id,
+        env_ids=env_ids,
         dt=dt,
         env_func=eval_env_func,
         track=False,
