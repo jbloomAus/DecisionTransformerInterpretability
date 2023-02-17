@@ -1,5 +1,4 @@
 
-import argparse
 import warnings
 import gymnasium as gym
 import torch as t
@@ -11,7 +10,7 @@ from ppo.my_probe_envs import Probe1, Probe2, Probe3, Probe4, Probe5
 from ppo.utils import PPOArgs, arg_help, set_global_seeds, parse_args
 from ppo.train import train_ppo
 from utils import TrajectoryWriter
-from environments import make_env
+from environment_generator import EnvGenerator, EnvironmentArgs
 from gymnasium.spaces import Discrete
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -29,6 +28,7 @@ if __name__ == "__main__":
         wandb_entity=args.wandb_entity,
         capture_video=args.capture_video,
         env_id=args.env_id,
+        env_prob=args.env_prob,
         view_size=args.view_size,
         total_timesteps=args.total_timesteps,
         learning_rate=args.learning_rate,
@@ -47,6 +47,35 @@ if __name__ == "__main__":
         one_hot_obs=args.one_hot_obs,
         trajectory_path=args.trajectory_path,
         fully_observed=args.fully_observed,
+    )
+
+    # wandb initialisation,
+    run_name = f"{args.exp_name}__{args.seed}__{int(time.time())}"
+    # add run_name to args
+    args.run_name = run_name
+
+    if args.track:
+        run = wandb.init(
+            project=args.wandb_project_name,
+            entity=args.wandb_entity,
+            config=vars(args),  # vars is equivalent to args.__dict__
+            name=run_name,
+            # monitor_gym=True,
+            save_code=True,
+        )
+
+    env_args = EnvironmentArgs(
+        env_ids=args.env_id,
+        env_prob=args.env_prob,
+        seed=args.seed,
+        capture_video=args.capture_video,
+        run_name=args.run_name,
+        render_mode="rgb_array",
+        max_steps=args.max_steps,
+        fully_observed=args.fully_observed,
+        flat_one_hot=args.one_hot_obs,
+        agent_view_size=args.view_size,
+        video_frequency=50,
     )
 
     for i in range(5):
@@ -72,21 +101,6 @@ if __name__ == "__main__":
     for env_id in args.env_id:
         assert env_id in all_envs, f"Environment {env_id} not registered."
 
-    # wandb initialisation,
-    run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
-    if args.track:
-        run = wandb.init(
-            project=args.wandb_project_name,
-            entity=args.wandb_entity,
-            config=vars(args),  # vars is equivalent to args.__dict__
-            name=run_name,
-            # monitor_gym=True,
-            save_code=True,
-        )
-
-    # add run_name to args
-    args.run_name = run_name
-
     # make envs
     set_global_seeds(args.seed)
     device = t.device("cuda" if t.cuda.is_available() and args.cuda else "cpu")
@@ -96,28 +110,16 @@ if __name__ == "__main__":
                  "Probe3-v0", "Probe4-v0", "Probe5-v0"]
     render_mode = None if set(args.env_id) in probe_ids else "rgb_array"
 
-    envs = gym.vector.SyncVectorEnv(
-        [make_env(
-            env_ids=args.env_id,
-            env_prob=args.env_prob,
-            seed=args.seed + i,
-            idx=i,
-            capture_video=args.capture_video,
-            run_name=run_name,
-            max_steps=args.max_steps,
-            fully_observed=args.fully_observed,
-            flat_one_hot=args.one_hot_obs,
-            agent_view_size=args.view_size,
-            render_mode=render_mode
-        ) for i in range(args.num_envs)]
+    env_generator = EnvGenerator(
+        env_args=env_args
     )
-    assert envs.single_action_space.shape is not None
+    envs = env_generator.generate_envs(args.num_envs)
     assert isinstance(envs.single_action_space,
                       Discrete), "only discrete action space is supported"
 
     train_ppo(
         args,
-        envs,
+        env_generator,
         trajectory_writer=trajectory_writer,
         probe_idx=probe_idx
     )

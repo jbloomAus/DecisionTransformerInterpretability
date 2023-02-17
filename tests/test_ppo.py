@@ -4,6 +4,7 @@ import torch as t
 import gymnasium as gym
 from gymnasium.spaces import Discrete
 
+from src.environment_generator import EnvGenerator, EnvironmentArgs
 from src.ppo.train import train_ppo
 from src.ppo.agent import Agent
 from src.ppo.my_probe_envs import Probe1, Probe2, Probe3, Probe4, Probe5
@@ -23,15 +24,14 @@ def test_probe_envs(env_name):
         gym.envs.registration.register(
             id=f"Probe{i+1}-v0", entry_point=probes[i])
 
-    envs = gym.vector.SyncVectorEnv(
-        [make_env(
-            env_ids=env_name,
-            idx=i,
-            seed=i,
-            capture_video=False,
-            run_name="test",
-            render_mode=None, max_steps=None, fully_observed=False) for i in range(4)]
+    env_args = EnvironmentArgs(
+        env_ids=env_name,
+        seed=i,
+        capture_video=False,
+        run_name="test",
+        render_mode=None, max_steps=None, fully_observed=False
     )
+    env_generator = EnvGenerator(env_args)
 
     args = PPOArgs(
         exp_name='Test',
@@ -48,22 +48,31 @@ def test_probe_envs(env_name):
     # currently, ppo has tests which run inside main if it
     # detects "Probe" in the env name. We will fix this
     # eventually.
-    ppo = train_ppo(args, envs=envs)
+    ppo = train_ppo(args, env_generator=env_generator)
 
 
 def test_empty_env():
 
     env_name = "MiniGrid-Empty-5x5-v0"
 
-    envs = gym.vector.SyncVectorEnv(
-        [make_env(
-            env_ids=env_name,
-            seed=i,
-            idx=i,
-            capture_video=False,
-            run_name="test",
-            render_mode=None, max_steps=None, fully_observed=False, flat_one_hot=False) for i in range(4)]
+    # envs = gym.vector.SyncVectorEnv(
+    #     [make_env(
+    #         env_ids=env_name,
+    #         seed=i,
+    #         idx=i,
+    #         capture_video=False,
+    #         run_name="test",
+    #         render_mode=None, max_steps=None, fully_observed=False, flat_one_hot=False) for i in range(4)]
+    # )
+
+    env_args = EnvironmentArgs(
+        env_ids=env_name,
+        seed=0,
+        capture_video=False,
+        run_name="test",
+        render_mode=None, max_steps=None, fully_observed=False
     )
+    env_generator = EnvGenerator(env_args)
 
     args = PPOArgs(
         exp_name='Test',
@@ -80,22 +89,21 @@ def test_empty_env():
     # currently, ppo has tests which run inside main if it
     # detects "Probe" in the env name. We will fix this
     # eventually.
-    ppo = train_ppo(args, envs=envs)
+    ppo = train_ppo(args, env_generator=env_generator)
 
 
 def test_empty_env_flat_one_hot():
 
     env_name = "MiniGrid-Empty-5x5-v0"
 
-    envs = gym.vector.SyncVectorEnv(
-        [make_env(
-            env_ids=env_name,
-            seed=i,
-            idx=i,
-            capture_video=False,
-            run_name="test",
-            render_mode=None, max_steps=None, fully_observed=False, flat_one_hot=True) for i in range(4)]
+    env_args = EnvironmentArgs(
+        env_ids=env_name,
+        seed=i,
+        capture_video=False,
+        run_name="test",
+        render_mode=None, max_steps=None, fully_observed=False, flat_one_hot=True
     )
+    env_generator = EnvGenerator(env_args)
 
     args = PPOArgs(
         exp_name='Test',
@@ -112,7 +120,7 @@ def test_empty_env_flat_one_hot():
     # currently, ppo has tests which run inside main if it
     # detects "Probe" in the env name. We will fix this
     # eventually.
-    ppo = train_ppo(args, envs=envs)
+    ppo = train_ppo(args, env_generator=env_generator)
 
 
 def test_ppo_agent_gym():

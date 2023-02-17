@@ -109,8 +109,12 @@ def parse_args():
     # parser.add_argument('--env_id', type=str, default='MiniGrid-Dynamic-Obstacles-8x8-v0',
     #                     help='the environment id')
     # parse a list of environment id, use action=append
-    parser.add_argument('--env_id', type=str, nargs='+', default=['MiniGrid-Dynamic-Obstacles-8x8-v0'],
-                        help='the environment id', required=True)
+    parser.add_argument('--env_id', type=str, action='append',
+                        #  default = ['MiniGrid-SimpleCrossingS9N1-v0', "MiniGrid-SimpleCrossingS9N2-v0",
+                        # "MiniGrid-LavaCrossingS9N3-v0", "MiniGrid-LavaCrossingS9N2-v0"],
+                        help='the environment id')
+    parser.add_argument('--env_prob', type=float,
+                        action='append', default=None)
     parser.add_argument('--hidden_size', type=int, default=64,
                         help='the size of the hidden layers')
     parser.add_argument('--view_size', type=int, default=7,

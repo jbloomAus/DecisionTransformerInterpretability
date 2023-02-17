@@ -38,10 +38,11 @@ def get_printable_output_for_probe_envs(args: PPOArgs, agent: Agent, probe_idx: 
     return output
 
 
-def train_ppo(args: PPOArgs, envs, trajectory_writer=None, probe_idx=None):
+def train_ppo(args: PPOArgs, env_generator, trajectory_writer=None, probe_idx=None):
 
-    memory = Memory(envs, args, device)
-    agent = Agent(envs, device=device, hidden_dim=args.hidden_dim)
+    initial_envs = env_generator.generate_envs(args.num_envs)
+    memory = Memory(initial_envs, args, device)
+    agent = Agent(initial_envs, device=device, hidden_dim=args.hidden_dim)
     num_updates = args.total_timesteps // args.batch_size
     if not args.decay_lr:
         end_lr = args.learning_rate
@@ -56,12 +57,18 @@ def train_ppo(args: PPOArgs, envs, trajectory_writer=None, probe_idx=None):
 
     if args.track:
         video_path = os.path.join("videos", args.run_name)
+        if not os.path.exists(video_path):
+            os.makedirs(video_path)
         videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
         for video in videos:
             os.remove(os.path.join(video_path, video))
         videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
 
     for update in progress_bar:
+
+        # dont refresh envs too regularly, since this cuts of episodes midway
+        if update % (args.max_steps // args.num_steps) == 0:
+            envs = env_generator.generate_envs(args.num_envs)
 
         agent.rollout(memory, args, envs, trajectory_writer)
         agent.learn(memory, args, optimizer, scheduler)
@@ -103,7 +110,7 @@ def check_and_upload_new_video(video_path, videos, step=None):
             wandb.log({"video": wandb.Video(
                 path_to_video,
                 fps=4,
-                caption=new_video,
+                caption="RL video step = {}".format(step),
                 format="mp4",
             )}, step=step)
     return current_videos
