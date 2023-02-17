@@ -64,11 +64,12 @@ def train_ppo(args: PPOArgs, env_generator, trajectory_writer=None, probe_idx=No
             os.remove(os.path.join(video_path, video))
         videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
 
+    envs = env_generator.generate_envs(args.num_envs)
     for update in progress_bar:
 
         # dont refresh envs too regularly, since this cuts of episodes midway
         max_steps = args.max_steps if args.max_steps is not None else 2000
-        if update % (max_steps // args.num_steps) == 0:
+        if (update % (max_steps // args.num_steps) == 0) and len(args.envs) > 1:
             envs = env_generator.generate_envs(args.num_envs)
 
         agent.rollout(memory, args, envs, trajectory_writer)
