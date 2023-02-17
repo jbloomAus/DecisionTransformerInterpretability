@@ -22,7 +22,7 @@ class EnvironmentArgs:
     fully_observed: bool = False
     flat_one_hot: bool = False
     agent_view_size: int = 7
-    video_frequency: int = 50
+    video_frequency: int = 200
 
 
 class EnvGenerator:
