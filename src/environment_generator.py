@@ -106,7 +106,9 @@ class EnvGenerator:
 
             # if more than one env, use the MissionSpaceEqualRedefinitionWrapper
             # if len(set(self.env_args.env_ids)) > 1:
-            env = MissionSpaceEqualRedefinitionWrapper(env)
+            if isinstance(env.observation_space, gym.spaces.Dict):
+                if "mission" in env.observation_space.spaces:
+                    env = MissionSpaceEqualRedefinitionWrapper(env)
 
             obs = env.reset()
             # env.action_space.seed(self.env_args.seed)

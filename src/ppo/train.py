@@ -67,7 +67,8 @@ def train_ppo(args: PPOArgs, env_generator, trajectory_writer=None, probe_idx=No
     for update in progress_bar:
 
         # dont refresh envs too regularly, since this cuts of episodes midway
-        if update % (args.max_steps // args.num_steps) == 0:
+        max_steps = args.max_steps if args.max_steps is not None else 2000
+        if update % (max_steps // args.num_steps) == 0:
             envs = env_generator.generate_envs(args.num_envs)
 
         agent.rollout(memory, args, envs, trajectory_writer)

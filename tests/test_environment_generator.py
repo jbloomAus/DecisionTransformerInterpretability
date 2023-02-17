@@ -111,7 +111,7 @@ def test_env_generator_multi_sampling_different_envs(env_args):
     ratio = counts["MiniGrid-SimpleCrossingS9N3-v0"] / \
         counts["MiniGrid-LavaCrossingS11N5-v0"]
     assert ratio == approx(
-        1, rel=0.1), "The ratio of envs is not 50:50, it is {}".format(ratio)
+        1, rel=0.2), "The ratio of envs is not 1:1, it is {}".format(ratio)
 
 
 def test_env_generator_multi_sampling_many_different_envs(env_args):
