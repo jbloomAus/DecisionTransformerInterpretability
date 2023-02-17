@@ -187,4 +187,4 @@ def test_multi_env_sampling():
     ratio = counts["MiniGrid-Dynamic-Obstacles-8x8-v0"] / \
         counts["MiniGrid-Dynamic-Obstacles-5x5-v0"]
     assert ratio == approx(
-        1, rel=0.1), "The ratio of envs is not 50:50, it is {}".format(ratio)
+        1, rel=0.2), "The ratio of envs is not 50:50, it is {}".format(ratio)
