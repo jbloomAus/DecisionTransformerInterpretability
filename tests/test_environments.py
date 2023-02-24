@@ -1,6 +1,6 @@
 import pytest
 
-from src.environments import make_env
+from src.environments.environments import make_env
 import numpy as np
 
 

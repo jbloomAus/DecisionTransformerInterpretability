@@ -7,7 +7,7 @@ import pickle
 import torch
 from src.utils import TrajectoryWriter
 from src.decision_transformer.utils import load_decision_transformer
-from src.environments import make_env
+from src.environments.environments import make_env
 
 
 def test_trajectory_writer_numpy():

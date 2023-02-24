@@ -6,7 +6,7 @@ import minigrid
 import math
 
 from src.decision_transformer.utils import load_decision_transformer
-from src.environments import make_env
+from src.environments.environments import make_env
 from src.utils import pad_tensor
 
 
