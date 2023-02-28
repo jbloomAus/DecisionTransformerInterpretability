@@ -26,6 +26,12 @@ class Minibatch:
 class Memory():
 
     def __init__(self, envs: gym.vector.SyncVectorEnv, args: PPOArgs, device: t.device):
+        """Initializes the memory buffer.
+
+        envs: A SyncVectorEnv object.
+        args: A PPOArgs object containing the PPO training hyperparameters.
+        device: The device to store the tensors on, either "cpu" or "cuda".
+        """
         self.envs = envs
         self.args = args
         self.next_obs = None
@@ -37,8 +43,11 @@ class Memory():
         self.reset()
 
     def add(self, *data: t.Tensor):
-        '''Adds an experience to storage. Called during the rollout phase.
-        '''
+        """
+        Adds an experience to storage. Called during the rollout phase.
+
+        *data: A tuple containing the tensors of (obs, done, action, logprob, value, reward) for an agent.
+        """
         info, *experiences = data
         self.experiences.append(experiences)
         if info and isinstance(info, dict):
@@ -57,7 +66,24 @@ class Memory():
                     self.global_step += 1
 
     def sample_experiences(self):
-        '''Helper function to print out experiences, as a sanity check!
+        '''Prints out a randomly selected experience as a sanity check.
+
+        Each experience consists of a tuple containing:
+        - obs: observations of the environment
+        - done: whether the episode has terminated
+        - action: the action taken by the agent
+        - logprob: the log probability of taking that action
+        - value: the estimated value of the current state
+        - reward: the reward received from taking that action
+        
+        The output will be a sample from the stored experiences, in the format:
+            Sample X/Y:
+            obs    : [...]
+            done   : [...]
+            action : [...]
+            logprob: [...]
+            value  : [...]
+            reward : [...]
         '''
         idx = np.random.randint(0, len(self.experiences))
         print(f"Sample {idx+1}/{len(self.experiences)}:")
@@ -100,8 +126,14 @@ class Memory():
         return advantages
 
     def get_minibatches(self) -> List[Minibatch]:
-        '''Computes advantages, and returns minibatches to be used in the
-        learning phase.
+        '''Return a list of length (batch_size // minibatch_size) where each element is an array of indexes into the batch.
+
+        Args:
+        - batch_size (int): total size of the batch.
+        - minibatch_size (int): size of each minibatch.
+
+        Returns:
+        - List[np.ndarray]: a list of length (batch_size // minibatch_size) where each element is an array of indexes into the batch. Each index should appear exactly once.
         '''
         obs, dones, actions, logprobs, values, rewards = [
             t.stack(arr) for arr in zip(*self.experiences)]

@@ -11,8 +11,21 @@ device = t.device("cuda" if t.cuda.is_available() else "cpu")
 
 
 def get_printable_output_for_probe_envs(args: PPOArgs, agent: Agent, probe_idx: int, update: int, num_updates: int):
-    """Tests a probe environment, by printing output in the form of a widget.
-    We should see rapid convergence in both actions and observations.
+    """Tests a probe environment and returns a widget-style output for the environment.
+
+    The function prints and returns output showing how well the agent performs on a given probe environment. The output
+    includes the agent's computed values and expected values for the observations in the probe environment, as well as
+    the agent's computed probabilities and the expected action for the probe environment, if applicable.
+
+    Args:
+    - args: a PPOArgs object containing arguments for the PPO training algorithm
+    - agent: an Agent object containing a trained PPO agent
+    - probe_idx: the index of the probe environment to test
+    - update: the current training update number
+    - num_updates: the total number of training updates
+
+    Returns:
+    - output: a string representing the output widget for the probe environment
     """
     obs_for_probes = [[[0.0]], [[-1.0], [+1.0]],
                       [[0.0], [1.0]], [[0.0]], [[0.0], [1.0]]]
@@ -39,6 +52,19 @@ def get_printable_output_for_probe_envs(args: PPOArgs, agent: Agent, probe_idx: 
 
 
 def train_ppo(args: PPOArgs, envs, trajectory_writer=None, probe_idx=None):
+    """
+    Trains a PPO agent on a given environment.
+
+    Args:
+    - args: an instance of PPOArgs containing the hyperparameters for training
+    - envs: the environment to train on
+    - trajectory_writer: an optional object to write trajectories to a file
+    - probe_idx: index of probe environment, if training on probe environment
+
+    Returns:
+    None
+    """
+
 
     memory = Memory(envs, args, device)
     agent = Agent(envs, device=device, hidden_dim=args.hidden_dim)
@@ -94,6 +120,18 @@ def train_ppo(args: PPOArgs, envs, trajectory_writer=None, probe_idx=None):
 
 
 def check_and_upload_new_video(video_path, videos, step=None):
+    """
+    Checks if new videos have been generated in the video path directory since the last check, and if so,
+    uploads them to the current WandB run.
+
+    Args:
+    - video_path: The path to the directory where the videos are being saved.
+    - videos: A list of the names of the videos that have already been uploaded to WandB.
+    - step: The current step in the training loop, used to associate the video with the correct timestep.
+
+    Returns:
+    - A list of the names of all the videos currently present in the video path directory.
+    """
 
     current_videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
     new_videos = [i for i in current_videos if i not in videos]

@@ -1,22 +1,76 @@
 
-import argparse
 import warnings
 import gymnasium as gym
 import torch as t
-import re
 import wandb
 import time
 
-from ppo.my_probe_envs import Probe1, Probe2, Probe3, Probe4, Probe5
-from ppo.utils import PPOArgs, arg_help, set_global_seeds, parse_args
+from ppo.utils import PPOArgs, set_global_seeds, parse_args
 from ppo.train import train_ppo
 from utils import TrajectoryWriter
 from environments.environments import make_env
 from environments.registration import register_envs
-from gymnasium.spaces import Discrete
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 device = t.device("cuda" if t.cuda.is_available() else "cpu")
+
+def ppo_runner(args: PPOArgs):
+    '''
+    Trains a Proximal Policy Optimization (PPO) algorithm on a specified environment using the given hyperparameters.
+    
+    Args:
+    - args (PPOArgs): an object that contains hyperparameters and other arguments for PPO training.
+    
+    Returns: None.
+    '''
+
+    if args.trajectory_path:
+        trajectory_writer = TrajectoryWriter(args.trajectory_path, args)
+    else:
+        trajectory_writer = None
+
+
+    # Verify environment is registered
+    register_envs()
+    all_envs = [env_spec for env_spec in gym.envs.registry]
+    assert args.env_id in all_envs, f"Environment {args.env_id} not registered."
+
+    # wandb initialisation,
+    run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
+    if args.track:
+        run = wandb.init(
+            project=args.wandb_project_name,
+            entity=args.wandb_entity,
+            config=vars(args),  # vars is equivalent to args.__dict__
+            name=run_name,
+            # monitor_gym=True,
+            save_code=True,
+        )
+
+    # add run_name to args
+    args.run_name = run_name
+
+    # make envs
+    set_global_seeds(args.seed)
+
+    envs = gym.vector.SyncVectorEnv(
+        [make_env(args.env_id, args.seed + i, i, args.capture_video, run_name,
+                    max_steps=args.max_steps,
+                    fully_observed=args.fully_observed,
+                    flat_one_hot=args.one_hot_obs,
+                    agent_view_size=args.view_size,
+                    render_mode="rgb_array",
+                    ) for i in range(args.num_envs)]
+    )
+
+    train_ppo(
+        args,
+        envs,
+        trajectory_writer=trajectory_writer,
+        probe_idx=None
+    )
+    if args.track:
+        run.finish()
 
 if __name__ == "__main__":
 
@@ -50,52 +104,5 @@ if __name__ == "__main__":
         fully_observed=args.fully_observed,
     )
 
-    if args.trajectory_path:
-        trajectory_writer = TrajectoryWriter(args.trajectory_path, args)
-    else:
-        trajectory_writer = None
+    ppo_runner(args)
 
-
-    # Verify environment is registered
-    register_envs()
-    all_envs = [env_spec for env_spec in gym.envs.registry]
-    assert args.env_id in all_envs, f"Environment {args.env_id} not registered."
-
-    # wandb initialisation,
-    run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
-    if args.track:
-        run = wandb.init(
-            project=args.wandb_project_name,
-            entity=args.wandb_entity,
-            config=vars(args),  # vars is equivalent to args.__dict__
-            name=run_name,
-            # monitor_gym=True,
-            save_code=True,
-        )
-
-    # add run_name to args
-    args.run_name = run_name
-
-    # make envs
-    set_global_seeds(args.seed)
-    device = t.device("cuda" if t.cuda.is_available() and args.cuda else "cpu")
-
-
-    envs = gym.vector.SyncVectorEnv(
-        [make_env(args.env_id, args.seed + i, i, args.capture_video, run_name,
-                    max_steps=args.max_steps,
-                    fully_observed=args.fully_observed,
-                    flat_one_hot=args.one_hot_obs,
-                    agent_view_size=args.view_size,
-                    render_mode="rgb_array",
-                    ) for i in range(args.num_envs)]
-    )
-
-    train_ppo(
-        args,
-        envs,
-        trajectory_writer=trajectory_writer,
-        probe_idx=None
-    )
-    if args.track:
-        run.finish()

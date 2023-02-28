@@ -14,6 +14,15 @@ from .utils import PPOArgs
 
 class PPOScheduler:
     def __init__(self, optimizer: optim.Optimizer, initial_lr: float, end_lr: float, num_updates: int):
+        '''
+        A learning rate scheduler for a Proximal Policy Optimization (PPO) algorithm.
+
+        Args:
+        - optimizer (optim.Optimizer): the optimizer to use for updating the learning rate.
+        - initial_lr (float): the initial learning rate.
+        - end_lr (float): the end learning rate.
+        - num_updates (int): the number of updates to perform before the learning rate reaches end_lr.
+        '''
         self.optimizer = optimizer
         self.initial_lr = initial_lr
         self.end_lr = end_lr
@@ -21,7 +30,8 @@ class PPOScheduler:
         self.n_step_calls = 0
 
     def step(self):
-        '''Implement linear learning rate decay so that after num_updates calls to step, the learning rate is end_lr.
+        '''
+        Implement linear learning rate decay so that after num_updates calls to step, the learning rate is end_lr.
         '''
         self.n_step_calls += 1
         frac = self.n_step_calls / self.num_updates
@@ -36,6 +46,14 @@ class Agent(nn.Module):
     actor: nn.Sequential
 
     def __init__(self, envs: gym.vector.SyncVectorEnv, device=t.device, hidden_dim: int = 64):
+        '''
+        An agent for a Proximal Policy Optimization (PPO) algorithm.
+
+        Args:
+        - envs (gym.vector.SyncVectorEnv): the environment(s) to interact with.
+        - device (t.device): the device on which to run the agent.
+        - hidden_dim (int): the number of neurons in the hidden layer.
+        '''
         super().__init__()
         # obs_shape will be a tuple (e.g. for RGB images this would be an array (h, w, c))
         if isinstance(envs.single_observation_space, gym.spaces.Box):
@@ -74,21 +92,46 @@ class Agent(nn.Module):
         self.to(device)
 
     def layer_init(self, layer: nn.Linear, std: float = np.sqrt(2), bias_const: float = 0.0) -> nn.Linear:
+        """Initializes the weights of a linear layer with orthogonal initialization and the biases with a constant value.
+
+        Args:
+            layer (nn.Linear): The linear layer to be initialized.
+            std (float, optional): The standard deviation of the distribution used to initialize the weights. Defaults to np.sqrt(2).
+            bias_const (float, optional): The constant value to initialize the biases with. Defaults to 0.0.
+
+        Returns:
+            nn.Linear: The initialized linear layer.
+        """
         t.nn.init.orthogonal_(layer.weight, std)
         t.nn.init.constant_(layer.bias, bias_const)
         return layer
 
     def make_optimizer(self, num_updates: int, initial_lr: float, end_lr: float) -> Tuple[optim.Optimizer, PPOScheduler]:
-        '''Return an appropriately configured Adam with its attached scheduler.
-        '''
+        """Returns an Adam optimizer with a learning rate schedule for updating the agent's parameters.
+
+        Args:
+            num_updates (int): The total number of updates to be performed.
+            initial_lr (float): The initial learning rate.
+            end_lr (float): The final learning rate.
+
+        Returns:
+            Tuple[optim.Optimizer, PPOScheduler]: A tuple containing the optimizer and its attached scheduler.
+        """
         optimizer = optim.Adam(
             self.parameters(), lr=initial_lr, eps=1e-5, maximize=True)
         scheduler = PPOScheduler(optimizer, initial_lr, end_lr, num_updates)
         return (optimizer, scheduler)
 
     def rollout(self, memory: Memory, args: PPOArgs, envs: gym.vector.SyncVectorEnv, trajectory_writer=None) -> None:
-        '''Performs the rollout phase, as described in '37 Implementational Details'.
-        '''
+        """Performs the rollout phase of the PPO algorithm, collecting experience by interacting with the environment.
+
+        Args:
+            memory (Memory): The replay buffer to store the experiences.
+            args (PPOArgs): The arguments to configure the algorithm.
+            envs (gym.vector.SyncVectorEnv): The vectorized environment to interact with.
+            trajectory_writer (TrajectoryWriter, optional): The writer to log the collected trajectories. Defaults to None.
+        """
+
         device = memory.device
         obs = memory.next_obs
         done = memory.next_done
@@ -150,8 +193,14 @@ class Agent(nn.Module):
             memory.next_value = self.critic(obs).flatten()
 
     def learn(self, memory: Memory, args: PPOArgs, optimizer: optim.Optimizer, scheduler: PPOScheduler) -> None:
-        '''Performs the learning phase, as described in '37 Implementational Details'.
-        '''
+        """Performs the learning phase of the PPO algorithm, updating the agent's parameters using the collected experience.
+
+        Args:
+            memory (Memory): The replay buffer containing the collected experiences.
+            args (PPOArgs): The arguments to configure the algorithm.
+            optimizer (optim.Optimizer): The optimizer to update the agent's parameters.
+            scheduler (PPOScheduler): The scheduler attached to the optimizer.
+        """
         for _ in range(args.update_epochs):
             minibatches = memory.get_minibatches()
             # Compute loss on each minibatch, and step the optimizer
@@ -199,10 +248,19 @@ patch_typeguard()
 def calc_clipped_surrogate_objective(
     probs: Categorical, mb_action: t.Tensor, mb_advantages: t.Tensor, mb_logprobs: t.Tensor, clip_coef: float
 ) -> t.Tensor:
-    '''Return the clipped surrogate objective, suitable for maximisation with gradient ascent.
+    '''
+    Return the clipped surrogate objective, suitable for maximisation with gradient ascent.
 
-    probs: a distribution containing the actor's unnormalized logits of shape (minibatch, num_actions)
-    clip_coef: amount of clipping, denoted by epsilon in Eq 7.
+    Args:
+        probs (Categorical): A distribution containing the actor's unnormalized logits of shape (minibatch, num_actions).
+        mb_action (Tensor): A tensor of shape (minibatch,) containing the actions taken by the agent in the minibatch.
+        mb_advantages (Tensor): A tensor of shape (minibatch,) containing the advantages estimated for each state in the minibatch.
+        mb_logprobs (Tensor): A tensor of shape (minibatch,) containing the log probabilities of the actions taken by the agent in the minibatch.
+        clip_coef (float): Amount of clipping, denoted by epsilon in Eq 7.
+
+    Returns:
+        Tensor: The clipped surrogate objective computed over the minibatch, with shape ().
+
     '''
     logits_diff = probs.log_prob(mb_action) - mb_logprobs
 
@@ -219,16 +277,30 @@ def calc_clipped_surrogate_objective(
 
 @typechecked
 def calc_value_function_loss(values: TT["batch"], mb_returns: TT["batch"], vf_coef: float) -> t.Tensor:  # noqa: F821
-    '''Compute the value function portion of the loss function.
+    '''
+    Compute the value function portion of the loss function.
 
-    vf_coef: the coefficient for the value loss, which weights its contribution to the overall loss. Denoted by c_1 in the paper.
+    Args:
+        values (Tensor): A tensor of shape (minibatch,) containing the value function estimates for the states in the minibatch.
+        mb_returns (Tensor): A tensor of shape (minibatch,) containing the discounted returns estimated for each state in the minibatch.
+        vf_coef (float): The coefficient for the value loss, which weights its contribution to the overall loss. Denoted by c_1 in the paper.
+
+    Returns:
+        Tensor: The value function loss computed over the minibatch, with shape ().
+
     '''
     return 0.5 * vf_coef * (values - mb_returns).pow(2).mean()
 
 
 def calc_entropy_bonus(probs: Categorical, ent_coef: float):
-    '''Return the entropy bonus term, suitable for gradient ascent.
+    '''
+    Return the entropy bonus term, suitable for gradient ascent.
 
-    ent_coef: the coefficient for the entropy loss, which weights its contribution to the overall loss. Denoted by c_2 in the paper.
+    Args:
+        probs (Categorical): A distribution containing the actor's unnormalized logits of shape (minibatch, num_actions).
+        ent_coef (float): The coefficient for the entropy loss, which weights its contribution to the overall loss. Denoted by c_2 in the paper.
+
+    Returns:
+        Tensor: The entropy bonus computed over the minibatch, with shape ().
     '''
     return ent_coef * probs.entropy().mean()

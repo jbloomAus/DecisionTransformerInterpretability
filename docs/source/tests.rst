@@ -36,10 +36,26 @@ tests.test\_dt\_train module
    :undoc-members:
    :show-inheritance:
 
+tests.test\_environment\_registration module
+--------------------------------------------
+
+.. automodule:: tests.test_environment_registration
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 tests.test\_environments module
 -------------------------------
 
 .. automodule:: tests.test_environments
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+tests.test\_multienvironments module
+------------------------------------
+
+.. automodule:: tests.test_multienvironments
    :members:
    :undoc-members:
    :show-inheritance:

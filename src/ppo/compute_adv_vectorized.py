@@ -5,16 +5,24 @@ from torchtyping import TensorType as TT
 
 def shift_rows(arr):
     """
-    Helper function for compute_advantages_vectorized
+    Returns a 2D array where the i-th row is the input array from index 0 to i.
+    If the input array has more than 1 dimension, it treats the later dimensions as batch dimensions.
 
-    Given a 1D array like:
-        [1, 2, 3]
-    this function will return:
-        [[1, 2, 3],
-         [0, 1, 2],
-         [0, 0, 1]]
+    Args:
+    arr (np.ndarray): 1D array to be transformed into a 2D array.
 
-    If the array has >1D, it treats the later dimensions as batch dims
+    Returns:
+    np.ndarray: A 2D array where the i-th row is the input array from index 0 to i.
+
+    Example:
+        Given a 1D array like:
+            [1, 2, 3]
+        this function will return:
+            [[1, 2, 3],
+            [0, 1, 2],
+            [0, 0, 1]]
+
+        If the array has >1D, it treats the later dimensions as batch dims
     """
     L = arr.shape[0]
     output = t.zeros(L, 2*L, *arr.shape[1:]).to(dtype=arr.dtype)
@@ -38,12 +46,21 @@ def compute_advantages_vectorized(
     gae_lambda: float
 ) -> TT["T", "env"]:  # noqa: F821
     """
-    Basic idea (assuming num_envs=1 in this description, but the case generalises):
+    The compute_advantages_vectorized function computes the Generalized Advantage Estimation (GAE) advantages for a batch of environments in a vectorized manner.
 
-        create a matrix of discount factors (gamma*lmda)**l, shape (t, l), suitably shifted
-        create a matrix of deltas, shape (t, l), suitably shifted
-        mask the deltas after the "done" points
-        multiply two matrices and sum over l (second dim)
+    Args:
+
+        next_value (torch.Tensor): The predicted value of the next state for each environment in the batch, of shape (num_envs,).
+        next_done (torch.Tensor): Whether the next state is done or not for each environment in the batch, of shape (num_envs,).
+        rewards (torch.Tensor): The rewards received for each timestep and environment, of shape (timesteps, num_envs).
+        values (torch.Tensor): The predicted state value for each timestep and environment, of shape (timesteps, num_envs).
+        dones (torch.Tensor): Whether the state is done or not for each timestep and environment, of shape (timesteps, num_envs).
+        device (torch.device): The device on which to perform computations.
+        gamma (float): The discount factor to use.
+        gae_lambda (float): The GAE lambda value to use.
+    Returns:
+
+        advantages (torch.Tensor): The computed GAE advantages for each timestep and environment, of shape (timesteps, num_envs).
     """
     T, num_envs = rewards.shape
     next_values = t.concat([values[1:], next_value.unsqueeze(0)])

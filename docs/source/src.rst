@@ -8,15 +8,16 @@ Subpackages
    :maxdepth: 4
 
    src.decision_transformer
+   src.environments
    src.ppo
 
 Submodules
 ----------
 
-src.environments module
+src.dummy\_agent module
 -----------------------
 
-.. automodule:: src.environments
+.. automodule:: src.dummy_agent
    :members:
    :undoc-members:
    :show-inheritance:
