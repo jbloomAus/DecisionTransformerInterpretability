@@ -4,7 +4,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
     <link rel="icon" href="_static/assets/Logo_black.ico" type="image/x-icon">
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="src.decision_transformer package" href="src.decision_transformer.html" /><link rel="prev" title="app module" href="app.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="src.decision_transformer package" href="src.decision_transformer.html" /><link rel="prev" title="src" href="modules.html" />
 
     <!-- Generated with Sphinx 5.2.3 and Furo 2022.12.07 -->
         <title>src package - Decision Transformer Interpretability Documentation</title>
@@ -165,14 +165,13 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Code</span></p>
 <ul class="current">
-<li class="toctree-l1 current has-children"><a class="reference internal" href="modules.html">DecisionTransformerInterpretability</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="app.html">app module</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="modules.html">src</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2 current has-children current-page"><a class="current reference internal" href="#">src package</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html">src.decision_transformer package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.environments.html">src.environments package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="src.ppo.html">src.ppo package</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="tests.html">tests package</a></li>
 </ul>
 </li>
 </ul>
@@ -221,25 +220,311 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="src.decision_transformer.html">src.decision_transformer package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="src.decision_transformer.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.decision_transformer.html#src-decision-transformer-calibration-module">src.decision_transformer.calibration module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.decision_transformer.html#src-decision-transformer-model-module">src.decision_transformer.model module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.decision_transformer.html#src-decision-transformer-offline-dataset-module">src.decision_transformer.offline_dataset module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.decision_transformer.html#src-decision-transformer-offline-dataset-new-module">src.decision_transformer.offline_dataset_new module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.decision_transformer.html#src-decision-transformer-train-module">src.decision_transformer.train module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.decision_transformer.html#src-decision-transformer-trainer-module">src.decision_transformer.trainer module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.decision_transformer.html#src-decision-transformer-utils-module">src.decision_transformer.utils module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.decision_transformer.html#module-contents">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.decision_transformer.html#module-src.decision_transformer.calibration">src.decision_transformer.calibration module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.calibration.calibration_statistics"><code class="docutils literal notranslate"><span class="pre">calibration_statistics()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.calibration.plot_calibration_statistics"><code class="docutils literal notranslate"><span class="pre">plot_calibration_statistics()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.decision_transformer.html#module-src.decision_transformer.model">src.decision_transformer.model module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.check_input_sizes"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.check_input_sizes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.forward"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.get_action"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.get_action()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.get_action_embeddings"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.get_action_embeddings()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.get_logits"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.get_logits()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.get_reward_embeddings"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.get_reward_embeddings()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.get_state_embeddings"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.get_state_embeddings()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.get_time_embeddings"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.get_time_embeddings()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.get_token_embeddings"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.get_token_embeddings()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.to_tokens"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.to_tokens()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.training"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.training</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.model.PosEmbedTokens"><code class="docutils literal notranslate"><span class="pre">PosEmbedTokens</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.model.PosEmbedTokens.forward"><code class="docutils literal notranslate"><span class="pre">PosEmbedTokens.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.model.PosEmbedTokens.training"><code class="docutils literal notranslate"><span class="pre">PosEmbedTokens.training</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.model.StateEncoder"><code class="docutils literal notranslate"><span class="pre">StateEncoder</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.model.StateEncoder.forward"><code class="docutils literal notranslate"><span class="pre">StateEncoder.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.model.StateEncoder.training"><code class="docutils literal notranslate"><span class="pre">StateEncoder.training</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.model.seed_everything"><code class="docutils literal notranslate"><span class="pre">seed_everything()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.decision_transformer.html#module-src.decision_transformer.offline_dataset">src.decision_transformer.offline_dataset module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader"><code class="docutils literal notranslate"><span class="pre">TrajectoryLoader</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.add_padding"><code class="docutils literal notranslate"><span class="pre">TrajectoryLoader.add_padding()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.discount_cumsum"><code class="docutils literal notranslate"><span class="pre">TrajectoryLoader.discount_cumsum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.get_batch"><code class="docutils literal notranslate"><span class="pre">TrajectoryLoader.get_batch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.get_indices_of_top_p_trajectories"><code class="docutils literal notranslate"><span class="pre">TrajectoryLoader.get_indices_of_top_p_trajectories()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.get_sampling_probabilities"><code class="docutils literal notranslate"><span class="pre">TrajectoryLoader.get_sampling_probabilities()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.get_state_mean_std"><code class="docutils literal notranslate"><span class="pre">TrajectoryLoader.get_state_mean_std()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.get_traj"><code class="docutils literal notranslate"><span class="pre">TrajectoryLoader.get_traj()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.load_trajectories"><code class="docutils literal notranslate"><span class="pre">TrajectoryLoader.load_trajectories()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.plot_base_action_frequencies"><code class="docutils literal notranslate"><span class="pre">TrajectoryLoader.plot_base_action_frequencies()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.plot_reward_over_time"><code class="docutils literal notranslate"><span class="pre">TrajectoryLoader.plot_reward_over_time()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.return_tensors"><code class="docutils literal notranslate"><span class="pre">TrajectoryLoader.return_tensors()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryReader"><code class="docutils literal notranslate"><span class="pre">TrajectoryReader</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryReader.read"><code class="docutils literal notranslate"><span class="pre">TrajectoryReader.read()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.decision_transformer.html#module-src.decision_transformer.offline_dataset_new">src.decision_transformer.offline_dataset_new module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryDataset"><code class="docutils literal notranslate"><span class="pre">TrajectoryDataset</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryDataset.add_padding"><code class="docutils literal notranslate"><span class="pre">TrajectoryDataset.add_padding()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryDataset.discount_cumsum"><code class="docutils literal notranslate"><span class="pre">TrajectoryDataset.discount_cumsum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryDataset.get_batch"><code class="docutils literal notranslate"><span class="pre">TrajectoryDataset.get_batch()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryDataset.get_indices_of_top_p_trajectories"><code class="docutils literal notranslate"><span class="pre">TrajectoryDataset.get_indices_of_top_p_trajectories()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryDataset.get_sampling_probabilities"><code class="docutils literal notranslate"><span class="pre">TrajectoryDataset.get_sampling_probabilities()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryDataset.get_state_mean_std"><code class="docutils literal notranslate"><span class="pre">TrajectoryDataset.get_state_mean_std()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryDataset.get_traj"><code class="docutils literal notranslate"><span class="pre">TrajectoryDataset.get_traj()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryDataset.load_trajectories"><code class="docutils literal notranslate"><span class="pre">TrajectoryDataset.load_trajectories()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryDataset.return_tensors"><code class="docutils literal notranslate"><span class="pre">TrajectoryDataset.return_tensors()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryVisualizer"><code class="docutils literal notranslate"><span class="pre">TrajectoryVisualizer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryVisualizer.plot_base_action_frequencies"><code class="docutils literal notranslate"><span class="pre">TrajectoryVisualizer.plot_base_action_frequencies()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryVisualizer.plot_reward_over_time"><code class="docutils literal notranslate"><span class="pre">TrajectoryVisualizer.plot_reward_over_time()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.decision_transformer.html#module-src.decision_transformer.train">src.decision_transformer.train module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.train.evaluate_dt_agent"><code class="docutils literal notranslate"><span class="pre">evaluate_dt_agent()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.train.test"><code class="docutils literal notranslate"><span class="pre">test()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.train.train"><code class="docutils literal notranslate"><span class="pre">train()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.decision_transformer.html#module-src.decision_transformer.trainer">src.decision_transformer.trainer module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.trainer.Trainer"><code class="docutils literal notranslate"><span class="pre">Trainer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.trainer.Trainer.train_step"><code class="docutils literal notranslate"><span class="pre">Trainer.train_step()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.decision_transformer.html#module-src.decision_transformer.utils">src.decision_transformer.utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs"><code class="docutils literal notranslate"><span class="pre">DTArgs</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.batch_size"><code class="docutils literal notranslate"><span class="pre">DTArgs.batch_size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.cuda"><code class="docutils literal notranslate"><span class="pre">DTArgs.cuda</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.d_mlp"><code class="docutils literal notranslate"><span class="pre">DTArgs.d_mlp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.d_model"><code class="docutils literal notranslate"><span class="pre">DTArgs.d_model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.eval_episodes"><code class="docutils literal notranslate"><span class="pre">DTArgs.eval_episodes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.eval_frequency"><code class="docutils literal notranslate"><span class="pre">DTArgs.eval_frequency</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.eval_max_time_steps"><code class="docutils literal notranslate"><span class="pre">DTArgs.eval_max_time_steps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.exp_name"><code class="docutils literal notranslate"><span class="pre">DTArgs.exp_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.initial_rtg"><code class="docutils literal notranslate"><span class="pre">DTArgs.initial_rtg</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.layer_norm"><code class="docutils literal notranslate"><span class="pre">DTArgs.layer_norm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.learning_rate"><code class="docutils literal notranslate"><span class="pre">DTArgs.learning_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.linear_time_embedding"><code class="docutils literal notranslate"><span class="pre">DTArgs.linear_time_embedding</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.n_ctx"><code class="docutils literal notranslate"><span class="pre">DTArgs.n_ctx</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.n_heads"><code class="docutils literal notranslate"><span class="pre">DTArgs.n_heads</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.n_layers"><code class="docutils literal notranslate"><span class="pre">DTArgs.n_layers</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.pct_traj"><code class="docutils literal notranslate"><span class="pre">DTArgs.pct_traj</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.prob_go_from_end"><code class="docutils literal notranslate"><span class="pre">DTArgs.prob_go_from_end</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.seed"><code class="docutils literal notranslate"><span class="pre">DTArgs.seed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.test_batches"><code class="docutils literal notranslate"><span class="pre">DTArgs.test_batches</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.test_epochs"><code class="docutils literal notranslate"><span class="pre">DTArgs.test_epochs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.test_frequency"><code class="docutils literal notranslate"><span class="pre">DTArgs.test_frequency</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.track"><code class="docutils literal notranslate"><span class="pre">DTArgs.track</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.train_epochs"><code class="docutils literal notranslate"><span class="pre">DTArgs.train_epochs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.trajectory_path"><code class="docutils literal notranslate"><span class="pre">DTArgs.trajectory_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.wandb_entity"><code class="docutils literal notranslate"><span class="pre">DTArgs.wandb_entity</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.wandb_project_name"><code class="docutils literal notranslate"><span class="pre">DTArgs.wandb_project_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.weight_decay"><code class="docutils literal notranslate"><span class="pre">DTArgs.weight_decay</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.load_decision_transformer"><code class="docutils literal notranslate"><span class="pre">load_decision_transformer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html#src.decision_transformer.utils.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.decision_transformer.html#module-src.decision_transformer">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="src.environments.html">src.environments package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="src.environments.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.environments.html#module-src.environments.environments">src.environments.environments module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.environments.html#src.environments.environments.make_env"><code class="docutils literal notranslate"><span class="pre">make_env()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.environments.html#module-src.environments.multienvironments">src.environments.multienvironments module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.environments.html#src.environments.multienvironments.MultiEnvSampler"><code class="docutils literal notranslate"><span class="pre">MultiEnvSampler</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.environments.html#src.environments.multienvironments.MultiEnvSampler.action_space"><code class="docutils literal notranslate"><span class="pre">MultiEnvSampler.action_space</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.environments.html#src.environments.multienvironments.MultiEnvSampler.close"><code class="docutils literal notranslate"><span class="pre">MultiEnvSampler.close()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.environments.html#src.environments.multienvironments.MultiEnvSampler.get_current_env_name"><code class="docutils literal notranslate"><span class="pre">MultiEnvSampler.get_current_env_name()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.environments.html#src.environments.multienvironments.MultiEnvSampler.metadata"><code class="docutils literal notranslate"><span class="pre">MultiEnvSampler.metadata</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.environments.html#src.environments.multienvironments.MultiEnvSampler.observation_space"><code class="docutils literal notranslate"><span class="pre">MultiEnvSampler.observation_space</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.environments.html#src.environments.multienvironments.MultiEnvSampler.render"><code class="docutils literal notranslate"><span class="pre">MultiEnvSampler.render()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.environments.html#src.environments.multienvironments.MultiEnvSampler.reset"><code class="docutils literal notranslate"><span class="pre">MultiEnvSampler.reset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.environments.html#src.environments.multienvironments.MultiEnvSampler.step"><code class="docutils literal notranslate"><span class="pre">MultiEnvSampler.step()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.environments.html#module-src.environments.registration">src.environments.registration module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.environments.html#src.environments.registration.get_crossing_multi_env"><code class="docutils literal notranslate"><span class="pre">get_crossing_multi_env()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.environments.html#src.environments.registration.get_dynamic_obstacles_multi_env"><code class="docutils literal notranslate"><span class="pre">get_dynamic_obstacles_multi_env()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.environments.html#src.environments.registration.get_multi_room_env"><code class="docutils literal notranslate"><span class="pre">get_multi_room_env()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.environments.html#src.environments.registration.register_envs"><code class="docutils literal notranslate"><span class="pre">register_envs()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.environments.html#module-src.environments.wrappers">src.environments.wrappers module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.environments.html#src.environments.wrappers.RenderResizeWrapper"><code class="docutils literal notranslate"><span class="pre">RenderResizeWrapper</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.environments.html#src.environments.wrappers.RenderResizeWrapper.render"><code class="docutils literal notranslate"><span class="pre">RenderResizeWrapper.render()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.environments.html#src.environments.wrappers.ViewSizeWrapper"><code class="docutils literal notranslate"><span class="pre">ViewSizeWrapper</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.environments.html#src.environments.wrappers.ViewSizeWrapper.observation"><code class="docutils literal notranslate"><span class="pre">ViewSizeWrapper.observation()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.environments.html#module-src.environments">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="src.ppo.html">src.ppo package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="src.ppo.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.ppo.html#src-ppo-agent-module">src.ppo.agent module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.ppo.html#src-ppo-compute-adv-vectorized-module">src.ppo.compute_adv_vectorized module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.ppo.html#src-ppo-memory-module">src.ppo.memory module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.ppo.html#src-ppo-my-probe-envs-module">src.ppo.my_probe_envs module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.ppo.html#src-ppo-train-module">src.ppo.train module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.ppo.html#src-ppo-utils-module">src.ppo.utils module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="src.ppo.html#module-contents">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.ppo.html#module-src.ppo.agent">src.ppo.agent module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.agent.Agent"><code class="docutils literal notranslate"><span class="pre">Agent</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.agent.Agent.actor"><code class="docutils literal notranslate"><span class="pre">Agent.actor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.agent.Agent.critic"><code class="docutils literal notranslate"><span class="pre">Agent.critic</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.agent.Agent.layer_init"><code class="docutils literal notranslate"><span class="pre">Agent.layer_init()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.agent.Agent.learn"><code class="docutils literal notranslate"><span class="pre">Agent.learn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.agent.Agent.make_optimizer"><code class="docutils literal notranslate"><span class="pre">Agent.make_optimizer()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.agent.Agent.rollout"><code class="docutils literal notranslate"><span class="pre">Agent.rollout()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.agent.PPOScheduler"><code class="docutils literal notranslate"><span class="pre">PPOScheduler</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.agent.PPOScheduler.step"><code class="docutils literal notranslate"><span class="pre">PPOScheduler.step()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.agent.calc_clipped_surrogate_objective"><code class="docutils literal notranslate"><span class="pre">calc_clipped_surrogate_objective()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.agent.calc_entropy_bonus"><code class="docutils literal notranslate"><span class="pre">calc_entropy_bonus()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.agent.calc_value_function_loss"><code class="docutils literal notranslate"><span class="pre">calc_value_function_loss()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.ppo.html#module-src.ppo.compute_adv_vectorized">src.ppo.compute_adv_vectorized module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.compute_adv_vectorized.compute_advantages_vectorized"><code class="docutils literal notranslate"><span class="pre">compute_advantages_vectorized()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.compute_adv_vectorized.shift_rows"><code class="docutils literal notranslate"><span class="pre">shift_rows()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.ppo.html#module-src.ppo.memory">src.ppo.memory module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Memory"><code class="docutils literal notranslate"><span class="pre">Memory</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Memory.add"><code class="docutils literal notranslate"><span class="pre">Memory.add()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Memory.add_vars_to_log"><code class="docutils literal notranslate"><span class="pre">Memory.add_vars_to_log()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Memory.compute_advantages"><code class="docutils literal notranslate"><span class="pre">Memory.compute_advantages()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Memory.get_minibatch_indexes"><code class="docutils literal notranslate"><span class="pre">Memory.get_minibatch_indexes()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Memory.get_minibatches"><code class="docutils literal notranslate"><span class="pre">Memory.get_minibatches()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Memory.get_printable_output"><code class="docutils literal notranslate"><span class="pre">Memory.get_printable_output()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Memory.log"><code class="docutils literal notranslate"><span class="pre">Memory.log()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Memory.reset"><code class="docutils literal notranslate"><span class="pre">Memory.reset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Memory.sample_experiences"><code class="docutils literal notranslate"><span class="pre">Memory.sample_experiences()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Minibatch"><code class="docutils literal notranslate"><span class="pre">Minibatch</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Minibatch.actions"><code class="docutils literal notranslate"><span class="pre">Minibatch.actions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Minibatch.advantages"><code class="docutils literal notranslate"><span class="pre">Minibatch.advantages</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Minibatch.logprobs"><code class="docutils literal notranslate"><span class="pre">Minibatch.logprobs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Minibatch.obs"><code class="docutils literal notranslate"><span class="pre">Minibatch.obs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Minibatch.returns"><code class="docutils literal notranslate"><span class="pre">Minibatch.returns</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Minibatch.values"><code class="docutils literal notranslate"><span class="pre">Minibatch.values</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.ppo.html#module-src.ppo.my_probe_envs">src.ppo.my_probe_envs module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe1"><code class="docutils literal notranslate"><span class="pre">Probe1</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe1.action_space"><code class="docutils literal notranslate"><span class="pre">Probe1.action_space</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe1.observation_space"><code class="docutils literal notranslate"><span class="pre">Probe1.observation_space</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe1.reset"><code class="docutils literal notranslate"><span class="pre">Probe1.reset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe1.step"><code class="docutils literal notranslate"><span class="pre">Probe1.step()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe2"><code class="docutils literal notranslate"><span class="pre">Probe2</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe2.action_space"><code class="docutils literal notranslate"><span class="pre">Probe2.action_space</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe2.observation_space"><code class="docutils literal notranslate"><span class="pre">Probe2.observation_space</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe2.reset"><code class="docutils literal notranslate"><span class="pre">Probe2.reset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe2.step"><code class="docutils literal notranslate"><span class="pre">Probe2.step()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe3"><code class="docutils literal notranslate"><span class="pre">Probe3</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe3.action_space"><code class="docutils literal notranslate"><span class="pre">Probe3.action_space</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe3.observation_space"><code class="docutils literal notranslate"><span class="pre">Probe3.observation_space</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe3.reset"><code class="docutils literal notranslate"><span class="pre">Probe3.reset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe3.step"><code class="docutils literal notranslate"><span class="pre">Probe3.step()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe4"><code class="docutils literal notranslate"><span class="pre">Probe4</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe4.action_space"><code class="docutils literal notranslate"><span class="pre">Probe4.action_space</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe4.observation_space"><code class="docutils literal notranslate"><span class="pre">Probe4.observation_space</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe4.reset"><code class="docutils literal notranslate"><span class="pre">Probe4.reset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe4.step"><code class="docutils literal notranslate"><span class="pre">Probe4.step()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe5"><code class="docutils literal notranslate"><span class="pre">Probe5</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe5.action_space"><code class="docutils literal notranslate"><span class="pre">Probe5.action_space</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe5.observation_space"><code class="docutils literal notranslate"><span class="pre">Probe5.observation_space</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe5.reset"><code class="docutils literal notranslate"><span class="pre">Probe5.reset()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.my_probe_envs.Probe5.step"><code class="docutils literal notranslate"><span class="pre">Probe5.step()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.ppo.html#module-src.ppo.train">src.ppo.train module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.train.check_and_upload_new_video"><code class="docutils literal notranslate"><span class="pre">check_and_upload_new_video()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.train.get_printable_output_for_probe_envs"><code class="docutils literal notranslate"><span class="pre">get_printable_output_for_probe_envs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.train.train_ppo"><code class="docutils literal notranslate"><span class="pre">train_ppo()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.ppo.html#module-src.ppo.utils">src.ppo.utils module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs"><code class="docutils literal notranslate"><span class="pre">PPOArgs</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.capture_video"><code class="docutils literal notranslate"><span class="pre">PPOArgs.capture_video</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.clip_coef"><code class="docutils literal notranslate"><span class="pre">PPOArgs.clip_coef</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.cuda"><code class="docutils literal notranslate"><span class="pre">PPOArgs.cuda</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.decay_lr"><code class="docutils literal notranslate"><span class="pre">PPOArgs.decay_lr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.ent_coef"><code class="docutils literal notranslate"><span class="pre">PPOArgs.ent_coef</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.env_id"><code class="docutils literal notranslate"><span class="pre">PPOArgs.env_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.exp_name"><code class="docutils literal notranslate"><span class="pre">PPOArgs.exp_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.fully_observed"><code class="docutils literal notranslate"><span class="pre">PPOArgs.fully_observed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.gae_lambda"><code class="docutils literal notranslate"><span class="pre">PPOArgs.gae_lambda</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.gamma"><code class="docutils literal notranslate"><span class="pre">PPOArgs.gamma</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.hidden_dim"><code class="docutils literal notranslate"><span class="pre">PPOArgs.hidden_dim</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.learning_rate"><code class="docutils literal notranslate"><span class="pre">PPOArgs.learning_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.max_grad_norm"><code class="docutils literal notranslate"><span class="pre">PPOArgs.max_grad_norm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.max_steps"><code class="docutils literal notranslate"><span class="pre">PPOArgs.max_steps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.num_envs"><code class="docutils literal notranslate"><span class="pre">PPOArgs.num_envs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.num_minibatches"><code class="docutils literal notranslate"><span class="pre">PPOArgs.num_minibatches</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.num_steps"><code class="docutils literal notranslate"><span class="pre">PPOArgs.num_steps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.one_hot_obs"><code class="docutils literal notranslate"><span class="pre">PPOArgs.one_hot_obs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.seed"><code class="docutils literal notranslate"><span class="pre">PPOArgs.seed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.total_timesteps"><code class="docutils literal notranslate"><span class="pre">PPOArgs.total_timesteps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.track"><code class="docutils literal notranslate"><span class="pre">PPOArgs.track</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.trajectory_path"><code class="docutils literal notranslate"><span class="pre">PPOArgs.trajectory_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.update_epochs"><code class="docutils literal notranslate"><span class="pre">PPOArgs.update_epochs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.vf_coef"><code class="docutils literal notranslate"><span class="pre">PPOArgs.vf_coef</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.view_size"><code class="docutils literal notranslate"><span class="pre">PPOArgs.view_size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.wandb_entity"><code class="docutils literal notranslate"><span class="pre">PPOArgs.wandb_entity</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.utils.PPOArgs.wandb_project_name"><code class="docutils literal notranslate"><span class="pre">PPOArgs.wandb_project_name</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.utils.arg_help"><code class="docutils literal notranslate"><span class="pre">arg_help()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.utils.cummean"><code class="docutils literal notranslate"><span class="pre">cummean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.utils.ewma"><code class="docutils literal notranslate"><span class="pre">ewma()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.utils.get_obs_preprocessor"><code class="docutils literal notranslate"><span class="pre">get_obs_preprocessor()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.utils.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.utils.plot_cartpole_obs_and_dones"><code class="docutils literal notranslate"><span class="pre">plot_cartpole_obs_and_dones()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.utils.preprocess_images"><code class="docutils literal notranslate"><span class="pre">preprocess_images()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.utils.set_global_seeds"><code class="docutils literal notranslate"><span class="pre">set_global_seeds()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.utils.set_seed"><code class="docutils literal notranslate"><span class="pre">set_seed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.utils.sum_rewards"><code class="docutils literal notranslate"><span class="pre">sum_rewards()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.utils.window_avg"><code class="docutils literal notranslate"><span class="pre">window_avg()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="src.ppo.html#module-src.ppo">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -248,8 +533,72 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">#</a></h2>
 </section>
-<section id="src-environments-module">
-<h2>src.environments module<a class="headerlink" href="#src-environments-module" title="Permalink to this heading">#</a></h2>
+<section id="module-src.dummy_agent">
+<span id="src-dummy-agent-module"></span><h2>src.dummy_agent module<a class="headerlink" href="#module-src.dummy_agent" title="Permalink to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.dummy_agent.RandomAgent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.dummy_agent.</span></span><span class="sig-name descname"><span class="pre">RandomAgent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">device(type='cpu')</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.dummy_agent.RandomAgent" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<p>A random agent that selects a valid action at each step in a given minigrid environment.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.dummy_agent.RandomAgent.collect_trajectories">
+<span class="sig-name descname"><span class="pre">collect_trajectories</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_trajectories</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectory_writer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#src.utils.TrajectoryWriter" title="src.utils.TrajectoryWriter"><span class="pre">TrajectoryWriter</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#src.dummy_agent.RandomAgent.collect_trajectories" title="Permalink to this definition">#</a></dt>
+<dd><p>Collects trajectories from the environment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>env</strong> (<em>gym-minigrid</em>) – The minigrid environment to act in.</p></li>
+<li><p><strong>num_trajectories</strong> (<em>int</em>) – The number of trajectories to collect.</p></li>
+<li><p><strong>trajectory_writer</strong> (<a class="reference internal" href="#src.utils.TrajectoryWriter" title="src.utils.TrajectoryWriter"><em>TrajectoryWriter</em></a><em>, </em><em>optional</em>) – The trajectory writer to accumulate the trajectories. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.dummy_agent.RandomAgent.get_action">
+<span class="sig-name descname"><span class="pre">get_action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.dummy_agent.RandomAgent.get_action" title="Permalink to this definition">#</a></dt>
+<dd><p>Randomly selects a valid action in the current minigrid environment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>obs</strong> (<em>numpy array</em>) – The observation of the current state.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The integer representing the selected action.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>action (int)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.dummy_agent.RandomAgent.rollout">
+<span class="sig-name descname"><span class="pre">rollout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectory_writer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#src.utils.TrajectoryWriter" title="src.utils.TrajectoryWriter"><span class="pre">TrajectoryWriter</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#src.dummy_agent.RandomAgent.rollout" title="Permalink to this definition">#</a></dt>
+<dd><p>Perform the rollout phase and accumulate trajectories in the trajectory writer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>env</strong> (<em>gym-minigrid</em>) – The minigrid environment to act in.</p></li>
+<li><p><strong>trajectory_writer</strong> (<a class="reference internal" href="#src.utils.TrajectoryWriter" title="src.utils.TrajectoryWriter"><em>TrajectoryWriter</em></a><em>, </em><em>optional</em>) – The trajectory writer to accumulate the trajectories. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.dummy_agent.RandomAgent.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#src.dummy_agent.RandomAgent.training" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.dummy_agent.RandomAgentArgs">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.dummy_agent.</span></span><span class="sig-name descname"><span class="pre">RandomAgentArgs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">view_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_envs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">one_hot_obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prob_go_from_end</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'MiniGrid-Dynamic-Obstacles-8x8-v0'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.dummy_agent.RandomAgentArgs" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
 </section>
 <section id="src-run-calibration-module">
 <h2>src.run_calibration module<a class="headerlink" href="#src-run-calibration-module" title="Permalink to this heading">#</a></h2>
@@ -260,14 +609,72 @@
 <section id="src-run-ppo-module">
 <h2>src.run_ppo module<a class="headerlink" href="#src-run-ppo-module" title="Permalink to this heading">#</a></h2>
 </section>
-<section id="src-utils-module">
-<h2>src.utils module<a class="headerlink" href="#src-utils-module" title="Permalink to this heading">#</a></h2>
+<section id="module-src.utils">
+<span id="src-utils-module"></span><h2>src.utils module<a class="headerlink" href="#module-src.utils" title="Permalink to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.utils.TrajectoryWriter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.utils.</span></span><span class="sig-name descname"><span class="pre">TrajectoryWriter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dataclass</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.utils.TrajectoryWriter" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>The trajectory writer is responsible for writing trajectories to a file.
+During each rollout phase, it will collect:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>the observations</p></li>
+<li><p>the actions</p></li>
+<li><p>the rewards</p></li>
+<li><p>the dones</p></li>
+<li><p>the infos</p></li>
+</ul>
+</div></blockquote>
+<p>And store them in a set of lists, indexed by batch b and time t.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.utils.TrajectoryWriter.accumulate_trajectory">
+<span class="sig-name descname"><span class="pre">accumulate_trajectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">next_obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reward</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">done</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">truncated</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.utils.TrajectoryWriter.accumulate_trajectory" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.utils.TrajectoryWriter.tag_terminated_trajectories">
+<span class="sig-name descname"><span class="pre">tag_terminated_trajectories</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.utils.TrajectoryWriter.tag_terminated_trajectories" title="Permalink to this definition">#</a></dt>
+<dd><p>Tag the last trajectory in each batch as done.
+This is needed when an episode in a minibatch is ended because the
+timesteps limit has been reached but the episode may not have been truncated
+or ended in the environment.</p>
+<p>I don’t love this solution, but it will do for now.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.utils.TrajectoryWriter.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">upload_to_wandb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.utils.TrajectoryWriter.write" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.utils.pad_tensor">
+<span class="sig-prename descclassname"><span class="pre">src.utils.</span></span><span class="sig-name descname"><span class="pre">pad_tensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_first_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad_token</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.utils.pad_tensor" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
 </section>
-<section id="src-visualization-module">
-<h2>src.visualization module<a class="headerlink" href="#src-visualization-module" title="Permalink to this heading">#</a></h2>
+<section id="module-src.visualization">
+<span id="src-visualization-module"></span><h2>src.visualization module<a class="headerlink" href="#module-src.visualization" title="Permalink to this heading">#</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="src.visualization.find_agent">
+<span class="sig-prename descclassname"><span class="pre">src.visualization.</span></span><span class="sig-name descname"><span class="pre">find_agent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observation</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.visualization.find_agent" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.visualization.render_minigrid_observation">
+<span class="sig-prename descclassname"><span class="pre">src.visualization.</span></span><span class="sig-name descname"><span class="pre">render_minigrid_observation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observation</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.visualization.render_minigrid_observation" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.visualization.render_minigrid_observations">
+<span class="sig-prename descclassname"><span class="pre">src.visualization.</span></span><span class="sig-name descname"><span class="pre">render_minigrid_observations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observations</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.visualization.render_minigrid_observations" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
 </section>
-<section id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this heading">#</a></h2>
+<section id="module-src">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-src" title="Permalink to this heading">#</a></h2>
 </section>
 </section>
 
@@ -285,14 +692,14 @@
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="app.html">
+          <a class="prev-page" href="modules.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">app module</div>
+                <div class="title">src</div>
                 
               </div>
             </a>
@@ -329,13 +736,37 @@
 <li><a class="reference internal" href="#">src package</a><ul>
 <li><a class="reference internal" href="#subpackages">Subpackages</a></li>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#src-environments-module">src.environments module</a></li>
+<li><a class="reference internal" href="#module-src.dummy_agent">src.dummy_agent module</a><ul>
+<li><a class="reference internal" href="#src.dummy_agent.RandomAgent"><code class="docutils literal notranslate"><span class="pre">RandomAgent</span></code></a><ul>
+<li><a class="reference internal" href="#src.dummy_agent.RandomAgent.collect_trajectories"><code class="docutils literal notranslate"><span class="pre">RandomAgent.collect_trajectories()</span></code></a></li>
+<li><a class="reference internal" href="#src.dummy_agent.RandomAgent.get_action"><code class="docutils literal notranslate"><span class="pre">RandomAgent.get_action()</span></code></a></li>
+<li><a class="reference internal" href="#src.dummy_agent.RandomAgent.rollout"><code class="docutils literal notranslate"><span class="pre">RandomAgent.rollout()</span></code></a></li>
+<li><a class="reference internal" href="#src.dummy_agent.RandomAgent.training"><code class="docutils literal notranslate"><span class="pre">RandomAgent.training</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#src.dummy_agent.RandomAgentArgs"><code class="docutils literal notranslate"><span class="pre">RandomAgentArgs</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#src-run-calibration-module">src.run_calibration module</a></li>
 <li><a class="reference internal" href="#src-run-decision-transformer-module">src.run_decision_transformer module</a></li>
 <li><a class="reference internal" href="#src-run-ppo-module">src.run_ppo module</a></li>
-<li><a class="reference internal" href="#src-utils-module">src.utils module</a></li>
-<li><a class="reference internal" href="#src-visualization-module">src.visualization module</a></li>
-<li><a class="reference internal" href="#module-contents">Module contents</a></li>
+<li><a class="reference internal" href="#module-src.utils">src.utils module</a><ul>
+<li><a class="reference internal" href="#src.utils.TrajectoryWriter"><code class="docutils literal notranslate"><span class="pre">TrajectoryWriter</span></code></a><ul>
+<li><a class="reference internal" href="#src.utils.TrajectoryWriter.accumulate_trajectory"><code class="docutils literal notranslate"><span class="pre">TrajectoryWriter.accumulate_trajectory()</span></code></a></li>
+<li><a class="reference internal" href="#src.utils.TrajectoryWriter.tag_terminated_trajectories"><code class="docutils literal notranslate"><span class="pre">TrajectoryWriter.tag_terminated_trajectories()</span></code></a></li>
+<li><a class="reference internal" href="#src.utils.TrajectoryWriter.write"><code class="docutils literal notranslate"><span class="pre">TrajectoryWriter.write()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#src.utils.pad_tensor"><code class="docutils literal notranslate"><span class="pre">pad_tensor()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-src.visualization">src.visualization module</a><ul>
+<li><a class="reference internal" href="#src.visualization.find_agent"><code class="docutils literal notranslate"><span class="pre">find_agent()</span></code></a></li>
+<li><a class="reference internal" href="#src.visualization.render_minigrid_observation"><code class="docutils literal notranslate"><span class="pre">render_minigrid_observation()</span></code></a></li>
+<li><a class="reference internal" href="#src.visualization.render_minigrid_observations"><code class="docutils literal notranslate"><span class="pre">render_minigrid_observations()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-src">Module contents</a></li>
 </ul>
 </li>
 </ul>

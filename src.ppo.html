@@ -4,7 +4,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
     <link rel="icon" href="_static/assets/Logo_black.ico" type="image/x-icon">
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="tests package" href="tests.html" /><link rel="prev" title="src.decision_transformer package" href="src.decision_transformer.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="References:" href="content/references.html" /><link rel="prev" title="src.environments package" href="src.environments.html" />
 
     <!-- Generated with Sphinx 5.2.3 and Furo 2022.12.07 -->
         <title>src.ppo package - Decision Transformer Interpretability Documentation</title>
@@ -165,14 +165,13 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Code</span></p>
 <ul class="current">
-<li class="toctree-l1 current has-children"><a class="reference internal" href="modules.html">DecisionTransformerInterpretability</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="app.html">app module</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="modules.html">src</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l2 current has-children"><a class="reference internal" href="src.html">src package</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html">src.decision_transformer package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="src.environments.html">src.environments package</a></li>
 <li class="toctree-l3 current current-page"><a class="current reference internal" href="#">src.ppo package</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="tests.html">tests package</a></li>
 </ul>
 </li>
 </ul>
@@ -218,26 +217,1210 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">#</a></h2>
 </section>
-<section id="src-ppo-agent-module">
-<h2>src.ppo.agent module<a class="headerlink" href="#src-ppo-agent-module" title="Permalink to this heading">#</a></h2>
+<section id="module-src.ppo.agent">
+<span id="src-ppo-agent-module"></span><h2>src.ppo.agent module<a class="headerlink" href="#module-src.ppo.agent" title="Permalink to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.ppo.agent.Agent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.agent.</span></span><span class="sig-name descname"><span class="pre">Agent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">envs:</span> <span class="pre">~gymnasium.vector.sync_vector_env.SyncVectorEnv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device=&lt;class</span> <span class="pre">'torch.device'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_dim:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">64</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.agent.Agent" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.agent.Agent.actor">
+<span class="sig-name descname"><span class="pre">actor</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Sequential</span></em><a class="headerlink" href="#src.ppo.agent.Agent.actor" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.agent.Agent.critic">
+<span class="sig-name descname"><span class="pre">critic</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Sequential</span></em><a class="headerlink" href="#src.ppo.agent.Agent.critic" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.agent.Agent.layer_init">
+<span class="sig-name descname"><span class="pre">layer_init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Linear</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.4142135623730951</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias_const</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Linear</span></span></span><a class="headerlink" href="#src.ppo.agent.Agent.layer_init" title="Permalink to this definition">#</a></dt>
+<dd><p>Initializes the weights of a linear layer with orthogonal initialization and the biases with a constant value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>layer</strong> (<em>nn.Linear</em>) – The linear layer to be initialized.</p></li>
+<li><p><strong>std</strong> (<em>float</em><em>, </em><em>optional</em>) – The standard deviation of the distribution used to initialize the weights. Defaults to np.sqrt(2).</p></li>
+<li><p><strong>bias_const</strong> (<em>float</em><em>, </em><em>optional</em>) – The constant value to initialize the biases with. Defaults to 0.0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The initialized linear layer.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>nn.Linear</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.agent.Agent.learn">
+<span class="sig-name descname"><span class="pre">learn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">memory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.ppo.memory.Memory" title="src.ppo.memory.Memory"><span class="pre">Memory</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.ppo.utils.PPOArgs" title="src.ppo.utils.PPOArgs"><span class="pre">PPOArgs</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.ppo.agent.PPOScheduler" title="src.ppo.agent.PPOScheduler"><span class="pre">PPOScheduler</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#src.ppo.agent.Agent.learn" title="Permalink to this definition">#</a></dt>
+<dd><p>Performs the learning phase of the PPO algorithm, updating the agent’s parameters using the collected experience.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory</strong> (<a class="reference internal" href="#src.ppo.memory.Memory" title="src.ppo.memory.Memory"><em>Memory</em></a>) – The replay buffer containing the collected experiences.</p></li>
+<li><p><strong>args</strong> (<a class="reference internal" href="#src.ppo.utils.PPOArgs" title="src.ppo.utils.PPOArgs"><em>PPOArgs</em></a>) – The arguments to configure the algorithm.</p></li>
+<li><p><strong>optimizer</strong> (<em>optim.Optimizer</em>) – The optimizer to update the agent’s parameters.</p></li>
+<li><p><strong>scheduler</strong> (<a class="reference internal" href="#src.ppo.agent.PPOScheduler" title="src.ppo.agent.PPOScheduler"><em>PPOScheduler</em></a>) – The scheduler attached to the optimizer.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.agent.Agent.make_optimizer">
+<span class="sig-name descname"><span class="pre">make_optimizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_updates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Optimizer</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#src.ppo.agent.PPOScheduler" title="src.ppo.agent.PPOScheduler"><span class="pre">PPOScheduler</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#src.ppo.agent.Agent.make_optimizer" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns an Adam optimizer with a learning rate schedule for updating the agent’s parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>num_updates</strong> (<em>int</em>) – The total number of updates to be performed.</p></li>
+<li><p><strong>initial_lr</strong> (<em>float</em>) – The initial learning rate.</p></li>
+<li><p><strong>end_lr</strong> (<em>float</em>) – The final learning rate.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple containing the optimizer and its attached scheduler.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[optim.Optimizer, <a class="reference internal" href="#src.ppo.agent.PPOScheduler" title="src.ppo.agent.PPOScheduler">PPOScheduler</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.agent.Agent.rollout">
+<span class="sig-name descname"><span class="pre">rollout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">memory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.ppo.memory.Memory" title="src.ppo.memory.Memory"><span class="pre">Memory</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.ppo.utils.PPOArgs" title="src.ppo.utils.PPOArgs"><span class="pre">PPOArgs</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">envs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SyncVectorEnv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectory_writer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#src.ppo.agent.Agent.rollout" title="Permalink to this definition">#</a></dt>
+<dd><p>Performs the rollout phase of the PPO algorithm, collecting experience by interacting with the environment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory</strong> (<a class="reference internal" href="#src.ppo.memory.Memory" title="src.ppo.memory.Memory"><em>Memory</em></a>) – The replay buffer to store the experiences.</p></li>
+<li><p><strong>args</strong> (<a class="reference internal" href="#src.ppo.utils.PPOArgs" title="src.ppo.utils.PPOArgs"><em>PPOArgs</em></a>) – The arguments to configure the algorithm.</p></li>
+<li><p><strong>envs</strong> (<em>gym.vector.SyncVectorEnv</em>) – The vectorized environment to interact with.</p></li>
+<li><p><strong>trajectory_writer</strong> (<a class="reference internal" href="src.html#src.utils.TrajectoryWriter" title="src.utils.TrajectoryWriter"><em>TrajectoryWriter</em></a><em>, </em><em>optional</em>) – The writer to log the collected trajectories. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.ppo.agent.PPOScheduler">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.agent.</span></span><span class="sig-name descname"><span class="pre">PPOScheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_updates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.agent.PPOScheduler" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.agent.PPOScheduler.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.agent.PPOScheduler.step" title="Permalink to this definition">#</a></dt>
+<dd><p>Implement linear learning rate decay so that after num_updates calls to step, the learning rate is end_lr.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.agent.calc_clipped_surrogate_objective">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.agent.</span></span><span class="sig-name descname"><span class="pre">calc_clipped_surrogate_objective</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">probs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Categorical</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mb_action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mb_advantages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mb_logprobs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip_coef</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#src.ppo.agent.calc_clipped_surrogate_objective" title="Permalink to this definition">#</a></dt>
+<dd><p>Return the clipped surrogate objective, suitable for maximisation with gradient ascent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>probs</strong> (<em>Categorical</em>) – A distribution containing the actor’s unnormalized logits of shape (minibatch, num_actions).</p></li>
+<li><p><strong>mb_action</strong> (<em>Tensor</em>) – A tensor of shape (minibatch,) containing the actions taken by the agent in the minibatch.</p></li>
+<li><p><strong>mb_advantages</strong> (<em>Tensor</em>) – A tensor of shape (minibatch,) containing the advantages estimated for each state in the minibatch.</p></li>
+<li><p><strong>mb_logprobs</strong> (<em>Tensor</em>) – A tensor of shape (minibatch,) containing the log probabilities of the actions taken by the agent in the minibatch.</p></li>
+<li><p><strong>clip_coef</strong> (<em>float</em>) – Amount of clipping, denoted by epsilon in Eq 7.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The clipped surrogate objective computed over the minibatch, with shape ().</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.agent.calc_entropy_bonus">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.agent.</span></span><span class="sig-name descname"><span class="pre">calc_entropy_bonus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">probs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Categorical</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ent_coef</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.agent.calc_entropy_bonus" title="Permalink to this definition">#</a></dt>
+<dd><p>Return the entropy bonus term, suitable for gradient ascent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>probs</strong> (<em>Categorical</em>) – A distribution containing the actor’s unnormalized logits of shape (minibatch, num_actions).</p></li>
+<li><p><strong>ent_coef</strong> (<em>float</em>) – The coefficient for the entropy loss, which weights its contribution to the overall loss. Denoted by c_2 in the paper.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The entropy bonus computed over the minibatch, with shape ().</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.agent.calc_value_function_loss">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.agent.</span></span><span class="sig-name descname"><span class="pre">calc_value_function_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mb_returns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vf_coef</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#src.ppo.agent.calc_value_function_loss" title="Permalink to this definition">#</a></dt>
+<dd><p>Compute the value function portion of the loss function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>values</strong> (<em>Tensor</em>) – A tensor of shape (minibatch,) containing the value function estimates for the states in the minibatch.</p></li>
+<li><p><strong>mb_returns</strong> (<em>Tensor</em>) – A tensor of shape (minibatch,) containing the discounted returns estimated for each state in the minibatch.</p></li>
+<li><p><strong>vf_coef</strong> (<em>float</em>) – The coefficient for the value loss, which weights its contribution to the overall loss. Denoted by c_1 in the paper.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The value function loss computed over the minibatch, with shape ().</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
-<section id="src-ppo-compute-adv-vectorized-module">
-<h2>src.ppo.compute_adv_vectorized module<a class="headerlink" href="#src-ppo-compute-adv-vectorized-module" title="Permalink to this heading">#</a></h2>
+<section id="module-src.ppo.compute_adv_vectorized">
+<span id="src-ppo-compute-adv-vectorized-module"></span><h2>src.ppo.compute_adv_vectorized module<a class="headerlink" href="#module-src.ppo.compute_adv_vectorized" title="Permalink to this heading">#</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.compute_adv_vectorized.compute_advantages_vectorized">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.compute_adv_vectorized.</span></span><span class="sig-name descname"><span class="pre">compute_advantages_vectorized</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">next_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">next_done</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rewards</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dones</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gae_lambda</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#src.ppo.compute_adv_vectorized.compute_advantages_vectorized" title="Permalink to this definition">#</a></dt>
+<dd><p>The compute_advantages_vectorized function computes the Generalized Advantage Estimation (GAE) advantages for a batch of environments in a vectorized manner.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>next_value</strong> (<em>torch.Tensor</em>) – The predicted value of the next state for each environment in the batch, of shape (num_envs,).</p></li>
+<li><p><strong>next_done</strong> (<em>torch.Tensor</em>) – Whether the next state is done or not for each environment in the batch, of shape (num_envs,).</p></li>
+<li><p><strong>rewards</strong> (<em>torch.Tensor</em>) – The rewards received for each timestep and environment, of shape (timesteps, num_envs).</p></li>
+<li><p><strong>values</strong> (<em>torch.Tensor</em>) – The predicted state value for each timestep and environment, of shape (timesteps, num_envs).</p></li>
+<li><p><strong>dones</strong> (<em>torch.Tensor</em>) – Whether the state is done or not for each timestep and environment, of shape (timesteps, num_envs).</p></li>
+<li><p><strong>device</strong> (<em>torch.device</em>) – The device on which to perform computations.</p></li>
+<li><p><strong>gamma</strong> (<em>float</em>) – The discount factor to use.</p></li>
+<li><p><strong>gae_lambda</strong> (<em>float</em>) – The GAE lambda value to use.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The computed GAE advantages for each timestep and environment, of shape (timesteps, num_envs).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>advantages (torch.Tensor)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.compute_adv_vectorized.shift_rows">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.compute_adv_vectorized.</span></span><span class="sig-name descname"><span class="pre">shift_rows</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arr</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.compute_adv_vectorized.shift_rows" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns a 2D array where the i-th row is the input array from index 0 to i.
+If the input array has more than 1 dimension, it treats the later dimensions as batch dimensions.</p>
+<p>Args:
+arr (np.ndarray): 1D array to be transformed into a 2D array.</p>
+<p>Returns:
+np.ndarray: A 2D array where the i-th row is the input array from index 0 to i.</p>
+<p class="rubric">Example</p>
+<dl class="simple">
+<dt>Given a 1D array like:</dt><dd><p>[1, 2, 3]</p>
+</dd>
+<dt>this function will return:</dt><dd><p>[[1, 2, 3],
+[0, 1, 2],
+[0, 0, 1]]</p>
+</dd>
+</dl>
+<p>If the array has &gt;1D, it treats the later dimensions as batch dims</p>
+</dd></dl>
+
 </section>
-<section id="src-ppo-memory-module">
-<h2>src.ppo.memory module<a class="headerlink" href="#src-ppo-memory-module" title="Permalink to this heading">#</a></h2>
+<section id="module-src.ppo.memory">
+<span id="src-ppo-memory-module"></span><h2>src.ppo.memory module<a class="headerlink" href="#module-src.ppo.memory" title="Permalink to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.ppo.memory.Memory">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.memory.</span></span><span class="sig-name descname"><span class="pre">Memory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">envs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SyncVectorEnv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.ppo.utils.PPOArgs" title="src.ppo.utils.PPOArgs"><span class="pre">PPOArgs</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.memory.Memory" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.memory.Memory.add">
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.memory.Memory.add" title="Permalink to this definition">#</a></dt>
+<dd><p>Adds an experience to storage. Called during the rollout phase.</p>
+<p><a href="#id1"><span class="problematic" id="id2">*</span></a>data: A tuple containing the tensors of (obs, done, action, logprob, value, reward) for an agent.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.memory.Memory.add_vars_to_log">
+<span class="sig-name descname"><span class="pre">add_vars_to_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.memory.Memory.add_vars_to_log" title="Permalink to this definition">#</a></dt>
+<dd><p>Add variables to storage, for eventual logging (if args.track=True).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.memory.Memory.compute_advantages">
+<span class="sig-name descname"><span class="pre">compute_advantages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">next_value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">next_done</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rewards</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dones</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gae_lambda</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#src.ppo.memory.Memory.compute_advantages" title="Permalink to this definition">#</a></dt>
+<dd><p>Compute advantages using Generalized Advantage Estimation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.memory.Memory.get_minibatch_indexes">
+<span class="sig-name descname"><span class="pre">get_minibatch_indexes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minibatch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#src.ppo.memory.Memory.get_minibatch_indexes" title="Permalink to this definition">#</a></dt>
+<dd><p>Return a list of length (batch_size // minibatch_size) where each element is an array of indexes into the batch.</p>
+<p>Each index should appear exactly once.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.memory.Memory.get_minibatches">
+<span class="sig-name descname"><span class="pre">get_minibatches</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#src.ppo.memory.Minibatch" title="src.ppo.memory.Minibatch"><span class="pre">Minibatch</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#src.ppo.memory.Memory.get_minibatches" title="Permalink to this definition">#</a></dt>
+<dd><p>Return a list of length (batch_size // minibatch_size) where each element is an array of indexes into the batch.</p>
+<p>Args:
+- batch_size (int): total size of the batch.
+- minibatch_size (int): size of each minibatch.</p>
+<p>Returns:
+- List[np.ndarray]: a list of length (batch_size // minibatch_size) where each element is an array of indexes into the batch. Each index should appear exactly once.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.memory.Memory.get_printable_output">
+<span class="sig-name descname"><span class="pre">get_printable_output</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#src.ppo.memory.Memory.get_printable_output" title="Permalink to this definition">#</a></dt>
+<dd><p>Sets a new progress bar description, if any episodes have terminated.
+If not, then the bar’s description won’t change.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.memory.Memory.log">
+<span class="sig-name descname"><span class="pre">log</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#src.ppo.memory.Memory.log" title="Permalink to this definition">#</a></dt>
+<dd><p>Logs variables to wandb.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.memory.Memory.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#src.ppo.memory.Memory.reset" title="Permalink to this definition">#</a></dt>
+<dd><p>Function to be called at the end of each rollout period, to make
+space for new experiences to be generated.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.memory.Memory.sample_experiences">
+<span class="sig-name descname"><span class="pre">sample_experiences</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.memory.Memory.sample_experiences" title="Permalink to this definition">#</a></dt>
+<dd><p>Prints out a randomly selected experience as a sanity check.</p>
+<p>Each experience consists of a tuple containing:
+- obs: observations of the environment
+- done: whether the episode has terminated
+- action: the action taken by the agent
+- logprob: the log probability of taking that action
+- value: the estimated value of the current state
+- reward: the reward received from taking that action</p>
+<dl class="simple">
+<dt>The output will be a sample from the stored experiences, in the format:</dt><dd><p>Sample X/Y:
+obs    : […]
+done   : […]
+action : […]
+logprob: […]
+value  : […]
+reward : […]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.ppo.memory.Minibatch">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.memory.</span></span><span class="sig-name descname"><span class="pre">Minibatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated[torch.Tensor,</span> <span class="pre">{'__torchtyping__':</span> <span class="pre">True,</span> <span class="pre">'details':</span> <span class="pre">('batch',</span> <span class="pre">'obs_shape'),</span> <span class="pre">'cls_name':</span> <span class="pre">'TensorType'}]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated[torch.Tensor,</span> <span class="pre">{'__torchtyping__':</span> <span class="pre">True,</span> <span class="pre">'details':</span> <span class="pre">('batch',),</span> <span class="pre">'cls_name':</span> <span class="pre">'TensorType'}]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logprobs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated[torch.Tensor,</span> <span class="pre">{'__torchtyping__':</span> <span class="pre">True,</span> <span class="pre">'details':</span> <span class="pre">('batch',),</span> <span class="pre">'cls_name':</span> <span class="pre">'TensorType'}]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">advantages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated[torch.Tensor,</span> <span class="pre">{'__torchtyping__':</span> <span class="pre">True,</span> <span class="pre">'details':</span> <span class="pre">('batch',),</span> <span class="pre">'cls_name':</span> <span class="pre">'TensorType'}]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated[torch.Tensor,</span> <span class="pre">{'__torchtyping__':</span> <span class="pre">True,</span> <span class="pre">'details':</span> <span class="pre">('batch',),</span> <span class="pre">'cls_name':</span> <span class="pre">'TensorType'}]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated[torch.Tensor,</span> <span class="pre">{'__torchtyping__':</span> <span class="pre">True,</span> <span class="pre">'details':</span> <span class="pre">('batch',),</span> <span class="pre">'cls_name':</span> <span class="pre">'TensorType'}]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.memory.Minibatch" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.memory.Minibatch.actions">
+<span class="sig-name descname"><span class="pre">actions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#src.ppo.memory.Minibatch.actions" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.memory.Minibatch.advantages">
+<span class="sig-name descname"><span class="pre">advantages</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#src.ppo.memory.Minibatch.advantages" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.memory.Minibatch.logprobs">
+<span class="sig-name descname"><span class="pre">logprobs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#src.ppo.memory.Minibatch.logprobs" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.memory.Minibatch.obs">
+<span class="sig-name descname"><span class="pre">obs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#src.ppo.memory.Minibatch.obs" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.memory.Minibatch.returns">
+<span class="sig-name descname"><span class="pre">returns</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#src.ppo.memory.Minibatch.returns" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.memory.Minibatch.values">
+<span class="sig-name descname"><span class="pre">values</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#src.ppo.memory.Minibatch.values" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="src-ppo-my-probe-envs-module">
-<h2>src.ppo.my_probe_envs module<a class="headerlink" href="#src-ppo-my-probe-envs-module" title="Permalink to this heading">#</a></h2>
+<section id="module-src.ppo.my_probe_envs">
+<span id="src-ppo-my-probe-envs-module"></span><h2>src.ppo.my_probe_envs module<a class="headerlink" href="#module-src.ppo.my_probe_envs" title="Permalink to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe1">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.my_probe_envs.</span></span><span class="sig-name descname"><span class="pre">Probe1</span></span><a class="headerlink" href="#src.ppo.my_probe_envs.Probe1" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Env</span></code></p>
+<p>One action, observation of [0.0], one timestep long, +1 reward.
+We expect the agent to rapidly learn that the value of the constant [0.0] observation is +1.0. Note we’re using a continuous observation space for consistency with CartPole.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe1.action_space">
+<span class="sig-name descname"><span class="pre">action_space</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Discrete</span></em><a class="headerlink" href="#src.ppo.my_probe_envs.Probe1.action_space" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe1.observation_space">
+<span class="sig-name descname"><span class="pre">observation_space</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Box</span></em><a class="headerlink" href="#src.ppo.my_probe_envs.Probe1.observation_space" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe1.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#src.ppo.my_probe_envs.Probe1.reset" title="Permalink to this definition">#</a></dt>
+<dd><p>Resets the environment to an initial internal state, returning an initial observation and info.</p>
+<p>This method generates a new starting state often with some randomness to ensure that the agent explores the
+state space and learns a generalised policy about the environment. This randomness can be controlled
+with the <code class="docutils literal notranslate"><span class="pre">seed</span></code> parameter otherwise if the environment already has a random number generator and
+<a class="reference internal" href="#src.ppo.my_probe_envs.Probe1.reset" title="src.ppo.my_probe_envs.Probe1.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> is called with <code class="docutils literal notranslate"><span class="pre">seed=None</span></code>, the RNG is not reset.</p>
+<p>Therefore, <a class="reference internal" href="#src.ppo.my_probe_envs.Probe1.reset" title="src.ppo.my_probe_envs.Probe1.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> should (in the typical use case) be called with a seed right after initialization and then never again.</p>
+<p>For Custom environments, the first line of <a class="reference internal" href="#src.ppo.my_probe_envs.Probe1.reset" title="src.ppo.my_probe_envs.Probe1.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> should be <code class="docutils literal notranslate"><span class="pre">super().reset(seed=seed)</span></code> which implements
+the seeding correctly.</p>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version v0.25: </span>The <code class="docutils literal notranslate"><span class="pre">return_info</span></code> parameter was removed and now info is expected to be returned.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seed</strong> (<em>optional int</em>) – The seed that is used to initialize the environment’s PRNG (<cite>np_random</cite>).
+If the environment does not already have a PRNG and <code class="docutils literal notranslate"><span class="pre">seed=None</span></code> (the default option) is passed,
+a seed will be chosen from some source of entropy (e.g. timestamp or /dev/urandom).
+However, if the environment already has a PRNG and <code class="docutils literal notranslate"><span class="pre">seed=None</span></code> is passed, the PRNG will <em>not</em> be reset.
+If you pass an integer, the PRNG will be reset even if it already exists.
+Usually, you want to pass an integer <em>right after the environment has been initialized and then never again</em>.
+Please refer to the minimal example above to see this paradigm in action.</p></li>
+<li><p><strong>options</strong> (<em>optional dict</em>) – Additional information to specify how the environment is reset (optional,
+depending on the specific environment)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Observation of the initial state. This will be an element of <a class="reference internal" href="#src.ppo.my_probe_envs.Probe1.observation_space" title="src.ppo.my_probe_envs.Probe1.observation_space"><code class="xref py py-attr docutils literal notranslate"><span class="pre">observation_space</span></code></a></dt><dd><p>(typically a numpy array) and is analogous to the observation returned by <a class="reference internal" href="#src.ppo.my_probe_envs.Probe1.step" title="src.ppo.my_probe_envs.Probe1.step"><code class="xref py py-meth docutils literal notranslate"><span class="pre">step()</span></code></a>.</p>
+</dd>
+<dt>info (dictionary):  This dictionary contains auxiliary information complementing <code class="docutils literal notranslate"><span class="pre">observation</span></code>. It should be analogous to</dt><dd><p>the <code class="docutils literal notranslate"><span class="pre">info</span></code> returned by <a class="reference internal" href="#src.ppo.my_probe_envs.Probe1.step" title="src.ppo.my_probe_envs.Probe1.step"><code class="xref py py-meth docutils literal notranslate"><span class="pre">step()</span></code></a>.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>observation (ObsType)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe1.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#src.ppo.my_probe_envs.Probe1.step" title="Permalink to this definition">#</a></dt>
+<dd><p>Run one timestep of the environment’s dynamics using the agent actions.</p>
+<p>When the end of an episode is reached (<code class="docutils literal notranslate"><span class="pre">terminated</span> <span class="pre">or</span> <span class="pre">truncated</span></code>), it is necessary to call <a class="reference internal" href="#src.ppo.my_probe_envs.Probe1.reset" title="src.ppo.my_probe_envs.Probe1.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> to
+reset this environment’s state for the next episode.</p>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version 0.26: </span>The Step API was changed removing <code class="docutils literal notranslate"><span class="pre">done</span></code> in favor of <code class="docutils literal notranslate"><span class="pre">terminated</span></code> and <code class="docutils literal notranslate"><span class="pre">truncated</span></code> to make it clearer
+to users when the environment had terminated or truncated which is critical for reinforcement learning
+bootstrapping algorithms.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>action</strong> (<em>ActType</em>) – an action provided by the agent to update the environment state.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>An element of the environment’s <a class="reference internal" href="#src.ppo.my_probe_envs.Probe1.observation_space" title="src.ppo.my_probe_envs.Probe1.observation_space"><code class="xref py py-attr docutils literal notranslate"><span class="pre">observation_space</span></code></a> as the next observation due to the agent actions.</dt><dd><p>An example is a numpy array containing the positions and velocities of the pole in CartPole.</p>
+</dd>
+</dl>
+<p>reward (SupportsFloat): The reward as a result of taking the action.
+terminated (bool): Whether the agent reaches the terminal state (as defined under the MDP of the task)</p>
+<blockquote>
+<div><p>which can be positive or negative. An example is reaching the goal state or moving into the lava from
+the Sutton and Barton, Gridworld. If true, the user needs to call <a class="reference internal" href="#src.ppo.my_probe_envs.Probe1.reset" title="src.ppo.my_probe_envs.Probe1.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a>.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>truncated (bool): Whether the truncation condition outside the scope of the MDP is satisfied.</dt><dd><p>Typically, this is a timelimit, but could also be used to indicate an agent physically going out of bounds.
+Can be used to end the episode prematurely before a terminal state is reached.
+If true, the user needs to call <a class="reference internal" href="#src.ppo.my_probe_envs.Probe1.reset" title="src.ppo.my_probe_envs.Probe1.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a>.</p>
+</dd>
+<dt>info (dict): Contains auxiliary diagnostic information (helpful for debugging, learning, and logging).</dt><dd><p>This might, for instance, contain: metrics that describe the agent’s performance state, variables that are
+hidden from observations, or individual reward terms that are combined to produce the total reward.
+In OpenAI Gym &lt;v26, it contains “TimeLimit.truncated” to distinguish truncation and termination,
+however this is deprecated in favour of returning terminated and truncated variables.</p>
+</dd>
+<dt>done (bool): (Deprecated) A boolean value for if the episode has ended, in which case further <a class="reference internal" href="#src.ppo.my_probe_envs.Probe1.step" title="src.ppo.my_probe_envs.Probe1.step"><code class="xref py py-meth docutils literal notranslate"><span class="pre">step()</span></code></a> calls will</dt><dd><p>return undefined results. This was removed in OpenAI Gym v26 in favor of terminated and truncated attributes.
+A done signal may be emitted for different reasons: Maybe the task underlying the environment was solved successfully,
+a certain timelimit was exceeded, or the physics simulation has entered an invalid state.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>observation (ObsType)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe2">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.my_probe_envs.</span></span><span class="sig-name descname"><span class="pre">Probe2</span></span><a class="headerlink" href="#src.ppo.my_probe_envs.Probe2" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Env</span></code></p>
+<p>One action, observation of [-1.0] or [+1.0], one timestep long, reward equals observation.
+We expect the agent to rapidly learn the value of each observation is equal to the observation.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe2.action_space">
+<span class="sig-name descname"><span class="pre">action_space</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Discrete</span></em><a class="headerlink" href="#src.ppo.my_probe_envs.Probe2.action_space" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe2.observation_space">
+<span class="sig-name descname"><span class="pre">observation_space</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Box</span></em><a class="headerlink" href="#src.ppo.my_probe_envs.Probe2.observation_space" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe2.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#src.ppo.my_probe_envs.Probe2.reset" title="Permalink to this definition">#</a></dt>
+<dd><p>Resets the environment to an initial internal state, returning an initial observation and info.</p>
+<p>This method generates a new starting state often with some randomness to ensure that the agent explores the
+state space and learns a generalised policy about the environment. This randomness can be controlled
+with the <code class="docutils literal notranslate"><span class="pre">seed</span></code> parameter otherwise if the environment already has a random number generator and
+<a class="reference internal" href="#src.ppo.my_probe_envs.Probe2.reset" title="src.ppo.my_probe_envs.Probe2.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> is called with <code class="docutils literal notranslate"><span class="pre">seed=None</span></code>, the RNG is not reset.</p>
+<p>Therefore, <a class="reference internal" href="#src.ppo.my_probe_envs.Probe2.reset" title="src.ppo.my_probe_envs.Probe2.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> should (in the typical use case) be called with a seed right after initialization and then never again.</p>
+<p>For Custom environments, the first line of <a class="reference internal" href="#src.ppo.my_probe_envs.Probe2.reset" title="src.ppo.my_probe_envs.Probe2.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> should be <code class="docutils literal notranslate"><span class="pre">super().reset(seed=seed)</span></code> which implements
+the seeding correctly.</p>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version v0.25: </span>The <code class="docutils literal notranslate"><span class="pre">return_info</span></code> parameter was removed and now info is expected to be returned.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seed</strong> (<em>optional int</em>) – The seed that is used to initialize the environment’s PRNG (<cite>np_random</cite>).
+If the environment does not already have a PRNG and <code class="docutils literal notranslate"><span class="pre">seed=None</span></code> (the default option) is passed,
+a seed will be chosen from some source of entropy (e.g. timestamp or /dev/urandom).
+However, if the environment already has a PRNG and <code class="docutils literal notranslate"><span class="pre">seed=None</span></code> is passed, the PRNG will <em>not</em> be reset.
+If you pass an integer, the PRNG will be reset even if it already exists.
+Usually, you want to pass an integer <em>right after the environment has been initialized and then never again</em>.
+Please refer to the minimal example above to see this paradigm in action.</p></li>
+<li><p><strong>options</strong> (<em>optional dict</em>) – Additional information to specify how the environment is reset (optional,
+depending on the specific environment)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Observation of the initial state. This will be an element of <a class="reference internal" href="#src.ppo.my_probe_envs.Probe2.observation_space" title="src.ppo.my_probe_envs.Probe2.observation_space"><code class="xref py py-attr docutils literal notranslate"><span class="pre">observation_space</span></code></a></dt><dd><p>(typically a numpy array) and is analogous to the observation returned by <a class="reference internal" href="#src.ppo.my_probe_envs.Probe2.step" title="src.ppo.my_probe_envs.Probe2.step"><code class="xref py py-meth docutils literal notranslate"><span class="pre">step()</span></code></a>.</p>
+</dd>
+<dt>info (dictionary):  This dictionary contains auxiliary information complementing <code class="docutils literal notranslate"><span class="pre">observation</span></code>. It should be analogous to</dt><dd><p>the <code class="docutils literal notranslate"><span class="pre">info</span></code> returned by <a class="reference internal" href="#src.ppo.my_probe_envs.Probe2.step" title="src.ppo.my_probe_envs.Probe2.step"><code class="xref py py-meth docutils literal notranslate"><span class="pre">step()</span></code></a>.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>observation (ObsType)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe2.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#src.ppo.my_probe_envs.Probe2.step" title="Permalink to this definition">#</a></dt>
+<dd><p>Run one timestep of the environment’s dynamics using the agent actions.</p>
+<p>When the end of an episode is reached (<code class="docutils literal notranslate"><span class="pre">terminated</span> <span class="pre">or</span> <span class="pre">truncated</span></code>), it is necessary to call <a class="reference internal" href="#src.ppo.my_probe_envs.Probe2.reset" title="src.ppo.my_probe_envs.Probe2.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> to
+reset this environment’s state for the next episode.</p>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version 0.26: </span>The Step API was changed removing <code class="docutils literal notranslate"><span class="pre">done</span></code> in favor of <code class="docutils literal notranslate"><span class="pre">terminated</span></code> and <code class="docutils literal notranslate"><span class="pre">truncated</span></code> to make it clearer
+to users when the environment had terminated or truncated which is critical for reinforcement learning
+bootstrapping algorithms.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>action</strong> (<em>ActType</em>) – an action provided by the agent to update the environment state.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>An element of the environment’s <a class="reference internal" href="#src.ppo.my_probe_envs.Probe2.observation_space" title="src.ppo.my_probe_envs.Probe2.observation_space"><code class="xref py py-attr docutils literal notranslate"><span class="pre">observation_space</span></code></a> as the next observation due to the agent actions.</dt><dd><p>An example is a numpy array containing the positions and velocities of the pole in CartPole.</p>
+</dd>
+</dl>
+<p>reward (SupportsFloat): The reward as a result of taking the action.
+terminated (bool): Whether the agent reaches the terminal state (as defined under the MDP of the task)</p>
+<blockquote>
+<div><p>which can be positive or negative. An example is reaching the goal state or moving into the lava from
+the Sutton and Barton, Gridworld. If true, the user needs to call <a class="reference internal" href="#src.ppo.my_probe_envs.Probe2.reset" title="src.ppo.my_probe_envs.Probe2.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a>.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>truncated (bool): Whether the truncation condition outside the scope of the MDP is satisfied.</dt><dd><p>Typically, this is a timelimit, but could also be used to indicate an agent physically going out of bounds.
+Can be used to end the episode prematurely before a terminal state is reached.
+If true, the user needs to call <a class="reference internal" href="#src.ppo.my_probe_envs.Probe2.reset" title="src.ppo.my_probe_envs.Probe2.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a>.</p>
+</dd>
+<dt>info (dict): Contains auxiliary diagnostic information (helpful for debugging, learning, and logging).</dt><dd><p>This might, for instance, contain: metrics that describe the agent’s performance state, variables that are
+hidden from observations, or individual reward terms that are combined to produce the total reward.
+In OpenAI Gym &lt;v26, it contains “TimeLimit.truncated” to distinguish truncation and termination,
+however this is deprecated in favour of returning terminated and truncated variables.</p>
+</dd>
+<dt>done (bool): (Deprecated) A boolean value for if the episode has ended, in which case further <a class="reference internal" href="#src.ppo.my_probe_envs.Probe2.step" title="src.ppo.my_probe_envs.Probe2.step"><code class="xref py py-meth docutils literal notranslate"><span class="pre">step()</span></code></a> calls will</dt><dd><p>return undefined results. This was removed in OpenAI Gym v26 in favor of terminated and truncated attributes.
+A done signal may be emitted for different reasons: Maybe the task underlying the environment was solved successfully,
+a certain timelimit was exceeded, or the physics simulation has entered an invalid state.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>observation (ObsType)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe3">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.my_probe_envs.</span></span><span class="sig-name descname"><span class="pre">Probe3</span></span><a class="headerlink" href="#src.ppo.my_probe_envs.Probe3" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Env</span></code></p>
+<p>One action, [0.0] then [1.0] observation, two timesteps, +1 reward at the end.
+We expect the agent to rapidly learn the discounted value of the initial observation.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe3.action_space">
+<span class="sig-name descname"><span class="pre">action_space</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Discrete</span></em><a class="headerlink" href="#src.ppo.my_probe_envs.Probe3.action_space" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe3.observation_space">
+<span class="sig-name descname"><span class="pre">observation_space</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Box</span></em><a class="headerlink" href="#src.ppo.my_probe_envs.Probe3.observation_space" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe3.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#src.ppo.my_probe_envs.Probe3.reset" title="Permalink to this definition">#</a></dt>
+<dd><p>Resets the environment to an initial internal state, returning an initial observation and info.</p>
+<p>This method generates a new starting state often with some randomness to ensure that the agent explores the
+state space and learns a generalised policy about the environment. This randomness can be controlled
+with the <code class="docutils literal notranslate"><span class="pre">seed</span></code> parameter otherwise if the environment already has a random number generator and
+<a class="reference internal" href="#src.ppo.my_probe_envs.Probe3.reset" title="src.ppo.my_probe_envs.Probe3.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> is called with <code class="docutils literal notranslate"><span class="pre">seed=None</span></code>, the RNG is not reset.</p>
+<p>Therefore, <a class="reference internal" href="#src.ppo.my_probe_envs.Probe3.reset" title="src.ppo.my_probe_envs.Probe3.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> should (in the typical use case) be called with a seed right after initialization and then never again.</p>
+<p>For Custom environments, the first line of <a class="reference internal" href="#src.ppo.my_probe_envs.Probe3.reset" title="src.ppo.my_probe_envs.Probe3.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> should be <code class="docutils literal notranslate"><span class="pre">super().reset(seed=seed)</span></code> which implements
+the seeding correctly.</p>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version v0.25: </span>The <code class="docutils literal notranslate"><span class="pre">return_info</span></code> parameter was removed and now info is expected to be returned.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seed</strong> (<em>optional int</em>) – The seed that is used to initialize the environment’s PRNG (<cite>np_random</cite>).
+If the environment does not already have a PRNG and <code class="docutils literal notranslate"><span class="pre">seed=None</span></code> (the default option) is passed,
+a seed will be chosen from some source of entropy (e.g. timestamp or /dev/urandom).
+However, if the environment already has a PRNG and <code class="docutils literal notranslate"><span class="pre">seed=None</span></code> is passed, the PRNG will <em>not</em> be reset.
+If you pass an integer, the PRNG will be reset even if it already exists.
+Usually, you want to pass an integer <em>right after the environment has been initialized and then never again</em>.
+Please refer to the minimal example above to see this paradigm in action.</p></li>
+<li><p><strong>options</strong> (<em>optional dict</em>) – Additional information to specify how the environment is reset (optional,
+depending on the specific environment)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Observation of the initial state. This will be an element of <a class="reference internal" href="#src.ppo.my_probe_envs.Probe3.observation_space" title="src.ppo.my_probe_envs.Probe3.observation_space"><code class="xref py py-attr docutils literal notranslate"><span class="pre">observation_space</span></code></a></dt><dd><p>(typically a numpy array) and is analogous to the observation returned by <a class="reference internal" href="#src.ppo.my_probe_envs.Probe3.step" title="src.ppo.my_probe_envs.Probe3.step"><code class="xref py py-meth docutils literal notranslate"><span class="pre">step()</span></code></a>.</p>
+</dd>
+<dt>info (dictionary):  This dictionary contains auxiliary information complementing <code class="docutils literal notranslate"><span class="pre">observation</span></code>. It should be analogous to</dt><dd><p>the <code class="docutils literal notranslate"><span class="pre">info</span></code> returned by <a class="reference internal" href="#src.ppo.my_probe_envs.Probe3.step" title="src.ppo.my_probe_envs.Probe3.step"><code class="xref py py-meth docutils literal notranslate"><span class="pre">step()</span></code></a>.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>observation (ObsType)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe3.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#src.ppo.my_probe_envs.Probe3.step" title="Permalink to this definition">#</a></dt>
+<dd><p>Run one timestep of the environment’s dynamics using the agent actions.</p>
+<p>When the end of an episode is reached (<code class="docutils literal notranslate"><span class="pre">terminated</span> <span class="pre">or</span> <span class="pre">truncated</span></code>), it is necessary to call <a class="reference internal" href="#src.ppo.my_probe_envs.Probe3.reset" title="src.ppo.my_probe_envs.Probe3.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> to
+reset this environment’s state for the next episode.</p>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version 0.26: </span>The Step API was changed removing <code class="docutils literal notranslate"><span class="pre">done</span></code> in favor of <code class="docutils literal notranslate"><span class="pre">terminated</span></code> and <code class="docutils literal notranslate"><span class="pre">truncated</span></code> to make it clearer
+to users when the environment had terminated or truncated which is critical for reinforcement learning
+bootstrapping algorithms.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>action</strong> (<em>ActType</em>) – an action provided by the agent to update the environment state.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>An element of the environment’s <a class="reference internal" href="#src.ppo.my_probe_envs.Probe3.observation_space" title="src.ppo.my_probe_envs.Probe3.observation_space"><code class="xref py py-attr docutils literal notranslate"><span class="pre">observation_space</span></code></a> as the next observation due to the agent actions.</dt><dd><p>An example is a numpy array containing the positions and velocities of the pole in CartPole.</p>
+</dd>
+</dl>
+<p>reward (SupportsFloat): The reward as a result of taking the action.
+terminated (bool): Whether the agent reaches the terminal state (as defined under the MDP of the task)</p>
+<blockquote>
+<div><p>which can be positive or negative. An example is reaching the goal state or moving into the lava from
+the Sutton and Barton, Gridworld. If true, the user needs to call <a class="reference internal" href="#src.ppo.my_probe_envs.Probe3.reset" title="src.ppo.my_probe_envs.Probe3.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a>.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>truncated (bool): Whether the truncation condition outside the scope of the MDP is satisfied.</dt><dd><p>Typically, this is a timelimit, but could also be used to indicate an agent physically going out of bounds.
+Can be used to end the episode prematurely before a terminal state is reached.
+If true, the user needs to call <a class="reference internal" href="#src.ppo.my_probe_envs.Probe3.reset" title="src.ppo.my_probe_envs.Probe3.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a>.</p>
+</dd>
+<dt>info (dict): Contains auxiliary diagnostic information (helpful for debugging, learning, and logging).</dt><dd><p>This might, for instance, contain: metrics that describe the agent’s performance state, variables that are
+hidden from observations, or individual reward terms that are combined to produce the total reward.
+In OpenAI Gym &lt;v26, it contains “TimeLimit.truncated” to distinguish truncation and termination,
+however this is deprecated in favour of returning terminated and truncated variables.</p>
+</dd>
+<dt>done (bool): (Deprecated) A boolean value for if the episode has ended, in which case further <a class="reference internal" href="#src.ppo.my_probe_envs.Probe3.step" title="src.ppo.my_probe_envs.Probe3.step"><code class="xref py py-meth docutils literal notranslate"><span class="pre">step()</span></code></a> calls will</dt><dd><p>return undefined results. This was removed in OpenAI Gym v26 in favor of terminated and truncated attributes.
+A done signal may be emitted for different reasons: Maybe the task underlying the environment was solved successfully,
+a certain timelimit was exceeded, or the physics simulation has entered an invalid state.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>observation (ObsType)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe4">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.my_probe_envs.</span></span><span class="sig-name descname"><span class="pre">Probe4</span></span><a class="headerlink" href="#src.ppo.my_probe_envs.Probe4" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Env</span></code></p>
+<p>Two actions, [0.0] observation, one timestep, reward is -1.0 or +1.0 dependent on the action.
+We expect the agent to learn to choose the +1.0 action.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe4.action_space">
+<span class="sig-name descname"><span class="pre">action_space</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Discrete</span></em><a class="headerlink" href="#src.ppo.my_probe_envs.Probe4.action_space" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe4.observation_space">
+<span class="sig-name descname"><span class="pre">observation_space</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Box</span></em><a class="headerlink" href="#src.ppo.my_probe_envs.Probe4.observation_space" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe4.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#src.ppo.my_probe_envs.Probe4.reset" title="Permalink to this definition">#</a></dt>
+<dd><p>Resets the environment to an initial internal state, returning an initial observation and info.</p>
+<p>This method generates a new starting state often with some randomness to ensure that the agent explores the
+state space and learns a generalised policy about the environment. This randomness can be controlled
+with the <code class="docutils literal notranslate"><span class="pre">seed</span></code> parameter otherwise if the environment already has a random number generator and
+<a class="reference internal" href="#src.ppo.my_probe_envs.Probe4.reset" title="src.ppo.my_probe_envs.Probe4.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> is called with <code class="docutils literal notranslate"><span class="pre">seed=None</span></code>, the RNG is not reset.</p>
+<p>Therefore, <a class="reference internal" href="#src.ppo.my_probe_envs.Probe4.reset" title="src.ppo.my_probe_envs.Probe4.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> should (in the typical use case) be called with a seed right after initialization and then never again.</p>
+<p>For Custom environments, the first line of <a class="reference internal" href="#src.ppo.my_probe_envs.Probe4.reset" title="src.ppo.my_probe_envs.Probe4.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> should be <code class="docutils literal notranslate"><span class="pre">super().reset(seed=seed)</span></code> which implements
+the seeding correctly.</p>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version v0.25: </span>The <code class="docutils literal notranslate"><span class="pre">return_info</span></code> parameter was removed and now info is expected to be returned.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seed</strong> (<em>optional int</em>) – The seed that is used to initialize the environment’s PRNG (<cite>np_random</cite>).
+If the environment does not already have a PRNG and <code class="docutils literal notranslate"><span class="pre">seed=None</span></code> (the default option) is passed,
+a seed will be chosen from some source of entropy (e.g. timestamp or /dev/urandom).
+However, if the environment already has a PRNG and <code class="docutils literal notranslate"><span class="pre">seed=None</span></code> is passed, the PRNG will <em>not</em> be reset.
+If you pass an integer, the PRNG will be reset even if it already exists.
+Usually, you want to pass an integer <em>right after the environment has been initialized and then never again</em>.
+Please refer to the minimal example above to see this paradigm in action.</p></li>
+<li><p><strong>options</strong> (<em>optional dict</em>) – Additional information to specify how the environment is reset (optional,
+depending on the specific environment)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Observation of the initial state. This will be an element of <a class="reference internal" href="#src.ppo.my_probe_envs.Probe4.observation_space" title="src.ppo.my_probe_envs.Probe4.observation_space"><code class="xref py py-attr docutils literal notranslate"><span class="pre">observation_space</span></code></a></dt><dd><p>(typically a numpy array) and is analogous to the observation returned by <a class="reference internal" href="#src.ppo.my_probe_envs.Probe4.step" title="src.ppo.my_probe_envs.Probe4.step"><code class="xref py py-meth docutils literal notranslate"><span class="pre">step()</span></code></a>.</p>
+</dd>
+<dt>info (dictionary):  This dictionary contains auxiliary information complementing <code class="docutils literal notranslate"><span class="pre">observation</span></code>. It should be analogous to</dt><dd><p>the <code class="docutils literal notranslate"><span class="pre">info</span></code> returned by <a class="reference internal" href="#src.ppo.my_probe_envs.Probe4.step" title="src.ppo.my_probe_envs.Probe4.step"><code class="xref py py-meth docutils literal notranslate"><span class="pre">step()</span></code></a>.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>observation (ObsType)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe4.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#src.ppo.my_probe_envs.Probe4.step" title="Permalink to this definition">#</a></dt>
+<dd><p>Run one timestep of the environment’s dynamics using the agent actions.</p>
+<p>When the end of an episode is reached (<code class="docutils literal notranslate"><span class="pre">terminated</span> <span class="pre">or</span> <span class="pre">truncated</span></code>), it is necessary to call <a class="reference internal" href="#src.ppo.my_probe_envs.Probe4.reset" title="src.ppo.my_probe_envs.Probe4.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> to
+reset this environment’s state for the next episode.</p>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version 0.26: </span>The Step API was changed removing <code class="docutils literal notranslate"><span class="pre">done</span></code> in favor of <code class="docutils literal notranslate"><span class="pre">terminated</span></code> and <code class="docutils literal notranslate"><span class="pre">truncated</span></code> to make it clearer
+to users when the environment had terminated or truncated which is critical for reinforcement learning
+bootstrapping algorithms.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>action</strong> (<em>ActType</em>) – an action provided by the agent to update the environment state.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>An element of the environment’s <a class="reference internal" href="#src.ppo.my_probe_envs.Probe4.observation_space" title="src.ppo.my_probe_envs.Probe4.observation_space"><code class="xref py py-attr docutils literal notranslate"><span class="pre">observation_space</span></code></a> as the next observation due to the agent actions.</dt><dd><p>An example is a numpy array containing the positions and velocities of the pole in CartPole.</p>
+</dd>
+</dl>
+<p>reward (SupportsFloat): The reward as a result of taking the action.
+terminated (bool): Whether the agent reaches the terminal state (as defined under the MDP of the task)</p>
+<blockquote>
+<div><p>which can be positive or negative. An example is reaching the goal state or moving into the lava from
+the Sutton and Barton, Gridworld. If true, the user needs to call <a class="reference internal" href="#src.ppo.my_probe_envs.Probe4.reset" title="src.ppo.my_probe_envs.Probe4.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a>.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>truncated (bool): Whether the truncation condition outside the scope of the MDP is satisfied.</dt><dd><p>Typically, this is a timelimit, but could also be used to indicate an agent physically going out of bounds.
+Can be used to end the episode prematurely before a terminal state is reached.
+If true, the user needs to call <a class="reference internal" href="#src.ppo.my_probe_envs.Probe4.reset" title="src.ppo.my_probe_envs.Probe4.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a>.</p>
+</dd>
+<dt>info (dict): Contains auxiliary diagnostic information (helpful for debugging, learning, and logging).</dt><dd><p>This might, for instance, contain: metrics that describe the agent’s performance state, variables that are
+hidden from observations, or individual reward terms that are combined to produce the total reward.
+In OpenAI Gym &lt;v26, it contains “TimeLimit.truncated” to distinguish truncation and termination,
+however this is deprecated in favour of returning terminated and truncated variables.</p>
+</dd>
+<dt>done (bool): (Deprecated) A boolean value for if the episode has ended, in which case further <a class="reference internal" href="#src.ppo.my_probe_envs.Probe4.step" title="src.ppo.my_probe_envs.Probe4.step"><code class="xref py py-meth docutils literal notranslate"><span class="pre">step()</span></code></a> calls will</dt><dd><p>return undefined results. This was removed in OpenAI Gym v26 in favor of terminated and truncated attributes.
+A done signal may be emitted for different reasons: Maybe the task underlying the environment was solved successfully,
+a certain timelimit was exceeded, or the physics simulation has entered an invalid state.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>observation (ObsType)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe5">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.my_probe_envs.</span></span><span class="sig-name descname"><span class="pre">Probe5</span></span><a class="headerlink" href="#src.ppo.my_probe_envs.Probe5" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Env</span></code></p>
+<p>Two actions, random 0/1 observation, one timestep, reward is 1 if action equals observation otherwise -1.
+We expect the agent to learn to match its action to the observation.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe5.action_space">
+<span class="sig-name descname"><span class="pre">action_space</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Discrete</span></em><a class="headerlink" href="#src.ppo.my_probe_envs.Probe5.action_space" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe5.observation_space">
+<span class="sig-name descname"><span class="pre">observation_space</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Box</span></em><a class="headerlink" href="#src.ppo.my_probe_envs.Probe5.observation_space" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe5.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#src.ppo.my_probe_envs.Probe5.reset" title="Permalink to this definition">#</a></dt>
+<dd><p>Resets the environment to an initial internal state, returning an initial observation and info.</p>
+<p>This method generates a new starting state often with some randomness to ensure that the agent explores the
+state space and learns a generalised policy about the environment. This randomness can be controlled
+with the <code class="docutils literal notranslate"><span class="pre">seed</span></code> parameter otherwise if the environment already has a random number generator and
+<a class="reference internal" href="#src.ppo.my_probe_envs.Probe5.reset" title="src.ppo.my_probe_envs.Probe5.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> is called with <code class="docutils literal notranslate"><span class="pre">seed=None</span></code>, the RNG is not reset.</p>
+<p>Therefore, <a class="reference internal" href="#src.ppo.my_probe_envs.Probe5.reset" title="src.ppo.my_probe_envs.Probe5.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> should (in the typical use case) be called with a seed right after initialization and then never again.</p>
+<p>For Custom environments, the first line of <a class="reference internal" href="#src.ppo.my_probe_envs.Probe5.reset" title="src.ppo.my_probe_envs.Probe5.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> should be <code class="docutils literal notranslate"><span class="pre">super().reset(seed=seed)</span></code> which implements
+the seeding correctly.</p>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version v0.25: </span>The <code class="docutils literal notranslate"><span class="pre">return_info</span></code> parameter was removed and now info is expected to be returned.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seed</strong> (<em>optional int</em>) – The seed that is used to initialize the environment’s PRNG (<cite>np_random</cite>).
+If the environment does not already have a PRNG and <code class="docutils literal notranslate"><span class="pre">seed=None</span></code> (the default option) is passed,
+a seed will be chosen from some source of entropy (e.g. timestamp or /dev/urandom).
+However, if the environment already has a PRNG and <code class="docutils literal notranslate"><span class="pre">seed=None</span></code> is passed, the PRNG will <em>not</em> be reset.
+If you pass an integer, the PRNG will be reset even if it already exists.
+Usually, you want to pass an integer <em>right after the environment has been initialized and then never again</em>.
+Please refer to the minimal example above to see this paradigm in action.</p></li>
+<li><p><strong>options</strong> (<em>optional dict</em>) – Additional information to specify how the environment is reset (optional,
+depending on the specific environment)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Observation of the initial state. This will be an element of <a class="reference internal" href="#src.ppo.my_probe_envs.Probe5.observation_space" title="src.ppo.my_probe_envs.Probe5.observation_space"><code class="xref py py-attr docutils literal notranslate"><span class="pre">observation_space</span></code></a></dt><dd><p>(typically a numpy array) and is analogous to the observation returned by <a class="reference internal" href="#src.ppo.my_probe_envs.Probe5.step" title="src.ppo.my_probe_envs.Probe5.step"><code class="xref py py-meth docutils literal notranslate"><span class="pre">step()</span></code></a>.</p>
+</dd>
+<dt>info (dictionary):  This dictionary contains auxiliary information complementing <code class="docutils literal notranslate"><span class="pre">observation</span></code>. It should be analogous to</dt><dd><p>the <code class="docutils literal notranslate"><span class="pre">info</span></code> returned by <a class="reference internal" href="#src.ppo.my_probe_envs.Probe5.step" title="src.ppo.my_probe_envs.Probe5.step"><code class="xref py py-meth docutils literal notranslate"><span class="pre">step()</span></code></a>.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>observation (ObsType)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe5.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#src.ppo.my_probe_envs.Probe5.step" title="Permalink to this definition">#</a></dt>
+<dd><p>Run one timestep of the environment’s dynamics using the agent actions.</p>
+<p>When the end of an episode is reached (<code class="docutils literal notranslate"><span class="pre">terminated</span> <span class="pre">or</span> <span class="pre">truncated</span></code>), it is necessary to call <a class="reference internal" href="#src.ppo.my_probe_envs.Probe5.reset" title="src.ppo.my_probe_envs.Probe5.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a> to
+reset this environment’s state for the next episode.</p>
+<div class="versionchanged">
+<p><span class="versionmodified changed">Changed in version 0.26: </span>The Step API was changed removing <code class="docutils literal notranslate"><span class="pre">done</span></code> in favor of <code class="docutils literal notranslate"><span class="pre">terminated</span></code> and <code class="docutils literal notranslate"><span class="pre">truncated</span></code> to make it clearer
+to users when the environment had terminated or truncated which is critical for reinforcement learning
+bootstrapping algorithms.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>action</strong> (<em>ActType</em>) – an action provided by the agent to update the environment state.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>An element of the environment’s <a class="reference internal" href="#src.ppo.my_probe_envs.Probe5.observation_space" title="src.ppo.my_probe_envs.Probe5.observation_space"><code class="xref py py-attr docutils literal notranslate"><span class="pre">observation_space</span></code></a> as the next observation due to the agent actions.</dt><dd><p>An example is a numpy array containing the positions and velocities of the pole in CartPole.</p>
+</dd>
+</dl>
+<p>reward (SupportsFloat): The reward as a result of taking the action.
+terminated (bool): Whether the agent reaches the terminal state (as defined under the MDP of the task)</p>
+<blockquote>
+<div><p>which can be positive or negative. An example is reaching the goal state or moving into the lava from
+the Sutton and Barton, Gridworld. If true, the user needs to call <a class="reference internal" href="#src.ppo.my_probe_envs.Probe5.reset" title="src.ppo.my_probe_envs.Probe5.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a>.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>truncated (bool): Whether the truncation condition outside the scope of the MDP is satisfied.</dt><dd><p>Typically, this is a timelimit, but could also be used to indicate an agent physically going out of bounds.
+Can be used to end the episode prematurely before a terminal state is reached.
+If true, the user needs to call <a class="reference internal" href="#src.ppo.my_probe_envs.Probe5.reset" title="src.ppo.my_probe_envs.Probe5.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a>.</p>
+</dd>
+<dt>info (dict): Contains auxiliary diagnostic information (helpful for debugging, learning, and logging).</dt><dd><p>This might, for instance, contain: metrics that describe the agent’s performance state, variables that are
+hidden from observations, or individual reward terms that are combined to produce the total reward.
+In OpenAI Gym &lt;v26, it contains “TimeLimit.truncated” to distinguish truncation and termination,
+however this is deprecated in favour of returning terminated and truncated variables.</p>
+</dd>
+<dt>done (bool): (Deprecated) A boolean value for if the episode has ended, in which case further <a class="reference internal" href="#src.ppo.my_probe_envs.Probe5.step" title="src.ppo.my_probe_envs.Probe5.step"><code class="xref py py-meth docutils literal notranslate"><span class="pre">step()</span></code></a> calls will</dt><dd><p>return undefined results. This was removed in OpenAI Gym v26 in favor of terminated and truncated attributes.
+A done signal may be emitted for different reasons: Maybe the task underlying the environment was solved successfully,
+a certain timelimit was exceeded, or the physics simulation has entered an invalid state.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>observation (ObsType)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="src-ppo-train-module">
-<h2>src.ppo.train module<a class="headerlink" href="#src-ppo-train-module" title="Permalink to this heading">#</a></h2>
+<section id="module-src.ppo.train">
+<span id="src-ppo-train-module"></span><h2>src.ppo.train module<a class="headerlink" href="#module-src.ppo.train" title="Permalink to this heading">#</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.train.check_and_upload_new_video">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.train.</span></span><span class="sig-name descname"><span class="pre">check_and_upload_new_video</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">video_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">videos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.train.check_and_upload_new_video" title="Permalink to this definition">#</a></dt>
+<dd><p>Checks if new videos have been generated in the video path directory since the last check, and if so,
+uploads them to the current WandB run.</p>
+<p>Args:
+- video_path: The path to the directory where the videos are being saved.
+- videos: A list of the names of the videos that have already been uploaded to WandB.
+- step: The current step in the training loop, used to associate the video with the correct timestep.</p>
+<p>Returns:
+- A list of the names of all the videos currently present in the video path directory.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.train.get_printable_output_for_probe_envs">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.train.</span></span><span class="sig-name descname"><span class="pre">get_printable_output_for_probe_envs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.ppo.utils.PPOArgs" title="src.ppo.utils.PPOArgs"><span class="pre">PPOArgs</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">agent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.ppo.agent.Agent" title="src.ppo.agent.Agent"><span class="pre">Agent</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">probe_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_updates</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.train.get_printable_output_for_probe_envs" title="Permalink to this definition">#</a></dt>
+<dd><p>Tests a probe environment and returns a widget-style output for the environment.</p>
+<p>The function prints and returns output showing how well the agent performs on a given probe environment. The output
+includes the agent’s computed values and expected values for the observations in the probe environment, as well as
+the agent’s computed probabilities and the expected action for the probe environment, if applicable.</p>
+<p>Args:
+- args: a PPOArgs object containing arguments for the PPO training algorithm
+- agent: an Agent object containing a trained PPO agent
+- probe_idx: the index of the probe environment to test
+- update: the current training update number
+- num_updates: the total number of training updates</p>
+<p>Returns:
+- output: a string representing the output widget for the probe environment</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.train.train_ppo">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.train.</span></span><span class="sig-name descname"><span class="pre">train_ppo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.ppo.utils.PPOArgs" title="src.ppo.utils.PPOArgs"><span class="pre">PPOArgs</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">envs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectory_writer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">probe_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.train.train_ppo" title="Permalink to this definition">#</a></dt>
+<dd><p>Trains a PPO agent on a given environment.</p>
+<p>Args:
+- args: an instance of PPOArgs containing the hyperparameters for training
+- envs: the environment to train on
+- trajectory_writer: an optional object to write trajectories to a file
+- probe_idx: index of probe environment, if training on probe environment</p>
+<p>Returns:
+None</p>
+</dd></dl>
+
 </section>
-<section id="src-ppo-utils-module">
-<h2>src.ppo.utils module<a class="headerlink" href="#src-ppo-utils-module" title="Permalink to this heading">#</a></h2>
+<section id="module-src.ppo.utils">
+<span id="src-ppo-utils-module"></span><h2>src.ppo.utils module<a class="headerlink" href="#module-src.ppo.utils" title="Permalink to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">PPOArgs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exp_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'MiniGrid-Dynamic-Obstacles-8x8-v0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cuda</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wandb_project_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'PPO-MiniGrid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wandb_entity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">capture_video</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'MiniGrid-Dynamic-Obstacles-8x8-v0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">view_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1800000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.00025</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decay_lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(False,)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_envs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.99</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gae_lambda</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.95</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_minibatches</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip_coef</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ent_coef</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vf_coef</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_grad_norm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">one_hot_obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectory_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fully_observed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.PPOArgs" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.capture_video">
+<span class="sig-name descname"><span class="pre">capture_video</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.capture_video" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.clip_coef">
+<span class="sig-name descname"><span class="pre">clip_coef</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.4</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.clip_coef" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.cuda">
+<span class="sig-name descname"><span class="pre">cuda</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.cuda" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.decay_lr">
+<span class="sig-name descname"><span class="pre">decay_lr</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(False,)</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.decay_lr" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.ent_coef">
+<span class="sig-name descname"><span class="pre">ent_coef</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.2</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.ent_coef" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.env_id">
+<span class="sig-name descname"><span class="pre">env_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'MiniGrid-Dynamic-Obstacles-8x8-v0'</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.env_id" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.exp_name">
+<span class="sig-name descname"><span class="pre">exp_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'MiniGrid-Dynamic-Obstacles-8x8-v0'</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.exp_name" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.fully_observed">
+<span class="sig-name descname"><span class="pre">fully_observed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.fully_observed" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.gae_lambda">
+<span class="sig-name descname"><span class="pre">gae_lambda</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.95</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.gae_lambda" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.gamma">
+<span class="sig-name descname"><span class="pre">gamma</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.99</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.gamma" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.hidden_dim">
+<span class="sig-name descname"><span class="pre">hidden_dim</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">64</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.hidden_dim" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.learning_rate">
+<span class="sig-name descname"><span class="pre">learning_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.00025</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.learning_rate" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.max_grad_norm">
+<span class="sig-name descname"><span class="pre">max_grad_norm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.max_grad_norm" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.max_steps">
+<span class="sig-name descname"><span class="pre">max_steps</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1000</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.max_steps" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.num_envs">
+<span class="sig-name descname"><span class="pre">num_envs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.num_envs" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.num_minibatches">
+<span class="sig-name descname"><span class="pre">num_minibatches</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.num_minibatches" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.num_steps">
+<span class="sig-name descname"><span class="pre">num_steps</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">128</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.num_steps" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.one_hot_obs">
+<span class="sig-name descname"><span class="pre">one_hot_obs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.one_hot_obs" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.seed">
+<span class="sig-name descname"><span class="pre">seed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.seed" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.total_timesteps">
+<span class="sig-name descname"><span class="pre">total_timesteps</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1800000</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.total_timesteps" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.track">
+<span class="sig-name descname"><span class="pre">track</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.track" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.trajectory_path">
+<span class="sig-name descname"><span class="pre">trajectory_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.trajectory_path" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.update_epochs">
+<span class="sig-name descname"><span class="pre">update_epochs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.update_epochs" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.vf_coef">
+<span class="sig-name descname"><span class="pre">vf_coef</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.5</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.vf_coef" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.view_size">
+<span class="sig-name descname"><span class="pre">view_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">7</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.view_size" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.wandb_entity">
+<span class="sig-name descname"><span class="pre">wandb_entity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.wandb_entity" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.wandb_project_name">
+<span class="sig-name descname"><span class="pre">wandb_project_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'PPO-MiniGrid'</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.wandb_project_name" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.utils.arg_help">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">arg_help</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#src.ppo.utils.PPOArgs" title="src.ppo.utils.PPOArgs"><span class="pre">PPOArgs</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_df</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.arg_help" title="Permalink to this definition">#</a></dt>
+<dd><p>Prints out a nicely displayed list of arguments, their default values, and what they mean.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.utils.cummean">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">cummean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.cummean" title="Permalink to this definition">#</a></dt>
+<dd><p>Computes the cumulative mean</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.utils.ewma">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">ewma</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.ewma" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns the exponentially weighted moving average of x.
+Parameters:
+———–
+x : array-like
+alpha : float {0 &lt;= alpha &lt;= 1}
+Returns:
+——–
+ewma: numpy array</p>
+<blockquote>
+<div><p>the exponentially weighted moving average</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.utils.get_obs_preprocessor">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">get_obs_preprocessor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs_space</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.get_obs_preprocessor" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.utils.parse_args">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">parse_args</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.parse_args" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.utils.plot_cartpole_obs_and_dones">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">plot_cartpole_obs_and_dones</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">done</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.plot_cartpole_obs_and_dones" title="Permalink to this definition">#</a></dt>
+<dd><p>obs: shape (n_steps, n_envs, n_obs)
+dones: shape (n_steps, n_envs)</p>
+<p>Plots the observations and the dones.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.utils.preprocess_images">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">preprocess_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">images</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.preprocess_images" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.utils.set_global_seeds">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">set_global_seeds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.set_global_seeds" title="Permalink to this definition">#</a></dt>
+<dd><p>Sets random seeds in several different ways (to guarantee reproducibility)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.utils.set_seed">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">set_seed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.set_seed" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.utils.sum_rewards">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">sum_rewards</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rewards</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.sum_rewards" title="Permalink to this definition">#</a></dt>
+<dd><p>Computes the total discounted sum of rewards for an episode.
+By default, assume no discount
+Input:</p>
+<blockquote>
+<div><p>rewards [r1, r2, r3, …] The rewards obtained during an episode
+gamma: Discount factor</p>
+</div></blockquote>
+<dl class="simple">
+<dt>Output:</dt><dd><p>The sum of discounted rewards
+r1 + gamma*r2 + gamma^2 r3 + …</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.utils.window_avg">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">window_avg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.window_avg" title="Permalink to this definition">#</a></dt>
+<dd><p>Computes sliding window average</p>
+</dd></dl>
+
 </section>
-<section id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this heading">#</a></h2>
+<section id="module-src.ppo">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-src.ppo" title="Permalink to this heading">#</a></h2>
+<p>The PPO (Proximal Policy Optimization) subpackage contains modules and classes for training an agent using the PPO algorithm on an OpenAI gym (now gymnasium) environment.</p>
+<dl class="simple">
+<dt>Modules:</dt><dd><ul class="simple">
+<li><p>agent: Contains the Agent class, which encapsulates the neural networks used to represent the policy and value function, as well as the methods used for interacting with the environment and updating the network weights.</p></li>
+<li><p>memory: Contains the Memory class, which stores experiences collected during the rollout phase and provides methods for computing advantages and generating minibatches for training.</p></li>
+<li><p>utils: Contains utility functions used throughout the PPO subpackage.</p></li>
+<li></li>
+</ul>
+</dd>
+<dt>Classes:</dt><dd><ul class="simple">
+<li><p>PPOArgs: A dataclass that stores hyperparameters and other configuration options for PPO training.</p></li>
+<li><p>Minibatch: A dataclass that represents a minibatch of experiences, containing observations, actions, log probabilities, advantages, values, and returns.</p></li>
+</ul>
+</dd>
+<dt>Functions:</dt><dd><ul class="simple">
+<li><p>get_obs_preprocessor: A function that takes an OpenAI gym observation space and returns a function that preprocesses observations for use in neural networks.</p></li>
+<li><p>check_and_upload_new_video: A function that checks for new video files in a specified directory and logs them to a WandB run if they are found.</p></li>
+<li><p>get_printable_output_for_probe_envs: A function that tests a probe environment and prints output in the form of a widget, showing the actual and expected values and actions for the environment.</p></li>
+<li><p>train_ppo: The main function for training an agent using the PPO algorithm. Calls the Agent and Memory classes, and uses an optimizer and learning rate scheduler to update the network weights.</p></li>
+</ul>
+</dd>
+<dt>Dependencies:</dt><dd><ul class="simple">
+<li><p>gym (gymnasium): For interacting with OpenAI gym environments.</p></li>
+<li><p>numpy: For numerical operations and array manipulation.</p></li>
+<li><p>torch: For building and training neural networks.</p></li>
+<li><p>einops: For efficient manipulation of tensor dimensions.</p></li>
+<li><p>wandb: For logging and visualizing training metrics and video.</p></li>
+</ul>
+</dd>
+</dl>
 </section>
 </section>
 
@@ -246,23 +1429,23 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="tests.html">
+          <a class="next-page" href="content/references.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">tests package</div>
+                <div class="title">References:</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="src.decision_transformer.html">
+          <a class="prev-page" href="src.environments.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">src.decision_transformer package</div>
+                <div class="title">src.environments package</div>
                 
               </div>
             </a>
@@ -298,13 +1481,143 @@
             <ul>
 <li><a class="reference internal" href="#">src.ppo package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#src-ppo-agent-module">src.ppo.agent module</a></li>
-<li><a class="reference internal" href="#src-ppo-compute-adv-vectorized-module">src.ppo.compute_adv_vectorized module</a></li>
-<li><a class="reference internal" href="#src-ppo-memory-module">src.ppo.memory module</a></li>
-<li><a class="reference internal" href="#src-ppo-my-probe-envs-module">src.ppo.my_probe_envs module</a></li>
-<li><a class="reference internal" href="#src-ppo-train-module">src.ppo.train module</a></li>
-<li><a class="reference internal" href="#src-ppo-utils-module">src.ppo.utils module</a></li>
-<li><a class="reference internal" href="#module-contents">Module contents</a></li>
+<li><a class="reference internal" href="#module-src.ppo.agent">src.ppo.agent module</a><ul>
+<li><a class="reference internal" href="#src.ppo.agent.Agent"><code class="docutils literal notranslate"><span class="pre">Agent</span></code></a><ul>
+<li><a class="reference internal" href="#src.ppo.agent.Agent.actor"><code class="docutils literal notranslate"><span class="pre">Agent.actor</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.agent.Agent.critic"><code class="docutils literal notranslate"><span class="pre">Agent.critic</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.agent.Agent.layer_init"><code class="docutils literal notranslate"><span class="pre">Agent.layer_init()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.agent.Agent.learn"><code class="docutils literal notranslate"><span class="pre">Agent.learn()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.agent.Agent.make_optimizer"><code class="docutils literal notranslate"><span class="pre">Agent.make_optimizer()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.agent.Agent.rollout"><code class="docutils literal notranslate"><span class="pre">Agent.rollout()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#src.ppo.agent.PPOScheduler"><code class="docutils literal notranslate"><span class="pre">PPOScheduler</span></code></a><ul>
+<li><a class="reference internal" href="#src.ppo.agent.PPOScheduler.step"><code class="docutils literal notranslate"><span class="pre">PPOScheduler.step()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#src.ppo.agent.calc_clipped_surrogate_objective"><code class="docutils literal notranslate"><span class="pre">calc_clipped_surrogate_objective()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.agent.calc_entropy_bonus"><code class="docutils literal notranslate"><span class="pre">calc_entropy_bonus()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.agent.calc_value_function_loss"><code class="docutils literal notranslate"><span class="pre">calc_value_function_loss()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-src.ppo.compute_adv_vectorized">src.ppo.compute_adv_vectorized module</a><ul>
+<li><a class="reference internal" href="#src.ppo.compute_adv_vectorized.compute_advantages_vectorized"><code class="docutils literal notranslate"><span class="pre">compute_advantages_vectorized()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.compute_adv_vectorized.shift_rows"><code class="docutils literal notranslate"><span class="pre">shift_rows()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-src.ppo.memory">src.ppo.memory module</a><ul>
+<li><a class="reference internal" href="#src.ppo.memory.Memory"><code class="docutils literal notranslate"><span class="pre">Memory</span></code></a><ul>
+<li><a class="reference internal" href="#src.ppo.memory.Memory.add"><code class="docutils literal notranslate"><span class="pre">Memory.add()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.memory.Memory.add_vars_to_log"><code class="docutils literal notranslate"><span class="pre">Memory.add_vars_to_log()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.memory.Memory.compute_advantages"><code class="docutils literal notranslate"><span class="pre">Memory.compute_advantages()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.memory.Memory.get_minibatch_indexes"><code class="docutils literal notranslate"><span class="pre">Memory.get_minibatch_indexes()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.memory.Memory.get_minibatches"><code class="docutils literal notranslate"><span class="pre">Memory.get_minibatches()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.memory.Memory.get_printable_output"><code class="docutils literal notranslate"><span class="pre">Memory.get_printable_output()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.memory.Memory.log"><code class="docutils literal notranslate"><span class="pre">Memory.log()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.memory.Memory.reset"><code class="docutils literal notranslate"><span class="pre">Memory.reset()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.memory.Memory.sample_experiences"><code class="docutils literal notranslate"><span class="pre">Memory.sample_experiences()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#src.ppo.memory.Minibatch"><code class="docutils literal notranslate"><span class="pre">Minibatch</span></code></a><ul>
+<li><a class="reference internal" href="#src.ppo.memory.Minibatch.actions"><code class="docutils literal notranslate"><span class="pre">Minibatch.actions</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.memory.Minibatch.advantages"><code class="docutils literal notranslate"><span class="pre">Minibatch.advantages</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.memory.Minibatch.logprobs"><code class="docutils literal notranslate"><span class="pre">Minibatch.logprobs</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.memory.Minibatch.obs"><code class="docutils literal notranslate"><span class="pre">Minibatch.obs</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.memory.Minibatch.returns"><code class="docutils literal notranslate"><span class="pre">Minibatch.returns</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.memory.Minibatch.values"><code class="docutils literal notranslate"><span class="pre">Minibatch.values</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-src.ppo.my_probe_envs">src.ppo.my_probe_envs module</a><ul>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe1"><code class="docutils literal notranslate"><span class="pre">Probe1</span></code></a><ul>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe1.action_space"><code class="docutils literal notranslate"><span class="pre">Probe1.action_space</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe1.observation_space"><code class="docutils literal notranslate"><span class="pre">Probe1.observation_space</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe1.reset"><code class="docutils literal notranslate"><span class="pre">Probe1.reset()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe1.step"><code class="docutils literal notranslate"><span class="pre">Probe1.step()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe2"><code class="docutils literal notranslate"><span class="pre">Probe2</span></code></a><ul>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe2.action_space"><code class="docutils literal notranslate"><span class="pre">Probe2.action_space</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe2.observation_space"><code class="docutils literal notranslate"><span class="pre">Probe2.observation_space</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe2.reset"><code class="docutils literal notranslate"><span class="pre">Probe2.reset()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe2.step"><code class="docutils literal notranslate"><span class="pre">Probe2.step()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe3"><code class="docutils literal notranslate"><span class="pre">Probe3</span></code></a><ul>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe3.action_space"><code class="docutils literal notranslate"><span class="pre">Probe3.action_space</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe3.observation_space"><code class="docutils literal notranslate"><span class="pre">Probe3.observation_space</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe3.reset"><code class="docutils literal notranslate"><span class="pre">Probe3.reset()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe3.step"><code class="docutils literal notranslate"><span class="pre">Probe3.step()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe4"><code class="docutils literal notranslate"><span class="pre">Probe4</span></code></a><ul>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe4.action_space"><code class="docutils literal notranslate"><span class="pre">Probe4.action_space</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe4.observation_space"><code class="docutils literal notranslate"><span class="pre">Probe4.observation_space</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe4.reset"><code class="docutils literal notranslate"><span class="pre">Probe4.reset()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe4.step"><code class="docutils literal notranslate"><span class="pre">Probe4.step()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe5"><code class="docutils literal notranslate"><span class="pre">Probe5</span></code></a><ul>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe5.action_space"><code class="docutils literal notranslate"><span class="pre">Probe5.action_space</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe5.observation_space"><code class="docutils literal notranslate"><span class="pre">Probe5.observation_space</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe5.reset"><code class="docutils literal notranslate"><span class="pre">Probe5.reset()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.my_probe_envs.Probe5.step"><code class="docutils literal notranslate"><span class="pre">Probe5.step()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-src.ppo.train">src.ppo.train module</a><ul>
+<li><a class="reference internal" href="#src.ppo.train.check_and_upload_new_video"><code class="docutils literal notranslate"><span class="pre">check_and_upload_new_video()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.train.get_printable_output_for_probe_envs"><code class="docutils literal notranslate"><span class="pre">get_printable_output_for_probe_envs()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.train.train_ppo"><code class="docutils literal notranslate"><span class="pre">train_ppo()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-src.ppo.utils">src.ppo.utils module</a><ul>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs"><code class="docutils literal notranslate"><span class="pre">PPOArgs</span></code></a><ul>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.capture_video"><code class="docutils literal notranslate"><span class="pre">PPOArgs.capture_video</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.clip_coef"><code class="docutils literal notranslate"><span class="pre">PPOArgs.clip_coef</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.cuda"><code class="docutils literal notranslate"><span class="pre">PPOArgs.cuda</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.decay_lr"><code class="docutils literal notranslate"><span class="pre">PPOArgs.decay_lr</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.ent_coef"><code class="docutils literal notranslate"><span class="pre">PPOArgs.ent_coef</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.env_id"><code class="docutils literal notranslate"><span class="pre">PPOArgs.env_id</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.exp_name"><code class="docutils literal notranslate"><span class="pre">PPOArgs.exp_name</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.fully_observed"><code class="docutils literal notranslate"><span class="pre">PPOArgs.fully_observed</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.gae_lambda"><code class="docutils literal notranslate"><span class="pre">PPOArgs.gae_lambda</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.gamma"><code class="docutils literal notranslate"><span class="pre">PPOArgs.gamma</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.hidden_dim"><code class="docutils literal notranslate"><span class="pre">PPOArgs.hidden_dim</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.learning_rate"><code class="docutils literal notranslate"><span class="pre">PPOArgs.learning_rate</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.max_grad_norm"><code class="docutils literal notranslate"><span class="pre">PPOArgs.max_grad_norm</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.max_steps"><code class="docutils literal notranslate"><span class="pre">PPOArgs.max_steps</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.num_envs"><code class="docutils literal notranslate"><span class="pre">PPOArgs.num_envs</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.num_minibatches"><code class="docutils literal notranslate"><span class="pre">PPOArgs.num_minibatches</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.num_steps"><code class="docutils literal notranslate"><span class="pre">PPOArgs.num_steps</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.one_hot_obs"><code class="docutils literal notranslate"><span class="pre">PPOArgs.one_hot_obs</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.seed"><code class="docutils literal notranslate"><span class="pre">PPOArgs.seed</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.total_timesteps"><code class="docutils literal notranslate"><span class="pre">PPOArgs.total_timesteps</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.track"><code class="docutils literal notranslate"><span class="pre">PPOArgs.track</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.trajectory_path"><code class="docutils literal notranslate"><span class="pre">PPOArgs.trajectory_path</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.update_epochs"><code class="docutils literal notranslate"><span class="pre">PPOArgs.update_epochs</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.vf_coef"><code class="docutils literal notranslate"><span class="pre">PPOArgs.vf_coef</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.view_size"><code class="docutils literal notranslate"><span class="pre">PPOArgs.view_size</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.wandb_entity"><code class="docutils literal notranslate"><span class="pre">PPOArgs.wandb_entity</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.wandb_project_name"><code class="docutils literal notranslate"><span class="pre">PPOArgs.wandb_project_name</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#src.ppo.utils.arg_help"><code class="docutils literal notranslate"><span class="pre">arg_help()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.cummean"><code class="docutils literal notranslate"><span class="pre">cummean()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.ewma"><code class="docutils literal notranslate"><span class="pre">ewma()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.get_obs_preprocessor"><code class="docutils literal notranslate"><span class="pre">get_obs_preprocessor()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.plot_cartpole_obs_and_dones"><code class="docutils literal notranslate"><span class="pre">plot_cartpole_obs_and_dones()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.preprocess_images"><code class="docutils literal notranslate"><span class="pre">preprocess_images()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.set_global_seeds"><code class="docutils literal notranslate"><span class="pre">set_global_seeds()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.set_seed"><code class="docutils literal notranslate"><span class="pre">set_seed()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.sum_rewards"><code class="docutils literal notranslate"><span class="pre">sum_rewards()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.window_avg"><code class="docutils literal notranslate"><span class="pre">window_avg()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-src.ppo">Module contents</a></li>
 </ul>
 </li>
 </ul>
