@@ -68,7 +68,6 @@ class OfflineTrainConfig:
 
 @dataclass
 class WandbConfig:
-    wandb: Optional[wandb_config.Config] = None
     wandb_project: Optional[str] = None
     wandb_run_name: Optional[str] = None
     wandb_entity: Optional[str] = None

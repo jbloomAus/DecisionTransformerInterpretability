@@ -5,11 +5,11 @@ import torch as t
 import wandb
 import time
 
-from ppo.utils import PPOArgs, set_global_seeds, parse_args
-from ppo.train import train_ppo
-from utils import TrajectoryWriter
-from environments.environments import make_env
-from environments.registration import register_envs
+from .ppo.utils import PPOArgs, set_global_seeds, parse_args
+from .ppo.train import train_ppo
+from .utils import TrajectoryWriter
+from .environments.environments import make_env
+from .environments.registration import register_envs
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 device = t.device("cuda" if t.cuda.is_available() else "cpu")
