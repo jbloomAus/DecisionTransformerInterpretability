@@ -6,7 +6,7 @@ from tqdm import tqdm
 import wandb
 
 from .model import DecisionTransformer
-from .offline_dataset_new import TrajectoryDataset
+from .offline_dataset import TrajectoryDataset
 from torch.utils.data.sampler import WeightedRandomSampler
 from torch.utils.data import random_split, DataLoader
 

@@ -1,7 +1,7 @@
 import pytest
 
 import torch
-from src.decision_transformer.offline_dataset_new import TrajectoryDataset, TrajectoryReader
+from src.decision_transformer.offline_dataset import TrajectoryDataset, TrajectoryReader
 from torch.utils.data import DataLoader, random_split
 from torch.utils.data.sampler import WeightedRandomSampler
 

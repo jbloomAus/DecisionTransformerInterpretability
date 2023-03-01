@@ -8,7 +8,7 @@ from environments import make_env
 
 from decision_transformer.utils import DTArgs, parse_args
 from decision_transformer.model import DecisionTransformer
-from decision_transformer.offline_dataset_new import TrajectoryDataset, TrajectoryVisualizer
+from decision_transformer.offline_dataset import TrajectoryDataset, TrajectoryVisualizer
 from decision_transformer.train import train
 
 

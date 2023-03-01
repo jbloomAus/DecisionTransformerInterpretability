@@ -3,7 +3,7 @@ import torch
 from src.decision_transformer.model import DecisionTransformer
 from src.environments.environments import make_env
 from src.decision_transformer.train import evaluate_dt_agent
-from src.decision_transformer.offline_dataset_new import TrajectoryDataset
+from src.decision_transformer.offline_dataset import TrajectoryDataset
 
 # need an agent.
 
