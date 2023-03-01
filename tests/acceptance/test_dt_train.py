@@ -1,9 +1,9 @@
 import pytest
 import torch
 from src.decision_transformer.model import DecisionTransformer
-from src.decision_transformer.offline_dataset import TrajectoryLoader
 from src.environments.environments import make_env
 from src.decision_transformer.train import evaluate_dt_agent
+from src.decision_transformer.offline_dataset_new import TrajectoryDataset
 
 # need an agent.
 
@@ -17,8 +17,9 @@ from src.decision_transformer.train import evaluate_dt_agent
 def test_evaluate_dt_agent():
 
     trajectory_path = "tests/fixtures/test_trajectories.pkl"
-    trajectory_data_set = TrajectoryLoader(
-        trajectory_path, pct_traj=1, device="cuda" if torch.cuda.is_available() else "cpu")
+    trajectory_data_set = TrajectoryDataset(
+        trajectory_path, 
+        pct_traj=1, device="cuda" if torch.cuda.is_available() else "cpu")
 
     env_id = trajectory_data_set.metadata['args']['env_id']
     env = make_env(env_id, seed=1, idx=0, capture_video=False,
