@@ -25,6 +25,12 @@ def decision_transformer():
     )
 
 
+def test_parameter_count(decision_transformer):
+    num_parameters = sum(
+        p.numel() for p in decision_transformer.parameters() if p.requires_grad)
+    assert num_parameters == 432411
+
+
 def test_get_logits(transformer):
     batch_size = 4
     seq_length = 5

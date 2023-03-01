@@ -1,6 +1,6 @@
-from decision_transformer.runner import run_decision_transformer
-from decision_transformer.utils import DTArgs, parse_args
-from environments.environments import make_env
+from .decision_transformer.runner import run_decision_transformer
+from .decision_transformer.utils import DTArgs, parse_args
+from .environments.environments import make_env
 
 if __name__ == "__main__":
 

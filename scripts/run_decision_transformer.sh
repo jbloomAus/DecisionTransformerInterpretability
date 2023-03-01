@@ -1,4 +1,4 @@
-python src/run_decision_transformer.py \
+python -m src.run_decision_transformer \
     --exp_name MiniGrid-Dynamic-Obstacles-8x8-v0-Refactor \
     --trajectory_path trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl \
     --d_model 128 \
