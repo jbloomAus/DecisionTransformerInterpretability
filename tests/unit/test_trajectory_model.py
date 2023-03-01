@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from gymnasium.spaces import Box, Dict
 from src.config import EnvironmentConfig, TransformerModelConfig
-from src.trajectory_model import TrajectoryTransformer, DecisionTransformer, PosEmbedTokens, StateEncoder
+from src.models.trajectory_model import TrajectoryTransformer, DecisionTransformer, PosEmbedTokens, StateEncoder
 from transformer_lens import HookedTransformer
 
 
