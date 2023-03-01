@@ -1,4 +1,4 @@
-import pytest 
+import pytest
 import gymnasium as gym
 
 from src.environments.registration import register_envs
@@ -12,4 +12,3 @@ def test_register_envs(env_id):
 
     env_ids = gym.envs.registry.keys()
     assert env_id in env_ids
-    

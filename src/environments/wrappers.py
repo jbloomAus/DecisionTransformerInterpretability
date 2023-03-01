@@ -4,6 +4,7 @@ from gymnasium import spaces
 from minigrid.minigrid_env import MiniGridEnv
 from minigrid.wrappers import ObservationWrapper
 
+
 class ViewSizeWrapper(ObservationWrapper):
     """
     Wrapper to customize the agent field of view size.
@@ -52,8 +53,9 @@ class ViewSizeWrapper(ObservationWrapper):
 
         return {**obs, "image": image}
 
+
 class RenderResizeWrapper(gym.Wrapper):
-    def __init__(self, env: MiniGridEnv, render_width = 256, render_height = 256):
+    def __init__(self, env: MiniGridEnv, render_width=256, render_height=256):
         super().__init__(env)
         self.render_width = render_width
         self.render_height = render_height
@@ -65,7 +67,8 @@ class RenderResizeWrapper(gym.Wrapper):
             img = np.array(img)
 
             # Resize image
-            img = self._resize_image(img, self.render_width, self.render_height)
+            img = self._resize_image(
+                img, self.render_width, self.render_height)
 
             return img
 

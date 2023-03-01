@@ -9,13 +9,13 @@ Modules:
 Classes:
     - PPOArgs: A dataclass that stores hyperparameters and other configuration options for PPO training.
     - Minibatch: A dataclass that represents a minibatch of experiences, containing observations, actions, log probabilities, advantages, values, and returns.
-    
+
 Functions:
     - get_obs_preprocessor: A function that takes an OpenAI gym observation space and returns a function that preprocesses observations for use in neural networks.
     - check_and_upload_new_video: A function that checks for new video files in a specified directory and logs them to a WandB run if they are found.
     - get_printable_output_for_probe_envs: A function that tests a probe environment and prints output in the form of a widget, showing the actual and expected values and actions for the environment.
     - train_ppo: The main function for training an agent using the PPO algorithm. Calls the Agent and Memory classes, and uses an optimizer and learning rate scheduler to update the network weights.
-    
+
 Dependencies:
     - gym (gymnasium): For interacting with OpenAI gym environments.
     - numpy: For numerical operations and array manipulation.

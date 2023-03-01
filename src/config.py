@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import gymnasium as gym
 
+
 @dataclass
 class TransformerModelConfig():
     d_model: int = 128
@@ -18,6 +19,7 @@ class TransformerModelConfig():
     def __post_init__(self):
         assert self.d_model % self.n_heads == 0
         self.d_head = self.d_model // self.n_heads
+
 
 @dataclass
 class EnvironmentConfig():
@@ -41,4 +43,3 @@ class EnvironmentConfig():
         env = gym.make(self.env_id)
         self.action_space = env.action_space or env.action_space
         self.observation_space = env.observation_space or env.observation_space
-

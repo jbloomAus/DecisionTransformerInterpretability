@@ -10,6 +10,7 @@ from einops import rearrange
 
 from torch.utils.data import Dataset
 
+
 class TrajectoryReader():
     '''
     The trajectory reader is responsible for reading trajectories from a file.
@@ -35,6 +36,7 @@ class TrajectoryReader():
                 f"Path {self.path} is not a valid trajectory file")
 
         return data
+
 
 class TrajectoryDataset(Dataset):
 

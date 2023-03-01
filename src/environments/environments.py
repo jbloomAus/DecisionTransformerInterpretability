@@ -2,6 +2,7 @@ import gymnasium as gym
 from .wrappers import RenderResizeWrapper, ViewSizeWrapper
 from minigrid.wrappers import FullyObsWrapper, OneHotPartialObsWrapper
 
+
 def make_env(
     env_id: str,
     seed: int,
@@ -42,7 +43,6 @@ def make_env(
                     episode_trigger=lambda x: x % video_frequency == 0,
                     disable_logger=True
                 )
-        
 
         # hard code for now!
         if env_id.startswith("MiniGrid"):
@@ -60,4 +60,3 @@ def make_env(
         return env
 
     return thunk
-

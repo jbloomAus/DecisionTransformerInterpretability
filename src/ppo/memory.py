@@ -75,7 +75,7 @@ class Memory():
         - logprob: the log probability of taking that action
         - value: the estimated value of the current state
         - reward: the reward received from taking that action
-        
+
         The output will be a sample from the stored experiences, in the format:
             Sample X/Y:
             obs    : [...]

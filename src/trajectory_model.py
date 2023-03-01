@@ -27,12 +27,11 @@ class TrajectoryTransformer(nn.Module):
         self,
         transformer_config: TransformerModelConfig,
         environment_config: EnvironmentConfig
-        ):
+    ):
         super().__init__()
 
         self.transformer_config = transformer_config
         self.environment_config = environment_config
-
 
         self.action_embedding = nn.Sequential(
             nn.Embedding(environment_config.action_space.n+1, self.transformer_config.d_model))
@@ -40,19 +39,20 @@ class TrajectoryTransformer(nn.Module):
             nn.Linear(1, self.transformer_config.d_model, bias=False))
         self.time_embedding = self.initialize_time_embedding()
         self.state_embedding = self.initialize_state_embedding()
-        
+
         # Initialize weights
         nn.init.normal_(
             self.action_embedding[0].weight, mean=0.0, std=1/((environment_config.action_space.n+1 + 1)*self.transformer_config.d_model))
         nn.init.normal_(
             self.reward_embedding[0].weight, mean=0.0, std=1/self.transformer_config.d_model)
-        
+
         self.transformer = self.initialize_easy_transformer()
 
-        self.action_predictor = nn.Linear(self.transformer_config.d_model, environment_config.action_space.n)
+        self.action_predictor = nn.Linear(
+            self.transformer_config.d_model, environment_config.action_space.n)
         self.reward_predictor = nn.Linear(self.transformer_config.d_model, 1)
         self.initialize_state_predictor()
-        
+
     def forward(self,
                 # has variable shape, starting with batch, position
                 states: TT[...],
@@ -88,7 +88,7 @@ class TrajectoryTransformer(nn.Module):
         return state_preds, action_preds, reward_preds
 
     def predict_rewards(self, x):
-        return self.reward_predictor(x)  
+        return self.reward_predictor(x)
 
     def predict_states(self, x):
         return self.state_predictor(x)
@@ -116,10 +116,11 @@ class TrajectoryTransformer(nn.Module):
             time_embeddings=time_embeddings
         )
         return token_embeddings
-    
+
     def get_time_embedding(self, timesteps):
 
-        assert timesteps.max() <= self.environment_config.max_steps, "timesteps must be less than max_timesteps"
+        assert timesteps.max(
+        ) <= self.environment_config.max_steps, "timesteps must be less than max_timesteps"
 
         block_size = timesteps.shape[1]
         timesteps = rearrange(
@@ -128,8 +129,8 @@ class TrajectoryTransformer(nn.Module):
         if self.transformer_config.time_embedding_type != 'linear':
             time_embeddings = time_embeddings.squeeze(-2)
         time_embeddings = rearrange(
-            time_embeddings, 
-            '(batch block) n_embd -> batch block n_embd', 
+            time_embeddings,
+            '(batch block) n_embd -> batch block n_embd',
             block=block_size
         )
         return time_embeddings
@@ -176,7 +177,7 @@ class TrajectoryTransformer(nn.Module):
         Note that different subclasses will have different token embeddings
         such as the DecisionTransformer which will use RTG (placed before the
         state embedding).
-        
+
         Args:
             states: (batch, position, state_dim)
             actions: (batch, position)
@@ -206,20 +207,22 @@ class TrajectoryTransformer(nn.Module):
         else:
             self.time_embedding = nn.Linear(
                 1, self.transformer_config.d_model)
-            
+
         return self.time_embedding
-    
+
     def initialize_state_embedding(self):
 
         if self.transformer_config.state_embedding_type == 'CNN':
             state_embedding = StateEncoder(self.transformer_config.d_model)
         else:
-            n_obs = np.prod(self.environment_config.observation_space['image'].shape)
-            state_embedding = nn.Linear(n_obs, self.transformer_config.d_model, bias=False)
+            n_obs = np.prod(
+                self.environment_config.observation_space['image'].shape)
+            state_embedding = nn.Linear(
+                n_obs, self.transformer_config.d_model, bias=False)
             nn.init.normal_(state_embedding.weight, mean=0.0, std=0.02)
 
         return state_embedding
-    
+
     def initialize_state_predictor(self):
         if isinstance(self.environment_config.observation_space, Box):
             self.state_predictor = nn.Linear(
@@ -241,7 +244,7 @@ class TrajectoryTransformer(nn.Module):
             # 3x the max timestep so we have room for an action, reward, and state per timestep
             n_ctx=self.transformer_config.n_ctx,
             act_fn="relu",
-            normalization_type= "LN" if self.transformer_config.layer_norm else None,
+            normalization_type="LN" if self.transformer_config.layer_norm else None,
             attention_dir="causal",
             d_vocab_out=self.transformer_config.d_model,
             seed=self.transformer_config.seed,
@@ -261,22 +264,23 @@ class TrajectoryTransformer(nn.Module):
                         cfg.initializer_range)
         # don't unembed, we'll do that ourselves.
         transformer.unembed = nn.Identity()
-        
+
         return transformer
+
 
 class DecisionTransformer(TrajectoryTransformer):
 
     def __init__(self, environment_config, transformer_config, **kwargs):
         super().__init__(
-            environment_config = environment_config,
-            transformer_config = transformer_config, 
+            environment_config=environment_config,
+            transformer_config=transformer_config,
             **kwargs)
-    
+
     def get_token_embeddings(self,
                              state_embeddings,
                              time_embeddings,
                              reward_embeddings,
-                             action_embeddings = None, 
+                             action_embeddings=None,
                              targets=None):
         '''
         We need to compose the embeddings for:
@@ -329,6 +333,7 @@ class DecisionTransformer(TrajectoryTransformer):
 
         return token_embeddings
 
+
 class StateEncoder(nn.Module):
     def __init__(self, n_embed):
         super(StateEncoder, self).__init__()
@@ -349,6 +354,7 @@ class StateEncoder(nn.Module):
         x = self.fc(x)
         x = F.relu(x)
         return x
+
 
 class PosEmbedTokens(nn.Module):
     def __init__(self, cfg: Union[Dict, HookedTransformerConfig]):

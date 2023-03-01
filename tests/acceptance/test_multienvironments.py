@@ -4,6 +4,8 @@ from minigrid.envs import DynamicObstaclesEnv, CrossingEnv, MultiRoomEnv
 from src.environments.multienvironments import MultiEnvSampler
 
 # test that the envs are registered
+
+
 def test_multienv_sampler():
 
     max_steps = 1000
@@ -12,22 +14,22 @@ def test_multienv_sampler():
     env = DynamicObstaclesEnv(
         size=6,
         n_obstacles=0,
-        agent_start_pos = None,
+        agent_start_pos=None,
         render_mode="rgb_array",
         max_steps=max_steps
     )
     envs.append(env)
-    for size in range(6,10):
-        for num_obstacles in range(5,7):
+    for size in range(6, 10):
+        for num_obstacles in range(5, 7):
             env = DynamicObstaclesEnv(
                 size=size,
                 n_obstacles=num_obstacles,
-                agent_start_pos = None,
+                agent_start_pos=None,
                 render_mode=render_mode,
                 max_steps=max_steps
             )
             envs.append(env)
-    
+
     multi_env = MultiEnvSampler(envs)
     assert multi_env.n_envs == len(envs)
     # assert obs space is the same

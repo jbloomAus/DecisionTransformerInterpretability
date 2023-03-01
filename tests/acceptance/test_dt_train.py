@@ -18,7 +18,7 @@ def test_evaluate_dt_agent():
 
     trajectory_path = "tests/fixtures/test_trajectories.pkl"
     trajectory_data_set = TrajectoryDataset(
-        trajectory_path, 
+        trajectory_path,
         pct_traj=1, device="cuda" if torch.cuda.is_available() else "cpu")
 
     env_id = trajectory_data_set.metadata['args']['env_id']

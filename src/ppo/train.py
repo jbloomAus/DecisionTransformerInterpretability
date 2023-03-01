@@ -65,7 +65,6 @@ def train_ppo(args: PPOArgs, envs, trajectory_writer=None, probe_idx=None):
     None
     """
 
-
     memory = Memory(envs, args, device)
     agent = Agent(envs, device=device, hidden_dim=args.hidden_dim)
     num_updates = args.total_timesteps // args.batch_size
