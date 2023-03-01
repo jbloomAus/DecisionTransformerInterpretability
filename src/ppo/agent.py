@@ -152,6 +152,7 @@ class Agent(nn.Module):
             next_obs = memory.obs_preprocessor(next_obs)
             reward = t.from_numpy(reward).to(device)
 
+            # TODO refactor to use ternary statements
             if trajectory_writer is not None:
                 # first_obs = obs
                 if not args.cuda:
