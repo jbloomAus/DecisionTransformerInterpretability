@@ -21,7 +21,7 @@ class DTArgs:
     train_epochs: int = 10
     test_epochs: int = 3
     learning_rate: float = 0.0001
-    linear_time_embedding: bool = True
+    linear_time_embedding: bool = False
     pct_traj: float = 1
     weight_decay: float = 0.001
     seed: int = 1
