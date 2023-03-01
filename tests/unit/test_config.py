@@ -1,7 +1,7 @@
 import pytest
 import gymnasium as gym
 
-from src.config import TransformerModelConfig, EnvironmentConfig
+from src.config import TransformerModelConfig, EnvironmentConfig, OfflineTrainConfig
 
 
 def test_transformer_model_config():
@@ -49,3 +49,20 @@ def test_environment_config():
     env = gym.make(config.env_id)
     assert config.action_space == env.action_space
     assert config.observation_space == env.observation_space
+
+
+def test_offline_train_config():
+    # test existence of properties
+    config = OfflineTrainConfig()
+    assert hasattr(config, 'batch_size')
+    assert hasattr(config, 'lr')
+    assert hasattr(config, 'weight_decay')
+    assert hasattr(config, 'device')
+    assert hasattr(config, 'track')
+    assert hasattr(config, 'train_epochs')
+    assert hasattr(config, 'test_epochs')
+    assert hasattr(config, 'test_frequency')
+    assert hasattr(config, 'eval_frequency')
+    assert hasattr(config, 'eval_episodes')
+    assert hasattr(config, 'initial_rtg')
+    assert hasattr(config, 'eval_max_time_steps')

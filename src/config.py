@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 import gymnasium as gym
+from torch import device
+from typing import Optional
 
 
 @dataclass
@@ -43,3 +45,30 @@ class EnvironmentConfig():
         env = gym.make(self.env_id)
         self.action_space = env.action_space or env.action_space
         self.observation_space = env.observation_space or env.observation_space
+
+
+@dataclass
+class OfflineTrainConfig:
+    batch_size: int = 128
+    lr: float = 0.0001
+    weight_decay: float = 0.0
+    pct_traj: float = 1.0
+    prob_go_from_end: float = 0.0
+    device: device = device("cpu")
+    track: bool = False
+    train_epochs: int = 100
+    test_epochs: int = 10
+    test_frequency: int = 10
+    eval_frequency: int = 10
+    eval_episodes: int = 10
+    initial_rtg: list[float] = (0.0, 1.0)
+    eval_max_time_steps: int = 100
+    trajectory_path: Optional[str] = None
+
+
+@dataclass
+class WandbConfig:
+    wandb: Optional[wandb_config.Config] = None
+    wandb_project: Optional[str] = None
+    wandb_run_name: Optional[str] = None
+    wandb_entity: Optional[str] = None
