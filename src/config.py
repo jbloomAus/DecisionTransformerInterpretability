@@ -1,7 +1,10 @@
+import os
+import uuid
 from dataclasses import dataclass
+from typing import Optional
+
 import gymnasium as gym
 from torch import device
-from typing import Optional
 
 
 @dataclass
@@ -25,9 +28,8 @@ class TransformerModelConfig():
 
 @dataclass
 class EnvironmentConfig():
-    env = None
     env_id: str = 'MiniGrid-Empty-8x8-v0'
-    one_hot: bool = False
+    one_hot_obs: bool = False
     fully_observed: bool = False
     max_steps: int = 1000
     seed: int = 1
@@ -67,7 +69,41 @@ class OfflineTrainConfig:
 
 
 @dataclass
-class WandbConfig:
-    wandb_project: Optional[str] = None
-    wandb_run_name: Optional[str] = None
-    wandb_entity: Optional[str] = None
+class OnlineTrainConfig:
+    hidden_dim: int = 64
+    total_timesteps: int = 18000
+    learning_rate: float = 0.00025
+    decay_lr: bool = False,
+    num_envs: int = 4
+    num_steps: int = 128
+    gamma: float = 0.99
+    gae_lambda: float = 0.95
+    num_minibatches: int = 4
+    update_epochs: int = 4
+    clip_coef: float = 0.4
+    ent_coef: float = 0.2
+    vf_coef: float = 0.5
+    max_grad_norm: float = 2
+    one_hot_obs: bool = False
+    trajectory_path: str = None
+    fully_observed: bool = False
+
+    def __post_init__(self):
+        self.batch_size = int(self.num_envs * self.num_steps)
+        self.minibatch_size = self.batch_size // self.num_minibatches
+
+
+@dataclass
+class RunConfig:
+    exp_name: str = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
+    seed: int = 1
+    cuda: bool = True
+    track: bool = True
+    wandb_project_name: str = "PPO-MiniGrid"
+    wandb_entity: str = None
+    trajectory_path: Optional[str] = None
+
+    def __post_init__(self):
+        if self.trajectory_path is None:
+            self.trajectory_path = os.path.join(
+                "trajectories", self.exp_name + str(uuid.uuid4()) + ".gz")

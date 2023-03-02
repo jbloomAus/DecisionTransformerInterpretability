@@ -2,6 +2,7 @@ import pytest
 import gymnasium as gym
 
 from src.config import TransformerModelConfig, EnvironmentConfig, OfflineTrainConfig
+from src.config import RunConfig
 
 
 def test_transformer_model_config():
@@ -31,7 +32,7 @@ def test_environment_config():
     config = EnvironmentConfig()
     assert hasattr(config, 'env')
     assert hasattr(config, 'env_id')
-    assert hasattr(config, 'one_hot')
+    assert hasattr(config, 'one_hot_obs')
     assert hasattr(config, 'fully_observed')
     assert hasattr(config, 'max_steps')
     assert hasattr(config, 'seed')
@@ -66,3 +67,15 @@ def test_offline_train_config():
     assert hasattr(config, 'eval_episodes')
     assert hasattr(config, 'initial_rtg')
     assert hasattr(config, 'eval_max_time_steps')
+
+
+def test_run_config():
+    # test existence of properties
+    config = RunConfig()
+    assert hasattr(config, 'exp_name')
+    assert hasattr(config, 'seed')
+    assert hasattr(config, 'cuda')
+    assert hasattr(config, 'track')
+    assert hasattr(config, 'wandb_project_name')
+    assert hasattr(config, 'wandb_entity')
+    assert hasattr(config, 'trajectory_path')
