@@ -17,6 +17,7 @@ from plotly.subplots import make_subplots
 from einops import rearrange
 import uuid
 
+
 MAIN = __name__ == "__main__"
 
 Arr = np.ndarray
@@ -161,7 +162,7 @@ class PPOArgs:
     capture_video: bool = True
     env_id: str = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
     view_size: int = 7
-    hidden_dim: int = 64
+    hidden_size: int = 64
     total_timesteps: int = 1800000
     learning_rate: float = 0.00025
     decay_lr: bool = False,
@@ -314,3 +315,44 @@ def preprocess_images(images, device=None):
     images = np.array(images)
     images = images.astype(np.float32)
     return images
+
+
+def get_printable_output_for_probe_envs(args, agent, probe_idx: int, update: int, num_updates: int):
+    """Tests a probe environment and returns a widget-style output for the environment.
+
+    The function prints and returns output showing how well the agent performs on a given probe environment. The output
+    includes the agent's computed values and expected values for the observations in the probe environment, as well as
+    the agent's computed probabilities and the expected action for the probe environment, if applicable.
+
+    Args:
+    - args: a PPOArgs object containing arguments for the PPO training algorithm
+    - agent: an Agent object containing a trained PPO agent
+    - probe_idx: the index of the probe environment to test
+    - update: the current training update number
+    - num_updates: the total number of training updates
+
+    Returns:
+    - output: a string representing the output widget for the probe environment
+    """
+    obs_for_probes = [[[0.0]], [[-1.0], [+1.0]],
+                      [[0.0], [1.0]], [[0.0]], [[0.0], [1.0]]]
+    expected_value_for_probes = [
+        1.0, [-1.0, +1.0], [args.gamma, 1.0], 1.0, [1.0, 1.0]]
+    expected_actions_for_probs = [None, None, None, 1, [0, 1]]
+
+    obs = t.tensor(obs_for_probes[probe_idx]).to(device)
+    output = ""
+
+    # Check if the value is what you expect
+    value = agent.critic(obs).detach().cpu().numpy().squeeze()
+    expected_value = expected_value_for_probes[probe_idx]
+    output += f"Obs: {update+1}/{num_updates}\n\nActual value: {value}\nExpected value: {expected_value}"
+    # Check if the action is what you expect
+    expected_action = expected_actions_for_probs[probe_idx]
+    if expected_action is not None:
+        logits = agent.actor(obs)
+        probs = logits.softmax(-1).detach().cpu().numpy().squeeze()
+        probs = str(probs).replace('\n', '')
+        output += f"\n\nActual prob: {probs}\nExpected action: {expected_action}"
+
+    return output

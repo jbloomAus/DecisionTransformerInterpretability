@@ -21,7 +21,7 @@
 #     trajectory_path: str = None
 #     fully_observed: bool = False
 
-python src/run_ppo.py --exp_name "MiniGrid-DoorKey-16x16-v0" \
+python -m src.run_ppo --exp_name "Test" \
     --seed 1 \
     --cuda \
     --track \
@@ -30,7 +30,7 @@ python src/run_ppo.py --exp_name "MiniGrid-DoorKey-16x16-v0" \
     --view_size 5 \
     --total_timesteps 350000 \
     --learning_rate 0.00025 \
-    --num_envs 4 \
+    --num_envs 8 \
     --num_steps 128 \
     --num_minibatches 4 \
     --update_epochs 4 \

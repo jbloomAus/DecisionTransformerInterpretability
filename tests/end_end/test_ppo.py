@@ -1,5 +1,5 @@
 
-from src.run_ppo import ppo_runner
+from src.ppo.runner import ppo_runner
 from src.ppo.utils import PPOArgs
 
 

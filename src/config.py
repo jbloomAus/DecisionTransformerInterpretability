@@ -15,7 +15,6 @@ class TransformerModelConfig():
     n_layers: int = 2
     n_ctx: int = 3
     layer_norm: bool = False
-    linear_time_embedding: bool = False
     state_embedding_type: str = 'grid'
     time_embedding_type: str = 'learned'
     seed: int = 1
@@ -24,11 +23,12 @@ class TransformerModelConfig():
     def __post_init__(self):
         assert self.d_model % self.n_heads == 0
         self.d_head = self.d_model // self.n_heads
+        assert self.time_embedding_type in ['learned', 'linear']
 
 
 @dataclass
 class EnvironmentConfig():
-    env_id: str = 'MiniGrid-Empty-8x8-v0'
+    env_id: str = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
     one_hot_obs: bool = False
     fully_observed: bool = False
     max_steps: int = 1000
@@ -37,7 +37,6 @@ class EnvironmentConfig():
     capture_video: bool = False
     video_dir: str = 'videos'
     render_mode: str = 'rgb_array'
-    num_parralel_envs: int = 1
     action_space: None = None
     observation_space: None = None
     device: str = 'cpu'
@@ -70,8 +69,8 @@ class OfflineTrainConfig:
 
 @dataclass
 class OnlineTrainConfig:
-    hidden_dim: int = 64
-    total_timesteps: int = 18000
+    hidden_size: int = 64
+    total_timesteps: int = 180000
     learning_rate: float = 0.00025
     decay_lr: bool = False,
     num_envs: int = 4
@@ -84,7 +83,6 @@ class OnlineTrainConfig:
     ent_coef: float = 0.2
     vf_coef: float = 0.5
     max_grad_norm: float = 2
-    one_hot_obs: bool = False
     trajectory_path: str = None
     fully_observed: bool = False
 

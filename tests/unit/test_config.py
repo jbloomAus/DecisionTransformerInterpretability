@@ -1,7 +1,7 @@
 import pytest
 import gymnasium as gym
 
-from src.config import TransformerModelConfig, EnvironmentConfig, OfflineTrainConfig
+from src.config import TransformerModelConfig, EnvironmentConfig, OfflineTrainConfig, OnlineTrainConfig
 from src.config import RunConfig
 
 
@@ -14,7 +14,6 @@ def test_transformer_model_config():
     assert hasattr(config, 'n_layers')
     assert hasattr(config, 'n_ctx')
     assert hasattr(config, 'layer_norm')
-    assert hasattr(config, 'linear_time_embedding')
     assert hasattr(config, 'state_embedding_type')
     assert hasattr(config, 'time_embedding_type')
     assert hasattr(config, 'seed')
@@ -30,7 +29,6 @@ def test_transformer_model_config():
 def test_environment_config():
     # test existence of properties
     config = EnvironmentConfig()
-    assert hasattr(config, 'env')
     assert hasattr(config, 'env_id')
     assert hasattr(config, 'one_hot_obs')
     assert hasattr(config, 'fully_observed')
@@ -40,7 +38,6 @@ def test_environment_config():
     assert hasattr(config, 'capture_video')
     assert hasattr(config, 'video_dir')
     assert hasattr(config, 'render_mode')
-    assert hasattr(config, 'num_parralel_envs')
     assert hasattr(config, 'action_space')
     assert hasattr(config, 'observation_space')
     assert hasattr(config, 'device')
@@ -50,6 +47,31 @@ def test_environment_config():
     env = gym.make(config.env_id)
     assert config.action_space == env.action_space
     assert config.observation_space == env.observation_space
+
+
+def test_online_train_config():
+    # test existence of properties
+    config = OnlineTrainConfig()
+    assert hasattr(config, 'batch_size')
+    assert hasattr(config, 'minibatch_size')
+    assert hasattr(config, 'hidden_size')
+    assert hasattr(config, 'total_timesteps')
+    assert hasattr(config, 'learning_rate')
+    assert hasattr(config, 'decay_lr')
+    assert hasattr(config, 'num_envs')
+    assert hasattr(config, 'num_steps')
+    assert hasattr(config, 'gamma')
+    assert hasattr(config, 'gae_lambda')
+    assert hasattr(config, 'num_minibatches')
+    assert hasattr(config, 'update_epochs')
+    assert hasattr(config, 'clip_coef')
+    assert hasattr(config, 'ent_coef')
+    assert hasattr(config, 'vf_coef')
+    assert hasattr(config, 'max_grad_norm')
+    assert hasattr(config, 'trajectory_path')
+    assert hasattr(config, 'fully_observed')
+    assert hasattr(config, 'batch_size')
+    assert hasattr(config, 'minibatch_size')
 
 
 def test_offline_train_config():
