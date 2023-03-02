@@ -1,12 +1,15 @@
+import abc
+from typing import Tuple
+
 import gymnasium as gym
 import numpy as np
 import torch as t
+import torch.optim as optim
 from torch import nn, optim
-from typing import Tuple
 from torch.distributions.categorical import Categorical
+from torchtyping import TensorType as TT
 from torchtyping import patch_typeguard
 from typeguard import typechecked
-from torchtyping import TensorType as TT
 
 from .memory import Memory
 from .utils import PPOArgs
@@ -41,7 +44,38 @@ class PPOScheduler:
                 frac * (self.end_lr - self.initial_lr)
 
 
-class Agent(nn.Module):
+class PPOAgent(nn.Module):
+    critic: nn.Module
+    actor: nn.Module
+
+    @abc.abstractmethod
+    def __init__(self, envs: gym.vector.SyncVectorEnv, device, hidden_dim: int):
+        super().__init__()
+        self.envs = envs
+        self.device = device
+        self.hidden_dim = hidden_dim
+
+        self.critic = nn.Sequential()
+        self.actor = nn.Sequential()
+
+    @abc.abstractmethod
+    def layer_init(self, layer: nn.Linear, std: float, bias_const: float) -> nn.Linear:
+        pass
+
+    @abc.abstractmethod
+    def make_optimizer(self, num_updates: int, initial_lr: float, end_lr: float) -> Tuple[optim.Optimizer, PPOScheduler]:
+        pass
+
+    @abc.abstractmethod
+    def rollout(self, memory, args, envs, trajectory_writer) -> None:
+        pass
+
+    @abc.abstractmethod
+    def learn(self, memory, args, optimizer, scheduler) -> None:
+        pass
+
+
+class FCAgent(PPOAgent):
     critic: nn.Sequential
     actor: nn.Sequential
 
@@ -54,7 +88,8 @@ class Agent(nn.Module):
         - device (t.device): the device on which to run the agent.
         - hidden_dim (int): the number of neurons in the hidden layer.
         '''
-        super().__init__()
+        super().__init__(envs=envs, device=device, hidden_dim=hidden_dim)
+        # super().__init__(envs=envs, device=device, hidden_dim=hidden_dim)
         # obs_shape will be a tuple (e.g. for RGB images this would be an array (h, w, c))
         if isinstance(envs.single_observation_space, gym.spaces.Box):
             self.obs_shape = envs.single_observation_space.shape
@@ -91,6 +126,7 @@ class Agent(nn.Module):
         self.device = device
         self.to(device)
 
+    # TODO work out why this is std not gain for orthogonal init
     def layer_init(self, layer: nn.Linear, std: float = np.sqrt(2), bias_const: float = 0.0) -> nn.Linear:
         """Initializes the weights of a linear layer with orthogonal initialization and the biases with a constant value.
 

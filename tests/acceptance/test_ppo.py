@@ -5,7 +5,7 @@ import gymnasium as gym
 from gymnasium.spaces import Discrete
 
 from src.ppo.train import train_ppo
-from src.ppo.agent import Agent
+from src.ppo.agent import FCAgent as Agent
 from src.ppo.my_probe_envs import Probe1, Probe2, Probe3, Probe4, Probe5
 from src.ppo.utils import PPOArgs
 from src.environments.environments import make_env

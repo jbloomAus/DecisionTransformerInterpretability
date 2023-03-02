@@ -3,7 +3,7 @@ from tqdm.autonotebook import tqdm
 import os
 import wandb
 
-from .agent import Agent
+from .agent import FCAgent as Agent
 from .memory import Memory
 from .utils import get_printable_output_for_probe_envs
 
@@ -33,12 +33,10 @@ def train_ppo(
 
     num_updates = args.total_timesteps // args.batch_size
 
-    if not args.decay_lr:
-        end_lr = args.learning_rate
-    else:
-        end_lr = 0.0
     optimizer, scheduler = agent.make_optimizer(
-        num_updates, initial_lr=args.learning_rate, end_lr=end_lr)
+        num_updates,
+        initial_lr=args.learning_rate,
+        end_lr=args.learning_rate if not args.decay_lr else 0.0)
 
     # out = wg.Output(layout={"padding": "15px"})
     # display(out)

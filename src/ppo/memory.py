@@ -142,13 +142,16 @@ class Memory():
         returns = advantages + values
         indexes = self.get_minibatch_indexes(
             self.args.batch_size, self.args.minibatch_size)
-        return [
-            Minibatch(*[
-                arr.flatten(0, 1)[ind]
-                for arr in [obs, actions, logprobs, advantages, values, returns]
-            ])
-            for ind in indexes
-        ]
+
+        minibatches = []
+        for ind in indexes:
+            batch = []
+            for arr in [obs, actions, logprobs, advantages, values, returns]:
+                flat_arr = arr.flatten(0, 1)
+                batch.append(flat_arr[ind])
+            minibatches.append(Minibatch(*batch))
+
+        return minibatches
 
     def get_printable_output(self) -> str:
         '''Sets a new progress bar description, if any episodes have terminated.

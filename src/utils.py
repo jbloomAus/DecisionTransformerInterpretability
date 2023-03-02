@@ -3,6 +3,7 @@ import lzma
 import os
 import pickle
 import time
+import dataclasses
 from dataclasses import asdict, dataclass
 from typing import Dict
 
@@ -67,11 +68,16 @@ class TrajectoryWriter():
             'truncated': np.array(self.truncated, dtype=bool),
             'infos': np.array(self.infos, dtype=object)
         }
-
-        metadata = {
-            "args": asdict(self.args),  # Args such as ppo args
-            "time": time.time()  # Time of writing
-        }
+        if dataclasses.is_dataclass(self.args):
+            metadata = {
+                "args": asdict(self.args),  # Args such as ppo args
+                "time": time.time()  # Time of writing
+            }
+        else:
+            metadata = {
+                "args": self.args,  # Args such as ppo args
+                "time": time.time()  # Time of writing
+            }
 
         if not os.path.exists(os.path.dirname(self.path)):
             os.makedirs(os.path.dirname(self.path))
