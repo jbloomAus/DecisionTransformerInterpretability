@@ -31,6 +31,7 @@ def test_environment_config():
     config = EnvironmentConfig()
     assert hasattr(config, 'env_id')
     assert hasattr(config, 'one_hot_obs')
+    assert hasattr(config, 'img_obs')
     assert hasattr(config, 'fully_observed')
     assert hasattr(config, 'max_steps')
     assert hasattr(config, 'seed')

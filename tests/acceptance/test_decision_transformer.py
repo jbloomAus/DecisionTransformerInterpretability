@@ -4,7 +4,9 @@ import numpy as np
 from einops import rearrange
 import gymnasium as gym
 from minigrid.wrappers import RGBImgPartialObsWrapper, ImgObsWrapper, OneHotPartialObsWrapper
-from src.decision_transformer.model import DecisionTransformer, StateEncoder
+from src.environments.wrappers import ViewSizeWrapper, RenderResizeWrapper
+from src.models.trajectory_model import DecisionTransformer, CloneTransformer, StateEncoder
+from src.config import EnvironmentConfig, TransformerModelConfig
 
 
 def test_state_encoder():
@@ -22,303 +24,335 @@ def test_state_encoder():
     x = state_encoder(x)
     assert x.shape == (1, 64)
 
-# first, we want to know that we can initialize the model
 
-
-def test_decision_transformer_init():
+def test_decision_transformer_img_obs_forward():
 
     env = gym.make('MiniGrid-Empty-8x8-v0')
     env = RGBImgPartialObsWrapper(env)  # Get pixel observations
     env = ImgObsWrapper(env)  # Get rid of the 'mission' field
     obs, _ = env.reset()  # This now produces an RGB tensor only
 
-    decision_transformer = DecisionTransformer(env)
+    transformer_config = TransformerModelConfig()
+    environment_config = EnvironmentConfig(
+        env_id='MiniGrid-Empty-8x8-v0',
+        img_obs=True,
+    )
+
+    decision_transformer = DecisionTransformer(
+        transformer_config=transformer_config,
+        environment_config=environment_config
+    )
+
     assert decision_transformer is not None
 
     # our model should have the following:
-
-    # state_encoder
-    assert decision_transformer.state_encoder is not None
-
-    # reward_embedding
+    assert decision_transformer.state_embedding is not None
     assert decision_transformer.reward_embedding is not None
-
-    # action_embedding
     assert decision_transformer.action_embedding is not None
-
-    # time_embedding
     assert decision_transformer.time_embedding is not None
 
     # a GPT2-like transformer
     assert decision_transformer.transformer is not None
     assert type(decision_transformer.transformer).__name__ == 'HookedTransformer'
 
+    # a linear layer to predict the next action
+    assert decision_transformer.action_predictor is not None
 
-def test_get_state_embeddings_image():
+    # a linear layer to predict the next reward
+    assert decision_transformer.reward_predictor is not None
+
+    # a linear layer to predict the next state
+    assert decision_transformer.state_predictor is not None
+
+    states = t.tensor(obs).unsqueeze(0).unsqueeze(0)  # add block, add batch
+    actions = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
+    rewards = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
+    timesteps = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
+
+    state_preds, action_preds, reward_preds = decision_transformer.forward(
+        states=states,
+        actions=actions,
+        rtgs=rewards,
+        timesteps=timesteps
+    )
+
+    assert state_preds.shape == (1, 1, 9408)
+    assert action_preds.shape == (1, 1, 7)
+    assert reward_preds.shape == (1, 1, 1)
+
+
+def test_decision_transformer_grid_obs_forward():
 
     env = gym.make('MiniGrid-Empty-8x8-v0')
-    env = RGBImgPartialObsWrapper(env)  # Get pixel observations
-    env = ImgObsWrapper(env)  # Get rid of the 'mission' field
     obs, _ = env.reset()  # This now produces an RGB tensor only
 
-    decision_transformer = DecisionTransformer(env)
-    assert decision_transformer is not None
-
-    # get state embeddings
-    obs = t.tensor(obs).unsqueeze(0).unsqueeze(0)  # add block, add batch
-    state_embeddings = decision_transformer.get_state_embeddings(obs)
-    assert state_embeddings.shape == (1, 1, 64)
-
-
-def test_get_state_embeddings_grid():
-
-    env = gym.make('MiniGrid-Empty-8x8-v0')
-    # env = RGBImgPartialObsWrapper(env) # Get pixel observations
-    # env = ImgObsWrapper(env) # Get rid of the 'mission' field
-    obs, _ = env.reset()  # This now produces an RGB tensor only
+    transformer_config = TransformerModelConfig()
+    environment_config = EnvironmentConfig(
+        env_id='MiniGrid-Empty-8x8-v0',
+        img_obs=False,
+    )
 
     decision_transformer = DecisionTransformer(
-        env, state_embedding_type='grid')
+        transformer_config=transformer_config,
+        environment_config=environment_config
+    )
+
     assert decision_transformer is not None
 
-    # get state embeddings
-    obs = t.tensor(obs['image']).unsqueeze(
+    # our model should have the following:
+    assert decision_transformer.state_embedding is not None
+    assert decision_transformer.reward_embedding is not None
+    assert decision_transformer.action_embedding is not None
+    assert decision_transformer.time_embedding is not None
+
+    # a GPT2-like transformer
+    assert decision_transformer.transformer is not None
+    assert type(decision_transformer.transformer).__name__ == 'HookedTransformer'
+
+    # a linear layer to predict the next action
+    assert decision_transformer.action_predictor is not None
+
+    # a linear layer to predict the next reward
+    assert decision_transformer.reward_predictor is not None
+
+    # a linear layer to predict the next state
+    assert decision_transformer.state_predictor is not None
+
+    states = t.tensor(obs['image']).unsqueeze(
         0).unsqueeze(0)  # add block, add batch
-    state_embeddings = decision_transformer.get_state_embeddings(obs)
-    assert state_embeddings.shape == (1, 1, 64)
+    actions = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
+    rewards = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
+    timesteps = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
+
+    state_preds, action_preds, reward_preds = decision_transformer.forward(
+        states=states,
+        actions=actions,
+        rtgs=rewards,
+        timesteps=timesteps
+    )
+
+    assert state_preds.shape == (1, 1, 147)
+    assert action_preds.shape == (1, 1, 7)
+    assert reward_preds.shape == (1, 1, 1)
 
 
-def test_get_state_embeddings_grid_one_hot():
+def test_decision_transformer_grid_one_hot_forward():
 
     env = gym.make('MiniGrid-Empty-8x8-v0')
     env = OneHotPartialObsWrapper(env)
     obs, _ = env.reset()  # This now produces an RGB tensor only
 
-    decision_transformer = DecisionTransformer(
-        env, state_embedding_type='grid')
-    assert decision_transformer is not None
-
-    # get state embeddings
-    obs = t.tensor(obs['image']).unsqueeze(
-        0).unsqueeze(0)  # add block, add batch
-    state_embeddings = decision_transformer.get_state_embeddings(obs)
-    assert state_embeddings.shape == (1, 1, 64)
-
-
-def test_get_action_embeddings():
-
-    env = gym.make('MiniGrid-Empty-8x8-v0')
-    env = RGBImgPartialObsWrapper(env)  # Get pixel observations
-    env = ImgObsWrapper(env)  # Get rid of the 'mission' field
-    obs, _ = env.reset()  # This now produces an RGB tensor only
-
-    decision_transformer = DecisionTransformer(env)
-    assert decision_transformer is not None
-
-    # get action embeddings
-    action = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
-    action_embeddings = decision_transformer.get_action_embeddings(action)
-    assert action_embeddings.shape == (1, 1, 64)
-
-
-def test_get_reward_embeddings():
-
-    env = gym.make('MiniGrid-Empty-8x8-v0')
-    env = RGBImgPartialObsWrapper(env)  # Get pixel observations
-    env = ImgObsWrapper(env)  # Get rid of the 'mission' field
-    obs, _ = env.reset()  # This now produces an RGB tensor only
-
-    decision_transformer = DecisionTransformer(env)
-    assert decision_transformer is not None
-
-    # get reward embeddings
-    rtgs = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
-    reward_embeddings = decision_transformer.get_reward_embeddings(rtgs)
-    assert reward_embeddings.shape == (1, 1, 64)
-
-
-def test_get_time_embeddings_linear():
-
-    env = gym.make('MiniGrid-Empty-8x8-v0')
-    env = RGBImgPartialObsWrapper(env)  # Get pixel observations
-    env = ImgObsWrapper(env)  # Get rid of the 'mission' field
-    obs, _ = env.reset()  # This now produces an RGB tensor only
-
-    decision_transformer = DecisionTransformer(
-        env, time_embedding_type='linear')
-    assert decision_transformer is not None
-
-    # get time embeddings
-    times = t.tensor([0.0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
-    time_embeddings = decision_transformer.get_time_embeddings(times)
-    assert time_embeddings.shape == (1, 1, 64)
-
-
-def test_get_time_embeddings_categorical():
-
-    env = gym.make('MiniGrid-Empty-8x8-v0')
-    env = RGBImgPartialObsWrapper(env)  # Get pixel observations
-    env = ImgObsWrapper(env)  # Get rid of the 'mission' field
-    obs, _ = env.reset()  # This now produces an RGB tensor only
-
-    decision_transformer = DecisionTransformer(
-        env, time_embedding_type='learned')
-    assert decision_transformer is not None
-
-    # get time embeddings
-    times = t.tensor([0], dtype=t.long).unsqueeze(
-        0).unsqueeze(0)  # add block, add batch
-    time_embeddings = decision_transformer.get_time_embeddings(times)
-    assert time_embeddings.shape == (1, 1, 64)
-
-
-def test_get_token_embeddings_single_batch():
-
-    env = gym.make('MiniGrid-Empty-8x8-v0')
-    env = RGBImgPartialObsWrapper(env)  # Get pixel observations
-    env = ImgObsWrapper(env)  # Get rid of the 'mission' field
-    obs, _ = env.reset()  # This now produces an RGB tensor only
-
-    decision_transformer = DecisionTransformer(env)
-    assert decision_transformer is not None
-
-    # get token embeddings
-    obs = t.tensor(obs).unsqueeze(0).unsqueeze(0)  # add block, add batch
-    action = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
-    rtgs = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
-    times = t.tensor([0], dtype=t.long).unsqueeze(
-        0).unsqueeze(0)  # add block, add batch
-
-    state_embedding = decision_transformer.get_state_embeddings(obs)
-    action_embedding = decision_transformer.get_action_embeddings(action)
-    reward_embedding = decision_transformer.get_reward_embeddings(rtgs)
-    time_embedding = decision_transformer.get_time_embeddings(times)
-
-    token_embeddings = decision_transformer.get_token_embeddings(
-        state_embeddings=state_embedding,
-        action_embeddings=action_embedding,
-        reward_embeddings=reward_embedding,
-        time_embeddings=time_embedding
+    transformer_config = TransformerModelConfig()
+    environment_config = EnvironmentConfig(
+        env_id='MiniGrid-Empty-8x8-v0',
+        one_hot_obs=True,
     )
 
-    assert token_embeddings.shape == (1, 3, 64)
-
-    # now assert that each of the embeddings can be decomposed into state/action/reward + time
-    # we can do this by checking that the sum of the embeddings is equal to the token embeddings
-    t.testing.assert_close(
-        token_embeddings[0][0] - time_embedding, reward_embedding)
-    t.testing.assert_close(
-        token_embeddings[0][1] - time_embedding, state_embedding)
-    t.testing.assert_close(
-        token_embeddings[0][2] - time_embedding, action_embedding)
-
-
-def test_get_token_embeddings_multi_batch():
-
-    env = gym.make('MiniGrid-Empty-8x8-v0')
-    env = RGBImgPartialObsWrapper(env)  # Get pixel observations
-    env = ImgObsWrapper(env)  # Get rid of the 'mission' field
-    obs, _ = env.reset()  # This now produces an RGB tensor only
-
-    decision_transformer = DecisionTransformer(env)
-
-    # take several actions, store the observations, actions, returns and timesteps
-    all_obs = []
-    all_actions = []
-    all_returns = []
-    all_timesteps = []
-
-    for i in range(10):
-        action = env.action_space.sample()
-        obs, reward, terminated, truncated, info = env.step(action)
-        all_obs.append(obs)
-        all_actions.append(action)
-        all_returns.append(reward)
-        all_timesteps.append(i)
-
-    # convert to tensors.unsqueeze(0)
-    all_obs = t.tensor(np.array(all_obs)).to(t.float32).unsqueeze(0)
-    all_actions = t.tensor(all_actions).reshape(-1, 1).unsqueeze(0)
-    all_returns = t.randn((10, 1))
-    all_returns_to_go = all_returns.flip(0).cumsum(
-        0).flip(0).reshape(-1, 1).unsqueeze(0)
-    all_timesteps = t.tensor(all_timesteps).reshape(-1, 1).unsqueeze(0)
-
-    state_embedding = decision_transformer.get_state_embeddings(all_obs)
-    action_embedding = decision_transformer.get_action_embeddings(all_actions)
-    reward_embedding = decision_transformer.get_reward_embeddings(
-        all_returns_to_go)
-    time_embedding = decision_transformer.get_time_embeddings(all_timesteps)
-
-    token_embeddings = decision_transformer.get_token_embeddings(
-        state_embeddings=state_embedding,
-        action_embeddings=action_embedding,
-        reward_embeddings=reward_embedding,
-        time_embeddings=time_embedding
+    decision_transformer = DecisionTransformer(
+        transformer_config=transformer_config,
+        environment_config=environment_config
     )
 
-    assert token_embeddings.shape == (1, 30, 64)
+    assert decision_transformer is not None
 
-    # now assert that each of the embeddings can be decomposed into state/action/reward + time
-    # we can do this by checking that the sum of the embeddings is equal to the token embeddings
-    t.testing.assert_close(
-        token_embeddings[:, ::3, :],  reward_embedding + time_embedding)
-    t.testing.assert_close(
-        token_embeddings[:, 1::3, :], state_embedding + time_embedding)
-    t.testing.assert_close(
-        token_embeddings[:, 2::3, :], action_embedding + time_embedding)
+    # our model should have the following:
+    assert decision_transformer.state_embedding is not None
+    assert decision_transformer.reward_embedding is not None
+    assert decision_transformer.action_embedding is not None
+    assert decision_transformer.time_embedding is not None
 
+    # a GPT2-like transformer
+    assert decision_transformer.transformer is not None
+    assert type(decision_transformer.transformer).__name__ == 'HookedTransformer'
 
-def test_forward():
+    # a linear layer to predict the next action
+    assert decision_transformer.action_predictor is not None
 
-    env = gym.make('MiniGrid-Empty-8x8-v0')
-    env = RGBImgPartialObsWrapper(env)  # Get pixel observations
-    env = ImgObsWrapper(env)  # Get rid of the 'mission' field
-    obs, _ = env.reset()  # This now produces an RGB tensor only
+    # a linear layer to predict the next reward
+    assert decision_transformer.reward_predictor is not None
 
-    # take several actions, store the observations, actions, returns and timesteps
-    all_obs = []
-    all_actions = []
-    all_returns = []
-    all_timesteps = []
+    # a linear layer to predict the next state
+    assert decision_transformer.state_predictor is not None
 
-    for i in range(10):
-        action = env.action_space.sample()
-        obs, reward, terminated, truncated, info = env.step(action)
-        all_obs.append(obs)
-        all_actions.append(action)
-        all_returns.append(reward)
-        all_timesteps.append(i)
+    states = t.tensor(obs['image']).unsqueeze(
+        0).unsqueeze(0)  # add block, add batch
+    actions = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
+    rewards = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
+    timesteps = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
 
-    # convert to tensors.unsqueeze(0)
-    all_obs = t.tensor(np.array(all_obs)).to(t.float32).unsqueeze(0)
-    all_actions = t.tensor(all_actions).reshape(-1, 1).unsqueeze(0)
-    all_returns = t.randn((10, 1))
-    all_returns_to_go = all_returns.flip(0).cumsum(
-        0).flip(0).reshape(-1, 1).unsqueeze(0)
-    all_timesteps = t.tensor(all_timesteps).reshape(-1, 1).unsqueeze(0)
-
-    # context window must be 3 * max sequence length
-    decision_transformer = DecisionTransformer(env, n_ctx=3*10, d_model=64)
-
-    if t.cuda.is_available():
-        decision_transformer = decision_transformer.cuda()
-        decision_transformer.transformer = decision_transformer.transformer.cuda()
-        all_obs = all_obs.cuda()
-        all_actions = all_actions.cuda()
-        all_returns_to_go = all_returns_to_go.cuda()
-        all_timesteps = all_timesteps.cuda()
-
-    assert all_obs.shape == (1, 10, 56, 56, 3)
-    assert all_actions.shape == (1, 10, 1)
-    assert all_returns_to_go.shape == (1, 10, 1)
-    assert all_timesteps.shape == (1, 10, 1)
-
-    _, action_logits, _ = decision_transformer(
-        states=all_obs,
-        actions=all_actions,
-        rtgs=all_returns_to_go,
-        timesteps=all_timesteps
+    state_preds, action_preds, reward_preds = decision_transformer.forward(
+        states=states,
+        actions=actions,
+        rtgs=rewards,
+        timesteps=timesteps
     )
 
-    assert action_logits.shape == (1, 10, env.action_space.n)
+    assert state_preds.shape == (1, 1, 980)
+    assert action_preds.shape == (1, 1, 7)
+    assert reward_preds.shape == (1, 1, 1)
+
+
+def test_decision_transformer_view_size_change_forward():
+
+    env = gym.make('MiniGrid-Empty-8x8-v0')
+    env = ViewSizeWrapper(env, agent_view_size=3)
+    obs, _ = env.reset()  # This now produces an RGB tensor only
+
+    transformer_config = TransformerModelConfig()
+    environment_config = EnvironmentConfig(
+        env_id='MiniGrid-Empty-8x8-v0',
+        view_size=3,
+    )
+
+    decision_transformer = DecisionTransformer(
+        transformer_config=transformer_config,
+        environment_config=environment_config
+    )
+
+    assert decision_transformer is not None
+
+    # our model should have the following:
+    assert decision_transformer.state_embedding is not None
+    assert decision_transformer.reward_embedding is not None
+    assert decision_transformer.action_embedding is not None
+    assert decision_transformer.time_embedding is not None
+
+    # a GPT2-like transformer
+    assert decision_transformer.transformer is not None
+    assert type(decision_transformer.transformer).__name__ == 'HookedTransformer'
+
+    # a linear layer to predict the next action
+    assert decision_transformer.action_predictor is not None
+
+    # a linear layer to predict the next reward
+    assert decision_transformer.reward_predictor is not None
+
+    # a linear layer to predict the next state
+    assert decision_transformer.state_predictor is not None
+
+    states = t.tensor(obs['image']).unsqueeze(
+        0).unsqueeze(0)  # add block, add batch
+    actions = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
+    rewards = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
+    timesteps = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
+
+    state_preds, action_preds, reward_preds = decision_transformer.forward(
+        states=states,
+        actions=actions,
+        rtgs=rewards,
+        timesteps=timesteps
+    )
+
+    assert state_preds.shape == (1, 1, 27)
+    assert action_preds.shape == (1, 1, 7)
+    assert reward_preds.shape == (1, 1, 1)
+
+
+def test_decision_transformer_grid_obs_no_action_forward():
+
+    env = gym.make('MiniGrid-Empty-8x8-v0')
+    obs, _ = env.reset()  # This now produces an RGB tensor only
+
+    transformer_config = TransformerModelConfig()
+    environment_config = EnvironmentConfig(
+        env_id='MiniGrid-Empty-8x8-v0',
+        img_obs=False,
+    )
+
+    decision_transformer = DecisionTransformer(
+        transformer_config=transformer_config,
+        environment_config=environment_config
+    )
+
+    assert decision_transformer is not None
+
+    # our model should have the following:
+    assert decision_transformer.state_embedding is not None
+    assert decision_transformer.reward_embedding is not None
+    assert decision_transformer.action_embedding is not None
+    assert decision_transformer.time_embedding is not None
+
+    # a GPT2-like transformer
+    assert decision_transformer.transformer is not None
+    assert type(decision_transformer.transformer).__name__ == 'HookedTransformer'
+
+    # a linear layer to predict the next action
+    assert decision_transformer.action_predictor is not None
+
+    # a linear layer to predict the next reward
+    assert decision_transformer.reward_predictor is not None
+
+    # a linear layer to predict the next state
+    assert decision_transformer.state_predictor is not None
+
+    states = t.tensor(obs['image']).unsqueeze(
+        0).unsqueeze(0)  # add block, add batch
+    # actions = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
+    rewards = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
+    timesteps = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
+
+    state_preds, action_preds, reward_preds = decision_transformer.forward(
+        states=states,
+        actions=None,
+        rtgs=rewards,
+        timesteps=timesteps
+    )
+
+    assert state_preds is None
+    assert action_preds.shape == (1, 1, 7)
+    assert reward_preds is None
+
+
+def test_decision_transformer_grid_obs_one_fewer_action_forward():
+
+    env = gym.make('MiniGrid-Empty-8x8-v0')
+    obs, _ = env.reset()  # This now produces an RGB tensor only
+
+    transformer_config = TransformerModelConfig(n_ctx=6)
+    environment_config = EnvironmentConfig(
+        env_id='MiniGrid-Empty-8x8-v0',
+        img_obs=False,
+    )
+
+    decision_transformer = DecisionTransformer(
+        transformer_config=transformer_config,
+        environment_config=environment_config
+    )
+
+    assert decision_transformer is not None
+
+    # our model should have the following:
+    assert decision_transformer.state_embedding is not None
+    assert decision_transformer.reward_embedding is not None
+    assert decision_transformer.action_embedding is not None
+    assert decision_transformer.time_embedding is not None
+
+    # a GPT2-like transformer
+    assert decision_transformer.transformer is not None
+    assert type(decision_transformer.transformer).__name__ == 'HookedTransformer'
+
+    # a linear layer to predict the next action
+    assert decision_transformer.action_predictor is not None
+
+    # a linear layer to predict the next reward
+    assert decision_transformer.reward_predictor is not None
+
+    # a linear layer to predict the next state
+    assert decision_transformer.state_predictor is not None
+
+    states = t.tensor([obs['image'], obs['image']]).unsqueeze(
+        0)  # add block, add batch
+    actions = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
+    rewards = t.tensor([[0], [0]]).unsqueeze(0)  # add block, add batch
+    timesteps = t.tensor([[0], [1]]).unsqueeze(0)  # add block, add batch
+
+    state_preds, action_preds, reward_preds = decision_transformer.forward(
+        states=states,
+        actions=actions,
+        rtgs=rewards,
+        timesteps=timesteps
+    )
+
+    assert state_preds.shape == (1, 2, 147)
+    assert action_preds.shape == (1, 2, 7)
+    assert reward_preds.shape == (1, 2, 1)

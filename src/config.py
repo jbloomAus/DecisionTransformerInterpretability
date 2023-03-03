@@ -4,6 +4,9 @@ from dataclasses import dataclass
 from typing import Optional
 
 import gymnasium as gym
+
+from minigrid.wrappers import FullyObsWrapper, RGBImgPartialObsWrapper, OneHotPartialObsWrapper
+from src.environments.wrappers import ViewSizeWrapper, RenderResizeWrapper
 from torch import device
 
 
@@ -30,6 +33,7 @@ class TransformerModelConfig():
 class EnvironmentConfig():
     env_id: str = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
     one_hot_obs: bool = False
+    img_obs: bool = False
     fully_observed: bool = False
     max_steps: int = 1000
     seed: int = 1
@@ -44,8 +48,20 @@ class EnvironmentConfig():
     def __post_init__(self):
 
         env = gym.make(self.env_id)
-        self.action_space = env.action_space or env.action_space
-        self.observation_space = env.observation_space or env.observation_space
+
+        if self.env_id.startswith('MiniGrid'):
+            if self.fully_observed:
+                env = FullyObsWrapper(env)
+            elif self.one_hot_obs:
+                env = OneHotPartialObsWrapper(env)
+            elif self.img_obs:
+                env = RGBImgPartialObsWrapper(env)
+
+            if self.view_size != 7:
+                env = ViewSizeWrapper(env, self.view_size)
+
+        self.action_space = self.action_space or env.action_space
+        self.observation_space = self.observation_space or env.observation_space
 
 
 @dataclass

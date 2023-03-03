@@ -232,7 +232,7 @@ def test_decision_transformer_get_logits(decision_transformer):
 
     x = torch.rand(batch_size, seq_length, 3, d_model)
     state_preds, action_preds, reward_preds = decision_transformer.get_logits(
-        x, batch_size, seq_length)
+        x, batch_size, seq_length, no_actions=False)
 
     assert state_preds.shape == (batch_size, seq_length, np.prod(
         decision_transformer.environment_config.observation_space['image'].shape))
