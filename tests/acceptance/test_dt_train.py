@@ -59,13 +59,18 @@ def test_evaluate_dt_agent():
             device="cuda" if torch.cuda.is_available() else "cpu",
         ))
 
+    if hasattr(dt, "environment_config"):
+        max_steps = min(dt.environment_config.max_steps, 10)
+    else:
+        max_steps = min(dt.max_timestep, 10)
+
     batch = 0
     eval_env_func = make_env(
         env_id=env.spec.id,
         seed=batch,
         idx=0,
         capture_video=True,
-        max_steps=min(dt.environment_config.max_steps, 10),
+        max_steps=max_steps,
         run_name=f"dt_eval_videos_{batch}",
         fully_observed=False,
         flat_one_hot=(trajectory_data_set.observation_type == "one_hot"),

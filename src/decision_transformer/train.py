@@ -4,7 +4,7 @@ import torch.nn as nn
 from einops import rearrange
 from tqdm import tqdm
 import wandb
-
+from argparse import Namespace
 from .model import DecisionTransformer
 from .offline_dataset import TrajectoryDataset
 from torch.utils.data.sampler import WeightedRandomSampler
@@ -212,6 +212,12 @@ def evaluate_dt_agent(
 
     env = env_func()
     video_path = os.path.join("videos", env.run_name)
+
+    if not hasattr(dt, "transformer_config"):
+        dt.transformer_config = Namespace(
+            n_ctx=dt.n_ctx,
+            time_embedding_type=dt.time_embedding_type,
+        )
 
     assert dt.transformer_config.n_ctx % 3 == 0, "n_ctx must be divisible by 3"
     max_len = dt.transformer_config.n_ctx // 3
