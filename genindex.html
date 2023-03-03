@@ -233,25 +233,23 @@
           <li><a href="src.ppo.html#src.ppo.my_probe_envs.Probe5.action_space">(src.ppo.my_probe_envs.Probe5 attribute)</a>
 </li>
         </ul></li>
-        <li><a href="src.ppo.html#src.ppo.memory.Minibatch.actions">actions (src.ppo.memory.Minibatch attribute)</a>
-</li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="src.ppo.html#src.ppo.agent.Agent.actor">actor (src.ppo.agent.Agent attribute)</a>
+        <li><a href="src.ppo.html#src.ppo.memory.Minibatch.actions">actions (src.ppo.memory.Minibatch attribute)</a>
 </li>
-        <li><a href="src.ppo.html#src.ppo.memory.Memory.add">add() (src.ppo.memory.Memory method)</a>
-</li>
-        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.add_padding">add_padding() (src.decision_transformer.offline_dataset.TrajectoryLoader method)</a>
+        <li><a href="src.ppo.html#src.ppo.agent.FCAgent.actor">actor (src.ppo.agent.FCAgent attribute)</a>
 
         <ul>
-          <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryDataset.add_padding">(src.decision_transformer.offline_dataset_new.TrajectoryDataset method)</a>
+          <li><a href="src.ppo.html#src.ppo.agent.PPOAgent.actor">(src.ppo.agent.PPOAgent attribute)</a>
 </li>
         </ul></li>
+        <li><a href="src.ppo.html#src.ppo.memory.Memory.add">add() (src.ppo.memory.Memory method)</a>
+</li>
+        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryDataset.add_padding">add_padding() (src.decision_transformer.offline_dataset.TrajectoryDataset method)</a>
+</li>
         <li><a href="src.ppo.html#src.ppo.memory.Memory.add_vars_to_log">add_vars_to_log() (src.ppo.memory.Memory method)</a>
 </li>
         <li><a href="src.ppo.html#src.ppo.memory.Minibatch.advantages">advantages (src.ppo.memory.Minibatch attribute)</a>
-</li>
-        <li><a href="src.ppo.html#src.ppo.agent.Agent">Agent (class in src.ppo.agent)</a>
 </li>
         <li><a href="src.ppo.html#src.ppo.utils.arg_help">arg_help() (in module src.ppo.utils)</a>
 </li>
@@ -299,8 +297,12 @@
 </li>
         <li><a href="src.ppo.html#src.ppo.compute_adv_vectorized.compute_advantages_vectorized">compute_advantages_vectorized() (in module src.ppo.compute_adv_vectorized)</a>
 </li>
-        <li><a href="src.ppo.html#src.ppo.agent.Agent.critic">critic (src.ppo.agent.Agent attribute)</a>
+        <li><a href="src.ppo.html#src.ppo.agent.FCAgent.critic">critic (src.ppo.agent.FCAgent attribute)</a>
+
+        <ul>
+          <li><a href="src.ppo.html#src.ppo.agent.PPOAgent.critic">(src.ppo.agent.PPOAgent attribute)</a>
 </li>
+        </ul></li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.cuda">cuda (src.decision_transformer.utils.DTArgs attribute)</a>
 
         <ul>
@@ -327,12 +329,8 @@
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer">DecisionTransformer (class in src.decision_transformer.model)</a>
 </li>
-        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.discount_cumsum">discount_cumsum() (src.decision_transformer.offline_dataset.TrajectoryLoader method)</a>
-
-        <ul>
-          <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryDataset.discount_cumsum">(src.decision_transformer.offline_dataset_new.TrajectoryDataset method)</a>
+        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryDataset.discount_cumsum">discount_cumsum() (src.decision_transformer.offline_dataset.TrajectoryDataset method)</a>
 </li>
-        </ul></li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs">DTArgs (class in src.decision_transformer.utils)</a>
 </li>
     </ul></td>
@@ -373,6 +371,8 @@
   <h2>F</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="src.ppo.html#src.ppo.agent.FCAgent">FCAgent (class in src.ppo.agent)</a>
+</li>
         <li><a href="src.html#src.visualization.find_agent">find_agent() (in module src.visualization)</a>
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.forward">forward() (src.decision_transformer.model.DecisionTransformer method)</a>
@@ -407,25 +407,15 @@
         </ul></li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.get_action_embeddings">get_action_embeddings() (src.decision_transformer.model.DecisionTransformer method)</a>
 </li>
-        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.get_batch">get_batch() (src.decision_transformer.offline_dataset.TrajectoryLoader method)</a>
-
-        <ul>
-          <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryDataset.get_batch">(src.decision_transformer.offline_dataset_new.TrajectoryDataset method)</a>
+        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryDataset.get_batch">get_batch() (src.decision_transformer.offline_dataset.TrajectoryDataset method)</a>
 </li>
-        </ul></li>
         <li><a href="src.environments.html#src.environments.registration.get_crossing_multi_env">get_crossing_multi_env() (in module src.environments.registration)</a>
 </li>
         <li><a href="src.environments.html#src.environments.multienvironments.MultiEnvSampler.get_current_env_name">get_current_env_name() (src.environments.multienvironments.MultiEnvSampler method)</a>
 </li>
         <li><a href="src.environments.html#src.environments.registration.get_dynamic_obstacles_multi_env">get_dynamic_obstacles_multi_env() (in module src.environments.registration)</a>
 </li>
-        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.get_indices_of_top_p_trajectories">get_indices_of_top_p_trajectories() (src.decision_transformer.offline_dataset.TrajectoryLoader method)</a>
-
-        <ul>
-          <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryDataset.get_indices_of_top_p_trajectories">(src.decision_transformer.offline_dataset_new.TrajectoryDataset method)</a>
-</li>
-        </ul></li>
-        <li><a href="tests.html#tests.test_offline_dataset.get_len_i_for_i_in_list">get_len_i_for_i_in_list() (in module tests.test_offline_dataset)</a>
+        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryDataset.get_indices_of_top_p_trajectories">get_indices_of_top_p_trajectories() (src.decision_transformer.offline_dataset.TrajectoryDataset method)</a>
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.get_logits">get_logits() (src.decision_transformer.model.DecisionTransformer method)</a>
 </li>
@@ -441,34 +431,22 @@
 </li>
         <li><a href="src.ppo.html#src.ppo.memory.Memory.get_printable_output">get_printable_output() (src.ppo.memory.Memory method)</a>
 </li>
-        <li><a href="src.ppo.html#src.ppo.train.get_printable_output_for_probe_envs">get_printable_output_for_probe_envs() (in module src.ppo.train)</a>
+        <li><a href="src.ppo.html#src.ppo.utils.get_printable_output_for_probe_envs">get_printable_output_for_probe_envs() (in module src.ppo.utils)</a>
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.get_reward_embeddings">get_reward_embeddings() (src.decision_transformer.model.DecisionTransformer method)</a>
 </li>
-        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.get_sampling_probabilities">get_sampling_probabilities() (src.decision_transformer.offline_dataset.TrajectoryLoader method)</a>
-
-        <ul>
-          <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryDataset.get_sampling_probabilities">(src.decision_transformer.offline_dataset_new.TrajectoryDataset method)</a>
+        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryDataset.get_sampling_probabilities">get_sampling_probabilities() (src.decision_transformer.offline_dataset.TrajectoryDataset method)</a>
 </li>
-        </ul></li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.get_state_embeddings">get_state_embeddings() (src.decision_transformer.model.DecisionTransformer method)</a>
 </li>
-        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.get_state_mean_std">get_state_mean_std() (src.decision_transformer.offline_dataset.TrajectoryLoader method)</a>
-
-        <ul>
-          <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryDataset.get_state_mean_std">(src.decision_transformer.offline_dataset_new.TrajectoryDataset method)</a>
+        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryDataset.get_state_mean_std">get_state_mean_std() (src.decision_transformer.offline_dataset.TrajectoryDataset method)</a>
 </li>
-        </ul></li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.get_time_embeddings">get_time_embeddings() (src.decision_transformer.model.DecisionTransformer method)</a>
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.get_token_embeddings">get_token_embeddings() (src.decision_transformer.model.DecisionTransformer method)</a>
 </li>
-        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.get_traj">get_traj() (src.decision_transformer.offline_dataset.TrajectoryLoader method)</a>
-
-        <ul>
-          <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryDataset.get_traj">(src.decision_transformer.offline_dataset_new.TrajectoryDataset method)</a>
+        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryDataset.get_traj">get_traj() (src.decision_transformer.offline_dataset.TrajectoryDataset method)</a>
 </li>
-        </ul></li>
     </ul></td>
   </tr></table>
 </section>
@@ -477,7 +455,7 @@
   <h2>H</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="src.ppo.html#src.ppo.utils.PPOArgs.hidden_dim">hidden_dim (src.ppo.utils.PPOArgs attribute)</a>
+        <li><a href="src.ppo.html#src.ppo.utils.PPOArgs.hidden_size">hidden_size (src.ppo.utils.PPOArgs attribute)</a>
 </li>
     </ul></td>
   </tr></table>
@@ -497,12 +475,20 @@
   <h2>L</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="src.ppo.html#src.ppo.agent.Agent.layer_init">layer_init() (src.ppo.agent.Agent method)</a>
+        <li><a href="src.ppo.html#src.ppo.agent.FCAgent.layer_init">layer_init() (src.ppo.agent.FCAgent method)</a>
+
+        <ul>
+          <li><a href="src.ppo.html#src.ppo.agent.PPOAgent.layer_init">(src.ppo.agent.PPOAgent method)</a>
 </li>
+        </ul></li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.layer_norm">layer_norm (src.decision_transformer.utils.DTArgs attribute)</a>
 </li>
-        <li><a href="src.ppo.html#src.ppo.agent.Agent.learn">learn() (src.ppo.agent.Agent method)</a>
+        <li><a href="src.ppo.html#src.ppo.agent.FCAgent.learn">learn() (src.ppo.agent.FCAgent method)</a>
+
+        <ul>
+          <li><a href="src.ppo.html#src.ppo.agent.PPOAgent.learn">(src.ppo.agent.PPOAgent method)</a>
 </li>
+        </ul></li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.learning_rate">learning_rate (src.decision_transformer.utils.DTArgs attribute)</a>
 
         <ul>
@@ -515,12 +501,8 @@
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.load_decision_transformer">load_decision_transformer() (in module src.decision_transformer.utils)</a>
 </li>
-        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.load_trajectories">load_trajectories() (src.decision_transformer.offline_dataset.TrajectoryLoader method)</a>
-
-        <ul>
-          <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryDataset.load_trajectories">(src.decision_transformer.offline_dataset_new.TrajectoryDataset method)</a>
+        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryDataset.load_trajectories">load_trajectories() (src.decision_transformer.offline_dataset.TrajectoryDataset method)</a>
 </li>
-        </ul></li>
         <li><a href="src.ppo.html#src.ppo.memory.Memory.log">log() (src.ppo.memory.Memory method)</a>
 </li>
         <li><a href="src.ppo.html#src.ppo.memory.Minibatch.logprobs">logprobs (src.ppo.memory.Minibatch attribute)</a>
@@ -535,8 +517,12 @@
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.environments.html#src.environments.environments.make_env">make_env() (in module src.environments.environments)</a>
 </li>
-        <li><a href="src.ppo.html#src.ppo.agent.Agent.make_optimizer">make_optimizer() (src.ppo.agent.Agent method)</a>
+        <li><a href="src.ppo.html#src.ppo.agent.FCAgent.make_optimizer">make_optimizer() (src.ppo.agent.FCAgent method)</a>
+
+        <ul>
+          <li><a href="src.ppo.html#src.ppo.agent.PPOAgent.make_optimizer">(src.ppo.agent.PPOAgent method)</a>
 </li>
+        </ul></li>
         <li><a href="src.ppo.html#src.ppo.utils.PPOArgs.max_grad_norm">max_grad_norm (src.ppo.utils.PPOArgs attribute)</a>
 </li>
         <li><a href="src.ppo.html#src.ppo.utils.PPOArgs.max_steps">max_steps (src.ppo.utils.PPOArgs attribute)</a>
@@ -560,8 +546,6 @@
           <li><a href="src.decision_transformer.html#module-src.decision_transformer.model">src.decision_transformer.model</a>
 </li>
           <li><a href="src.decision_transformer.html#module-src.decision_transformer.offline_dataset">src.decision_transformer.offline_dataset</a>
-</li>
-          <li><a href="src.decision_transformer.html#module-src.decision_transformer.offline_dataset_new">src.decision_transformer.offline_dataset_new</a>
 </li>
           <li><a href="src.decision_transformer.html#module-src.decision_transformer.train">src.decision_transformer.train</a>
 </li>
@@ -595,35 +579,15 @@
 </li>
           <li><a href="src.ppo.html#module-src.ppo.utils">src.ppo.utils</a>
 </li>
+          <li><a href="src.html#module-src.run_decision_transformer">src.run_decision_transformer</a>
+</li>
+          <li><a href="src.html#module-src.run_ppo">src.run_ppo</a>
+</li>
           <li><a href="src.html#module-src.utils">src.utils</a>
 </li>
           <li><a href="src.html#module-src.visualization">src.visualization</a>
 </li>
           <li><a href="tests.html#module-tests">tests</a>
-</li>
-          <li><a href="tests.html#module-tests.test_calibration">tests.test_calibration</a>
-</li>
-          <li><a href="tests.html#module-tests.test_constants">tests.test_constants</a>
-</li>
-          <li><a href="tests.html#module-tests.test_decision_transformer">tests.test_decision_transformer</a>
-</li>
-          <li><a href="tests.html#module-tests.test_dt_train">tests.test_dt_train</a>
-</li>
-          <li><a href="tests.html#module-tests.test_environment_registration">tests.test_environment_registration</a>
-</li>
-          <li><a href="tests.html#module-tests.test_environments">tests.test_environments</a>
-</li>
-          <li><a href="tests.html#module-tests.test_multienvironments">tests.test_multienvironments</a>
-</li>
-          <li><a href="tests.html#module-tests.test_offline_dataset">tests.test_offline_dataset</a>
-</li>
-          <li><a href="tests.html#module-tests.test_ppo">tests.test_ppo</a>
-</li>
-          <li><a href="tests.html#module-tests.test_ppo_utils">tests.test_ppo_utils</a>
-</li>
-          <li><a href="tests.html#module-tests.test_streamlit_environment">tests.test_streamlit_environment</a>
-</li>
-          <li><a href="tests.html#module-tests.test_utils">tests.test_utils</a>
 </li>
         </ul></li>
     </ul></td>
@@ -700,25 +664,19 @@
         </ul></li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.pct_traj">pct_traj (src.decision_transformer.utils.DTArgs attribute)</a>
 </li>
-        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.plot_base_action_frequencies">plot_base_action_frequencies() (src.decision_transformer.offline_dataset.TrajectoryLoader method)</a>
-
-        <ul>
-          <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryVisualizer.plot_base_action_frequencies">(src.decision_transformer.offline_dataset_new.TrajectoryVisualizer method)</a>
+        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryVisualizer.plot_base_action_frequencies">plot_base_action_frequencies() (src.decision_transformer.offline_dataset.TrajectoryVisualizer method)</a>
 </li>
-        </ul></li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.calibration.plot_calibration_statistics">plot_calibration_statistics() (in module src.decision_transformer.calibration)</a>
 </li>
         <li><a href="src.ppo.html#src.ppo.utils.plot_cartpole_obs_and_dones">plot_cartpole_obs_and_dones() (in module src.ppo.utils)</a>
 </li>
-        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.plot_reward_over_time">plot_reward_over_time() (src.decision_transformer.offline_dataset.TrajectoryLoader method)</a>
-
-        <ul>
-          <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryVisualizer.plot_reward_over_time">(src.decision_transformer.offline_dataset_new.TrajectoryVisualizer method)</a>
+        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryVisualizer.plot_reward_over_time">plot_reward_over_time() (src.decision_transformer.offline_dataset.TrajectoryVisualizer method)</a>
 </li>
-        </ul></li>
+        <li><a href="src.decision_transformer.html#src.decision_transformer.model.PosEmbedTokens">PosEmbedTokens (class in src.decision_transformer.model)</a>
+</li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="src.decision_transformer.html#src.decision_transformer.model.PosEmbedTokens">PosEmbedTokens (class in src.decision_transformer.model)</a>
+        <li><a href="src.ppo.html#src.ppo.agent.PPOAgent">PPOAgent (class in src.ppo.agent)</a>
 </li>
         <li><a href="src.ppo.html#src.ppo.utils.PPOArgs">PPOArgs (class in src.ppo.utils)</a>
 </li>
@@ -784,18 +742,16 @@
         </ul></li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader.return_tensors">return_tensors() (src.decision_transformer.offline_dataset.TrajectoryLoader method)</a>
-
-        <ul>
-          <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryDataset.return_tensors">(src.decision_transformer.offline_dataset_new.TrajectoryDataset method)</a>
+        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryDataset.return_tensors">return_tensors() (src.decision_transformer.offline_dataset.TrajectoryDataset method)</a>
 </li>
-        </ul></li>
         <li><a href="src.ppo.html#src.ppo.memory.Minibatch.returns">returns (src.ppo.memory.Minibatch attribute)</a>
 </li>
         <li><a href="src.html#src.dummy_agent.RandomAgent.rollout">rollout() (src.dummy_agent.RandomAgent method)</a>
 
         <ul>
-          <li><a href="src.ppo.html#src.ppo.agent.Agent.rollout">(src.ppo.agent.Agent method)</a>
+          <li><a href="src.ppo.html#src.ppo.agent.FCAgent.rollout">(src.ppo.agent.FCAgent method)</a>
+</li>
+          <li><a href="src.ppo.html#src.ppo.agent.PPOAgent.rollout">(src.ppo.agent.PPOAgent method)</a>
 </li>
         </ul></li>
     </ul></td>
@@ -858,13 +814,6 @@
 </li>
         </ul></li>
         <li>
-    src.decision_transformer.offline_dataset_new
-
-        <ul>
-          <li><a href="src.decision_transformer.html#module-src.decision_transformer.offline_dataset_new">module</a>
-</li>
-        </ul></li>
-        <li>
     src.decision_transformer.train
 
         <ul>
@@ -913,8 +862,6 @@
           <li><a href="src.environments.html#module-src.environments.multienvironments">module</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li>
     src.environments.registration
 
@@ -922,6 +869,8 @@
           <li><a href="src.environments.html#module-src.environments.registration">module</a>
 </li>
         </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li>
     src.environments.wrappers
 
@@ -979,6 +928,20 @@
 </li>
         </ul></li>
         <li>
+    src.run_decision_transformer
+
+        <ul>
+          <li><a href="src.html#module-src.run_decision_transformer">module</a>
+</li>
+        </ul></li>
+        <li>
+    src.run_ppo
+
+        <ul>
+          <li><a href="src.html#module-src.run_ppo">module</a>
+</li>
+        </ul></li>
+        <li>
     src.utils
 
         <ul>
@@ -1026,215 +989,15 @@
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.test_batches">test_batches (src.decision_transformer.utils.DTArgs attribute)</a>
 </li>
-        <li><a href="tests.html#tests.test_calibration.test_calibration_end_to_end">test_calibration_end_to_end() (in module tests.test_calibration)</a>
-</li>
-        <li><a href="tests.html#tests.test_calibration.test_calibration_end_to_end_one_hot_model">test_calibration_end_to_end_one_hot_model() (in module tests.test_calibration)</a>
-</li>
-        <li><a href="tests.html#tests.test_decision_transformer.test_decision_transformer_init">test_decision_transformer_init() (in module tests.test_decision_transformer)</a>
-</li>
-        <li><a href="tests.html#tests.test_ppo.test_empty_env">test_empty_env() (in module tests.test_ppo)</a>
-</li>
-        <li><a href="tests.html#tests.test_ppo.test_empty_env_flat_one_hot">test_empty_env_flat_one_hot() (in module tests.test_ppo)</a>
-</li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.test_epochs">test_epochs (src.decision_transformer.utils.DTArgs attribute)</a>
 </li>
-        <li><a href="tests.html#tests.test_dt_train.test_evaluate_dt_agent">test_evaluate_dt_agent() (in module tests.test_dt_train)</a>
-</li>
-        <li><a href="tests.html#tests.test_decision_transformer.test_forward">test_forward() (in module tests.test_decision_transformer)</a>
-</li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.test_frequency">test_frequency (src.decision_transformer.utils.DTArgs attribute)</a>
-</li>
-        <li><a href="tests.html#tests.test_decision_transformer.test_get_action_embeddings">test_get_action_embeddings() (in module tests.test_decision_transformer)</a>
-</li>
-        <li><a href="tests.html#tests.test_streamlit_environment.test_get_env_and_dt">test_get_env_and_dt() (in module tests.test_streamlit_environment)</a>
-</li>
-        <li><a href="tests.html#tests.test_ppo_utils.test_get_obs_preprocessor_MiniGrid">test_get_obs_preprocessor_MiniGrid() (in module tests.test_ppo_utils)</a>
-</li>
-        <li><a href="tests.html#tests.test_ppo_utils.test_get_obs_preprocessor_MiniGrid_flat">test_get_obs_preprocessor_MiniGrid_flat() (in module tests.test_ppo_utils)</a>
-</li>
-        <li><a href="tests.html#tests.test_ppo_utils.test_get_obs_preprocessor_MiniGrid_full_img_obs">test_get_obs_preprocessor_MiniGrid_full_img_obs() (in module tests.test_ppo_utils)</a>
-</li>
-        <li><a href="tests.html#tests.test_ppo_utils.test_get_obs_preprocessor_MiniGrid_full_img_partial">test_get_obs_preprocessor_MiniGrid_full_img_partial() (in module tests.test_ppo_utils)</a>
-</li>
-        <li><a href="tests.html#tests.test_ppo_utils.test_get_obs_preprocessor_MiniGrid_full_obs">test_get_obs_preprocessor_MiniGrid_full_obs() (in module tests.test_ppo_utils)</a>
-</li>
-        <li><a href="tests.html#tests.test_ppo_utils.test_get_obs_preprocessor_probe1">test_get_obs_preprocessor_probe1() (in module tests.test_ppo_utils)</a>
-</li>
-        <li><a href="tests.html#tests.test_decision_transformer.test_get_reward_embeddings">test_get_reward_embeddings() (in module tests.test_decision_transformer)</a>
-</li>
-        <li><a href="tests.html#tests.test_decision_transformer.test_get_state_embeddings_grid">test_get_state_embeddings_grid() (in module tests.test_decision_transformer)</a>
-</li>
-        <li><a href="tests.html#tests.test_decision_transformer.test_get_state_embeddings_grid_one_hot">test_get_state_embeddings_grid_one_hot() (in module tests.test_decision_transformer)</a>
-</li>
-        <li><a href="tests.html#tests.test_decision_transformer.test_get_state_embeddings_image">test_get_state_embeddings_image() (in module tests.test_decision_transformer)</a>
-</li>
-        <li><a href="tests.html#tests.test_decision_transformer.test_get_time_embeddings_categorical">test_get_time_embeddings_categorical() (in module tests.test_decision_transformer)</a>
-</li>
-        <li><a href="tests.html#tests.test_decision_transformer.test_get_time_embeddings_linear">test_get_time_embeddings_linear() (in module tests.test_decision_transformer)</a>
-</li>
-        <li><a href="tests.html#tests.test_decision_transformer.test_get_token_embeddings_multi_batch">test_get_token_embeddings_multi_batch() (in module tests.test_decision_transformer)</a>
-</li>
-        <li><a href="tests.html#tests.test_decision_transformer.test_get_token_embeddings_single_batch">test_get_token_embeddings_single_batch() (in module tests.test_decision_transformer)</a>
-</li>
-        <li><a href="tests.html#tests.test_offline_dataset.test_init_trajectory_loader">test_init_trajectory_loader() (in module tests.test_offline_dataset)</a>
-</li>
-        <li><a href="tests.html#tests.test_offline_dataset.test_init_trajectory_loader_xz">test_init_trajectory_loader_xz() (in module tests.test_offline_dataset)</a>
-</li>
-        <li><a href="tests.html#tests.test_utils.test_load_decision_key_door">test_load_decision_key_door() (in module tests.test_utils)</a>
-</li>
-        <li><a href="tests.html#tests.test_utils.test_load_decision_transformer">test_load_decision_transformer() (in module tests.test_utils)</a>
-</li>
-        <li><a href="tests.html#tests.test_utils.test_load_decision_transformer_linear_time">test_load_decision_transformer_linear_time() (in module tests.test_utils)</a>
-</li>
-        <li><a href="tests.html#tests.test_environments.test_make_env">test_make_env() (in module tests.test_environments)</a>
-</li>
-        <li><a href="tests.html#tests.test_environments.test_make_env_change_view_size">test_make_env_change_view_size() (in module tests.test_environments)</a>
-</li>
-        <li><a href="tests.html#tests.test_environments.test_make_env_flat_one_hot">test_make_env_flat_one_hot() (in module tests.test_environments)</a>
-</li>
-        <li><a href="tests.html#tests.test_environments.test_make_env_flat_one_hot_view_size_change">test_make_env_flat_one_hot_view_size_change() (in module tests.test_environments)</a>
-</li>
-        <li><a href="tests.html#tests.test_environments.test_make_env_fully_observed">test_make_env_fully_observed() (in module tests.test_environments)</a>
-</li>
-        <li><a href="tests.html#tests.test_multienvironments.test_multienv_sampler">test_multienv_sampler() (in module tests.test_multienvironments)</a>
-</li>
-        <li><a href="tests.html#tests.test_ppo.test_ppo_agent_gym">test_ppo_agent_gym() (in module tests.test_ppo)</a>
-</li>
-        <li><a href="tests.html#tests.test_ppo.test_ppo_agent_minigrid">test_ppo_agent_minigrid() (in module tests.test_ppo)</a>
-</li>
-        <li><a href="tests.html#tests.test_ppo.test_probe_envs">test_probe_envs() (in module tests.test_ppo)</a>
-</li>
-        <li><a href="tests.html#tests.test_environment_registration.test_register_envs">test_register_envs() (in module tests.test_environment_registration)</a>
-</li>
-        <li><a href="tests.html#tests.test_decision_transformer.test_state_encoder">test_state_encoder() (in module tests.test_decision_transformer)</a>
-</li>
-        <li><a href="tests.html#tests.test_offline_dataset.test_train_test_split">test_train_test_split() (in module tests.test_offline_dataset)</a>
-</li>
-        <li><a href="tests.html#tests.test_offline_dataset.test_train_test_split_other_data">test_train_test_split_other_data() (in module tests.test_offline_dataset)</a>
-</li>
-        <li><a href="tests.html#tests.test_offline_dataset.test_trajectory_dataset__getitem__">test_trajectory_dataset__getitem__() (in module tests.test_offline_dataset)</a>
-</li>
-        <li><a href="tests.html#tests.test_offline_dataset.test_trajectory_dataset_as_dataloader">test_trajectory_dataset_as_dataloader() (in module tests.test_offline_dataset)</a>
-</li>
-        <li><a href="tests.html#tests.test_offline_dataset.test_trajectory_dataset_discount_cumusum_10">test_trajectory_dataset_discount_cumusum_10() (in module tests.test_offline_dataset)</a>
-</li>
-        <li><a href="tests.html#tests.test_offline_dataset.test_trajectory_dataset_get_indices_of_top_p_trajectories_01">test_trajectory_dataset_get_indices_of_top_p_trajectories_01() (in module tests.test_offline_dataset)</a>
-</li>
-        <li><a href="tests.html#tests.test_offline_dataset.test_trajectory_dataset_get_indices_of_top_p_trajectories_1">test_trajectory_dataset_get_indices_of_top_p_trajectories_1() (in module tests.test_offline_dataset)</a>
-</li>
-        <li><a href="tests.html#tests.test_offline_dataset.test_trajectory_dataset_init">test_trajectory_dataset_init() (in module tests.test_offline_dataset)</a>
-</li>
-        <li><a href="tests.html#tests.test_offline_dataset.test_trajectory_dataset_init_xz">test_trajectory_dataset_init_xz() (in module tests.test_offline_dataset)</a>
-</li>
-        <li><a href="tests.html#tests.test_offline_dataset.test_trajectory_dataset_sampling_probabilities">test_trajectory_dataset_sampling_probabilities() (in module tests.test_offline_dataset)</a>
-</li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="tests.html#tests.test_offline_dataset.test_trajectory_loader_get_batch">test_trajectory_loader_get_batch() (in module tests.test_offline_dataset)</a>
-</li>
-        <li><a href="tests.html#tests.test_offline_dataset.test_trajectory_loader_get_indices_of_top_p">test_trajectory_loader_get_indices_of_top_p() (in module tests.test_offline_dataset)</a>
-</li>
-        <li><a href="tests.html#tests.test_offline_dataset.test_trajectory_reader">test_trajectory_reader() (in module tests.test_offline_dataset)</a>
-</li>
-        <li><a href="tests.html#tests.test_offline_dataset.test_trajectory_reader_xz">test_trajectory_reader_xz() (in module tests.test_offline_dataset)</a>
-</li>
-        <li><a href="tests.html#tests.test_utils.test_trajectory_writer_lzma">test_trajectory_writer_lzma() (in module tests.test_utils)</a>
-</li>
-        <li><a href="tests.html#tests.test_utils.test_trajectory_writer_numpy">test_trajectory_writer_numpy() (in module tests.test_utils)</a>
-</li>
-        <li><a href="tests.html#tests.test_utils.test_trajectory_writer_torch">test_trajectory_writer_torch() (in module tests.test_utils)</a>
-</li>
-        <li><a href="tests.html#tests.test_constants.test_twenty_idx_format_func">test_twenty_idx_format_func() (in module tests.test_constants)</a>
 </li>
         <li>
     tests
 
         <ul>
           <li><a href="tests.html#module-tests">module</a>
-</li>
-        </ul></li>
-        <li>
-    tests.test_calibration
-
-        <ul>
-          <li><a href="tests.html#module-tests.test_calibration">module</a>
-</li>
-        </ul></li>
-        <li>
-    tests.test_constants
-
-        <ul>
-          <li><a href="tests.html#module-tests.test_constants">module</a>
-</li>
-        </ul></li>
-        <li>
-    tests.test_decision_transformer
-
-        <ul>
-          <li><a href="tests.html#module-tests.test_decision_transformer">module</a>
-</li>
-        </ul></li>
-        <li>
-    tests.test_dt_train
-
-        <ul>
-          <li><a href="tests.html#module-tests.test_dt_train">module</a>
-</li>
-        </ul></li>
-        <li>
-    tests.test_environment_registration
-
-        <ul>
-          <li><a href="tests.html#module-tests.test_environment_registration">module</a>
-</li>
-        </ul></li>
-        <li>
-    tests.test_environments
-
-        <ul>
-          <li><a href="tests.html#module-tests.test_environments">module</a>
-</li>
-        </ul></li>
-        <li>
-    tests.test_multienvironments
-
-        <ul>
-          <li><a href="tests.html#module-tests.test_multienvironments">module</a>
-</li>
-        </ul></li>
-        <li>
-    tests.test_offline_dataset
-
-        <ul>
-          <li><a href="tests.html#module-tests.test_offline_dataset">module</a>
-</li>
-        </ul></li>
-        <li>
-    tests.test_ppo
-
-        <ul>
-          <li><a href="tests.html#module-tests.test_ppo">module</a>
-</li>
-        </ul></li>
-        <li>
-    tests.test_ppo_utils
-
-        <ul>
-          <li><a href="tests.html#module-tests.test_ppo_utils">module</a>
-</li>
-        </ul></li>
-        <li>
-    tests.test_streamlit_environment
-
-        <ul>
-          <li><a href="tests.html#module-tests.test_streamlit_environment">module</a>
-</li>
-        </ul></li>
-        <li>
-    tests.test_utils
-
-        <ul>
-          <li><a href="tests.html#module-tests.test_utils">module</a>
 </li>
         </ul></li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.to_tokens">to_tokens() (src.decision_transformer.model.DecisionTransformer method)</a>
@@ -1251,6 +1014,8 @@
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.train_epochs">train_epochs (src.decision_transformer.utils.DTArgs attribute)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.ppo.html#src.ppo.train.train_ppo">train_ppo() (in module src.ppo.train)</a>
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.trainer.Trainer.train_step">train_step() (src.decision_transformer.trainer.Trainer method)</a>
@@ -1273,13 +1038,11 @@
           <li><a href="src.ppo.html#src.ppo.utils.PPOArgs.trajectory_path">(src.ppo.utils.PPOArgs attribute)</a>
 </li>
         </ul></li>
-        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryDataset">TrajectoryDataset (class in src.decision_transformer.offline_dataset_new)</a>
-</li>
-        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryLoader">TrajectoryLoader (class in src.decision_transformer.offline_dataset)</a>
+        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryDataset">TrajectoryDataset (class in src.decision_transformer.offline_dataset)</a>
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryReader">TrajectoryReader (class in src.decision_transformer.offline_dataset)</a>
 </li>
-        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset_new.TrajectoryVisualizer">TrajectoryVisualizer (class in src.decision_transformer.offline_dataset_new)</a>
+        <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryVisualizer">TrajectoryVisualizer (class in src.decision_transformer.offline_dataset)</a>
 </li>
         <li><a href="src.html#src.utils.TrajectoryWriter">TrajectoryWriter (class in src.utils)</a>
 </li>
