@@ -237,20 +237,19 @@ class DecisionTransformer(TrajectoryTransformer):
 
         '''
         batches = state_embeddings.shape[0]
+        timesteps = time_embeddings.shape[1]
 
         reward_embeddings = reward_embeddings + time_embeddings
         state_embeddings = state_embeddings + time_embeddings
 
         if action_embeddings is not None:
             action_embeddings = action_embeddings + time_embeddings
-        if targets:
-            targets = targets + time_embeddings
-
-        timesteps = time_embeddings.shape[1]  # number of timesteps
-        if action_embeddings is not None:
             trajectory_length = timesteps*3
         else:
             trajectory_length = 2  # one timestep, no action yet
+
+        if targets:
+            targets = targets + time_embeddings
 
         # create the token embeddings
         token_embeddings = torch.zeros(
@@ -342,6 +341,124 @@ class DecisionTransformer(TrajectoryTransformer):
             x, batch_size, seq_length)
 
         return state_preds, action_preds, reward_preds
+
+
+class CloneTransformer(TrajectoryTransformer):
+    '''
+    Behavioral clone modelling transformer including:
+        - CloneTransformer (offline, (s,a))
+    '''
+
+    def __init__(
+        self,
+        transformer_config: TransformerModelConfig,
+        environment_config: EnvironmentConfig
+    ):
+        super().__init__(transformer_config, environment_config)
+
+        self.transformer = self.initialize_easy_transformer()
+
+    def get_token_embeddings(self,
+                             state_embeddings,
+                             time_embeddings,
+                             action_embeddings=None):
+        '''
+        Returns the token embeddings for the transformer input.
+        Note that different subclasses will have different token embeddings
+        such as the DecisionTransformer which will use RTG (placed before the
+        state embedding).
+
+        Args:
+            states: (batch, position, state_dim)
+            actions: (batch, position)
+
+        Returns:
+            token_embeddings: (batch, position, n_embd)
+        '''
+        batches = state_embeddings.shape[0]
+        timesteps = time_embeddings.shape[1]
+
+        state_embeddings = state_embeddings + time_embeddings
+
+        if action_embeddings is not None:
+            action_embeddings = action_embeddings + time_embeddings
+            trajectory_length = timesteps*2
+        else:
+            trajectory_length = 1  # one timestep, no action yet
+
+        # create the token embeddings
+        token_embeddings = torch.zeros(
+            (batches, trajectory_length, self.transformer_config.d_model),
+            dtype=torch.float32, device=state_embeddings.device)  # batches, blocksize, n_embd
+
+        if action_embeddings is not None:
+            token_embeddings[:, 0::2, :] = state_embeddings
+            token_embeddings[:, 1::2, :] = action_embeddings
+        else:
+            token_embeddings[:, 0, :] = state_embeddings[:, 0, :]
+
+        return token_embeddings
+
+    def to_tokens(self, states, actions, timesteps):
+
+        # embed states and recast back to (batch, block_size, n_embd)
+        state_embeddings = self.get_state_embedding(
+            states)  # batch_size, block_size, n_embd
+        action_embeddings = self.get_action_embedding(
+            actions) if actions is not None else None  # batch_size, block_size, n_embd or None
+        time_embeddings = self.get_time_embedding(
+            timesteps)  # batch_size, block_size, n_embd
+
+        # use state_embeddings, actions, rewards to go and
+        token_embeddings = self.get_token_embeddings(
+            state_embeddings=state_embeddings,
+            action_embeddings=action_embeddings,
+            time_embeddings=time_embeddings
+        )
+        return token_embeddings
+
+    def forward(self,
+                # has variable shape, starting with batch, position
+                states: TT[...],
+                actions: TT["batch", "position"],  # noqa: F821
+                timesteps: TT["batch", "position"],  # noqa: F821
+                ) -> Tuple[TT[...], TT["batch", "position"], TT["batch", "position"]]:  # noqa: F821
+
+        batch_size = states.shape[0]
+        seq_length = states.shape[1]
+
+        # embed states and recast back to (batch, block_size, n_embd)
+        token_embeddings = self.to_tokens(states, actions, timesteps)
+        x = self.transformer(token_embeddings)
+        state_preds, action_preds = self.get_logits(
+            x, batch_size, seq_length)
+
+        return state_preds, action_preds
+
+    def get_action(self, states, actions, timesteps):
+
+        state_preds, action_preds = self.forward(
+            states, actions, timesteps)
+
+        # get the action prediction
+        action_preds = action_preds[:, -1, :]  # (batch, n_actions)
+        action = torch.argmax(action_preds, dim=-1)  # (batch)
+        return action
+
+    def get_logits(self, x, batch_size, seq_length):
+
+        # TODO replace with einsum
+        x = x.reshape(batch_size, seq_length, 2,
+                      self.transformer_config.d_model).permute(0, 2, 1, 3)
+
+        # predict next return given state and action
+        # reward_preds = self.predict_rewards(x[:, 2])
+        # predict next state given state and action
+        state_preds = self.predict_states(x[:, 1])
+        # predict next action given state
+        action_preds = self.predict_actions(x[:, 0])
+
+        return state_preds, action_preds
 
 
 class StateEncoder(nn.Module):

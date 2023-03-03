@@ -4,7 +4,8 @@ import torch
 import torch.nn as nn
 from gymnasium.spaces import Box, Dict
 from src.config import EnvironmentConfig, TransformerModelConfig
-from src.models.trajectory_model import TrajectoryTransformer, DecisionTransformer, PosEmbedTokens, StateEncoder
+from src.models.trajectory_model import TrajectoryTransformer, DecisionTransformer, CloneTransformer
+from src.models.trajectory_model import PosEmbedTokens, StateEncoder
 from transformer_lens import HookedTransformer
 
 
@@ -26,61 +27,13 @@ def decision_transformer():
 
 
 @pytest.fixture
-def decision_transformer():
-    transformer_config = TransformerModelConfig(
-
-    )
+def clone_transformer():
+    transformer_config = TransformerModelConfig()
     environment_config = EnvironmentConfig()
-    return DecisionTransformer(
+    return CloneTransformer(
         transformer_config=transformer_config,
         environment_config=environment_config
     )
-
-
-def test_parameter_count(decision_transformer):
-    num_parameters = sum(
-        p.numel() for p in decision_transformer.parameters() if p.requires_grad)
-    # 432411 - something changed, verify later when model working.
-    assert num_parameters == 431383
-
-
-def test_get_logits(decision_transformer):
-    batch_size = 4
-    seq_length = 5
-    d_model = decision_transformer.transformer_config.d_model
-
-    x = torch.rand(batch_size, seq_length, 3, d_model)
-    state_preds, action_preds, reward_preds = decision_transformer.get_logits(
-        x, batch_size, seq_length)
-
-    assert state_preds.shape == (batch_size, seq_length, np.prod(
-        decision_transformer.environment_config.observation_space['image'].shape))
-    assert action_preds.shape == (
-        batch_size, seq_length, decision_transformer.environment_config.action_space.n)
-    assert reward_preds.shape == (batch_size, seq_length, 1)
-
-
-def test_predict_rewards(transformer):
-    d_model = transformer.transformer_config.d_model
-    x = torch.rand(3, 4, d_model)
-    result = transformer.predict_rewards(x)
-    assert result.shape == (3, 4, 1)
-
-
-def test_predict_states(transformer):
-    d_model = transformer.transformer_config.d_model
-    x = torch.rand(3, 4, d_model)
-    result = transformer.predict_states(x)
-    assert result.shape == (3, 4,  np.prod(
-        transformer.environment_config.observation_space['image'].shape))
-
-
-def test_predict_actions(transformer):
-    d_model = transformer.transformer_config.d_model
-    x = torch.rand(3, 4, d_model)
-    result = transformer.predict_actions(x)
-    assert result.shape == (
-        3, 4, transformer.environment_config.action_space.n)
 
 
 def test_get_time_embedding(transformer):
@@ -107,15 +60,6 @@ def test_get_state_embedding(transformer):
                             transformer.transformer_config.d_model)
 
 
-def test_get_reward_embedding(decision_transformer):
-    batch_size = 2
-    block_size = 3
-    rtgs = torch.rand(batch_size, block_size).unsqueeze(-1)
-    result = decision_transformer.get_reward_embedding(rtgs)
-    assert result.shape == (batch_size, block_size,
-                            decision_transformer.transformer_config.d_model)
-
-
 def test_get_action_embedding(transformer):
     batch_size = 2
     block_size = 3
@@ -124,12 +68,6 @@ def test_get_action_embedding(transformer):
     result = transformer.get_action_embedding(actions)
     assert result.shape == (batch_size, block_size,
                             transformer.transformer_config.d_model)
-
-
-def test_predict_rewards(decision_transformer):
-    x = torch.randn((16, 5, 3, 128))
-    rewards = decision_transformer.predict_rewards(x[:, 2])
-    assert rewards.shape == (16, 3, 1)
 
 
 def test_predict_states(transformer):
@@ -182,7 +120,7 @@ def test_initialize_easy_transformer(transformer):
     assert easy_transformer.cfg.d_vocab == transformer.transformer_config.d_model
 
 
-def test_get_token_embeddings_with_actions(decision_transformer):
+def test_decision_transformer_get_token_embeddings_with_actions(decision_transformer):
     # Create dummy data for states, actions, rtgs, and timesteps
     state_embeddings = torch.randn((2, 3, 128))
     time_embeddings = torch.randn((2, 3, 128))
@@ -222,7 +160,7 @@ def test_get_token_embeddings_with_actions(decision_transformer):
     )
 
 
-def test_get_token_embeddings_without_actions(decision_transformer):
+def test_decision_transformer_get_token_embeddings_without_actions(decision_transformer):
 
     # Check with no actions
     state_embeddings = torch.randn((2, 1, 128))
@@ -253,7 +191,22 @@ def test_get_token_embeddings_without_actions(decision_transformer):
     )
 
 
-def test_to_tokens(decision_transformer):
+def test_decision_transformer_get_reward_embedding(decision_transformer):
+    batch_size = 2
+    block_size = 3
+    rtgs = torch.rand(batch_size, block_size).unsqueeze(-1)
+    result = decision_transformer.get_reward_embedding(rtgs)
+    assert result.shape == (batch_size, block_size,
+                            decision_transformer.transformer_config.d_model)
+
+
+def test_decision_transformer_predict_rewards(decision_transformer):
+    x = torch.randn((16, 5, 3, 128))
+    rewards = decision_transformer.predict_rewards(x[:, 2])
+    assert rewards.shape == (16, 3, 1)
+
+
+def test_decision_transformer_to_tokens(decision_transformer):
     states = torch.randn((16, 5, 7, 7, 3))
     actions = torch.randint(0, 4, (16, 5, 1)).to(torch.int64)
     rewards = torch.randn((16, 5, 1))
@@ -263,3 +216,112 @@ def test_to_tokens(decision_transformer):
         states, actions, rewards, timesteps)
 
     assert token_embeddings.shape == (16, 15, 128)
+
+
+def test_decision_transformer_parameter_count(decision_transformer):
+    num_parameters = sum(
+        p.numel() for p in decision_transformer.parameters() if p.requires_grad)
+    # 432411 - something changed, verify later when model working.
+    assert num_parameters == 431383
+
+
+def test_decision_transformer_get_logits(decision_transformer):
+    batch_size = 4
+    seq_length = 5
+    d_model = decision_transformer.transformer_config.d_model
+
+    x = torch.rand(batch_size, seq_length, 3, d_model)
+    state_preds, action_preds, reward_preds = decision_transformer.get_logits(
+        x, batch_size, seq_length)
+
+    assert state_preds.shape == (batch_size, seq_length, np.prod(
+        decision_transformer.environment_config.observation_space['image'].shape))
+    assert action_preds.shape == (
+        batch_size, seq_length, decision_transformer.environment_config.action_space.n)
+    assert reward_preds.shape == (batch_size, seq_length, 1)
+
+
+def test_clone_transformer_get_token_embeddings_with_actions(clone_transformer):
+    # Create dummy data for states, actions, rtgs, and timesteps
+    state_embeddings = torch.randn((2, 3, 128))
+    time_embeddings = torch.randn((2, 3, 128))
+    action_embeddings = torch.randn((2, 3, 128))
+
+    # Call get_token_embeddings method
+    token_embeddings = clone_transformer.get_token_embeddings(
+        state_embeddings=state_embeddings,
+        time_embeddings=time_embeddings,
+        action_embeddings=action_embeddings,
+    )
+
+    # Check shape of returned tensor
+    assert token_embeddings.shape == (2, 6, 128)
+
+    # Check that the first token is the reward embedding
+    assert torch.allclose(
+        token_embeddings[:, ::2, :] - time_embeddings,
+        state_embeddings,
+        rtol=1e-3
+    )
+
+    # Check that the second token is the state embedding
+    assert torch.allclose(
+        token_embeddings[:, 1::2, :] - time_embeddings,
+        action_embeddings,
+        rtol=1e-3
+    )
+
+
+def test_clone_transformer_get_token_embeddings_without_actions(clone_transformer):
+
+    # Check with no actions
+    state_embeddings = torch.randn((2, 1, 128))
+    time_embeddings = torch.randn((2, 1, 128))
+
+    # Call get_token_embeddings method
+    token_embeddings = clone_transformer.get_token_embeddings(
+        state_embeddings=state_embeddings,
+        time_embeddings=time_embeddings,
+    )
+
+    assert token_embeddings.shape == (2, 1, 128)
+
+    # Check that the first token is the reward embedding
+    assert torch.allclose(
+        token_embeddings[:, ::2, :] - time_embeddings,
+        state_embeddings,
+        rtol=1e-3
+    )
+
+
+def test_clone_transformer_to_tokens(clone_transformer):
+    states = torch.randn((16, 5, 7, 7, 3))
+    actions = torch.randint(0, 4, (16, 5, 1)).to(torch.int64)
+    timesteps = torch.ones((16, 5)).unsqueeze(-1).to(torch.int64)
+
+    token_embeddings = clone_transformer.to_tokens(
+        states, actions, timesteps)
+
+    assert token_embeddings.shape == (16, 10, 128)
+
+
+def test_clone_transformer_parameter_count(clone_transformer):
+    num_parameters = sum(
+        p.numel() for p in clone_transformer.parameters() if p.requires_grad)
+    # 432411 - something changed, verify later when model working.
+    assert num_parameters == 431126
+
+
+def test_clone_transformer_get_logits(clone_transformer):
+    batch_size = 4
+    seq_length = 5
+    d_model = clone_transformer.transformer_config.d_model
+
+    x = torch.rand(batch_size, seq_length, 2, d_model)
+    state_preds, action_preds = clone_transformer.get_logits(
+        x, batch_size, seq_length)
+
+    assert state_preds.shape == (batch_size, seq_length, np.prod(
+        clone_transformer.environment_config.observation_space['image'].shape))
+    assert action_preds.shape == (
+        batch_size, seq_length, clone_transformer.environment_config.action_space.n)
