@@ -137,7 +137,7 @@ def test_trajectory_writer_lzma():
     assert os.path.getsize("tmp/test_trajectory_writer_writer.xz") < 400
 
 
-def test_load_decision_transformer():
+def test_load_legacy_decision_transformer():
 
     model_path = "models/MiniGrid-Dynamic-Obstacles-8x8-v0/demo_model_overnight_training.pt"
     env = make_env('MiniGrid-Dynamic-Obstacles-8x8-v0', 0, 0, False, "test")()
@@ -152,7 +152,7 @@ def test_load_decision_transformer():
     assert model.normalization_type is None
 
 
-def test_load_decision_transformer_linear_time():
+def test_loa_legacy_decision_transformer_linear_time():
 
     model_path = "models/linear_model_not_performant.pt"
     env = make_env('MiniGrid-Dynamic-Obstacles-8x8-v0', 0, 0, False, "test")()
@@ -167,7 +167,7 @@ def test_load_decision_transformer_linear_time():
     assert model.normalization_type is None
 
 
-def test_load_decision_key_door():
+def test_load_legacy_decision_key_door():
 
     model_path = "models/MiniGrid-DoorKey-8x8-v0/first_pass.pt"
     env = make_env('MiniGrid-DoorKey-8x8-v0', 0, 0, False, "test")()
@@ -180,3 +180,5 @@ def test_load_decision_key_door():
     assert model.n_heads == 2
     assert model.n_layers == 1
     assert model.normalization_type is None
+
+# TODO when we have non-legacy models, we should test them here
