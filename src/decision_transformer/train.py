@@ -62,7 +62,7 @@ def train(
 
             dt.train()
 
-            if dt.time_embedding_type == "linear":
+            if dt.transformer_config.time_embedding_type == "linear":
                 ti = ti.to(t.float32)
 
             a[a == -10] = env.action_space.n  # dummy action for padding
@@ -93,7 +93,7 @@ def train(
             if track:
                 wandb.log({"train/loss": loss.item()}, step=total_batches)
                 tokens_seen = (total_batches + 1) * \
-                    batch_size * (dt.n_ctx // 3)
+                    batch_size * (dt.transformer_config.n_ctx // 3)
                 wandb.log({"metrics/tokens_seen": tokens_seen},
                           step=total_batches)
 
@@ -112,7 +112,8 @@ def train(
             seed=batch,
             idx=0,
             capture_video=True,
-            max_steps=min(dt.max_timestep, eval_max_time_steps),
+            max_steps=min(dt.environment_config.max_steps,
+                          eval_max_time_steps),
             run_name=f"dt_eval_videos_{batch}",
             fully_observed=False,
             flat_one_hot=(
@@ -158,7 +159,7 @@ def test(
 
     for epoch in pbar:
         for batch, (s, a, r, d, rtg, ti, m) in (enumerate(dataloader)):
-            if dt.time_embedding_type == "linear":
+            if dt.transformer_config.time_embedding_type == "linear":
                 ti = ti.to(t.float32)
 
             a[a == -10] = env.action_space.n
@@ -212,8 +213,8 @@ def evaluate_dt_agent(
     env = env_func()
     video_path = os.path.join("videos", env.run_name)
 
-    assert dt.n_ctx % 3 == 0, "n_ctx must be divisible by 3"
-    max_len = dt.n_ctx // 3
+    assert dt.transformer_config.n_ctx % 3 == 0, "n_ctx must be divisible by 3"
+    max_len = dt.transformer_config.n_ctx // 3
 
     traj_lengths = []
     rewards = []
@@ -247,7 +248,7 @@ def evaluate_dt_agent(
         a = a.to(device)
         timesteps = timesteps.to(device)
 
-        if dt.time_embedding_type == "linear":
+        if dt.transformer_config.time_embedding_type == "linear":
             timesteps = timesteps.to(t.float32)
 
         # get first action
@@ -272,7 +273,7 @@ def evaluate_dt_agent(
             timesteps = t.cat([timesteps, t.tensor(
                 [timesteps[-1][-1].item()+1]).unsqueeze(0).unsqueeze(0).to(device)], dim=1)
 
-            if dt.time_embedding_type == "linear":
+            if dt.transformer_config.time_embedding_type == "linear":
                 timesteps = timesteps.to(t.float32)
 
             a = t.cat(

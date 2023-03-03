@@ -5,10 +5,11 @@ import time
 import os
 
 from typing import Callable
-from .model import DecisionTransformer
+# from .model import DecisionTransformer
 from .offline_dataset import TrajectoryDataset, TrajectoryVisualizer
 from .train import train
-from src.config import RunConfig, TransformerModelConfig, OfflineTrainConfig
+from src.config import RunConfig, TransformerModelConfig, OfflineTrainConfig, EnvironmentConfig
+from src.models.trajectory_model import DecisionTransformer
 
 
 def run_decision_transformer(
@@ -42,6 +43,14 @@ def run_decision_transformer(
     if not "view_size" in trajectory_data_set.metadata['args']:
         trajectory_data_set.metadata['args']['view_size'] = 7
 
+    environment_config = EnvironmentConfig(
+        env_id=trajectory_data_set.metadata['args']['env_id'],
+        one_hot_obs=trajectory_data_set.observation_type == "one_hot",
+        view_size=trajectory_data_set.metadata['args']['view_size'],
+        fully_observed=False,
+        capture_video=False,
+        render_mode='rgb_array')
+
     env = make_env(
         env_id,
         seed=0,
@@ -72,20 +81,9 @@ def run_decision_transformer(
         wandb.log(
             {"dataset/num_trajectories": trajectory_data_set.num_trajectories})
 
-    # make a decision transformer
     dt = DecisionTransformer(
-        env=env,
-        d_model=transformer_config.d_model,
-        n_heads=transformer_config.n_heads,
-        d_mlp=transformer_config.d_mlp,
-        n_layers=transformer_config.n_layers,
-        layer_norm=transformer_config.layer_norm,
-        time_embedding_type=transformer_config.time_embedding_type,
-        state_embedding_type="grid",  # hard-coded for now to minigrid.
-        # so we can embed all the timesteps in the training data.
-        max_timestep=trajectory_data_set.metadata.get("args").get("max_steps"),
-        n_ctx=transformer_config.n_ctx,
-        device=device
+        environment_config=environment_config,
+        transformer_config=transformer_config
     )
 
     if run_config.track:

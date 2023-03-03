@@ -121,3 +121,21 @@ class RunConfig:
         if self.trajectory_path is None:
             self.trajectory_path = os.path.join(
                 "trajectories", self.exp_name + str(uuid.uuid4()) + ".gz")
+
+
+def parse_metadata_to_environment_config(metadata: dict):
+
+    env_id = metadata['env_id']
+    one_hot_obs = metadata['one_hot_obs']
+    img_obs = metadata['img_obs']
+    fully_observed = metadata['fully_observed']
+    max_steps = metadata['max_steps']
+    seed = metadata['seed']
+    view_size = metadata['view_size']
+    capture_video = metadata['capture_video']
+    video_dir = metadata['video_dir']
+    render_mode = metadata['render_mode']
+
+    return EnvironmentConfig(env_id=env_id, one_hot_obs=one_hot_obs, img_obs=img_obs, fully_observed=fully_observed,
+                             max_steps=max_steps, seed=seed, view_size=view_size, capture_video=capture_video,
+                             video_dir=video_dir, render_mode=render_mode)

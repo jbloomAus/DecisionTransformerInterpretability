@@ -1,17 +1,22 @@
 from .decision_transformer.runner import run_decision_transformer
 from .decision_transformer.utils import DTArgs, parse_args
+from .config import RunConfig, TransformerModelConfig, OfflineTrainConfig, EnvironmentConfig
 from .environments.environments import make_env
 
 if __name__ == "__main__":
 
     args = parse_args()
-    args = DTArgs(
+
+    run_config = RunConfig(
         exp_name=args.exp_name,
         seed=args.seed,
         cuda=args.cuda,
         track=args.track,
         wandb_project_name=args.wandb_project_name,
-        wandb_entity=args.wandb_entity,
+        wandb_entity=args.wandb_entity
+    )
+
+    transformer_model_config = TransformerModelConfig(
         trajectory_path=args.trajectory_path,
         pct_traj=args.pct_traj,
         d_model=args.d_model,
@@ -20,7 +25,10 @@ if __name__ == "__main__":
         n_layers=args.n_layers,
         layer_norm=args.layer_norm,
         linear_time_embedding=args.linear_time_embedding,
-        n_ctx=args.n_ctx,
+        n_ctx=args.n_ctx
+    )
+
+    offline_config = OfflineTrainConfig(
         train_epochs=args.train_epochs,
         test_epochs=args.test_epochs,
         learning_rate=args.learning_rate,
@@ -34,4 +42,8 @@ if __name__ == "__main__":
         eval_max_time_steps=args.eval_max_time_steps
     )
 
-    run_decision_transformer(args, make_env)
+    run_decision_transformer(
+        run_config=run_config,
+        transformer_model_config=transformer_model_config,
+        offline_config=offline_config
+    )
