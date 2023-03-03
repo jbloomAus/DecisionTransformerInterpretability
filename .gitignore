@@ -137,7 +137,7 @@ runs/
 tmp/
 trajectories/
 .DS_Store
-models/
+./models/
 artifacts/
 
 *.png

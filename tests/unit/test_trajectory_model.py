@@ -44,19 +44,19 @@ def test_parameter_count(decision_transformer):
     assert num_parameters == 431383
 
 
-def test_get_logits(transformer):
+def test_get_logits(decision_transformer):
     batch_size = 4
     seq_length = 5
-    d_model = transformer.transformer_config.d_model
+    d_model = decision_transformer.transformer_config.d_model
 
     x = torch.rand(batch_size, seq_length, 3, d_model)
-    state_preds, action_preds, reward_preds = transformer.get_logits(
+    state_preds, action_preds, reward_preds = decision_transformer.get_logits(
         x, batch_size, seq_length)
 
     assert state_preds.shape == (batch_size, seq_length, np.prod(
-        transformer.environment_config.observation_space['image'].shape))
+        decision_transformer.environment_config.observation_space['image'].shape))
     assert action_preds.shape == (
-        batch_size, seq_length, transformer.environment_config.action_space.n)
+        batch_size, seq_length, decision_transformer.environment_config.action_space.n)
     assert reward_preds.shape == (batch_size, seq_length, 1)
 
 
@@ -107,13 +107,13 @@ def test_get_state_embedding(transformer):
                             transformer.transformer_config.d_model)
 
 
-def test_get_reward_embedding(transformer):
+def test_get_reward_embedding(decision_transformer):
     batch_size = 2
     block_size = 3
     rtgs = torch.rand(batch_size, block_size).unsqueeze(-1)
-    result = transformer.get_reward_embedding(rtgs)
+    result = decision_transformer.get_reward_embedding(rtgs)
     assert result.shape == (batch_size, block_size,
-                            transformer.transformer_config.d_model)
+                            decision_transformer.transformer_config.d_model)
 
 
 def test_get_action_embedding(transformer):
@@ -126,9 +126,9 @@ def test_get_action_embedding(transformer):
                             transformer.transformer_config.d_model)
 
 
-def test_predict_rewards(transformer):
+def test_predict_rewards(decision_transformer):
     x = torch.randn((16, 5, 3, 128))
-    rewards = transformer.predict_rewards(x[:, 2])
+    rewards = decision_transformer.predict_rewards(x[:, 2])
     assert rewards.shape == (16, 3, 1)
 
 
