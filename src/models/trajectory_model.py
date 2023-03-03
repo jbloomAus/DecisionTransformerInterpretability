@@ -452,16 +452,32 @@ class CloneTransformer(TrajectoryTransformer):
                 states: TT[...],
                 actions: TT["batch", "position"],  # noqa: F821
                 timesteps: TT["batch", "position"],  # noqa: F821
+                pad_action: bool = True
                 ) -> Tuple[TT[...], TT["batch", "position"], TT["batch", "position"]]:  # noqa: F821
 
         batch_size = states.shape[0]
         seq_length = states.shape[1]
 
+        no_actions = actions is None
+
+        if no_actions is False:
+            if actions.shape[1] < seq_length-1:
+                raise ValueError(
+                    f"Actions must be provided for all timesteps except the last, got {actions.shape[1]} and {seq_length}")
+
+            if actions.shape[1] == seq_length-1:
+                if pad_action:
+                    print(
+                        "Warning: actions are missing for the last timestep, padding with zeros")
+                    # This means that you can't interpret Reward or State predictions for the last timestep!!!
+                    actions = torch.cat([actions, torch.zeros(
+                        batch_size, 1, 1, dtype=torch.long, device=actions.device)], dim=1)
+
         # embed states and recast back to (batch, block_size, n_embd)
         token_embeddings = self.to_tokens(states, actions, timesteps)
         x = self.transformer(token_embeddings)
         state_preds, action_preds = self.get_logits(
-            x, batch_size, seq_length)
+            x, batch_size, seq_length, no_actions=no_actions)
 
         return state_preds, action_preds
 
@@ -475,20 +491,31 @@ class CloneTransformer(TrajectoryTransformer):
         action = torch.argmax(action_preds, dim=-1)  # (batch)
         return action
 
-    def get_logits(self, x, batch_size, seq_length):
+    def get_logits(self, x, batch_size, seq_length, no_actions: bool):
 
         # TODO replace with einsum
-        x = x.reshape(batch_size, seq_length, 2,
-                      self.transformer_config.d_model).permute(0, 2, 1, 3)
+        if not no_actions:
+            x = x.reshape(batch_size, seq_length, 2,
+                          self.transformer_config.d_model).permute(0, 2, 1, 3)
+            # predict next return given state and action
+            # reward_preds = self.predict_rewards(x[:, 2])
+            # predict next state given state and action
+            state_preds = self.predict_states(x[:, 1])
+            # predict next action given state
+            action_preds = self.predict_actions(x[:, 0])
 
-        # predict next return given state and action
-        # reward_preds = self.predict_rewards(x[:, 2])
-        # predict next state given state and action
-        state_preds = self.predict_states(x[:, 1])
-        # predict next action given state
-        action_preds = self.predict_actions(x[:, 0])
+            return state_preds, action_preds
+        else:
+            x = x.reshape(batch_size, seq_length, 1,
+                          self.transformer_config.d_model).permute(0, 2, 1, 3)
 
-        return state_preds, action_preds
+            # predict next return given state and action
+            # reward_preds = self.predict_rewards(x[:, 2])
+            # predict next state given state and action
+            # predict next action given state
+            action_preds = self.predict_actions(x[:, 0])
+
+            return None, action_preds
 
 
 class StateEncoder(nn.Module):
