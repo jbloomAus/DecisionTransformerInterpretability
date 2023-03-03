@@ -16,14 +16,14 @@ class TransformerModelConfig():
     n_ctx: int = 3
     layer_norm: bool = False
     state_embedding_type: str = 'grid'
-    time_embedding_type: str = 'learned'
+    time_embedding_type: str = 'embedding'
     seed: int = 1
     device: str = 'cpu'
 
     def __post_init__(self):
         assert self.d_model % self.n_heads == 0
         self.d_head = self.d_model // self.n_heads
-        assert self.time_embedding_type in ['learned', 'linear']
+        assert self.time_embedding_type in ['embedding', 'linear']
 
 
 @dataclass

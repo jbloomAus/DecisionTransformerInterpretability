@@ -5,31 +5,33 @@ import time
 import os
 
 from typing import Callable
-
-
-from .utils import DTArgs
 from .model import DecisionTransformer
 from .offline_dataset import TrajectoryDataset, TrajectoryVisualizer
 from .train import train
+from src.config import RunConfig, TransformerModelConfig, OfflineTrainConfig
 
 
-def run_decision_transformer(args: DTArgs, make_env: Callable):
+def run_decision_transformer(
+        run_config: RunConfig,
+        transformer_config: TransformerModelConfig,
+        offline_config: OfflineTrainConfig,
+        make_env: Callable):
     warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-    if args.cuda:
+    if run_config.cuda:
         device = t.device("cuda" if t.cuda.is_available() else "cpu")
     else:
         device = t.device("cpu")
 
-    if args.trajectory_path is None:
+    if run_config.trajectory_path is None:
         raise ValueError("Must specify a trajectory path.")
 
     trajectory_data_set = TrajectoryDataset(
-        trajectory_path=args.trajectory_path,
-        max_len=args.n_ctx // 3,
-        pct_traj=args.pct_traj,
-        prob_go_from_end=args.prob_go_from_end,
-        device=device
+        trajectory_path=run_config.trajectory_path,
+        max_len=transformer_config.n_ctx // 3,
+        pct_traj=offline_config.pct_traj,
+        prob_go_from_end=offline_config.prob_go_from_end,
+        device=transformer_config.device,
     )
 
     # make an environment
@@ -53,13 +55,15 @@ def run_decision_transformer(args: DTArgs, make_env: Callable):
     )
     env = env()
 
-    if args.track:
-        run_name = f"{env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
+    wandb_args = run_config.__dict__ | transformer_config.__dict__ | offline_config.__dict__
+
+    if run_config.track:
+        run_name = f"{env_id}__{run_config.exp_name}__{run_config.seed}__{int(time.time())}"
         wandb.init(
-            project=args.wandb_project_name,
-            entity=args.wandb_entity,
+            project=run_config.wandb_project_name,
+            entity=run_config.wandb_entity,
             name=run_name,
-            config=args)
+            config=wandb_args)
         trajectory_visualizer = TrajectoryVisualizer(trajectory_data_set)
         fig = trajectory_visualizer.plot_reward_over_time()
         wandb.log({"dataset/reward_over_time": wandb.Plotly(fig)})
@@ -68,28 +72,23 @@ def run_decision_transformer(args: DTArgs, make_env: Callable):
         wandb.log(
             {"dataset/num_trajectories": trajectory_data_set.num_trajectories})
 
-    if args.linear_time_embedding:
-        time_embedding_type = "linear"
-    else:
-        time_embedding_type = "embedding"
-
     # make a decision transformer
     dt = DecisionTransformer(
         env=env,
-        d_model=args.d_model,
-        n_heads=args.n_heads,
-        d_mlp=args.d_mlp,
-        n_layers=args.n_layers,
-        layer_norm=args.layer_norm,
-        time_embedding_type=time_embedding_type,
+        d_model=transformer_config.d_model,
+        n_heads=transformer_config.n_heads,
+        d_mlp=transformer_config.d_mlp,
+        n_layers=transformer_config.n_layers,
+        layer_norm=transformer_config.layer_norm,
+        time_embedding_type=transformer_config.time_embedding_type,
         state_embedding_type="grid",  # hard-coded for now to minigrid.
         # so we can embed all the timesteps in the training data.
         max_timestep=trajectory_data_set.metadata.get("args").get("max_steps"),
-        n_ctx=args.n_ctx,
+        n_ctx=transformer_config.n_ctx,
         device=device
     )
 
-    if args.track:
+    if run_config.track:
         wandb.watch(dt, log="parameters")
 
     dt = train(
@@ -98,20 +97,20 @@ def run_decision_transformer(args: DTArgs, make_env: Callable):
         env=env,
         make_env=make_env,
         device=device,
-        lr=args.learning_rate,
-        weight_decay=args.weight_decay,
-        batch_size=args.batch_size,
-        track=args.track,
-        train_epochs=args.train_epochs,
-        test_epochs=args.test_epochs,
-        test_frequency=args.test_frequency,
-        eval_frequency=args.eval_frequency,
-        eval_episodes=args.eval_episodes,
-        initial_rtg=args.initial_rtg,
-        eval_max_time_steps=args.eval_max_time_steps
+        lr=offline_config.lr,
+        weight_decay=offline_config.weight_decay,
+        batch_size=offline_config.batch_size,
+        track=offline_config.track,
+        train_epochs=offline_config.train_epochs,
+        test_epochs=offline_config.test_epochs,
+        test_frequency=offline_config.test_frequency,
+        eval_frequency=offline_config.eval_frequency,
+        eval_episodes=offline_config.eval_episodes,
+        initial_rtg=offline_config.initial_rtg,
+        eval_max_time_steps=offline_config.eval_max_time_steps
     )
 
-    if args.track:
+    if run_config.track:
         # save the model with pickle, then upload it as an artifact, then delete it.
         # name it after the run name.
         if not os.path.exists("models"):
