@@ -319,7 +319,7 @@ def test_clone_transformer_get_logits(clone_transformer):
 
     x = torch.rand(batch_size, seq_length, 2, d_model)
     state_preds, action_preds = clone_transformer.get_logits(
-        x, batch_size, seq_length)
+        x, batch_size, seq_length, no_actions=False)
 
     assert state_preds.shape == (batch_size, seq_length, np.prod(
         clone_transformer.environment_config.observation_space['image'].shape))
