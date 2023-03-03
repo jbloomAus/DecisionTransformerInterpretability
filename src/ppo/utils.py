@@ -317,7 +317,7 @@ def preprocess_images(images, device=None):
     return images
 
 
-def get_printable_output_for_probe_envs(args, agent, probe_idx: int, update: int, num_updates: int):
+def get_printable_output_for_probe_envs(args, agent, probe_idx: int, update: int, num_updates: int, device="cpu"):
     """Tests a probe environment and returns a widget-style output for the environment.
 
     The function prints and returns output showing how well the agent performs on a given probe environment. The output
