@@ -520,6 +520,32 @@ class CloneTransformer(TrajectoryTransformer):
             return None, action_preds
 
 
+class ActorTransformer(CloneTransformer):
+    '''
+    Identical to clone transformer but forward pass can only return action predictions
+    '''
+
+    def __init__(
+        self,
+        transformer_config: TransformerModelConfig,
+        environment_config: EnvironmentConfig,
+    ):
+        super().__init__(transformer_config, environment_config)
+
+    def forward(self,
+                # has variable shape, starting with batch, position
+                states: TT[...],
+                actions: TT["batch", "position"],  # noqa: F821
+                timesteps: TT["batch", "position"],  # noqa: F821
+                pad_action: bool = True
+                ) -> TT["batch", "position"]:  # noqa: F821
+
+        _, action_preds = super().forward(
+            states, actions, timesteps, pad_action=pad_action)
+
+        return action_preds
+
+
 class StateEncoder(nn.Module):
     def __init__(self, n_embed):
         super(StateEncoder, self).__init__()

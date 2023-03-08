@@ -5,7 +5,7 @@ from einops import rearrange
 import gymnasium as gym
 from minigrid.wrappers import RGBImgPartialObsWrapper, ImgObsWrapper, OneHotPartialObsWrapper
 from src.environments.wrappers import ViewSizeWrapper, RenderResizeWrapper
-from src.models.trajectory_model import DecisionTransformer, CloneTransformer, StateEncoder
+from src.models.trajectory_model import DecisionTransformer, CloneTransformer, StateEncoder, ActorTransformer
 from src.config import EnvironmentConfig, TransformerModelConfig
 
 
@@ -498,3 +498,50 @@ def test_clone_transformer_grid_obs_one_fewer_action_forward():
 
     assert state_preds.shape == (1, 2, 147)
     assert action_preds.shape == (1, 2, 7)
+
+
+def test_actor_transformer():
+
+    env = gym.make('MiniGrid-Empty-8x8-v0')
+    obs, _ = env.reset()  # This now produces an RGB tensor only
+
+    transformer_config = TransformerModelConfig()
+    environment_config = EnvironmentConfig(
+        env_id='MiniGrid-Empty-8x8-v0',
+        img_obs=False,
+    )
+
+    actor_transformer = ActorTransformer(
+        transformer_config=transformer_config,
+        environment_config=environment_config
+    )
+
+    assert actor_transformer is not None
+
+    # our model should have the following:
+    assert actor_transformer.state_embedding is not None
+    assert actor_transformer.action_embedding is not None
+    assert actor_transformer.time_embedding is not None
+
+    # a GPT2-like transformer
+    assert actor_transformer.transformer is not None
+    assert type(actor_transformer.transformer).__name__ == 'HookedTransformer'
+
+    # a linear layer to predict the next action
+    assert actor_transformer.action_predictor is not None
+
+    # a linear layer to predict the next state
+    assert actor_transformer.state_predictor is not None
+
+    states = t.tensor(obs['image']).unsqueeze(
+        0).unsqueeze(0)  # add block, add batch
+    actions = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
+    timesteps = t.tensor([0]).unsqueeze(0).unsqueeze(0)  # add block, add batch
+
+    action_preds = actor_transformer.forward(
+        states=states,
+        actions=actions,
+        timesteps=timesteps
+    )
+
+    assert action_preds.shape == (1, 1, 7)
