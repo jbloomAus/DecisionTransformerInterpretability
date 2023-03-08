@@ -1,3 +1,6 @@
+'''
+This module contains the configuration classes for the project.
+'''
 import os
 import uuid
 from dataclasses import dataclass
@@ -6,12 +9,14 @@ from typing import Optional
 import gymnasium as gym
 
 from minigrid.wrappers import FullyObsWrapper, RGBImgPartialObsWrapper, OneHotPartialObsWrapper
-from src.environments.wrappers import ViewSizeWrapper, RenderResizeWrapper
-from torch import device
+from src.environments.wrappers import ViewSizeWrapper
 
 
 @dataclass
 class TransformerModelConfig():
+    '''
+    Configuration class for the transformer model.
+    '''
     d_model: int = 128
     n_heads: int = 4
     d_mlp: int = 256
@@ -31,6 +36,9 @@ class TransformerModelConfig():
 
 @dataclass
 class EnvironmentConfig():
+    '''
+    Configuration class for the environment.
+    '''
     env_id: str = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
     one_hot_obs: bool = False
     img_obs: bool = False
@@ -66,25 +74,36 @@ class EnvironmentConfig():
 
 @dataclass
 class OfflineTrainConfig:
+    '''
+    Configuration class for offline training.
+    '''
     batch_size: int = 128
     lr: float = 0.0001
     weight_decay: float = 0.0
     pct_traj: float = 1.0
     prob_go_from_end: float = 0.0
-    device: device = device("cpu")
+    device: str = 'cpu'
     track: bool = False
     train_epochs: int = 100
     test_epochs: int = 10
     test_frequency: int = 10
     eval_frequency: int = 10
     eval_episodes: int = 10
+    model_type: str = 'decision_transformer'
     initial_rtg: list[float] = (0.0, 1.0)
     eval_max_time_steps: int = 100
     trajectory_path: Optional[str] = None
 
+    def __post__init__(self):
+
+        assert self.model_type in ['decision_transformer', 'clone_transformer']
+
 
 @dataclass
 class OnlineTrainConfig:
+    '''
+    Configuration class for online training.
+    '''
     hidden_size: int = 64
     total_timesteps: int = 180000
     learning_rate: float = 0.00025
@@ -109,6 +128,9 @@ class OnlineTrainConfig:
 
 @dataclass
 class RunConfig:
+    '''
+    Configuration class for running the model.
+    '''
     exp_name: str = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
     seed: int = 1
     cuda: bool = True
@@ -124,6 +146,9 @@ class RunConfig:
 
 
 def parse_metadata_to_environment_config(metadata: dict):
+    '''
+    Parses the metadata dictionary from a loaded trajectory to an EnvironmentConfig object.
+    '''
 
     env_id = metadata['env_id']
     one_hot_obs = metadata['one_hot_obs']
@@ -136,6 +161,8 @@ def parse_metadata_to_environment_config(metadata: dict):
     video_dir = metadata['video_dir']
     render_mode = metadata['render_mode']
 
-    return EnvironmentConfig(env_id=env_id, one_hot_obs=one_hot_obs, img_obs=img_obs, fully_observed=fully_observed,
-                             max_steps=max_steps, seed=seed, view_size=view_size, capture_video=capture_video,
+    return EnvironmentConfig(env_id=env_id, one_hot_obs=one_hot_obs,
+                             img_obs=img_obs, fully_observed=fully_observed,
+                             max_steps=max_steps, seed=seed, view_size=view_size,
+                             capture_video=capture_video,
                              video_dir=video_dir, render_mode=render_mode)

@@ -78,7 +78,7 @@ def test_evaluate_dt_agent():
 
     statistics = evaluate_dt_agent(
         env_id=env_id,
-        dt=dt,
+        model=dt,
         env_func=eval_env_func,
         track=False,
         initial_rtg=1,

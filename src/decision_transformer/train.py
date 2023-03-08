@@ -5,14 +5,14 @@ from einops import rearrange
 from tqdm import tqdm
 import wandb
 from argparse import Namespace
-from .model import DecisionTransformer
+from src.models.trajectory_model import TrajectoryTransformer, DecisionTransformer, CloneTransformer
 from .offline_dataset import TrajectoryDataset
 from torch.utils.data.sampler import WeightedRandomSampler
 from torch.utils.data import random_split, DataLoader
 
 
 def train(
-        dt: DecisionTransformer,
+        model: TrajectoryTransformer,
         trajectory_data_set: TrajectoryDataset,
         env,
         make_env,
@@ -30,8 +30,9 @@ def train(
         eval_max_time_steps=100):
 
     loss_fn = nn.CrossEntropyLoss()
-    dt = dt.to(device)
-    optimizer = t.optim.Adam(dt.parameters(), lr=lr, weight_decay=weight_decay)
+    model = model.to(device)
+    optimizer = t.optim.Adam(model.parameters(), lr=lr,
+                             weight_decay=weight_decay)
 
     train_dataset, test_dataset = random_split(
         trajectory_data_set, [0.90, 0.10])
@@ -60,21 +61,28 @@ def train(
         for batch, (s, a, r, d, rtg, ti, m) in (enumerate(train_dataloader)):
             total_batches = epoch * train_batches_per_epoch + batch
 
-            dt.train()
+            model.train()
 
-            if dt.transformer_config.time_embedding_type == "linear":
+            if model.transformer_config.time_embedding_type == "linear":
                 ti = ti.to(t.float32)
 
             a[a == -10] = env.action_space.n  # dummy action for padding
 
             optimizer.zero_grad()
 
-            _, action_preds, _ = dt.forward(
-                states=s,
-                actions=a.unsqueeze(-1),
-                rtgs=rtg[:, :-1],
-                timesteps=ti.unsqueeze(-1)
-            )
+            if isinstance(model, DecisionTransformer):
+                _, action_preds, _ = model.forward(
+                    states=s,
+                    actions=a.unsqueeze(-1),
+                    rtgs=rtg[:, :-1],
+                    timesteps=ti.unsqueeze(-1)
+                )
+            elif isinstance(model, CloneTransformer):
+                _, action_preds = model.forward(
+                    states=s,
+                    actions=a.unsqueeze(-1),
+                    timesteps=ti.unsqueeze(-1)
+                )
 
             action_preds = rearrange(action_preds, 'b t a -> (b t) a')
             a_exp = rearrange(a, 'b t -> (b t)').to(t.int64)
@@ -93,14 +101,14 @@ def train(
             if track:
                 wandb.log({"train/loss": loss.item()}, step=total_batches)
                 tokens_seen = (total_batches + 1) * \
-                    batch_size * (dt.transformer_config.n_ctx // 3)
+                    batch_size * (model.transformer_config.n_ctx // 3)
                 wandb.log({"metrics/tokens_seen": tokens_seen},
                           step=total_batches)
 
         # # at test frequency
         if epoch % test_frequency == 0:
             test(
-                dt=dt,
+                model=model,
                 dataloader=test_dataloader,
                 env=env,
                 epochs=test_epochs,
@@ -112,7 +120,7 @@ def train(
             seed=batch,
             idx=0,
             capture_video=True,
-            max_steps=min(dt.environment_config.max_steps,
+            max_steps=min(model.environment_config.max_steps,
                           eval_max_time_steps),
             run_name=f"dt_eval_videos_{batch}",
             fully_observed=False,
@@ -127,7 +135,7 @@ def train(
             for rtg in initial_rtg:
                 evaluate_dt_agent(
                     env_id=env.spec.id,
-                    dt=dt,
+                    model=model,
                     env_func=eval_env_func,
                     trajectories=eval_episodes,
                     track=track,
@@ -135,18 +143,18 @@ def train(
                     initial_rtg=float(rtg),
                     device=device)
 
-    return dt
+    return model
 
 
 def test(
-        dt: DecisionTransformer,
+        model: TrajectoryTransformer,
         dataloader: DataLoader,
         env,
         epochs=10,
         track=False,
         batch_number=0):
 
-    dt.eval()
+    model.eval()
 
     loss_fn = nn.CrossEntropyLoss()
 
@@ -159,17 +167,24 @@ def test(
 
     for epoch in pbar:
         for batch, (s, a, r, d, rtg, ti, m) in (enumerate(dataloader)):
-            if dt.transformer_config.time_embedding_type == "linear":
+            if model.transformer_config.time_embedding_type == "linear":
                 ti = ti.to(t.float32)
 
             a[a == -10] = env.action_space.n
 
-            _, action_preds, _ = dt.forward(
-                states=s,
-                actions=a.unsqueeze(-1),
-                rtgs=rtg[:, :-1],
-                timesteps=ti.unsqueeze(-1)
-            )
+            if isinstance(model, DecisionTransformer):
+                _, action_preds, _ = model.forward(
+                    states=s,
+                    actions=a.unsqueeze(-1),
+                    rtgs=rtg[:, :-1],
+                    timesteps=ti.unsqueeze(-1)
+                )
+            elif isinstance(model, CloneTransformer):
+                _, action_preds = model.forward(
+                    states=s,
+                    actions=a.unsqueeze(-1),
+                    timesteps=ti.unsqueeze(-1)
+                )
 
             action_preds = rearrange(action_preds, 'b t a -> (b t) a')
             a_exp = rearrange(a, 'b t -> (b t)').to(t.int64)
@@ -199,7 +214,7 @@ def test(
 
 def evaluate_dt_agent(
         env_id: str,
-        dt: DecisionTransformer,
+        model: TrajectoryTransformer,
         env_func,
         trajectories=300,
         track=False,
@@ -208,19 +223,19 @@ def evaluate_dt_agent(
         use_tqdm=True,
         device="cpu"):
 
-    dt.eval()
+    model.eval()
 
     env = env_func()
     video_path = os.path.join("videos", env.run_name)
 
-    if not hasattr(dt, "transformer_config"):
-        dt.transformer_config = Namespace(
-            n_ctx=dt.n_ctx,
-            time_embedding_type=dt.time_embedding_type,
+    if not hasattr(model, "transformer_config"):
+        model.transformer_config = Namespace(
+            n_ctx=model.n_ctx,
+            time_embedding_type=model.time_embedding_type,
         )
 
-    assert dt.transformer_config.n_ctx % 3 == 0, "n_ctx must be divisible by 3"
-    max_len = dt.transformer_config.n_ctx // 3
+    assert model.transformer_config.n_ctx % 3 == 0, "n_ctx must be divisible by 3"
+    max_len = model.transformer_config.n_ctx // 3
 
     traj_lengths = []
     rewards = []
@@ -254,12 +269,16 @@ def evaluate_dt_agent(
         a = a.to(device)
         timesteps = timesteps.to(device)
 
-        if dt.transformer_config.time_embedding_type == "linear":
+        if model.transformer_config.time_embedding_type == "linear":
             timesteps = timesteps.to(t.float32)
 
         # get first action
-        state_preds, action_preds, reward_preds = dt.forward(
-            states=obs, actions=a, rtgs=rtg, timesteps=timesteps)
+        if isinstance(model, DecisionTransformer):
+            state_preds, action_preds, reward_preds = model.forward(
+                states=obs, actions=a, rtgs=rtg, timesteps=timesteps)
+        elif isinstance(model, CloneTransformer):
+            state_preds, action_preds = model.forward(
+                states=obs, actions=a, timesteps=timesteps)
 
         new_action = t.argmax(action_preds, dim=-1)[0].item()
         new_obs, new_reward, terminated, truncated, info = env.step(new_action)
@@ -279,19 +298,27 @@ def evaluate_dt_agent(
             timesteps = t.cat([timesteps, t.tensor(
                 [timesteps[-1][-1].item()+1]).unsqueeze(0).unsqueeze(0).to(device)], dim=1)
 
-            if dt.transformer_config.time_embedding_type == "linear":
+            if model.transformer_config.time_embedding_type == "linear":
                 timesteps = timesteps.to(t.float32)
 
             a = t.cat(
                 [a, t.tensor([new_action]).unsqueeze(0).unsqueeze(0).to(device)], dim=1)
 
-            state_preds, action_preds, reward_preds = dt.forward(
-                states=obs[:, -max_len:] if obs.shape[1] > max_len else obs,
-                actions=a[:, -max_len:] if a.shape[1] > max_len else a,
-                rtgs=rtg[:, -max_len:] if rtg.shape[1] > max_len else rtg,
-                timesteps=timesteps[:, -
-                                    max_len:] if timesteps.shape[1] > max_len else timesteps
-            )
+            if isinstance(model, DecisionTransformer):
+                _, action_preds, _ = model.forward(
+                    states=obs[:, -max_len:] if obs.shape[1] > max_len else obs,
+                    actions=a[:, -max_len:] if a.shape[1] > max_len else a,
+                    rtgs=rtg[:, -max_len:] if rtg.shape[1] > max_len else rtg,
+                    timesteps=timesteps[:, -
+                                        max_len:] if timesteps.shape[1] > max_len else timesteps
+                )
+            elif isinstance(model, CloneTransformer):
+                _, action_preds = model.forward(
+                    states=obs[:, -max_len:] if obs.shape[1] > max_len else obs,
+                    actions=a[:, -max_len:] if a.shape[1] > max_len else a,
+                    timesteps=timesteps[:, -
+                                        max_len:] if timesteps.shape[1] > max_len else timesteps
+                )
             action = t.argmax(action_preds, dim=-1)[0][-1].item()
             new_obs, new_reward, terminated, truncated, info = env.step(action)
 

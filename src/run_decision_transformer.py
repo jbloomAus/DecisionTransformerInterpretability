@@ -1,3 +1,6 @@
+'''
+This file is the entry point for running the decision transformer.
+'''
 from .decision_transformer.runner import run_decision_transformer
 from .decision_transformer.utils import parse_args
 from .config import RunConfig, TransformerModelConfig, OfflineTrainConfig
@@ -27,10 +30,12 @@ if __name__ == "__main__":
         n_layers=args.n_layers,
         layer_norm=args.layer_norm,
         time_embedding_type=TIME_EMBEDDING_TYPE,
-        n_ctx=args.n_ctx
+        n_ctx=args.n_ctx,
+        model_type=args.model_type,
     )
 
     offline_config = OfflineTrainConfig(
+        model_type=args.model_type,
         trajectory_path=args.trajectory_path,
         pct_traj=args.pct_traj,
         train_epochs=args.train_epochs,

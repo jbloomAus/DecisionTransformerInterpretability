@@ -1,15 +1,18 @@
-import torch as t
-import warnings
-import wandb
-import time
 import os
-
+import time
+import warnings
 from typing import Callable
+
+import torch as t
+
+import wandb
+from src.config import (EnvironmentConfig, OfflineTrainConfig, RunConfig,
+                        TransformerModelConfig)
+from src.models.trajectory_model import CloneTransformer, DecisionTransformer
+
 # from .model import DecisionTransformer
 from .offline_dataset import TrajectoryDataset, TrajectoryVisualizer
 from .train import train
-from src.config import RunConfig, TransformerModelConfig, OfflineTrainConfig, EnvironmentConfig
-from src.models.trajectory_model import DecisionTransformer
 
 
 def run_decision_transformer(
@@ -40,7 +43,7 @@ def run_decision_transformer(
     # pretty print the metadata
     print(trajectory_data_set.metadata)
 
-    if not "view_size" in trajectory_data_set.metadata['args']:
+    if "view_size" not in trajectory_data_set.metadata['args']:
         trajectory_data_set.metadata['args']['view_size'] = 7
 
     environment_config = EnvironmentConfig(
@@ -81,16 +84,22 @@ def run_decision_transformer(
         wandb.log(
             {"dataset/num_trajectories": trajectory_data_set.num_trajectories})
 
-    dt = DecisionTransformer(
-        environment_config=environment_config,
-        transformer_config=transformer_config
-    )
+    if offline_config.model_type == "decision_transformer":
+        model = DecisionTransformer(
+            environment_config=environment_config,
+            transformer_config=transformer_config
+        )
+    else:
+        model = CloneTransformer(
+            environment_config=environment_config,
+            transformer_config=transformer_config
+        )
 
     if run_config.track:
-        wandb.watch(dt, log="parameters")
+        wandb.watch(model, log="parameters")
 
-    dt = train(
-        dt=dt,
+    model = train(
+        model=model,
         trajectory_data_set=trajectory_data_set,
         env=env,
         make_env=make_env,
@@ -109,13 +118,14 @@ def run_decision_transformer(
     )
 
     if run_config.track:
-        # save the model with pickle, then upload it as an artifact, then delete it.
+        # save the model with pickle, then upload it
+        # as an artifact, then delete it.
         # name it after the run name.
         if not os.path.exists("models"):
             os.mkdir("models")
 
         model_path = f"models/{run_name}.pt"
-        t.save(dt.state_dict(), model_path)
+        t.save(model.state_dict(), model_path)
         artifact = wandb.Artifact(run_name, type="model")
         artifact.add_file(model_path)
         wandb.log_artifact(artifact)

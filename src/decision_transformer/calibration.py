@@ -12,7 +12,7 @@ def calibration_statistics(dt, env_id, env_func, initial_rtg_range=np.linspace(-
     for initial_rtg in pbar:
         statistics.append(evaluate_dt_agent(
             env_id=env_id,
-            dt=dt,
+            model=dt,
             env_func=env_func,
             track=False,
             batch_number=0,

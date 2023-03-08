@@ -100,7 +100,9 @@ class TrajectoryTransformer(nn.Module):
         return self.action_predictor(x)
 
     @abstractmethod
-    def get_token_embeddings(self, states, actions, timesteps, **kwargs):
+    def get_token_embeddings(self, state_embeddings,
+                             time_embeddings,
+                             action_embeddings, **kwargs):
         '''
         Returns the token embeddings for the transformer input.
         Note that different subclasses will have different token embeddings
