@@ -478,6 +478,7 @@ np.ndarray: A 2D array where the i-th row is the input array from index 0 to i.<
 <dt class="sig sig-object py" id="src.ppo.memory.Memory">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.memory.</span></span><span class="sig-name descname"><span class="pre">Memory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">envs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SyncVectorEnv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.ppo.utils.PPOArgs" title="src.ppo.utils.PPOArgs"><span class="pre">PPOArgs</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.memory.Memory" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A memory buffer for storing experiences during the rollout phase.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ppo.memory.Memory.add">
 <span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.memory.Memory.add" title="Permalink to this definition">#</a></dt>
@@ -500,19 +501,36 @@ np.ndarray: A 2D array where the i-th row is the input array from index 0 to i.<
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ppo.memory.Memory.get_minibatch_indexes">
 <span class="sig-name descname"><span class="pre">get_minibatch_indexes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minibatch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#src.ppo.memory.Memory.get_minibatch_indexes" title="Permalink to this definition">#</a></dt>
-<dd><p>Return a list of length (batch_size // minibatch_size) where each element is an array of indexes into the batch.</p>
+<dd><p>Return a list of length (batch_size // minibatch_size) where each element
+is an array of indexes into the batch.</p>
 <p>Each index should appear exactly once.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ppo.memory.Memory.get_minibatches">
 <span class="sig-name descname"><span class="pre">get_minibatches</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#src.ppo.memory.Minibatch" title="src.ppo.memory.Minibatch"><span class="pre">Minibatch</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#src.ppo.memory.Memory.get_minibatches" title="Permalink to this definition">#</a></dt>
-<dd><p>Return a list of length (batch_size // minibatch_size) where each element is an array of indexes into the batch.</p>
+<dd><dl class="simple">
+<dt>Return a list of length (batch_size // minibatch_size)</dt><dd><p>where each element is an array of indexes into the batch.</p>
+</dd>
+</dl>
 <p>Args:
 - batch_size (int): total size of the batch.
 - minibatch_size (int): size of each minibatch.</p>
 <p>Returns:
-- List[np.ndarray]: a list of length (batch_size // minibatch_size) where each element is an array of indexes into the batch. Each index should appear exactly once.</p>
+- List[np.ndarray]: a list of length (batch_size // minibatch_size)
+where each element is an array of indexes into the batch. Each index should appear exactly once.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.memory.Memory.get_obs_traj">
+<span class="sig-name descname"><span class="pre">get_obs_traj</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad_to_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.memory.Memory.get_obs_traj" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns a tensor of shape (steps, envs, obs_shape) containing the observations from the last steps.</p>
+<p>Args:
+- steps (int): number of steps to return.
+- pad_to_length (int): if the number of steps is less than this, then the tensor will be padded with zeros.</p>
+<p>Returns:
+- TT[“T”, “env”, “obs”]: a tensor of shape (steps, envs, obs_shape) containing
+the observations from the last steps.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -562,8 +580,9 @@ reward : […]</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="src.ppo.memory.Minibatch">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.memory.</span></span><span class="sig-name descname"><span class="pre">Minibatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated[torch.Tensor,</span> <span class="pre">{'__torchtyping__':</span> <span class="pre">True,</span> <span class="pre">'details':</span> <span class="pre">('batch',</span> <span class="pre">'obs_shape'),</span> <span class="pre">'cls_name':</span> <span class="pre">'TensorType'}]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated[torch.Tensor,</span> <span class="pre">{'__torchtyping__':</span> <span class="pre">True,</span> <span class="pre">'details':</span> <span class="pre">('batch',),</span> <span class="pre">'cls_name':</span> <span class="pre">'TensorType'}]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logprobs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated[torch.Tensor,</span> <span class="pre">{'__torchtyping__':</span> <span class="pre">True,</span> <span class="pre">'details':</span> <span class="pre">('batch',),</span> <span class="pre">'cls_name':</span> <span class="pre">'TensorType'}]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">advantages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated[torch.Tensor,</span> <span class="pre">{'__torchtyping__':</span> <span class="pre">True,</span> <span class="pre">'details':</span> <span class="pre">('batch',),</span> <span class="pre">'cls_name':</span> <span class="pre">'TensorType'}]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated[torch.Tensor,</span> <span class="pre">{'__torchtyping__':</span> <span class="pre">True,</span> <span class="pre">'details':</span> <span class="pre">('batch',),</span> <span class="pre">'cls_name':</span> <span class="pre">'TensorType'}]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated[torch.Tensor,</span> <span class="pre">{'__torchtyping__':</span> <span class="pre">True,</span> <span class="pre">'details':</span> <span class="pre">('batch',),</span> <span class="pre">'cls_name':</span> <span class="pre">'TensorType'}]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.memory.Minibatch" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.memory.</span></span><span class="sig-name descname"><span class="pre">Minibatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logprobs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">advantages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.memory.Minibatch" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A dataclass containing the tensors of a minibatch of experiences.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="src.ppo.memory.Minibatch.actions">
 <span class="sig-name descname"><span class="pre">actions</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#src.ppo.memory.Minibatch.actions" title="Permalink to this definition">#</a></dt>
@@ -1557,6 +1576,7 @@ r1 + gamma*r2 + gamma^2 r3 + …</p>
 <li><a class="reference internal" href="#src.ppo.memory.Memory.compute_advantages"><code class="docutils literal notranslate"><span class="pre">Memory.compute_advantages()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.memory.Memory.get_minibatch_indexes"><code class="docutils literal notranslate"><span class="pre">Memory.get_minibatch_indexes()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.memory.Memory.get_minibatches"><code class="docutils literal notranslate"><span class="pre">Memory.get_minibatches()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.memory.Memory.get_obs_traj"><code class="docutils literal notranslate"><span class="pre">Memory.get_obs_traj()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.memory.Memory.get_printable_output"><code class="docutils literal notranslate"><span class="pre">Memory.get_printable_output()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.memory.Memory.log"><code class="docutils literal notranslate"><span class="pre">Memory.log()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.memory.Memory.reset"><code class="docutils literal notranslate"><span class="pre">Memory.reset()</span></code></a></li>
