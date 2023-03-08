@@ -499,6 +499,18 @@ np.ndarray: A 2D array where the i-th row is the input array from index 0 to i.<
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.memory.Memory.get_act_traj">
+<span class="sig-name descname"><span class="pre">get_act_traj</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad_to_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.memory.Memory.get_act_traj" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns a tensor of shape (steps, envs, obs_shape) containing the observations from the last steps.</p>
+<p>Args:
+- steps (int): number of steps to return.
+- pad_to_length (int): if the number of steps is less than this, then the tensor will be padded with zeros.</p>
+<p>Returns:
+- TT[“T”, “env”, “obs”]: a tensor of shape (steps, envs, obs_shape) containing
+the observations from the last steps.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="src.ppo.memory.Memory.get_minibatch_indexes">
 <span class="sig-name descname"><span class="pre">get_minibatch_indexes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minibatch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#src.ppo.memory.Memory.get_minibatch_indexes" title="Permalink to this definition">#</a></dt>
 <dd><p>Return a list of length (batch_size // minibatch_size) where each element
@@ -1574,6 +1586,7 @@ r1 + gamma*r2 + gamma^2 r3 + …</p>
 <li><a class="reference internal" href="#src.ppo.memory.Memory.add"><code class="docutils literal notranslate"><span class="pre">Memory.add()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.memory.Memory.add_vars_to_log"><code class="docutils literal notranslate"><span class="pre">Memory.add_vars_to_log()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.memory.Memory.compute_advantages"><code class="docutils literal notranslate"><span class="pre">Memory.compute_advantages()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.memory.Memory.get_act_traj"><code class="docutils literal notranslate"><span class="pre">Memory.get_act_traj()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.memory.Memory.get_minibatch_indexes"><code class="docutils literal notranslate"><span class="pre">Memory.get_minibatch_indexes()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.memory.Memory.get_minibatches"><code class="docutils literal notranslate"><span class="pre">Memory.get_minibatches()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.memory.Memory.get_obs_traj"><code class="docutils literal notranslate"><span class="pre">Memory.get_obs_traj()</span></code></a></li>
