@@ -239,3 +239,34 @@ class Memory():
             obs_traj = obs_traj[-pad_to_length:]
 
         return obs_traj
+
+    def get_act_traj(self, steps: int, pad_to_length: int):
+        '''Returns a tensor of shape (steps, envs, obs_shape) containing the observations from the last steps.
+
+        Args:
+        - steps (int): number of steps to return.
+        - pad_to_length (int): if the number of steps is less than this, then the tensor will be padded with zeros.
+
+        Returns:
+        - TT["T", "env", "obs"]: a tensor of shape (steps, envs, obs_shape) containing
+        the observations from the last steps.
+        '''
+
+        # total bullshit because of how these experiences are stored.
+        act = [exp[3] for exp in self.experiences]
+        act = t.stack(act)  # obs now has shape (steps, envs, obs_shape)
+
+        # then get the last steps
+        act_traj = act[-steps:]
+
+        # then pad with zeros if needed
+        if steps < pad_to_length:
+            pad = t.ones((pad_to_length - steps, self.envs.num_envs)
+                         ) * self.envs.single_action_space.n
+
+            act_traj = t.cat([pad, act_traj], dim=0)
+
+        else:
+            act_traj = act_traj[-pad_to_length:]
+
+        return act_traj

@@ -1,5 +1,6 @@
 import pytest
 import gymnasium as gym
+import minigrid
 import torch
 from src.ppo.utils import PPOArgs
 from src.ppo.memory import Memory, Minibatch
@@ -8,7 +9,7 @@ from src.ppo.memory import Memory, Minibatch
 @pytest.fixture
 def memory():
     envs = gym.vector.SyncVectorEnv(
-        [lambda: gym.make('CartPole-v0') for _ in range(4)])
+        [lambda: gym.make('MiniGrid-Dynamic-Obstacles-5x5-v0') for _ in range(4)])
     args = PPOArgs()
     device = torch.device("cpu")
     return Memory(envs, args, device)
@@ -128,7 +129,7 @@ def test_memory_compute_advantages(memory):
     )
 
 
-def test_memory_return_n_steps(memory):
+def test_memory_get_obs_traj(memory):
 
     info_final = {"final_info": [{"episode": {"l": 1, "r": 1.0}}]}
 
@@ -160,7 +161,7 @@ def test_memory_return_n_steps(memory):
     )
 
 
-def test_memory_return_n_steps_padding_required(memory):
+def test_memory_get_obs_traj_padding_required(memory):
 
     info_final = {"final_info": [{"episode": {"l": 1, "r": 1.0}}]}
 
@@ -199,7 +200,7 @@ def test_memory_return_n_steps_padding_required(memory):
     )
 
 
-def test_memory_return_n_steps_truncation_required(memory):
+def test_memory_get_obs_traj_truncation_required(memory):
 
     info_final = {"final_info": [{"episode": {"l": 1, "r": 1.0}}]}
 
@@ -217,6 +218,116 @@ def test_memory_return_n_steps_truncation_required(memory):
     memory.add(info_final, obs, done, action, logprob, value, reward)
 
     obs_traj = memory.get_obs_traj(steps=14, pad_to_length=10)
+
+    # assert shape matches
+    assert obs_traj.shape == (10, 4)
+
+    torch.testing.assert_allclose(
+        obs_traj,
+        torch.tensor([
+            [1.0, 2.0, 3.0, 4.0],
+            [1.0, 2.0, 3.0, 4.0],
+            [1.0, 2.0, 3.0, 4.0],
+            [1.0, 2.0, 3.0, 4.0],
+            [1.0, 2.0, 3.0, 4.0],
+            [1.0, 2.0, 3.0, 4.0],
+            [1.0, 2.0, 3.0, 4.0],
+            [1.0, 2.0, 3.0, 4.0],
+            [1.0, 2.0, 3.0, 4.0],
+            [1.0, 2.0, 3.0, 4.0]
+        ])
+    )
+
+
+def test_memory_get_act_traj(memory):
+
+    info_final = {"final_info": [{"episode": {"l": 1, "r": 1.0}}]}
+
+    info = {}
+    obs = torch.tensor([1.0, 2.0, 3.0])
+    done = torch.tensor([1.0, 2.0, 3.0])
+    action = torch.tensor([1.0, 2.0, 3.0])
+    logprob = torch.tensor([1.0, 2.0, 3.0])
+    value = torch.tensor([1.0, 2.0, 3.0])
+    reward = torch.tensor([1.0, 2.0, 3.0])
+
+    for i in range(10):
+        memory.add(info, obs, done, action, logprob, value, reward)
+
+    memory.add(info_final, obs, done, action, logprob, value, reward)
+
+    obs_traj = memory.get_act_traj(steps=3, pad_to_length=3)
+
+    # assert shape matches
+    assert obs_traj.shape == (3, 3)
+
+    torch.testing.assert_allclose(
+        obs_traj,
+        torch.tensor([
+            [1.0, 2.0, 3.0],
+            [1.0, 2.0, 3.0],
+            [1.0, 2.0, 3.0]
+        ])
+    )
+
+
+def test_memory_get_act_traj_padding_required(memory):
+
+    info_final = {"final_info": [{"episode": {"l": 1, "r": 1.0}}]}
+
+    info = {}
+    obs = torch.tensor([1.0, 2.0, 3.0, 4.0])
+    done = torch.tensor([1.0, 2.0, 3.0, 4.0])
+    action = torch.tensor([1.0, 2.0, 3.0, 4.0])
+    logprob = torch.tensor([1.0, 2.0, 3.0, 4.0])
+    value = torch.tensor([1.0, 2.0, 3.0, 4.0])
+    reward = torch.tensor([1.0, 2.0, 3.0, 4.0])
+
+    for i in range(10):
+        memory.add(info, obs, done, action, logprob, value, reward)
+
+    memory.add(info_final, obs, done, action, logprob, value, reward)
+
+    obs_traj = memory.get_act_traj(steps=3, pad_to_length=10)
+
+    # assert shape matches
+    assert obs_traj.shape == (10, 4)
+
+    torch.testing.assert_allclose(
+        obs_traj,
+        torch.tensor([
+            [3.0, 3.0, 3.0, 3.0],
+            [3.0, 3.0, 3.0, 3.0],
+            [3.0, 3.0, 3.0, 3.0],
+            [3.0, 3.0, 3.0, 3.0],
+            [3.0, 3.0, 3.0, 3.0],
+            [3.0, 3.0, 3.0, 3.0],
+            [3.0, 3.0, 3.0, 3.0],
+            [1.0, 2.0, 3.0, 4.0],
+            [1.0, 2.0, 3.0, 4.0],
+            [1.0, 2.0, 3.0, 4.0]
+        ])
+    )
+
+
+def test_memory_get_act_traj_truncation_required(memory):
+
+    info_final = {"final_info": [{"episode": {"l": 1, "r": 1.0}}]}
+
+    info = {}
+    obs = torch.tensor([1.0, 2.0, 3.0, 4.0])
+    done = torch.tensor([1.0, 2.0, 3.0, 4.0])
+    action = torch.tensor([1.0, 2.0, 3.0, 4.0])
+    logprob = torch.tensor([1.0, 2.0, 3.0, 4.0])
+    value = torch.tensor([1.0, 2.0, 3.0, 4.0])
+    reward = torch.tensor([1.0, 2.0, 3.0, 4.0])
+
+    for i in range(10):
+        memory.add(info, obs, done, action, logprob, value, reward)
+
+    memory.add(info_final, obs, done, action, logprob, value, reward)
+
+    obs_traj = memory.get_act_traj(steps=14, pad_to_length=10)
 
     # assert shape matches
     assert obs_traj.shape == (10, 4)
