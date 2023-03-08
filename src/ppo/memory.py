@@ -15,6 +15,9 @@ from .utils import PPOArgs, get_obs_preprocessor
 
 @dataclass
 class Minibatch:
+    '''
+    A dataclass containing the tensors of a minibatch of experiences.
+    '''
     obs: TT["batch", "obs_shape"]  # noqa: F821
     actions: TT["batch"]  # noqa: F821
     logprobs: TT["batch"]  # noqa: F821
@@ -24,6 +27,9 @@ class Minibatch:
 
 
 class Memory():
+    '''
+    A memory buffer for storing experiences during the rollout phase.
+    '''
 
     def __init__(self, envs: gym.vector.SyncVectorEnv, args: PPOArgs, device: t.device):
         """Initializes the memory buffer.
@@ -91,7 +97,8 @@ class Memory():
             print(f"{n:8}: {self.experiences[idx][i].cpu().numpy().tolist()}")
 
     def get_minibatch_indexes(self, batch_size: int, minibatch_size: int) -> List[np.ndarray]:
-        '''Return a list of length (batch_size // minibatch_size) where each element is an array of indexes into the batch.
+        '''Return a list of length (batch_size // minibatch_size) where each element
+        is an array of indexes into the batch.
 
         Each index should appear exactly once.
         '''
@@ -121,19 +128,21 @@ class Memory():
         advantages = t.zeros_like(deltas).to(device)
         advantages[-1] = deltas[-1]
         for t_ in reversed(range(1, T)):
-            advantages[t_-1] = deltas[t_-1] + gamma * \
+            advantages[t_ - 1] = deltas[t_ - 1] + gamma * \
                 gae_lambda * (1.0 - dones[t_]) * advantages[t_]
         return advantages
 
     def get_minibatches(self) -> List[Minibatch]:
-        '''Return a list of length (batch_size // minibatch_size) where each element is an array of indexes into the batch.
+        '''Return a list of length (batch_size // minibatch_size)
+          where each element is an array of indexes into the batch.
 
         Args:
         - batch_size (int): total size of the batch.
         - minibatch_size (int): size of each minibatch.
 
         Returns:
-        - List[np.ndarray]: a list of length (batch_size // minibatch_size) where each element is an array of indexes into the batch. Each index should appear exactly once.
+        - List[np.ndarray]: a list of length (batch_size // minibatch_size)
+        where each element is an array of indexes into the batch. Each index should appear exactly once.
         '''
         obs, dones, actions, logprobs, values, rewards = [
             t.stack(arr) for arr in zip(*self.experiences)]
@@ -188,3 +197,45 @@ class Memory():
         '''
         for step, vars_to_log in self.vars_to_log.items():
             wandb.log(vars_to_log, step=step)
+
+    # TODO work out how to TT with obs shape at end
+    def get_obs_traj(self, steps: int, pad_to_length: int):
+        '''Returns a tensor of shape (steps, envs, obs_shape) containing the observations from the last steps.
+
+        Args:
+        - steps (int): number of steps to return.
+        - pad_to_length (int): if the number of steps is less than this, then the tensor will be padded with zeros.
+
+        Returns:
+        - TT["T", "env", "obs"]: a tensor of shape (steps, envs, obs_shape) containing
+        the observations from the last steps.
+        '''
+        if self.experiences[0][1][0].shape == ():  # if obs is a scalar
+            obs_shape = 1
+        else:
+            obs_shape = self.experiences[0][1][0].shape
+
+        obs_shape = self.experiences[0][1].shape
+
+        # total bullshit because of how these experiences are stored.
+        obs = [exp[1] for exp in self.experiences]
+        obs = t.stack(obs)  # obs now has shape (steps, envs, obs_shape)
+
+        # then get the last steps
+        obs_traj = obs[-steps:]
+
+        # then pad with zeros if needed
+        # TODO check if 0 padding is the right way to pad obs in this codebase
+        if steps < pad_to_length:
+            if len(self.experiences[0][1].shape) == 1:
+                pad = t.zeros((pad_to_length - steps, self.envs.num_envs))
+            else:
+                pad = t.zeros((pad_to_length - steps, self.envs.num_envs,
+                               self.envs.observation_space.shape[0]))
+
+            obs_traj = t.cat([pad, obs_traj], dim=0)
+
+        else:
+            obs_traj = obs_traj[-pad_to_length:]
+
+        return obs_traj
