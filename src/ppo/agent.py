@@ -4,7 +4,6 @@ from typing import Tuple
 import gymnasium as gym
 import numpy as np
 import torch as t
-import torch.optim as optim
 from torch import nn, optim
 from torch.distributions.categorical import Categorical
 from torchtyping import TensorType as TT
@@ -62,9 +61,21 @@ class PPOAgent(nn.Module):
     def layer_init(self, layer: nn.Linear, std: float, bias_const: float) -> nn.Linear:
         pass
 
-    @abc.abstractmethod
     def make_optimizer(self, num_updates: int, initial_lr: float, end_lr: float) -> Tuple[optim.Optimizer, PPOScheduler]:
-        pass
+        """Returns an Adam optimizer with a learning rate schedule for updating the agent's parameters.
+
+        Args:
+            num_updates (int): The total number of updates to be performed.
+            initial_lr (float): The initial learning rate.
+            end_lr (float): The final learning rate.
+
+        Returns:
+            Tuple[optim.Optimizer, PPOScheduler]: A tuple containing the optimizer and its attached scheduler.
+        """
+        optimizer = optim.Adam(
+            self.parameters(), lr=initial_lr, eps=1e-5, maximize=True)
+        scheduler = PPOScheduler(optimizer, initial_lr, end_lr, num_updates)
+        return (optimizer, scheduler)
 
     @abc.abstractmethod
     def rollout(self, memory, args, envs, trajectory_writer) -> None:
@@ -142,37 +153,22 @@ class FCAgent(PPOAgent):
         t.nn.init.constant_(layer.bias, bias_const)
         return layer
 
-    def make_optimizer(self, num_updates: int, initial_lr: float, end_lr: float) -> Tuple[optim.Optimizer, PPOScheduler]:
-        """Returns an Adam optimizer with a learning rate schedule for updating the agent's parameters.
-
-        Args:
-            num_updates (int): The total number of updates to be performed.
-            initial_lr (float): The initial learning rate.
-            end_lr (float): The final learning rate.
-
-        Returns:
-            Tuple[optim.Optimizer, PPOScheduler]: A tuple containing the optimizer and its attached scheduler.
-        """
-        optimizer = optim.Adam(
-            self.parameters(), lr=initial_lr, eps=1e-5, maximize=True)
-        scheduler = PPOScheduler(optimizer, initial_lr, end_lr, num_updates)
-        return (optimizer, scheduler)
-
-    def rollout(self, memory: Memory, args: PPOArgs, envs: gym.vector.SyncVectorEnv, trajectory_writer=None) -> None:
+    def rollout(self, memory: Memory, num_steps: int, envs: gym.vector.SyncVectorEnv, trajectory_writer=None) -> None:
         """Performs the rollout phase of the PPO algorithm, collecting experience by interacting with the environment.
 
         Args:
             memory (Memory): The replay buffer to store the experiences.
-            args (PPOArgs): The arguments to configure the algorithm.
+            num_steps (int): The number of steps to collect.
             envs (gym.vector.SyncVectorEnv): The vectorized environment to interact with.
             trajectory_writer (TrajectoryWriter, optional): The writer to log the collected trajectories. Defaults to None.
         """
 
         device = memory.device
+        cuda = device.type == "cuda"
         obs = memory.next_obs
         done = memory.next_done
 
-        for step in range(args.num_steps):
+        for step in range(num_steps):
 
             # Generate the next set of new experiences (one for each env)
             with t.inference_mode():
@@ -191,7 +187,7 @@ class FCAgent(PPOAgent):
             # TODO refactor to use ternary statements
             if trajectory_writer is not None:
                 # first_obs = obs
-                if not args.cuda:
+                if not cuda:
                     trajectory_writer.accumulate_trajectory(
                         # the observation stored with an action and reward is the observation which the agent responded to.
                         next_obs=obs.detach().numpy(),
@@ -307,7 +303,7 @@ def calc_clipped_surrogate_objective(
         (mb_advantages.std() + 10e-8)
 
     non_clipped = r_theta * mb_advantages
-    clipped = t.clip(r_theta, 1-clip_coef, 1+clip_coef) * mb_advantages
+    clipped = t.clip(r_theta, 1 - clip_coef, 1 + clip_coef) * mb_advantages
 
     return t.minimum(non_clipped, clipped).mean()
 

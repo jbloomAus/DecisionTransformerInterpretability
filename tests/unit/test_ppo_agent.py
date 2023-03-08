@@ -93,7 +93,7 @@ def test_fc_agent_rollout(fc_agent):
         [lambda: gym.make('CartPole-v0') for _ in range(args.num_envs)])
     memory = Memory(envs=envs, args=args, device=fc_agent.device)
 
-    fc_agent.rollout(memory, args, envs)
+    fc_agent.rollout(memory, num_steps, envs)
 
     assert memory.next_obs.shape[0] == envs.num_envs
     assert memory.next_obs.shape[1] == envs.single_observation_space.shape[0]
@@ -126,7 +126,7 @@ def test_learn(fc_agent):
         args.learning_rate * 1e-4
     )
 
-    fc_agent.rollout(memory, args, envs)
+    fc_agent.rollout(memory, args.num_steps, envs)
     fc_agent.learn(memory, args, optimizer, scheduler)
 
     assert isinstance(optimizer, optim.Adam)
