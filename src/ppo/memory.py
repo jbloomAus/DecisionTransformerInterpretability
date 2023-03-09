@@ -207,7 +207,7 @@ class Memory():
             wandb.log(vars_to_log, step=step)
 
     # TODO work out how to TT with obs shape at end
-    def get_obs_traj(self, steps: int, pad_to_length: int) -> TT["env", "T", "obs"]:
+    def get_obs_traj(self, steps: int, pad_to_length: int) -> TT["env", "T", "obs"]:  # noqa: F821
         '''Returns a tensor of shape (steps, envs, obs_shape) containing the observations from the last steps.
 
         Args:
@@ -249,7 +249,7 @@ class Memory():
         obs_traj = rearrange(obs_traj, 't e ... -> e t ...')
         return obs_traj
 
-    def get_act_traj(self, steps: int, pad_to_length: int) -> TT["env", "T", "act"]:
+    def get_act_traj(self, steps: int, pad_to_length: int) -> TT["env", "T", "act"]:  # noqa: F821
         '''Returns a tensor of shape (steps, envs, obs_shape) containing the observations from the last steps.
 
         Args:
@@ -281,7 +281,7 @@ class Memory():
         act_traj = rearrange(act_traj, 't e ... -> e t ...')
         return act_traj
 
-    def get_timestep_traj(self, steps: int, pad_to_length: int) -> TT["env", "T", "1"]:
+    def get_timestep_traj(self, steps: int, pad_to_length: int) -> TT["env", "T", "1"]:  # noqa: F821
         '''
         Returns a tensor of shape (steps, envs, 1) containing the time steps from the last steps.
 
