@@ -1,6 +1,5 @@
 import pytest
 import os
-import torch as t
 from dataclasses import dataclass
 import numpy as np
 import pickle
@@ -10,16 +9,73 @@ from src.decision_transformer.utils import load_decision_transformer
 from src.environments.environments import make_env
 
 
-def test_trajectory_writer_numpy():
-
+@pytest.fixture
+def run_config():
     @dataclass
-    class DummyArgs:
-        path = "tmp/test_trajectory_writer_output.pkl"
+    class DummyRunConfig:
+        exp_name: str = 'test'
+        seed: int = 1
+        track: bool = False
+        wandb_project_name: str = 'test'
+        wandb_entity: str = 'test'
 
-    args = DummyArgs()
+    return DummyRunConfig()
+
+
+@pytest.fixture
+def environment_config():
+    @dataclass
+    class DummyEnvironmentConfig:
+        env_id: str = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
+        one_hot_obs: bool = False
+        img_obs: bool = False
+        fully_observed: bool = False
+        max_steps: int = 1000
+        seed: int = 1
+        view_size: int = 7
+        capture_video: bool = False
+        video_dir: str = 'videos'
+        render_mode: str = 'rgb_array'
+        action_space: None = None
+        observation_space: None = None
+        device: str = 'cpu'
+
+    return DummyEnvironmentConfig()
+
+
+@pytest.fixture
+def online_config():
+    @dataclass
+    class DummyOnlineConfig:
+        use_trajectory_model: bool = False
+        hidden_size: int = 64
+        total_timesteps: int = 180000
+        learning_rate: float = 0.00025
+        decay_lr: bool = False,
+        num_envs: int = 4
+        num_steps: int = 128
+        gamma: float = 0.99
+        gae_lambda: float = 0.95
+        num_minibatches: int = 4
+        update_epochs: int = 4
+        clip_coef: float = 0.4
+        ent_coef: float = 0.2
+        vf_coef: float = 0.5
+        max_grad_norm: float = 2
+        trajectory_path: str = None
+        fully_observed: bool = False
+
+    return DummyOnlineConfig()
+
+
+def test_trajectory_writer_numpy(environment_config, run_config, online_config):
 
     trajectory_writer = TrajectoryWriter(
-        "tmp/test_trajectory_writer_writer.pkl", args)
+        path="tmp/test_trajectory_writer_writer.pkl",
+        run_config=run_config,
+        environment_config=environment_config,
+        online_config=online_config,
+        transformer_model_config=None)
 
     # test accumulate trajectory when all the objects are initialized as np arrays
 
@@ -36,8 +92,8 @@ def test_trajectory_writer_numpy():
 
     # get the size of the file in bytes
     assert os.path.getsize("tmp/test_trajectory_writer_writer.pkl") > 0
-    # make sure it's less than 200 bytes
-    assert os.path.getsize("tmp/test_trajectory_writer_writer.pkl") < 700
+    # make sure it's less than 1500 bytes (got larger with more hyperparameters)
+    assert os.path.getsize("tmp/test_trajectory_writer_writer.pkl") < 1500
 
     with open("tmp/test_trajectory_writer_writer.pkl", "rb") as f:
         data = pickle.load(f)
@@ -63,8 +119,8 @@ def test_trajectory_writer_numpy():
         assert dones.dtype == bool
 
         assert dones[0][0]
-        assert dones[0][1] == False
-        assert dones[0][2] == False
+        assert ~ dones[0][1]
+        assert ~ dones[0][2]
 
         actions = data["data"]["actions"]
         assert type(actions) == np.ndarray
@@ -83,16 +139,14 @@ def test_trajectory_writer_numpy():
         assert infos[0]["c"] == 3
 
 
-def test_trajectory_writer_torch():
-
-    @dataclass
-    class DummyArgs:
-        pass
-
-    args = DummyArgs()
+def test_trajectory_writer_torch(environment_config, run_config, online_config):
 
     trajectory_writer = TrajectoryWriter(
-        "tmp/test_trajectory_writer_writer.pkl", args)
+        path="tmp/test_trajectory_writer_writer.pkl",
+        run_config=run_config,
+        environment_config=environment_config,
+        online_config=online_config,
+        transformer_model_config=None)
 
     # test accumulate trajectory when all the objects are initialized as pytorch tensors
 
@@ -107,16 +161,14 @@ def test_trajectory_writer_torch():
         )
 
 
-def test_trajectory_writer_lzma():
-
-    @dataclass
-    class DummyArgs:
-        path = "tmp/test_trajectory_writer_output.xz"
-
-    args = DummyArgs()
+def test_trajectory_writer_lzma(environment_config, run_config, online_config):
 
     trajectory_writer = TrajectoryWriter(
-        "tmp/test_trajectory_writer_writer.xz", args)
+        path="tmp/test_trajectory_writer_writer.xz",
+        run_config=run_config,
+        environment_config=environment_config,
+        online_config=online_config,
+        transformer_model_config=None)
 
     # test accumulate trajectory when all the objects are initialized as np arrays
 
@@ -134,7 +186,7 @@ def test_trajectory_writer_lzma():
     # get the size of the file in bytes
     assert os.path.getsize("tmp/test_trajectory_writer_writer.xz") > 0
     # make sure it's less than 200 bytes
-    assert os.path.getsize("tmp/test_trajectory_writer_writer.xz") < 400
+    assert os.path.getsize("tmp/test_trajectory_writer_writer.xz") < 1000
 
 
 def test_load_legacy_decision_transformer():

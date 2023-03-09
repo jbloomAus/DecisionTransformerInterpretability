@@ -203,7 +203,7 @@ def test(
             accuracy = n_correct.item() / n_actions
             pbar.set_description(f"Testing DT: Accuracy so far {accuracy:.4f}")
 
-    mean_loss = loss.item() / epochs*test_batches_per_epoch
+    mean_loss = loss.item() / epochs * test_batches_per_epoch
 
     if track:
         wandb.log({"test/loss": mean_loss}, step=batch_number)
@@ -279,6 +279,9 @@ def evaluate_dt_agent(
         elif isinstance(model, CloneTransformer):
             state_preds, action_preds = model.forward(
                 states=obs, actions=a, timesteps=timesteps)
+        else:  # it's probably a legacy model in which case the interface is:
+            state_preds, action_preds, reward_preds = model.forward(
+                states=obs, actions=a, rtgs=rtg, timesteps=timesteps)
 
         new_action = t.argmax(action_preds, dim=-1)[0].item()
         new_obs, new_reward, terminated, truncated, info = env.step(new_action)
@@ -296,7 +299,7 @@ def evaluate_dt_agent(
 
             # add new timesteps
             timesteps = t.cat([timesteps, t.tensor(
-                [timesteps[-1][-1].item()+1]).unsqueeze(0).unsqueeze(0).to(device)], dim=1)
+                [timesteps[-1][-1].item() + 1]).unsqueeze(0).unsqueeze(0).to(device)], dim=1)
 
             if model.transformer_config.time_embedding_type == "linear":
                 timesteps = timesteps.to(t.float32)

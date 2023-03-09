@@ -49,14 +49,14 @@ def plot_calibration_statistics(statistics, show_spread=False, CI=0.95):
     )
 
     if show_spread:
-        upper = (1-CI)/2
+        upper = (1 - CI) / 2
         lower = 1 - upper
         # add 95% CI
         # also show 97.5 percentile and 2.5 percentile
         df["percentile_975"] = df.rewards.apply(
-            lambda x: np.percentile(x, 100*upper))
+            lambda x: np.percentile(x, 100 * upper))
         df["percentile_025"] = df.rewards.apply(
-            lambda x: np.percentile(x, 100*lower))
+            lambda x: np.percentile(x, 100 * lower))
         # shade between 97.5 and 2.5 percentile
         fig.add_trace(
             go.Scatter(

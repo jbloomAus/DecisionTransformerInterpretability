@@ -3,9 +3,37 @@ import gymnasium as gym
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from src.ppo.utils import PPOArgs
+from dataclasses import dataclass
+
 from src.ppo.agent import PPOScheduler, PPOAgent, FCAgent
 from src.ppo.memory import Memory
+
+
+@pytest.fixture
+def online_config():
+    @dataclass
+    class DummyOnlineConfig:
+        use_trajectory_model: bool = False
+        hidden_size: int = 64
+        total_timesteps: int = 180000
+        learning_rate: float = 0.00025
+        decay_lr: bool = False,
+        num_envs: int = 4
+        num_steps: int = 128
+        gamma: float = 0.99
+        gae_lambda: float = 0.95
+        num_minibatches: int = 4
+        update_epochs: int = 4
+        clip_coef: float = 0.4
+        ent_coef: float = 0.2
+        vf_coef: float = 0.5
+        max_grad_norm: float = 2
+        trajectory_path: str = None
+        fully_observed: bool = False
+        batch_size: int = 16
+        minibatch_size = 4
+
+    return DummyOnlineConfig()
 
 
 @pytest.fixture
@@ -34,8 +62,7 @@ def test_ppo_agent_init():
     envs = gym.vector.SyncVectorEnv(
         [lambda: gym.make('CartPole-v0') for _ in range(4)])
     device = torch.device("cpu")
-    hidden_dim = 32
-    agent = PPOAgent(envs, device, hidden_dim)
+    agent = PPOAgent(envs, device)
 
     assert isinstance(agent, nn.Module)
     assert isinstance(agent.critic, nn.Module)
@@ -85,13 +112,12 @@ def test_fc_agent_make_optimizer(fc_agent):
     assert scheduler.end_lr == end_lr
 
 
-def test_fc_agent_rollout(fc_agent):
+def test_fc_agent_rollout(fc_agent, online_config):
 
     num_steps = 10
-    args = PPOArgs(num_steps=num_steps)
     envs = gym.vector.SyncVectorEnv(
-        [lambda: gym.make('CartPole-v0') for _ in range(args.num_envs)])
-    memory = Memory(envs=envs, args=args, device=fc_agent.device)
+        [lambda: gym.make('CartPole-v0') for _ in range(online_config.num_envs)])
+    memory = Memory(envs=envs, args=online_config, device=fc_agent.device)
 
     fc_agent.rollout(memory, num_steps, envs)
 
@@ -103,35 +129,26 @@ def test_fc_agent_rollout(fc_agent):
     assert len(memory.experiences[0]) == 6
 
 
-def test_learn(fc_agent):
+def test_learn(fc_agent, online_config):
 
     envs = gym.vector.SyncVectorEnv(
         [lambda: gym.make('CartPole-v0') for _ in range(4)])
-    args = PPOArgs(
-        num_steps=10,
-        update_epochs=1,
-        clip_coef=0.2,
-        vf_coef=0.5,
-        ent_coef=0.01,
-        max_grad_norm=0.5,
-        track=False,
-        cuda=False,
-        num_envs=4)
-    memory = Memory(envs=envs, args=args, device=fc_agent.device)
 
-    num_updates = args.total_timesteps // args.batch_size
+    memory = Memory(envs=envs, args=online_config, device=fc_agent.device)
+
+    num_updates = online_config.total_timesteps // online_config.batch_size
     optimizer, scheduler = fc_agent.make_optimizer(
         num_updates,
-        args.learning_rate,
-        args.learning_rate * 1e-4
+        online_config.learning_rate,
+        online_config.learning_rate * 1e-4
     )
 
-    fc_agent.rollout(memory, args.num_steps, envs)
-    fc_agent.learn(memory, args, optimizer, scheduler)
+    fc_agent.rollout(memory, online_config.num_steps, envs)
+    fc_agent.learn(memory, online_config, optimizer, scheduler, track=False)
 
     assert isinstance(optimizer, optim.Adam)
     assert isinstance(scheduler, PPOScheduler)
     assert len(memory.next_done) == envs.num_envs
     assert len(memory.next_value) == envs.num_envs
-    assert len(memory.experiences) == args.num_steps
+    assert len(memory.experiences) == online_config.num_steps
     assert len(memory.experiences[0]) == 6

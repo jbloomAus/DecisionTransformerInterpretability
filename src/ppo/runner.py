@@ -34,18 +34,13 @@ def ppo_runner(
     Returns: None.
     '''
 
-    if transformer_model_config is None:
-        print("Defaulting to Fully Connected AC model. Not a transformer model.")
-
-    args = run_config.__dict__ | environment_config.__dict__ | online_config.__dict__
-    if transformer_model_config is not None:
-        args = args | transformer_model_config.__dict__
-
-    args = Namespace(**args)
     if online_config.trajectory_path:
         trajectory_writer = TrajectoryWriter(
             online_config.trajectory_path,
-            args=args
+            run_config=run_config,
+            environment_config=environment_config,
+            online_config=online_config,
+            transformer_model_config=transformer_model_config,
         )
     else:
         trajectory_writer = None
@@ -53,21 +48,23 @@ def ppo_runner(
     # Verify environment is registered
     register_envs()
     all_envs = [env_spec for env_spec in gym.envs.registry]
-    assert environment_config.env_id in all_envs, f"Environment {args.env_id} not registered."
+    assert environment_config.env_id in all_envs, f"Environment {environment_config.env_id} not registered."
 
     # wandb initialisation,
     run_name = f"{environment_config.env_id}__{run_config.exp_name}__{run_config.seed}__{int(time.time())}"
-    if args.track:
+    if run_config.track:
         run = wandb.init(
             project=run_config.wandb_project_name,
             entity=run_config.wandb_entity,
-            config=vars(args),  # vars is equivalent to args.__dict__
+            config=combine_args(
+                run_config, environment_config, online_config, transformer_model_config
+            ),  # vars is equivalent to args.__dict__
             name=run_name,
             save_code=True,
         )
 
     # add run_name to args
-    args.run_name = run_name
+    run_config.run_name = run_name
 
     # make envs
     set_global_seeds(run_config.seed)
@@ -88,10 +85,23 @@ def ppo_runner(
     )
 
     train_ppo(
-        args,
-        envs,
+        run_config=run_config,
+        online_config=online_config,
+        environment_config=environment_config,
+        transformer_model_config=transformer_model_config,
+        envs=envs,
         trajectory_writer=trajectory_writer,
         probe_idx=None
     )
-    if args.track:
+    if run_config.track:
         run.finish()
+
+
+def combine_args(run_config, environment_config, online_config, transformer_model_config=None):
+    args = {}
+    args.update(run_config.__dict__)
+    args.update(environment_config.__dict__)
+    args.update(online_config.__dict__)
+    if transformer_model_config is not None:
+        args.update(transformer_model_config.__dict__)
+    return args

@@ -1,9 +1,15 @@
-import torch as t
-from tqdm.autonotebook import tqdm
 import os
-import wandb
+from typing import Optional
 
-from .agent import FCAgent as Agent
+import torch as t
+from gymnasium.vector import SyncVectorEnv
+from tqdm.autonotebook import tqdm
+
+import wandb
+from src.config import (EnvironmentConfig, OnlineTrainConfig, RunConfig,
+                        TransformerModelConfig)
+
+from .agent import FCAgent, TrajPPOAgent
 from .memory import Memory
 from .utils import get_printable_output_for_probe_envs
 
@@ -11,8 +17,11 @@ device = t.device("cuda" if t.cuda.is_available() else "cpu")
 
 
 def train_ppo(
-        args,
-        envs,
+        run_config: RunConfig,
+        online_config: OnlineTrainConfig,
+        environment_config: EnvironmentConfig,
+        transformer_model_config: Optional[TransformerModelConfig],
+        envs: SyncVectorEnv,
         trajectory_writer=None,
         probe_idx=None):
     """
@@ -28,22 +37,35 @@ def train_ppo(
     None
     """
 
-    memory = Memory(envs, args, device)
-    agent = Agent(envs, device=device, hidden_dim=args.hidden_size)
+    memory = Memory(envs, online_config, device)
 
-    num_updates = args.total_timesteps // args.batch_size
+    if transformer_model_config is None:
+        agent = FCAgent(
+            envs,
+            device=device,
+            hidden_dim=online_config.hidden_size
+        )
+    else:
+        agent = TrajPPOAgent(
+            envs=envs,
+            transformer_model_config=transformer_model_config,
+            environment_config=environment_config,
+            device=device,
+        )
+
+    num_updates = online_config.total_timesteps // online_config.batch_size
 
     optimizer, scheduler = agent.make_optimizer(
         num_updates,
-        initial_lr=args.learning_rate,
-        end_lr=args.learning_rate if not args.decay_lr else 0.0)
+        initial_lr=online_config.learning_rate,
+        end_lr=online_config.learning_rate if not online_config.decay_lr else 0.0)
 
     # out = wg.Output(layout={"padding": "15px"})
     # display(out)
     progress_bar = tqdm(range(num_updates), position=0, leave=True)
 
-    if args.track:
-        video_path = os.path.join("videos", args.run_name)
+    if run_config.track:
+        video_path = os.path.join("videos", run_config.run_name)
         if not os.path.exists(video_path):
             os.makedirs(video_path)
         videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
@@ -53,10 +75,11 @@ def train_ppo(
 
     for update in progress_bar:
 
-        agent.rollout(memory, args.num_steps, envs, trajectory_writer)
-        agent.learn(memory, args, optimizer, scheduler)
+        agent.rollout(memory, online_config.num_steps, envs, trajectory_writer)
+        agent.learn(memory, online_config, optimizer,
+                    scheduler, run_config.track)
 
-        if args.track:
+        if run_config.track:
             memory.log()
             videos = check_and_upload_new_video(
                 video_path=video_path, videos=videos, step=memory.global_step)
@@ -67,7 +90,7 @@ def train_ppo(
 
         else:
             output = get_printable_output_for_probe_envs(
-                args, agent, probe_idx, update, num_updates)
+                online_config, agent, probe_idx, update, num_updates)
         if output:
             # with out:
             #     # print(output)
@@ -78,7 +101,7 @@ def train_ppo(
 
     if trajectory_writer is not None:
         trajectory_writer.tag_terminated_trajectories()
-        trajectory_writer.write(upload_to_wandb=args.track)
+        trajectory_writer.write(upload_to_wandb=run_config.track)
 
     envs.close()
 

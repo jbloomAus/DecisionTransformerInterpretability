@@ -11,10 +11,9 @@ from torchtyping import patch_typeguard
 from typeguard import typechecked
 
 from .memory import Memory
-from .utils import PPOArgs
 
 from src.models.trajectory_model import ActorTransformer
-from src.config import TransformerModelConfig, EnvironmentConfig
+from src.config import TransformerModelConfig, EnvironmentConfig, OnlineTrainConfig
 
 
 class PPOScheduler:
@@ -51,11 +50,10 @@ class PPOAgent(nn.Module):
     actor: nn.Module
 
     @abc.abstractmethod
-    def __init__(self, envs: gym.vector.SyncVectorEnv, device, hidden_dim: int):
+    def __init__(self, envs: gym.vector.SyncVectorEnv, device):
         super().__init__()
         self.envs = envs
         self.device = device
-        self.hidden_dim = hidden_dim
 
         self.critic = nn.Sequential()
         self.actor = nn.Sequential()
@@ -102,8 +100,8 @@ class FCAgent(PPOAgent):
         - device (t.device): the device on which to run the agent.
         - hidden_dim (int): the number of neurons in the hidden layer.
         '''
-        super().__init__(envs=envs, device=device, hidden_dim=hidden_dim)
-        # super().__init__(envs=envs, device=device, hidden_dim=hidden_dim)
+        super().__init__(envs=envs, device=device)
+
         # obs_shape will be a tuple (e.g. for RGB images this would be an array (h, w, c))
         if isinstance(envs.single_observation_space, gym.spaces.Box):
             self.obs_shape = envs.single_observation_space.shape
@@ -230,17 +228,19 @@ class FCAgent(PPOAgent):
 
     def learn(self,
               memory: Memory,
-              args: PPOArgs,
+              args: OnlineTrainConfig,
               optimizer: optim.Optimizer,
-              scheduler: PPOScheduler) -> None:
+              scheduler: PPOScheduler,
+              track: bool) -> None:
         """Performs the learning phase of the PPO algorithm, updating the agent's parameters
         using the collected experience.
 
         Args:
             memory (Memory): The replay buffer containing the collected experiences.
-            args (PPOArgs): The arguments to configure the algorithm.
+            args (OnlineTrainConfig): The configuration for the training.
             optimizer (optim.Optimizer): The optimizer to update the agent's parameters.
             scheduler (PPOScheduler): The scheduler attached to the optimizer.
+            track (bool): Whether to track the training progress.
         """
         for _ in range(args.update_epochs):
             minibatches = memory.get_minibatches()
@@ -264,7 +264,7 @@ class FCAgent(PPOAgent):
         scheduler.step()
 
         # Get debug variables, for just the most recent minibatch (otherwise there's too much logging!)
-        if args.track:
+        if track:
             with t.inference_mode():
                 newlogprob = probs.log_prob(mb.actions)
                 logratio = newlogprob - mb.logprobs
@@ -284,16 +284,25 @@ class FCAgent(PPOAgent):
 
 
 class TrajPPOAgent(PPOAgent):
-    def __init__(self, envs: gym.vector.SyncVectorEnv, device=t.device, hidden_dim: int = 64):
+    def __init__(self,
+                 envs: gym.vector.SyncVectorEnv,
+                 environment_config: EnvironmentConfig,
+                 transformer_model_config: TransformerModelConfig,
+                 device=t.device
+                 ):
         '''
         An agent for a Proximal Policy Optimization (PPO) algorithm.
 
         Args:
         - envs (gym.vector.SyncVectorEnv): the environment(s) to interact with.
         - device (t.device): the device on which to run the agent.
-        - hidden_dim (int): the number of neurons in the hidden layer.
+        - environment_config (EnvironmentConfig): the configuration for the environment.
+        - transformer_model_config (TransformerModelConfig): the configuration for the transformer model.
+        - device (t.device): the device on which to run the agent.
         '''
-        super().__init__(envs=envs, device=device, hidden_dim=hidden_dim)
+        super().__init__(envs=envs, device=device)
+        self.environment_config = environment_config
+        self.transformer_model_config = transformer_model_config
 
         # obs_shape will be a tuple (e.g. for RGB images this would be an array (h, w, c))
         if isinstance(envs.single_observation_space, gym.spaces.Box):
@@ -308,8 +317,8 @@ class TrajPPOAgent(PPOAgent):
         self.num_obs = np.array(self.obs_shape).prod()
         # assuming a discrete action space
         self.num_actions = envs.single_action_space.n
-        self.hidden_dim = hidden_dim
 
+        self.hidden_dim = transformer_model_config.d_model
         self.critic = nn.Sequential(
             nn.Flatten(),
             self.layer_init(nn.Linear(self.num_obs, self.hidden_dim)),
@@ -319,33 +328,8 @@ class TrajPPOAgent(PPOAgent):
             self.layer_init(nn.Linear(self.hidden_dim, 1), std=1.0)
         )
 
-        # TODO - let users specify the model config
-        transfomer_model_config = TransformerModelConfig(
-            d_model=128,
-            n_heads=4,
-            d_mlp=256,
-            n_layers=2,
-            n_ctx=3,
-            layer_norm=False,
-            state_embedding_type='grid',
-            time_embedding_type='embedding',
-            seed=1,
-            device='cpu'
-        )
-
-        # TODO - let users specify the model config (will break if env config isn't right)
-        environment_config = EnvironmentConfig(
-            env_id='MiniGrid-Dynamic-Obstacles-8x8-v0',
-            one_hot_obs=False,
-            img_obs=False,
-            fully_observed=False,
-            max_steps=1000,
-            seed=1,
-            device='cpu'
-        )
-
         actor_transformer = ActorTransformer(
-            transformer_config=transfomer_model_config,
+            transformer_config=transformer_model_config,
             environment_config=environment_config,
         )
 
@@ -374,7 +358,8 @@ class TrajPPOAgent(PPOAgent):
     def rollout(self,
                 memory: Memory,
                 num_steps: int,
-                envs: gym.vector.SyncVectorEnv) -> None:
+                envs: gym.vector.SyncVectorEnv,
+                trajectory_writer=None) -> None:
         """Performs the rollout phase of the PPO algorithm, collecting experience by interacting with the environment.
 
         Args:
@@ -399,6 +384,7 @@ class TrajPPOAgent(PPOAgent):
         done = memory.next_done
         context_window_size = self.actor.transformer_config.n_ctx
         n_envs = envs.num_envs
+        cuda = self.device.type == 'cuda'
 
         for step in range(num_steps):
 
@@ -442,6 +428,36 @@ class TrajPPOAgent(PPOAgent):
             next_obs = memory.obs_preprocessor(next_obs)
             reward = t.from_numpy(reward).to(device)
 
+            # TODO refactor to use ternary statements
+            if trajectory_writer is not None:
+                # first_obs = obs
+                if not cuda:
+                    trajectory_writer.accumulate_trajectory(
+                        # the observation stored with an action and reward is the observation which the agent responded to.
+                        next_obs=obs.detach().numpy(),
+                        # the reward stored with an action and observation is the reward the agent received for taking that action in that state
+                        reward=reward.detach().numpy(),
+                        # the action stored with an observation and reward is the action the agent took to get to that reward
+                        action=action.detach().numpy(),
+                        # the done stored with an action and observation is the done the agent received for taking that action in that state
+                        done=next_done,
+                        truncated=next_truncated,
+                        info=info
+                    )
+                else:
+                    trajectory_writer.accumulate_trajectory(
+                        # the observation stored with an action and reward is the observation which the agent responded to.
+                        next_obs=obs.detach().cpu().numpy(),
+                        # the reward stored with an action and observation is the reward the agent received for taking that action in that state
+                        reward=reward.detach().cpu().numpy(),
+                        # the action stored with an observation and reward is the action the agent took to get to that reward
+                        action=action.detach().cpu().numpy(),
+                        # the done stored with an action and observation is the done the agent received for taking that action in that state
+                        done=next_done,
+                        truncated=next_truncated,
+                        info=info
+                    )
+
             # Store (s_t, d_t, a_t, logpi(a_t|s_t), v(s_t), r_t+1)
             memory.add(info, obs, done, action, logprob, value, reward)
             obs = t.from_numpy(next_obs).to(device)
@@ -452,6 +468,70 @@ class TrajPPOAgent(PPOAgent):
         memory.next_done = done
         with t.inference_mode():
             memory.next_value = self.critic(obs).flatten()
+
+    def learn(self,
+              memory: Memory,
+              args: OnlineTrainConfig,
+              optimizer: optim.Optimizer,
+              scheduler: PPOScheduler,
+              track: bool) -> None:
+        """Performs the learning phase of the PPO algorithm, updating the agent's parameters
+        using the collected experience.
+
+        Args:
+            memory (Memory): The replay buffer containing the collected experiences.
+            args (OnlineTrainConfig): The configuration for the training.
+            optimizer (optim.Optimizer): The optimizer to update the agent's parameters.
+            scheduler (PPOScheduler): The scheduler attached to the optimizer.
+            track (bool): Whether to track the training progress.
+        """
+        for _ in range(args.update_epochs):
+            minibatches = memory.get_minibatches()
+            # Compute loss on each minibatch, and step the optimizer
+            for mb in minibatches:
+
+                timesteps = memory.get_timestep_traj(steps=mb.obs.size[1])
+
+                logits = self.actor(
+                    states=mb.obs,
+                    actions=mb.actions,
+                    timesteps=timesteps
+                )
+
+                probs = Categorical(logits=logits)
+                values = self.critic(mb.obs).squeeze()
+                clipped_surrogate_objective = calc_clipped_surrogate_objective(
+                    probs, mb.actions, mb.advantages, mb.logprobs, args.clip_coef)
+                value_loss = calc_value_function_loss(
+                    values, mb.returns, args.vf_coef)
+                entropy_bonus = calc_entropy_bonus(probs, args.ent_coef)
+                total_objective_function = clipped_surrogate_objective - value_loss + entropy_bonus
+                optimizer.zero_grad()
+                total_objective_function.backward()
+                nn.utils.clip_grad_norm_(self.parameters(), args.max_grad_norm)
+                optimizer.step()
+
+        # Step the scheduler
+        scheduler.step()
+
+        # Get debug variables, for just the most recent minibatch (otherwise there's too much logging!)
+        if track:
+            with t.inference_mode():
+                newlogprob = probs.log_prob(mb.actions)
+                logratio = newlogprob - mb.logprobs
+                ratio = logratio.exp()
+                approx_kl = (ratio - 1 - logratio).mean().item()
+                clipfracs = [
+                    ((ratio - 1.0).abs() > args.clip_coef).float().mean().item()]
+            memory.add_vars_to_log(
+                learning_rate=optimizer.param_groups[0]["lr"],
+                avg_value=values.mean().item(),
+                value_loss=value_loss.item(),
+                clipped_surrogate_objective=clipped_surrogate_objective.item(),
+                entropy=entropy_bonus.item(),
+                approx_kl=approx_kl,
+                clipfrac=np.mean(clipfracs)
+            )
 
 
 patch_typeguard()

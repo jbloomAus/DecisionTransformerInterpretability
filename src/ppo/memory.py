@@ -10,6 +10,7 @@ from torchtyping import TensorType as TT
 
 import wandb
 
+from src.config import OnlineTrainConfig
 from .utils import PPOArgs, get_obs_preprocessor
 
 
@@ -31,7 +32,7 @@ class Memory():
     A memory buffer for storing experiences during the rollout phase.
     '''
 
-    def __init__(self, envs: gym.vector.SyncVectorEnv, args: PPOArgs, device: t.device):
+    def __init__(self, envs: gym.vector.SyncVectorEnv, args: OnlineTrainConfig, device: t.device):
         """Initializes the memory buffer.
 
         envs: A SyncVectorEnv object.
@@ -141,13 +142,20 @@ class Memory():
         - minibatch_size (int): size of each minibatch.
 
         Returns:
-        - List[np.ndarray]: a list of length (batch_size // minibatch_size)
-        where each element is an array of indexes into the batch. Each index should appear exactly once.
+        - List[MiniBatch]: a list of minibatches.
         '''
         obs, dones, actions, logprobs, values, rewards = [
             t.stack(arr) for arr in zip(*self.experiences)]
         advantages = self.compute_advantages(
-            self.next_value, self.next_done, rewards, values, dones, self.device, self.args.gamma, self.args.gae_lambda)
+            self.next_value,
+            self.next_done,
+            rewards,
+            values,
+            dones,
+            self.device,
+            self.args.gamma,
+            self.args.gae_lambda
+        )
         returns = advantages + values
         indexes = self.get_minibatch_indexes(
             self.args.batch_size, self.args.minibatch_size)
