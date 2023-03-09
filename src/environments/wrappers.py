@@ -32,10 +32,10 @@ class ViewSizeWrapper(ObservationWrapper):
         assert agent_view_size >= 3
 
         self.agent_view_size = agent_view_size
-
+        current_dim = self.observation_space["image"].shape[2:]
         # Compute observation space with specified view size
         new_image_space = gym.spaces.Box(
-            low=0, high=255, shape=(agent_view_size, agent_view_size, 3), dtype="uint8"
+            low=0, high=255, shape=(agent_view_size, agent_view_size, *current_dim), dtype="uint8"
         )
 
         # Override the environment's observation spaceexit
