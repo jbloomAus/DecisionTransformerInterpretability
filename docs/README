@@ -13,7 +13,7 @@ Install the required packages:
 
 Need to use python 3.9 (3.10 has an issue with napoleon extension) and below 3.8 doesn't have sphinx suppourt.
 ```
-poetry install --extras docs
+pip install -r requirements-docs.txt
 ```
 
 Using api doc to make the rst files
