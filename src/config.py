@@ -104,6 +104,7 @@ class OnlineTrainConfig:
     '''
     Configuration class for online training.
     '''
+    use_trajectory_model: bool = False
     hidden_size: int = 64
     total_timesteps: int = 180000
     learning_rate: float = 0.00025

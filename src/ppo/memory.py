@@ -272,3 +272,19 @@ class Memory():
 
         act_traj = rearrange(act_traj, 't e ... -> e t ...')
         return act_traj
+
+    def get_timestep_traj(self, steps: int, pad_to_length: int) -> TT["env", "T", "1"]:
+        '''
+        Returns a tensor of shape (steps, envs, 1) containing the time steps from the last steps.
+
+        Args:
+        - steps (int): number of steps to return.
+        - pad_to_length (int): if the number of steps is less than this, then the tensor will be padded with zeros.
+
+        Returns:
+        - a tensor of shape (steps, envs, 1) containing
+        the time steps from the last steps.
+        '''
+        n_envs = self.envs.num_envs
+        timesteps = t.arange(0, steps).repeat(n_envs, 1)[:, -pad_to_length:]
+        return timesteps

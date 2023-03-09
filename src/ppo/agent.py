@@ -13,6 +13,9 @@ from typeguard import typechecked
 from .memory import Memory
 from .utils import PPOArgs
 
+from src.models.trajectory_model import ActorTransformer
+from src.config import TransformerModelConfig, EnvironmentConfig
+
 
 class PPOScheduler:
     def __init__(self, optimizer: optim.Optimizer, initial_lr: float, end_lr: float, num_updates: int):
@@ -225,8 +228,13 @@ class FCAgent(PPOAgent):
         with t.inference_mode():
             memory.next_value = self.critic(obs).flatten()
 
-    def learn(self, memory: Memory, args: PPOArgs, optimizer: optim.Optimizer, scheduler: PPOScheduler) -> None:
-        """Performs the learning phase of the PPO algorithm, updating the agent's parameters using the collected experience.
+    def learn(self,
+              memory: Memory,
+              args: PPOArgs,
+              optimizer: optim.Optimizer,
+              scheduler: PPOScheduler) -> None:
+        """Performs the learning phase of the PPO algorithm, updating the agent's parameters
+        using the collected experience.
 
         Args:
             memory (Memory): The replay buffer containing the collected experiences.
@@ -273,6 +281,177 @@ class FCAgent(PPOAgent):
                 approx_kl=approx_kl,
                 clipfrac=np.mean(clipfracs)
             )
+
+
+class TrajPPOAgent(PPOAgent):
+    def __init__(self, envs: gym.vector.SyncVectorEnv, device=t.device, hidden_dim: int = 64):
+        '''
+        An agent for a Proximal Policy Optimization (PPO) algorithm.
+
+        Args:
+        - envs (gym.vector.SyncVectorEnv): the environment(s) to interact with.
+        - device (t.device): the device on which to run the agent.
+        - hidden_dim (int): the number of neurons in the hidden layer.
+        '''
+        super().__init__(envs=envs, device=device, hidden_dim=hidden_dim)
+
+        # obs_shape will be a tuple (e.g. for RGB images this would be an array (h, w, c))
+        if isinstance(envs.single_observation_space, gym.spaces.Box):
+            self.obs_shape = envs.single_observation_space.shape
+        elif isinstance(envs.single_observation_space, gym.spaces.Discrete):
+            self.obs_shape = (envs.single_observation_space.n,)
+        elif isinstance(envs.single_observation_space, gym.spaces.Dict):
+            self.obs_shape = envs.single_observation_space.spaces["image"].shape
+        else:
+            raise ValueError("Unsupported observation space")
+        # num_obs is num elements in observations (e.g. for RGB images this would be h * w * c)
+        self.num_obs = np.array(self.obs_shape).prod()
+        # assuming a discrete action space
+        self.num_actions = envs.single_action_space.n
+        self.hidden_dim = hidden_dim
+
+        self.critic = nn.Sequential(
+            nn.Flatten(),
+            self.layer_init(nn.Linear(self.num_obs, self.hidden_dim)),
+            nn.Tanh(),
+            self.layer_init(nn.Linear(self.hidden_dim, self.hidden_dim)),
+            nn.Tanh(),
+            self.layer_init(nn.Linear(self.hidden_dim, 1), std=1.0)
+        )
+
+        # TODO - let users specify the model config
+        transfomer_model_config = TransformerModelConfig(
+            d_model=128,
+            n_heads=4,
+            d_mlp=256,
+            n_layers=2,
+            n_ctx=3,
+            layer_norm=False,
+            state_embedding_type='grid',
+            time_embedding_type='embedding',
+            seed=1,
+            device='cpu'
+        )
+
+        # TODO - let users specify the model config (will break if env config isn't right)
+        environment_config = EnvironmentConfig(
+            env_id='MiniGrid-Dynamic-Obstacles-8x8-v0',
+            one_hot_obs=False,
+            img_obs=False,
+            fully_observed=False,
+            max_steps=1000,
+            seed=1,
+            device='cpu'
+        )
+
+        actor_transformer = ActorTransformer(
+            transformer_config=transfomer_model_config,
+            environment_config=environment_config,
+        )
+
+        self.layer_init(actor_transformer.action_predictor, std=0.01)
+        self.actor = actor_transformer
+
+        self.device = device
+        self.to(device)
+
+    # TODO work out why this is std not gain for orthogonal init
+    def layer_init(self, layer: nn.Linear, std: float = np.sqrt(2), bias_const: float = 0.0) -> nn.Linear:
+        """Initializes the weights of a linear layer with orthogonal initialization and the biases with a constant value.
+
+        Args:
+            layer (nn.Linear): The linear layer to be initialized.
+            std (float, optional): The standard deviation of the distribution used to initialize the weights. Defaults to np.sqrt(2).
+            bias_const (float, optional): The constant value to initialize the biases with. Defaults to 0.0.
+
+        Returns:
+            nn.Linear: The initialized linear layer.
+        """
+        t.nn.init.orthogonal_(layer.weight, std)
+        t.nn.init.constant_(layer.bias, bias_const)
+        return layer
+
+    def rollout(self,
+                memory: Memory,
+                num_steps: int,
+                envs: gym.vector.SyncVectorEnv) -> None:
+        """Performs the rollout phase of the PPO algorithm, collecting experience by interacting with the environment.
+
+        Args:
+            memory (Memory): The replay buffer to store the experiences.
+            num_steps (int): The number of steps to collect.
+            envs (gym.vector.SyncVectorEnv): The vectorized environment to interact with.
+            trajectory_writer (TrajectoryWriter, optional): The writer to log the collected trajectories. Defaults to None.
+        """
+
+        # since there's no reset here, we're going to continue sampling from the trajectories present in the replay buffer.
+        # to do so, we need to go back a context window lenght of the steps and get these out of the replay buffer.
+        # after we do that, we can hand them to the actor/critic.
+        # the actor will then generate a new action, and the critic will generate a new value function.
+        # nothing will change with the value function/logits actually.
+
+        # So it seems like our to do list is:
+        # 1. add a function to the memory object to get the last n-steps
+        # 2. convert these to states/actions for input into the actor
+
+        device = memory.device
+        obs = memory.next_obs
+        done = memory.next_done
+        context_window_size = self.actor.transformer_config.n_ctx
+        n_envs = envs.num_envs
+
+        for step in range(num_steps):
+
+            if len(memory.experiences) == 0:
+                with t.inference_mode():
+                    logits = self.actor.forward(
+                        states=obs.unsqueeze(1),
+                        actions=None,
+                        timesteps=t.tensor([0]).repeat(n_envs, 1, 1)
+                    )
+                    value = self.critic(obs).flatten()
+            else:
+
+                # if no experience,s you have one timestep and you buffer out to the context size.
+                # if you have some experiences, than you fill out at much of the context window as you can.
+                # if you have more experiences than the context window, you have to truncate.
+                obss = memory.get_obs_traj(
+                    steps=step, pad_to_length=context_window_size // 2)
+                actions = memory.get_act_traj(
+                    steps=context_window_size // 2, pad_to_length=context_window_size // 2)
+                timesteps = memory.get_timestep_traj(
+                    steps=context_window_size // 2, pad_to_length=context_window_size // 2)
+
+                # Generate the next set of new experiences (one for each env)
+                with t.inference_mode():
+                    # Our actor generates logits over actions which we can then sample from
+                    logits = self.actor.forward(
+                        states=obss,
+                        actions=actions.to(dtype=t.long),
+                        timesteps=timesteps.unsqueeze(-1)
+                    )
+                    # Our critic generates a value function (which we use in the value loss, and to estimate advantages)
+
+                    value = self.critic(obs).flatten()
+
+            probs = Categorical(logits=logits)
+            action = probs.sample()
+            logprob = probs.log_prob(action)
+            next_obs, reward, next_done, next_truncated, info = envs.step(
+                action.cpu().numpy())
+            next_obs = memory.obs_preprocessor(next_obs)
+            reward = t.from_numpy(reward).to(device)
+
+            # Store (s_t, d_t, a_t, logpi(a_t|s_t), v(s_t), r_t+1)
+            memory.add(info, obs, done, action, logprob, value, reward)
+            obs = t.from_numpy(next_obs).to(device)
+            done = t.from_numpy(next_done).to(device, dtype=t.float)
+
+        # Store last (obs, done, value) tuple, since we need it to compute advantages
+        memory.next_obs = obs
+        memory.next_done = done
+        with t.inference_mode():
+            memory.next_value = self.critic(obs).flatten()
 
 
 patch_typeguard()

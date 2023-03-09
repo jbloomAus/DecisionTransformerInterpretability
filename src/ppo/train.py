@@ -53,7 +53,7 @@ def train_ppo(
 
     for update in progress_bar:
 
-        agent.rollout(memory, args, envs, trajectory_writer)
+        agent.rollout(memory, args.num_steps, envs, trajectory_writer)
         agent.learn(memory, args, optimizer, scheduler)
 
         if args.track:
