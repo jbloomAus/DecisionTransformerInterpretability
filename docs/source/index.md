@@ -8,7 +8,7 @@ lastpage:
 
 [![build](https://github.com/jbloomAus/DecisionTransformerInterpretability/actions/workflows/build.yml/badge.svg)](https://github.com/jbloomAus/DecisionTransformerInterpretability/actions/workflows/build.yml)
 
-# [Docs here](https://jbloomaus-decisiontransformerinterpretability-app-4edcnc.streamlit.app/)
+# [Docs Here](https://jbloomaus.github.io/DecisionTransformerInterpretability/) [App Here](https://jbloomaus-decisiontransformerinterpretability-app-4edcnc.streamlit.app/)
 
 This project is designed to facilitate mechanistic interpretability of decision transformers as well as RL agents using transformer architectures.
 
