@@ -4,10 +4,10 @@
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
     <link rel="icon" href="_static/assets/Logo_black.ico" type="image/x-icon">
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="src package" href="src.html" /><link rel="prev" title="Installation" href="content/installation.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" />
 
     <!-- Generated with Sphinx 5.2.3 and Furo 2022.12.07 -->
-        <title>src - Decision Transformer Interpretability Documentation</title>
+        <title>DecisionTransformerInterpretability - Decision Transformer Interpretability Documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=91d0f0d1c444bdcb17a68e833c7a53903343c195" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
@@ -164,16 +164,10 @@
 <li class="toctree-l1"><a class="reference internal" href="content/installation.html">Installation</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Code</span></p>
-<ul class="current">
-<li class="toctree-l1 current has-children current-page"><a class="current reference internal" href="#">src</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2 has-children"><a class="reference internal" href="src.html">src package</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html">src.decision_transformer package</a></li>
-<li class="toctree-l3"><a class="reference internal" href="src.environments.html">src.environments package</a></li>
-<li class="toctree-l3"><a class="reference internal" href="src.ppo.html">src.ppo package</a></li>
-</ul>
-</li>
-</ul>
-</li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="src.decision_transformer.html">src.decision_transformer package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="src.ppo.html">src.ppo package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="src.environments.html">src.environments package</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">References</span></p>
 <ul>
@@ -212,10 +206,11 @@
           </label>
         </div>
         <article role="main">
-          <section id="src">
-<h1>src<a class="headerlink" href="#src" title="Permalink to this heading">#</a></h1>
+          <section id="decisiontransformerinterpretability">
+<h1>DecisionTransformerInterpretability<a class="headerlink" href="#decisiontransformerinterpretability" title="Permalink to this heading">#</a></h1>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="app.html">app module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="src.html">src package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="src.html#subpackages">Subpackages</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html">src.decision_transformer package</a><ul>
@@ -223,7 +218,7 @@
 <li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#module-src.decision_transformer.calibration">src.decision_transformer.calibration module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#module-src.decision_transformer.model">src.decision_transformer.model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#module-src.decision_transformer.offline_dataset">src.decision_transformer.offline_dataset module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#src-decision-transformer-offline-dataset-new-module">src.decision_transformer.offline_dataset_new module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#module-src.decision_transformer.runner">src.decision_transformer.runner module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#module-src.decision_transformer.train">src.decision_transformer.train module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#module-src.decision_transformer.trainer">src.decision_transformer.trainer module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.decision_transformer.html#module-src.decision_transformer.utils">src.decision_transformer.utils module</a></li>
@@ -245,6 +240,7 @@
 <li class="toctree-l4"><a class="reference internal" href="src.ppo.html#module-src.ppo.compute_adv_vectorized">src.ppo.compute_adv_vectorized module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ppo.html#module-src.ppo.memory">src.ppo.memory module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ppo.html#module-src.ppo.my_probe_envs">src.ppo.my_probe_envs module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#module-src.ppo.runner">src.ppo.runner module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ppo.html#module-src.ppo.train">src.ppo.train module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ppo.html#module-src.ppo.utils">src.ppo.utils module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ppo.html#module-src.ppo">Module contents</a></li>
@@ -253,6 +249,88 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="src.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.html#module-src.config">src.config module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="src.html#src.config.EnvironmentConfig"><code class="docutils literal notranslate"><span class="pre">EnvironmentConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.EnvironmentConfig.action_space"><code class="docutils literal notranslate"><span class="pre">EnvironmentConfig.action_space</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.EnvironmentConfig.capture_video"><code class="docutils literal notranslate"><span class="pre">EnvironmentConfig.capture_video</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.EnvironmentConfig.device"><code class="docutils literal notranslate"><span class="pre">EnvironmentConfig.device</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.EnvironmentConfig.env_id"><code class="docutils literal notranslate"><span class="pre">EnvironmentConfig.env_id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.EnvironmentConfig.fully_observed"><code class="docutils literal notranslate"><span class="pre">EnvironmentConfig.fully_observed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.EnvironmentConfig.img_obs"><code class="docutils literal notranslate"><span class="pre">EnvironmentConfig.img_obs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.EnvironmentConfig.max_steps"><code class="docutils literal notranslate"><span class="pre">EnvironmentConfig.max_steps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.EnvironmentConfig.observation_space"><code class="docutils literal notranslate"><span class="pre">EnvironmentConfig.observation_space</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.EnvironmentConfig.one_hot_obs"><code class="docutils literal notranslate"><span class="pre">EnvironmentConfig.one_hot_obs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.EnvironmentConfig.render_mode"><code class="docutils literal notranslate"><span class="pre">EnvironmentConfig.render_mode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.EnvironmentConfig.seed"><code class="docutils literal notranslate"><span class="pre">EnvironmentConfig.seed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.EnvironmentConfig.video_dir"><code class="docutils literal notranslate"><span class="pre">EnvironmentConfig.video_dir</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.EnvironmentConfig.view_size"><code class="docutils literal notranslate"><span class="pre">EnvironmentConfig.view_size</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.html#src.config.OfflineTrainConfig"><code class="docutils literal notranslate"><span class="pre">OfflineTrainConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OfflineTrainConfig.batch_size"><code class="docutils literal notranslate"><span class="pre">OfflineTrainConfig.batch_size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OfflineTrainConfig.device"><code class="docutils literal notranslate"><span class="pre">OfflineTrainConfig.device</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OfflineTrainConfig.eval_episodes"><code class="docutils literal notranslate"><span class="pre">OfflineTrainConfig.eval_episodes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OfflineTrainConfig.eval_frequency"><code class="docutils literal notranslate"><span class="pre">OfflineTrainConfig.eval_frequency</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OfflineTrainConfig.eval_max_time_steps"><code class="docutils literal notranslate"><span class="pre">OfflineTrainConfig.eval_max_time_steps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OfflineTrainConfig.initial_rtg"><code class="docutils literal notranslate"><span class="pre">OfflineTrainConfig.initial_rtg</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OfflineTrainConfig.lr"><code class="docutils literal notranslate"><span class="pre">OfflineTrainConfig.lr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OfflineTrainConfig.model_type"><code class="docutils literal notranslate"><span class="pre">OfflineTrainConfig.model_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OfflineTrainConfig.pct_traj"><code class="docutils literal notranslate"><span class="pre">OfflineTrainConfig.pct_traj</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OfflineTrainConfig.prob_go_from_end"><code class="docutils literal notranslate"><span class="pre">OfflineTrainConfig.prob_go_from_end</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OfflineTrainConfig.test_epochs"><code class="docutils literal notranslate"><span class="pre">OfflineTrainConfig.test_epochs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OfflineTrainConfig.test_frequency"><code class="docutils literal notranslate"><span class="pre">OfflineTrainConfig.test_frequency</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OfflineTrainConfig.track"><code class="docutils literal notranslate"><span class="pre">OfflineTrainConfig.track</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OfflineTrainConfig.train_epochs"><code class="docutils literal notranslate"><span class="pre">OfflineTrainConfig.train_epochs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OfflineTrainConfig.trajectory_path"><code class="docutils literal notranslate"><span class="pre">OfflineTrainConfig.trajectory_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OfflineTrainConfig.weight_decay"><code class="docutils literal notranslate"><span class="pre">OfflineTrainConfig.weight_decay</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig"><code class="docutils literal notranslate"><span class="pre">OnlineTrainConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig.clip_coef"><code class="docutils literal notranslate"><span class="pre">OnlineTrainConfig.clip_coef</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig.decay_lr"><code class="docutils literal notranslate"><span class="pre">OnlineTrainConfig.decay_lr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig.ent_coef"><code class="docutils literal notranslate"><span class="pre">OnlineTrainConfig.ent_coef</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig.fully_observed"><code class="docutils literal notranslate"><span class="pre">OnlineTrainConfig.fully_observed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig.gae_lambda"><code class="docutils literal notranslate"><span class="pre">OnlineTrainConfig.gae_lambda</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig.gamma"><code class="docutils literal notranslate"><span class="pre">OnlineTrainConfig.gamma</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig.hidden_size"><code class="docutils literal notranslate"><span class="pre">OnlineTrainConfig.hidden_size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig.learning_rate"><code class="docutils literal notranslate"><span class="pre">OnlineTrainConfig.learning_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig.max_grad_norm"><code class="docutils literal notranslate"><span class="pre">OnlineTrainConfig.max_grad_norm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig.num_envs"><code class="docutils literal notranslate"><span class="pre">OnlineTrainConfig.num_envs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig.num_minibatches"><code class="docutils literal notranslate"><span class="pre">OnlineTrainConfig.num_minibatches</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig.num_steps"><code class="docutils literal notranslate"><span class="pre">OnlineTrainConfig.num_steps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig.total_timesteps"><code class="docutils literal notranslate"><span class="pre">OnlineTrainConfig.total_timesteps</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig.trajectory_path"><code class="docutils literal notranslate"><span class="pre">OnlineTrainConfig.trajectory_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig.update_epochs"><code class="docutils literal notranslate"><span class="pre">OnlineTrainConfig.update_epochs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig.use_trajectory_model"><code class="docutils literal notranslate"><span class="pre">OnlineTrainConfig.use_trajectory_model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig.vf_coef"><code class="docutils literal notranslate"><span class="pre">OnlineTrainConfig.vf_coef</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.html#src.config.RunConfig"><code class="docutils literal notranslate"><span class="pre">RunConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.RunConfig.cuda"><code class="docutils literal notranslate"><span class="pre">RunConfig.cuda</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.RunConfig.exp_name"><code class="docutils literal notranslate"><span class="pre">RunConfig.exp_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.RunConfig.seed"><code class="docutils literal notranslate"><span class="pre">RunConfig.seed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.RunConfig.track"><code class="docutils literal notranslate"><span class="pre">RunConfig.track</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.RunConfig.trajectory_path"><code class="docutils literal notranslate"><span class="pre">RunConfig.trajectory_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.RunConfig.wandb_entity"><code class="docutils literal notranslate"><span class="pre">RunConfig.wandb_entity</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.RunConfig.wandb_project_name"><code class="docutils literal notranslate"><span class="pre">RunConfig.wandb_project_name</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.html#src.config.TransformerModelConfig"><code class="docutils literal notranslate"><span class="pre">TransformerModelConfig</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.TransformerModelConfig.d_mlp"><code class="docutils literal notranslate"><span class="pre">TransformerModelConfig.d_mlp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.TransformerModelConfig.d_model"><code class="docutils literal notranslate"><span class="pre">TransformerModelConfig.d_model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.TransformerModelConfig.device"><code class="docutils literal notranslate"><span class="pre">TransformerModelConfig.device</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.TransformerModelConfig.layer_norm"><code class="docutils literal notranslate"><span class="pre">TransformerModelConfig.layer_norm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.TransformerModelConfig.n_ctx"><code class="docutils literal notranslate"><span class="pre">TransformerModelConfig.n_ctx</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.TransformerModelConfig.n_heads"><code class="docutils literal notranslate"><span class="pre">TransformerModelConfig.n_heads</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.TransformerModelConfig.n_layers"><code class="docutils literal notranslate"><span class="pre">TransformerModelConfig.n_layers</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.TransformerModelConfig.seed"><code class="docutils literal notranslate"><span class="pre">TransformerModelConfig.seed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.TransformerModelConfig.state_embedding_type"><code class="docutils literal notranslate"><span class="pre">TransformerModelConfig.state_embedding_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.html#src.config.TransformerModelConfig.time_embedding_type"><code class="docutils literal notranslate"><span class="pre">TransformerModelConfig.time_embedding_type</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="src.html#src.config.parse_metadata_to_environment_config"><code class="docutils literal notranslate"><span class="pre">parse_metadata_to_environment_config()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="src.html#module-src.dummy_agent">src.dummy_agent module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="src.html#src.dummy_agent.RandomAgent"><code class="docutils literal notranslate"><span class="pre">RandomAgent</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="src.html#src.dummy_agent.RandomAgent.collect_trajectories"><code class="docutils literal notranslate"><span class="pre">RandomAgent.collect_trajectories()</span></code></a></li>
@@ -264,7 +342,7 @@
 <li class="toctree-l3"><a class="reference internal" href="src.html#src.dummy_agent.RandomAgentArgs"><code class="docutils literal notranslate"><span class="pre">RandomAgentArgs</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="src.html#src-run-calibration-module">src.run_calibration module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="src.html#module-src.run_calibration">src.run_calibration module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="src.html#module-src.run_decision_transformer">src.run_decision_transformer module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="src.html#module-src.run_ppo">src.run_ppo module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="src.html#module-src.utils">src.utils module</a><ul>
@@ -286,6 +364,48 @@
 <li class="toctree-l2"><a class="reference internal" href="src.html#module-src">Module contents</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">tests package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="tests.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tests.acceptance.html">tests.acceptance package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tests.acceptance.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.acceptance.html#module-tests.acceptance.test_calibration">tests.acceptance.test_calibration module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.acceptance.html#module-tests.acceptance.test_config">tests.acceptance.test_config module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.acceptance.html#module-tests.acceptance.test_decision_transformer">tests.acceptance.test_decision_transformer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.acceptance.html#module-tests.acceptance.test_dt_train">tests.acceptance.test_dt_train module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.acceptance.html#module-tests.acceptance.test_environment_registration">tests.acceptance.test_environment_registration module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.acceptance.html#module-tests.acceptance.test_multienvironments">tests.acceptance.test_multienvironments module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.acceptance.html#module-tests.acceptance.test_offline_dataset">tests.acceptance.test_offline_dataset module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.acceptance.html#module-tests.acceptance.test_ppo">tests.acceptance.test_ppo module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.acceptance.html#module-tests.acceptance">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="tests.end_end.html">tests.end_end package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tests.end_end.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.end_end.html#module-tests.end_end.test_decision_transformer">tests.end_end.test_decision_transformer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.end_end.html#module-tests.end_end.test_ppo">tests.end_end.test_ppo module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.end_end.html#module-tests.end_end.test_ppo_dt_integration">tests.end_end.test_ppo_dt_integration module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.end_end.html#module-tests.end_end">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="tests.unit.html">tests.unit package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tests.unit.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.unit.html#module-tests.unit.test_config">tests.unit.test_config module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.unit.html#module-tests.unit.test_constants">tests.unit.test_constants module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.unit.html#module-tests.unit.test_environments">tests.unit.test_environments module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.unit.html#module-tests.unit.test_ppo_agent">tests.unit.test_ppo_agent module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.unit.html#module-tests.unit.test_ppo_memory">tests.unit.test_ppo_memory module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.unit.html#module-tests.unit.test_ppo_utils">tests.unit.test_ppo_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.unit.html#module-tests.unit.test_streamlit_environment">tests.unit.test_streamlit_environment module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.unit.html#module-tests.unit.test_trajectory_model">tests.unit.test_trajectory_model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.unit.html#module-tests.unit.test_utils">tests.unit.test_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="tests.unit.html#module-tests.unit">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tests.html#module-tests">Module contents</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </section>
@@ -295,26 +415,8 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="src.html">
-              <div class="page-info">
-                <div class="context">
-                  <span>Next</span>
-                </div>
-                <div class="title">src package</div>
-              </div>
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-            </a>
-          <a class="prev-page" href="content/installation.html">
-              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
-              <div class="page-info">
-                <div class="context">
-                  <span>Previous</span>
-                </div>
-                
-                <div class="title">Installation</div>
-                
-              </div>
-            </a>
+          
+          
         </div>
         <div class="bottom-of-page">
           <div class="left-details">

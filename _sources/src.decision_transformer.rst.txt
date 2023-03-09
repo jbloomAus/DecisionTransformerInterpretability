@@ -28,10 +28,10 @@ src.decision\_transformer.offline\_dataset module
    :undoc-members:
    :show-inheritance:
 
-src.decision\_transformer.offline\_dataset\_new module
-------------------------------------------------------
+src.decision\_transformer.runner module
+---------------------------------------
 
-.. automodule:: src.decision_transformer.offline_dataset_new
+.. automodule:: src.decision_transformer.runner
    :members:
    :undoc-members:
    :show-inheritance:

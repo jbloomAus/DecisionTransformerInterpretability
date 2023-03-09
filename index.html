@@ -165,15 +165,9 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Code</span></p>
 <ul>
-<li class="toctree-l1 has-children"><a class="reference internal" href="modules.html">src</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l2 has-children"><a class="reference internal" href="src.html">src package</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="src.decision_transformer.html">src.decision_transformer package</a></li>
-<li class="toctree-l3"><a class="reference internal" href="src.environments.html">src.environments package</a></li>
-<li class="toctree-l3"><a class="reference internal" href="src.ppo.html">src.ppo package</a></li>
-</ul>
-</li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="src.decision_transformer.html">src.decision_transformer package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="src.ppo.html">src.ppo package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="src.environments.html">src.environments package</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">References</span></p>
 <ul>
@@ -214,23 +208,187 @@
         <article role="main">
           <section id="decision-transformer-interpretability">
 <h1>Decision Transformer Interpretability<a class="headerlink" href="#decision-transformer-interpretability" title="Permalink to this heading">#</a></h1>
-<p><strong>This documentation is in progress, we haven’t written most of the doc strings.</strong></p>
-<p>In this project, we intend to apply a mathematical framework for transformer circuits to study transformer models trained on reinforcement tasks to create a simpler context than large language models for understanding high-level concepts, such as goal-directedness, in transformer architecture.</p>
-<p>To begin, we hope to train a small transformer model (maximum of two layers, implemented via the Transformer Lens interpretability library) to solve MiniGrid RL tasks. Once we achieve good performance, we will attempt to find mechanistic explanations for the agent’s behaviour, such as how it decides whether to move toward the door or the key.</p>
-<p>Interpretability of such circuits may be a valuable step towards understanding high-level concepts such as deception or goal-directedness in transformer circuits.</p>
-<p>Future work may include attempting to manually edit decision transformers to modify goals and behavior.</p>
+<p><a class="reference external" href="https://github.com/jbloomAus/DecisionTransformerInterpretability/actions/workflows/build.yml"><img alt="build" src="https://github.com/jbloomAus/DecisionTransformerInterpretability/actions/workflows/build.yml/badge.svg" /></a></p>
+</section>
+<section id="docs-here">
+<h1><a class="reference external" href="https://jbloomaus-decisiontransformerinterpretability-app-4edcnc.streamlit.app/">Docs here</a><a class="headerlink" href="#docs-here" title="Permalink to this heading">#</a></h1>
+<p>This project is designed to facilitate mechanistic interpretability of decision transformers as well as RL agents using transformer architectures.</p>
+<p>This is achieved via:</p>
+<ul class="simple">
+<li><p>Training scripts for online RL agents using the PPO algorithm. This training script can be used to generate trajectories for training a decision transformer.</p></li>
+<li><p>A decision transformer implementation and training script. This implementation is based on the <a class="reference external" href="https://arxiv.org/abs/1706.03762">transformer architecture</a> and the <a class="reference external" href="https://arxiv.org/abs/2106.01345">decision transformer architecture</a>.</p></li>
+<li><p>A streamlit app. This app enables researchers to play minigrid games whilst observing the decision transformer’s predictions/activations.</p></li>
+</ul>
+<p>Future work will include:</p>
+<ul class="simple">
+<li><p>creating an interpretability portfolio, expanding various exploratory techniques already present in the streamlit app.</p></li>
+<li><p>solving tasks which require memory or language instruction. Many MiniGrid tasks require agents have memory and currently our PPO agent only responds to the last timestep.</p></li>
+<li><p>validating hypotheses about model circuits using <a class="reference external" href="https://www.alignmentforum.org/posts/JvZhhzycHu2Yd57RN/causal-scrubbing-a-method-for-rigorously-testing">casual scrubbing</a>.</p></li>
+</ul>
 <section id="write-up">
 <h2>Write Up<a class="headerlink" href="#write-up" title="Permalink to this heading">#</a></h2>
 <p>You can find an initial technical report for this project <a class="reference external" href="https://www.lesswrong.com/posts/bBuBDJBYHt39Q5zZy/decision-transformer-interpretability">here</a>.</p>
-<div class="toctree-wrapper compound">
-</div>
-<div class="toctree-wrapper compound">
-</div>
-<div class="toctree-wrapper compound">
-</div>
-<div class="toctree-wrapper compound">
+</section>
+<section id="package-overview">
+<h2>Package Overview<a class="headerlink" href="#package-overview" title="Permalink to this heading">#</a></h2>
+<p>The package contains several important components:</p>
+<ul class="simple">
+<li><p>The environments package which provides utilities for generating environments (mainly focussed on MiniGrid).</p></li>
+<li><p>The decision_transformer package which provides utilities for training and evaluating decision transformers (via calibration curves).</p></li>
+<li><p>The ppo package which provides utilities for training and evaluating PPO agents.</p></li>
+<li><p>The streamlit app which provides a user interface for playing games and observing the decision transformer’s predictions/activations.</p></li>
+<li><p>The models package which provides the a common trajectory-transformer class so as to keep architectures homogeneous across the project.</p></li>
+</ul>
+<p>Other notable files/folders:</p>
+<ul class="simple">
+<li><p>The scripts folder contains bash scripts which show how to use various interfaces in the project.</p></li>
+<li><p>The test folder which contains extensive tests for the projcect.</p></li>
+</ul>
+</section>
+<section id="streamlit-app">
+<h2>Streamlit App<a class="headerlink" href="#streamlit-app" title="Permalink to this heading">#</a></h2>
+<p>I highly recommend playing with the streamlit app if you are interested in this project. It relies heavily on an understanding of the <a class="reference external" href="https://transformer-circuits.pub/2021/framework/index.html">Mathematical Framework for Transformer Circuits</a>.</p>
+</section>
+<section id="running-the-scripts">
+<h2>Running the scripts<a class="headerlink" href="#running-the-scripts" title="Permalink to this heading">#</a></h2>
+<p>Example bash scripts are provided in the scripts folder. They make use of argparse interfaces in the package.</p>
+<section id="training-a-ppo-agent">
+<h3>Training a PPO agent<a class="headerlink" href="#training-a-ppo-agent" title="Permalink to this heading">#</a></h3>
+<p>If you set ‘track’ to true, a weights and biases dashboard will be generated. A trajectories pickle file will be generated in the trajectories folder. This file can be used to train a decision tranformer.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>src.run_ppo<span class="w"> </span>--exp_name<span class="w"> </span><span class="s2">&quot;Test&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--seed<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--cuda<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--track<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--wandb_project_name<span class="w"> </span><span class="s2">&quot;PPO-MiniGrid&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--env_id<span class="w"> </span><span class="s2">&quot;MiniGrid-DoorKey-8x8-v0&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--view_size<span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--total_timesteps<span class="w"> </span><span class="m">350000</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--learning_rate<span class="w"> </span><span class="m">0</span>.00025<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--num_envs<span class="w"> </span><span class="m">8</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--num_steps<span class="w"> </span><span class="m">128</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--num_minibatches<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--update_epochs<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--clip_coef<span class="w"> </span><span class="m">0</span>.2<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--ent_coef<span class="w"> </span><span class="m">0</span>.01<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--vf_coef<span class="w"> </span><span class="m">0</span>.5<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--max_steps<span class="w"> </span><span class="m">1000</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--one_hot_obs
+</pre></div>
 </div>
 </section>
+<section id="training-a-decision-transformer">
+<h3>Training a decision transformer<a class="headerlink" href="#training-a-decision-transformer" title="Permalink to this heading">#</a></h3>
+<p>Targeting the trajectories file and setting the model architecture details and hyperparameters, you can run the decision transformer training script.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>src.run_decision_transformer<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--exp_name<span class="w"> </span>MiniGrid-Dynamic-Obstacles-8x8-v0-Refactor<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--trajectory_path<span class="w"> </span>trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--d_model<span class="w"> </span><span class="m">128</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--n_heads<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--d_mlp<span class="w"> </span><span class="m">256</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--n_layers<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--learning_rate<span class="w"> </span><span class="m">0</span>.0001<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--batch_size<span class="w"> </span><span class="m">128</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--train_epochs<span class="w"> </span><span class="m">5000</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--test_epochs<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--n_ctx<span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--pct_traj<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--weight_decay<span class="w"> </span><span class="m">0</span>.001<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--seed<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--wandb_project_name<span class="w"> </span>DecisionTransformerInterpretability-Dev<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--test_frequency<span class="w"> </span><span class="m">1000</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--eval_frequency<span class="w"> </span><span class="m">1000</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--eval_episodes<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--initial_rtg<span class="w"> </span>-1<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--initial_rtg<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--initial_rtg<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--prob_go_from_end<span class="w"> </span><span class="m">0</span>.1<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--eval_max_time_steps<span class="w"> </span><span class="m">1000</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--track<span class="w"> </span>True
+</pre></div>
+</div>
+</section>
+<section id="running-the-streamlit-app">
+<h3>Running the streamlit app<a class="headerlink" href="#running-the-streamlit-app" title="Permalink to this heading">#</a></h3>
+<p>To run the streamlit app:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>streamlit<span class="w"> </span>run<span class="w"> </span>app.py
+</pre></div>
+</div>
+</section>
+</section>
+<section id="setting-up-the-environment">
+<h2>Setting up the environment<a class="headerlink" href="#setting-up-the-environment" title="Permalink to this heading">#</a></h2>
+<p>I haven’t been too careful about this yet. Using python 3.9.15 with the requirements.txt file. We’re using the V2 branch of transformer lens and Minigrid 2.1.0.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">env</span> <span class="n">create</span> <span class="o">--</span><span class="n">name</span> <span class="n">decison_transformer_interpretability</span> <span class="n">python</span><span class="o">=</span><span class="mf">3.9.15</span>
+<span class="n">conda</span> <span class="n">activate</span> <span class="n">decison_transformer_interpretability</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<p>The docker file should work and we can make use of it more when the project is further ahead/if we are alternativing developers frequently and have any differential behavior.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./scripts/build_docker.sh
+./scripts/run_docker.sh
+</pre></div>
+</div>
+<p>Then you can ssh into the docker and a good ide will bring credentials etc.</p>
+</section>
+<section id="development">
+<h2>Development<a class="headerlink" href="#development" title="Permalink to this heading">#</a></h2>
+<section id="tests">
+<h3>Tests:<a class="headerlink" href="#tests" title="Permalink to this heading">#</a></h3>
+<p>Ensure that the run_tests.sh script is executable:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>chmod<span class="w"> </span>a+x<span class="w"> </span>./scripts/run_tests.sh
+</pre></div>
+</div>
+<p>Run the tests. Note: the end to end tests are excluded from the run_test.sh script since they take a while to run. They make wandb dashboards are are useful for debugging but they are not necessary for development.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./scripts/run_tests.sh
+</pre></div>
+</div>
+<p>You should see something like this after the tests run. This is the coverage report. Ideally this is 100% but we’re not there yet. Furthermore, it will be 100% long before we have enough tests. But if it’s 100% and we have performant code with agents training and stuff otherwise working, that’s pretty good.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>----------<span class="w"> </span>coverage:<span class="w"> </span>platform<span class="w"> </span>darwin,<span class="w"> </span>python<span class="w"> </span><span class="m">3</span>.9.15-final-0<span class="w"> </span>----------
+Name<span class="w">                                </span>Stmts<span class="w">   </span>Miss<span class="w">  </span>Cover<span class="w">   </span>Missing
+-----------------------------------------------------------------
+src/__init__.py<span class="w">                         </span><span class="m">0</span><span class="w">      </span><span class="m">0</span><span class="w">   </span><span class="m">100</span>%
+src/decision_transformer.py<span class="w">           </span><span class="m">132</span><span class="w">      </span><span class="m">8</span><span class="w">    </span><span class="m">94</span>%<span class="w">   </span><span class="m">39</span>,<span class="w"> </span><span class="m">145</span>,<span class="w"> </span><span class="m">151</span>,<span class="w"> </span><span class="m">156</span>-157,<span class="w"> </span><span class="m">221</span>,<span class="w"> </span><span class="m">246</span>,<span class="w"> </span><span class="m">249</span>
+src/ppo.py<span class="w">                             </span><span class="m">20</span><span class="w">     </span><span class="m">20</span><span class="w">     </span><span class="m">0</span>%<span class="w">   </span><span class="m">2</span>-28
+src/ppo/__init__.py<span class="w">                     </span><span class="m">0</span><span class="w">      </span><span class="m">0</span><span class="w">   </span><span class="m">100</span>%
+src/ppo/agent.py<span class="w">                      </span><span class="m">109</span><span class="w">     </span><span class="m">10</span><span class="w">    </span><span class="m">91</span>%<span class="w">   </span><span class="m">41</span>,<span class="w"> </span><span class="m">45</span>,<span class="w"> </span><span class="m">112</span>,<span class="w"> </span><span class="m">151</span>-157
+src/ppo/compute_adv_vectorized.py<span class="w">      </span><span class="m">30</span><span class="w">     </span><span class="m">30</span><span class="w">     </span><span class="m">0</span>%<span class="w">   </span><span class="m">1</span>-65
+src/ppo/memory.py<span class="w">                      </span><span class="m">88</span><span class="w">     </span><span class="m">11</span><span class="w">    </span><span class="m">88</span>%<span class="w">   </span><span class="m">61</span>-64,<span class="w"> </span><span class="m">119</span>-123,<span class="w"> </span><span class="m">147</span>-148
+src/ppo/my_probe_envs.py<span class="w">               </span><span class="m">99</span><span class="w">      </span><span class="m">9</span><span class="w">    </span><span class="m">91</span>%<span class="w">   </span><span class="m">38</span>,<span class="w"> </span><span class="m">42</span>-44,<span class="w"> </span><span class="m">74</span>,<span class="w"> </span><span class="m">99</span>,<span class="w"> </span><span class="m">108</span>,<span class="w"> </span><span class="m">137</span>,<span class="w"> </span><span class="m">168</span>
+src/ppo/train.py<span class="w">                       </span><span class="m">69</span><span class="w">      </span><span class="m">6</span><span class="w">    </span><span class="m">91</span>%<span class="w">   </span><span class="m">58</span>,<span class="w"> </span><span class="m">74</span>,<span class="w"> </span><span class="m">94</span>,<span class="w"> </span><span class="m">98</span>,<span class="w"> </span><span class="m">109</span>,<span class="w"> </span><span class="m">113</span>
+src/ppo/utils.py<span class="w">                      </span><span class="m">146</span><span class="w">     </span><span class="m">54</span><span class="w">    </span><span class="m">63</span>%<span class="w">   </span><span class="m">41</span>-42,<span class="w"> </span><span class="m">61</span>-63,<span class="w"> </span><span class="m">69</span>,<span class="w"> </span><span class="m">75</span>,<span class="w"> </span><span class="m">92</span>-96,<span class="w"> </span><span class="m">110</span>-115,<span class="w"> </span><span class="m">177</span>-206,<span class="w"> </span><span class="m">217</span>-235
+src/utils.py<span class="w">                           </span><span class="m">40</span><span class="w">     </span><span class="m">17</span><span class="w">    </span><span class="m">58</span>%<span class="w">   </span><span class="m">33</span>-38,<span class="w"> </span><span class="m">42</span>-65,<span class="w"> </span><span class="m">73</span>,<span class="w"> </span><span class="m">76</span>-79
+src/visualization.py<span class="w">                   </span><span class="m">25</span><span class="w">     </span><span class="m">25</span><span class="w">     </span><span class="m">0</span>%<span class="w">   </span><span class="m">1</span>-34
+-----------------------------------------------------------------
+TOTAL<span class="w">                                 </span><span class="m">758</span><span class="w">    </span><span class="m">190</span><span class="w">    </span><span class="m">75</span>%
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="next-steps">
+<h1>Next Steps<a class="headerlink" href="#next-steps" title="Permalink to this heading">#</a></h1>
+<ul class="simple">
+<li><p>Getting PPO to work with a transformer architecture.</p></li>
+<li><p>Analyse this model/the decision transformer/a behavioural clone and publish the results.</p></li>
+<li><p>Get a version of causal-scrubbing working</p></li>
+<li><p>Study BabyAI (adapt all models to take an instruction token that is prepended to the context window)</p></li>
+</ul>
+</section>
+<section id="relevant-projects">
+<h1>Relevant Projects:<a class="headerlink" href="#relevant-projects" title="Permalink to this heading">#</a></h1>
+<ul class="simple">
+<li><p><a class="reference external" href="https://arxiv.org/pdf/2106.01345.pdf">decision transformers</a></p></li>
+<li><p><a class="reference external" href="https://github.com/Farama-Foundation/Minigrid">gym-minigrid</a></p></li>
+<li><p><a class="reference external" href="https://github.com/neelnanda-io/TransformerLens">transformerlens</a></p></li>
+</ul>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+</div>
 </section>
 
         </article>
