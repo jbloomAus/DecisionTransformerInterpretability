@@ -233,14 +233,16 @@
           <li><a href="src.ppo.html#src.ppo.my_probe_envs.Probe5.action_space">(src.ppo.my_probe_envs.Probe5 attribute)</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.ppo.html#src.ppo.memory.Minibatch.actions">actions (src.ppo.memory.Minibatch attribute)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.ppo.html#src.ppo.agent.FCAgent.actor">actor (src.ppo.agent.FCAgent attribute)</a>
 
         <ul>
           <li><a href="src.ppo.html#src.ppo.agent.PPOAgent.actor">(src.ppo.agent.PPOAgent attribute)</a>
+</li>
+          <li><a href="src.ppo.html#src.ppo.agent.TrajPPOAgent.actor">(src.ppo.agent.TrajPPOAgent attribute)</a>
 </li>
         </ul></li>
         <li><a href="src.ppo.html#src.ppo.memory.Memory.add">add() (src.ppo.memory.Memory method)</a>
@@ -287,10 +289,10 @@
 </li>
         <li><a href="src.ppo.html#src.ppo.utils.PPOArgs.clip_coef">clip_coef (src.ppo.utils.PPOArgs attribute)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.environments.html#src.environments.multienvironments.MultiEnvSampler.close">close() (src.environments.multienvironments.MultiEnvSampler method)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.html#src.dummy_agent.RandomAgent.collect_trajectories">collect_trajectories() (src.dummy_agent.RandomAgent method)</a>
 </li>
         <li><a href="src.ppo.html#src.ppo.memory.Memory.compute_advantages">compute_advantages() (src.ppo.memory.Memory method)</a>
@@ -301,6 +303,8 @@
 
         <ul>
           <li><a href="src.ppo.html#src.ppo.agent.PPOAgent.critic">(src.ppo.agent.PPOAgent attribute)</a>
+</li>
+          <li><a href="src.ppo.html#src.ppo.agent.TrajPPOAgent.critic">(src.ppo.agent.TrajPPOAgent attribute)</a>
 </li>
         </ul></li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.cuda">cuda (src.decision_transformer.utils.DTArgs attribute)</a>
@@ -447,6 +451,8 @@
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.get_time_embeddings">get_time_embeddings() (src.decision_transformer.model.DecisionTransformer method)</a>
 </li>
+        <li><a href="src.ppo.html#src.ppo.memory.Memory.get_timestep_traj">get_timestep_traj() (src.ppo.memory.Memory method)</a>
+</li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.get_token_embeddings">get_token_embeddings() (src.decision_transformer.model.DecisionTransformer method)</a>
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryDataset.get_traj">get_traj() (src.decision_transformer.offline_dataset.TrajectoryDataset method)</a>
@@ -484,6 +490,8 @@
         <ul>
           <li><a href="src.ppo.html#src.ppo.agent.PPOAgent.layer_init">(src.ppo.agent.PPOAgent method)</a>
 </li>
+          <li><a href="src.ppo.html#src.ppo.agent.TrajPPOAgent.layer_init">(src.ppo.agent.TrajPPOAgent method)</a>
+</li>
         </ul></li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.layer_norm">layer_norm (src.decision_transformer.utils.DTArgs attribute)</a>
 </li>
@@ -492,15 +500,17 @@
         <ul>
           <li><a href="src.ppo.html#src.ppo.agent.PPOAgent.learn">(src.ppo.agent.PPOAgent method)</a>
 </li>
+          <li><a href="src.ppo.html#src.ppo.agent.TrajPPOAgent.learn">(src.ppo.agent.TrajPPOAgent method)</a>
+</li>
         </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.learning_rate">learning_rate (src.decision_transformer.utils.DTArgs attribute)</a>
 
         <ul>
           <li><a href="src.ppo.html#src.ppo.utils.PPOArgs.learning_rate">(src.ppo.utils.PPOArgs attribute)</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.linear_time_embedding">linear_time_embedding (src.decision_transformer.utils.DTArgs attribute)</a>
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.load_decision_transformer">load_decision_transformer() (in module src.decision_transformer.utils)</a>
@@ -754,6 +764,8 @@
           <li><a href="src.ppo.html#src.ppo.agent.FCAgent.rollout">(src.ppo.agent.FCAgent method)</a>
 </li>
           <li><a href="src.ppo.html#src.ppo.agent.PPOAgent.rollout">(src.ppo.agent.PPOAgent method)</a>
+</li>
+          <li><a href="src.ppo.html#src.ppo.agent.TrajPPOAgent.rollout">(src.ppo.agent.TrajPPOAgent method)</a>
 </li>
         </ul></li>
     </ul></td>
@@ -1016,10 +1028,10 @@
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.train_epochs">train_epochs (src.decision_transformer.utils.DTArgs attribute)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.ppo.html#src.ppo.train.train_ppo">train_ppo() (in module src.ppo.train)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.decision_transformer.html#src.decision_transformer.trainer.Trainer.train_step">train_step() (src.decision_transformer.trainer.Trainer method)</a>
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.trainer.Trainer">Trainer (class in src.decision_transformer.trainer)</a>
@@ -1032,6 +1044,8 @@
           <li><a href="src.decision_transformer.html#src.decision_transformer.model.StateEncoder.training">(src.decision_transformer.model.StateEncoder attribute)</a>
 </li>
           <li><a href="src.html#src.dummy_agent.RandomAgent.training">(src.dummy_agent.RandomAgent attribute)</a>
+</li>
+          <li><a href="src.ppo.html#src.ppo.agent.TrajPPOAgent.training">(src.ppo.agent.TrajPPOAgent attribute)</a>
 </li>
         </ul></li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.trajectory_path">trajectory_path (src.decision_transformer.utils.DTArgs attribute)</a>
@@ -1047,6 +1061,8 @@
         <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryVisualizer">TrajectoryVisualizer (class in src.decision_transformer.offline_dataset)</a>
 </li>
         <li><a href="src.html#src.utils.TrajectoryWriter">TrajectoryWriter (class in src.utils)</a>
+</li>
+        <li><a href="src.ppo.html#src.ppo.agent.TrajPPOAgent">TrajPPOAgent (class in src.ppo.agent)</a>
 </li>
     </ul></td>
   </tr></table>

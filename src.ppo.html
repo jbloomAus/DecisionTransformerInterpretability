@@ -256,15 +256,17 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ppo.agent.FCAgent.learn">
-<span class="sig-name descname"><span class="pre">learn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">memory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.ppo.memory.Memory" title="src.ppo.memory.Memory"><span class="pre">Memory</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.ppo.utils.PPOArgs" title="src.ppo.utils.PPOArgs"><span class="pre">PPOArgs</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.ppo.agent.PPOScheduler" title="src.ppo.agent.PPOScheduler"><span class="pre">PPOScheduler</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#src.ppo.agent.FCAgent.learn" title="Permalink to this definition">#</a></dt>
-<dd><p>Performs the learning phase of the PPO algorithm, updating the agent’s parameters using the collected experience.</p>
+<span class="sig-name descname"><span class="pre">learn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">memory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.ppo.memory.Memory" title="src.ppo.memory.Memory"><span class="pre">Memory</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">OnlineTrainConfig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.ppo.agent.PPOScheduler" title="src.ppo.agent.PPOScheduler"><span class="pre">PPOScheduler</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">track</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#src.ppo.agent.FCAgent.learn" title="Permalink to this definition">#</a></dt>
+<dd><p>Performs the learning phase of the PPO algorithm, updating the agent’s parameters
+using the collected experience.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>memory</strong> (<a class="reference internal" href="#src.ppo.memory.Memory" title="src.ppo.memory.Memory"><em>Memory</em></a>) – The replay buffer containing the collected experiences.</p></li>
-<li><p><strong>args</strong> (<a class="reference internal" href="#src.ppo.utils.PPOArgs" title="src.ppo.utils.PPOArgs"><em>PPOArgs</em></a>) – The arguments to configure the algorithm.</p></li>
+<li><p><strong>args</strong> (<em>OnlineTrainConfig</em>) – The configuration for the training.</p></li>
 <li><p><strong>optimizer</strong> (<em>optim.Optimizer</em>) – The optimizer to update the agent’s parameters.</p></li>
 <li><p><strong>scheduler</strong> (<a class="reference internal" href="#src.ppo.agent.PPOScheduler" title="src.ppo.agent.PPOScheduler"><em>PPOScheduler</em></a>) – The scheduler attached to the optimizer.</p></li>
+<li><p><strong>track</strong> (<em>bool</em>) – Whether to track the training progress.</p></li>
 </ul>
 </dd>
 </dl>
@@ -290,7 +292,7 @@
 
 <dl class="py class">
 <dt class="sig sig-object py" id="src.ppo.agent.PPOAgent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.agent.</span></span><span class="sig-name descname"><span class="pre">PPOAgent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">envs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SyncVectorEnv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.agent.PPOAgent" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.agent.</span></span><span class="sig-name descname"><span class="pre">PPOAgent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">envs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SyncVectorEnv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.agent.PPOAgent" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="src.ppo.agent.PPOAgent.actor">
@@ -349,6 +351,82 @@
 <span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.agent.PPOScheduler.step" title="Permalink to this definition">#</a></dt>
 <dd><p>Implement linear learning rate decay so that after num_updates calls to step, the learning rate is end_lr.</p>
 </dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="src.ppo.agent.TrajPPOAgent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.agent.</span></span><span class="sig-name descname"><span class="pre">TrajPPOAgent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">envs:</span> <span class="pre">~gymnasium.vector.sync_vector_env.SyncVectorEnv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">environment_config:</span> <span class="pre">~src.config.EnvironmentConfig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformer_model_config:</span> <span class="pre">~src.config.TransformerModelConfig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device=&lt;class</span> <span class="pre">'torch.device'&gt;</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.agent.TrajPPOAgent" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#src.ppo.agent.PPOAgent" title="src.ppo.agent.PPOAgent"><code class="xref py py-class docutils literal notranslate"><span class="pre">PPOAgent</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.agent.TrajPPOAgent.actor">
+<span class="sig-name descname"><span class="pre">actor</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Module</span></em><a class="headerlink" href="#src.ppo.agent.TrajPPOAgent.actor" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.agent.TrajPPOAgent.critic">
+<span class="sig-name descname"><span class="pre">critic</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Module</span></em><a class="headerlink" href="#src.ppo.agent.TrajPPOAgent.critic" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.agent.TrajPPOAgent.layer_init">
+<span class="sig-name descname"><span class="pre">layer_init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Linear</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.4142135623730951</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias_const</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Linear</span></span></span><a class="headerlink" href="#src.ppo.agent.TrajPPOAgent.layer_init" title="Permalink to this definition">#</a></dt>
+<dd><p>Initializes the weights of a linear layer with orthogonal initialization and the biases with a constant value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>layer</strong> (<em>nn.Linear</em>) – The linear layer to be initialized.</p></li>
+<li><p><strong>std</strong> (<em>float</em><em>, </em><em>optional</em>) – The standard deviation of the distribution used to initialize the weights. Defaults to np.sqrt(2).</p></li>
+<li><p><strong>bias_const</strong> (<em>float</em><em>, </em><em>optional</em>) – The constant value to initialize the biases with. Defaults to 0.0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The initialized linear layer.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>nn.Linear</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.agent.TrajPPOAgent.learn">
+<span class="sig-name descname"><span class="pre">learn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">memory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.ppo.memory.Memory" title="src.ppo.memory.Memory"><span class="pre">Memory</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">OnlineTrainConfig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.ppo.agent.PPOScheduler" title="src.ppo.agent.PPOScheduler"><span class="pre">PPOScheduler</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">track</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#src.ppo.agent.TrajPPOAgent.learn" title="Permalink to this definition">#</a></dt>
+<dd><p>Performs the learning phase of the PPO algorithm, updating the agent’s parameters
+using the collected experience.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory</strong> (<a class="reference internal" href="#src.ppo.memory.Memory" title="src.ppo.memory.Memory"><em>Memory</em></a>) – The replay buffer containing the collected experiences.</p></li>
+<li><p><strong>args</strong> (<em>OnlineTrainConfig</em>) – The configuration for the training.</p></li>
+<li><p><strong>optimizer</strong> (<em>optim.Optimizer</em>) – The optimizer to update the agent’s parameters.</p></li>
+<li><p><strong>scheduler</strong> (<a class="reference internal" href="#src.ppo.agent.PPOScheduler" title="src.ppo.agent.PPOScheduler"><em>PPOScheduler</em></a>) – The scheduler attached to the optimizer.</p></li>
+<li><p><strong>track</strong> (<em>bool</em>) – Whether to track the training progress.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.agent.TrajPPOAgent.rollout">
+<span class="sig-name descname"><span class="pre">rollout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">memory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.ppo.memory.Memory" title="src.ppo.memory.Memory"><span class="pre">Memory</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">envs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SyncVectorEnv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectory_writer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#src.ppo.agent.TrajPPOAgent.rollout" title="Permalink to this definition">#</a></dt>
+<dd><p>Performs the rollout phase of the PPO algorithm, collecting experience by interacting with the environment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>memory</strong> (<a class="reference internal" href="#src.ppo.memory.Memory" title="src.ppo.memory.Memory"><em>Memory</em></a>) – The replay buffer to store the experiences.</p></li>
+<li><p><strong>num_steps</strong> (<em>int</em>) – The number of steps to collect.</p></li>
+<li><p><strong>envs</strong> (<em>gym.vector.SyncVectorEnv</em>) – The vectorized environment to interact with.</p></li>
+<li><p><strong>trajectory_writer</strong> (<a class="reference internal" href="src.html#src.utils.TrajectoryWriter" title="src.utils.TrajectoryWriter"><em>TrajectoryWriter</em></a><em>, </em><em>optional</em>) – The writer to log the collected trajectories. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="src.ppo.agent.TrajPPOAgent.training">
+<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#src.ppo.agent.TrajPPOAgent.training" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -471,7 +549,7 @@ np.ndarray: A 2D array where the i-th row is the input array from index 0 to i.<
 <span id="src-ppo-memory-module"></span><h2>src.ppo.memory module<a class="headerlink" href="#module-src.ppo.memory" title="Permalink to this heading">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="src.ppo.memory.Memory">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.memory.</span></span><span class="sig-name descname"><span class="pre">Memory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">envs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SyncVectorEnv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.ppo.utils.PPOArgs" title="src.ppo.utils.PPOArgs"><span class="pre">PPOArgs</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.memory.Memory" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.memory.</span></span><span class="sig-name descname"><span class="pre">Memory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">envs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SyncVectorEnv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">OnlineTrainConfig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.memory.Memory" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A memory buffer for storing experiences during the rollout phase.</p>
 <dl class="py method">
@@ -495,7 +573,7 @@ np.ndarray: A 2D array where the i-th row is the input array from index 0 to i.<
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ppo.memory.Memory.get_act_traj">
-<span class="sig-name descname"><span class="pre">get_act_traj</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad_to_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.memory.Memory.get_act_traj" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">get_act_traj</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad_to_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#src.ppo.memory.Memory.get_act_traj" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns a tensor of shape (steps, envs, obs_shape) containing the observations from the last steps.</p>
 <p>Args:
 - steps (int): number of steps to return.
@@ -524,13 +602,12 @@ is an array of indexes into the batch.</p>
 - batch_size (int): total size of the batch.
 - minibatch_size (int): size of each minibatch.</p>
 <p>Returns:
-- List[np.ndarray]: a list of length (batch_size // minibatch_size)
-where each element is an array of indexes into the batch. Each index should appear exactly once.</p>
+- List[MiniBatch]: a list of minibatches.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="src.ppo.memory.Memory.get_obs_traj">
-<span class="sig-name descname"><span class="pre">get_obs_traj</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad_to_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.memory.Memory.get_obs_traj" title="Permalink to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">get_obs_traj</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad_to_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#src.ppo.memory.Memory.get_obs_traj" title="Permalink to this definition">#</a></dt>
 <dd><p>Returns a tensor of shape (steps, envs, obs_shape) containing the observations from the last steps.</p>
 <p>Args:
 - steps (int): number of steps to return.
@@ -545,6 +622,18 @@ the observations from the last steps.</p>
 <span class="sig-name descname"><span class="pre">get_printable_output</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#src.ppo.memory.Memory.get_printable_output" title="Permalink to this definition">#</a></dt>
 <dd><p>Sets a new progress bar description, if any episodes have terminated.
 If not, then the bar’s description won’t change.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.ppo.memory.Memory.get_timestep_traj">
+<span class="sig-name descname"><span class="pre">get_timestep_traj</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad_to_length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#src.ppo.memory.Memory.get_timestep_traj" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns a tensor of shape (steps, envs, 1) containing the time steps from the last steps.</p>
+<p>Args:
+- steps (int): number of steps to return.
+- pad_to_length (int): if the number of steps is less than this, then the tensor will be padded with zeros.</p>
+<p>Returns:
+- a tensor of shape (steps, envs, 1) containing
+the time steps from the last steps.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1193,7 +1282,7 @@ uploads them to the current WandB run.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="src.ppo.train.train_ppo">
-<span class="sig-prename descclassname"><span class="pre">src.ppo.train.</span></span><span class="sig-name descname"><span class="pre">train_ppo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">envs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectory_writer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">probe_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.train.train_ppo" title="Permalink to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">src.ppo.train.</span></span><span class="sig-name descname"><span class="pre">train_ppo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">RunConfig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">online_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">OnlineTrainConfig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">environment_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">EnvironmentConfig</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformer_model_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">TransformerModelConfig</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">envs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SyncVectorEnv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectory_writer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">probe_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.train.train_ppo" title="Permalink to this definition">#</a></dt>
 <dd><p>Trains a PPO agent on a given environment.</p>
 <p>Args:
 - args: an instance of PPOArgs containing the hyperparameters for training
@@ -1565,6 +1654,15 @@ r1 + gamma*r2 + gamma^2 r3 + …</p>
 <li><a class="reference internal" href="#src.ppo.agent.PPOScheduler.step"><code class="docutils literal notranslate"><span class="pre">PPOScheduler.step()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#src.ppo.agent.TrajPPOAgent"><code class="docutils literal notranslate"><span class="pre">TrajPPOAgent</span></code></a><ul>
+<li><a class="reference internal" href="#src.ppo.agent.TrajPPOAgent.actor"><code class="docutils literal notranslate"><span class="pre">TrajPPOAgent.actor</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.agent.TrajPPOAgent.critic"><code class="docutils literal notranslate"><span class="pre">TrajPPOAgent.critic</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.agent.TrajPPOAgent.layer_init"><code class="docutils literal notranslate"><span class="pre">TrajPPOAgent.layer_init()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.agent.TrajPPOAgent.learn"><code class="docutils literal notranslate"><span class="pre">TrajPPOAgent.learn()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.agent.TrajPPOAgent.rollout"><code class="docutils literal notranslate"><span class="pre">TrajPPOAgent.rollout()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.agent.TrajPPOAgent.training"><code class="docutils literal notranslate"><span class="pre">TrajPPOAgent.training</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#src.ppo.agent.calc_clipped_surrogate_objective"><code class="docutils literal notranslate"><span class="pre">calc_clipped_surrogate_objective()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.agent.calc_entropy_bonus"><code class="docutils literal notranslate"><span class="pre">calc_entropy_bonus()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.agent.calc_value_function_loss"><code class="docutils literal notranslate"><span class="pre">calc_value_function_loss()</span></code></a></li>
@@ -1585,6 +1683,7 @@ r1 + gamma*r2 + gamma^2 r3 + …</p>
 <li><a class="reference internal" href="#src.ppo.memory.Memory.get_minibatches"><code class="docutils literal notranslate"><span class="pre">Memory.get_minibatches()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.memory.Memory.get_obs_traj"><code class="docutils literal notranslate"><span class="pre">Memory.get_obs_traj()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.memory.Memory.get_printable_output"><code class="docutils literal notranslate"><span class="pre">Memory.get_printable_output()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.memory.Memory.get_timestep_traj"><code class="docutils literal notranslate"><span class="pre">Memory.get_timestep_traj()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.memory.Memory.log"><code class="docutils literal notranslate"><span class="pre">Memory.log()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.memory.Memory.reset"><code class="docutils literal notranslate"><span class="pre">Memory.reset()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.memory.Memory.sample_experiences"><code class="docutils literal notranslate"><span class="pre">Memory.sample_experiences()</span></code></a></li>

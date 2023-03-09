@@ -395,6 +395,15 @@
 <li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.agent.PPOScheduler.step"><code class="docutils literal notranslate"><span class="pre">PPOScheduler.step()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.agent.TrajPPOAgent"><code class="docutils literal notranslate"><span class="pre">TrajPPOAgent</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.agent.TrajPPOAgent.actor"><code class="docutils literal notranslate"><span class="pre">TrajPPOAgent.actor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.agent.TrajPPOAgent.critic"><code class="docutils literal notranslate"><span class="pre">TrajPPOAgent.critic</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.agent.TrajPPOAgent.layer_init"><code class="docutils literal notranslate"><span class="pre">TrajPPOAgent.layer_init()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.agent.TrajPPOAgent.learn"><code class="docutils literal notranslate"><span class="pre">TrajPPOAgent.learn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.agent.TrajPPOAgent.rollout"><code class="docutils literal notranslate"><span class="pre">TrajPPOAgent.rollout()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.agent.TrajPPOAgent.training"><code class="docutils literal notranslate"><span class="pre">TrajPPOAgent.training</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.agent.calc_clipped_surrogate_objective"><code class="docutils literal notranslate"><span class="pre">calc_clipped_surrogate_objective()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.agent.calc_entropy_bonus"><code class="docutils literal notranslate"><span class="pre">calc_entropy_bonus()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="src.ppo.html#src.ppo.agent.calc_value_function_loss"><code class="docutils literal notranslate"><span class="pre">calc_value_function_loss()</span></code></a></li>
@@ -415,6 +424,7 @@
 <li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Memory.get_minibatches"><code class="docutils literal notranslate"><span class="pre">Memory.get_minibatches()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Memory.get_obs_traj"><code class="docutils literal notranslate"><span class="pre">Memory.get_obs_traj()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Memory.get_printable_output"><code class="docutils literal notranslate"><span class="pre">Memory.get_printable_output()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Memory.get_timestep_traj"><code class="docutils literal notranslate"><span class="pre">Memory.get_timestep_traj()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Memory.log"><code class="docutils literal notranslate"><span class="pre">Memory.log()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Memory.reset"><code class="docutils literal notranslate"><span class="pre">Memory.reset()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="src.ppo.html#src.ppo.memory.Memory.sample_experiences"><code class="docutils literal notranslate"><span class="pre">Memory.sample_experiences()</span></code></a></li>
@@ -609,7 +619,7 @@
 <span id="src-utils-module"></span><h2>src.utils module<a class="headerlink" href="#module-src.utils" title="Permalink to this heading">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="src.utils.TrajectoryWriter">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.utils.</span></span><span class="sig-name descname"><span class="pre">TrajectoryWriter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dataclass</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.utils.TrajectoryWriter" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.utils.</span></span><span class="sig-name descname"><span class="pre">TrajectoryWriter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">environment_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">online_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformer_model_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.utils.TrajectoryWriter" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>The trajectory writer is responsible for writing trajectories to a file.
 During each rollout phase, it will collect:</p>
