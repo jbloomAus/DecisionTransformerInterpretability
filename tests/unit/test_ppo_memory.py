@@ -135,7 +135,7 @@ def test_memory_get_obs_traj(memory):
 
     info = {}
     obs = torch.tensor([1.0, 2.0, 3.0])
-    done = torch.tensor([1.0, 2.0, 3.0])
+    done = torch.tensor([0.0, 1.0, 0.0, 1.0])
     action = torch.tensor([1.0, 2.0, 3.0])
     logprob = torch.tensor([1.0, 2.0, 3.0])
     value = torch.tensor([1.0, 2.0, 3.0])
@@ -157,7 +157,7 @@ def test_memory_get_obs_traj(memory):
             [1.0, 2.0, 3.0],
             [1.0, 2.0, 3.0],
             [1.0, 2.0, 3.0]
-        ])
+        ]).T
     )
 
 
@@ -167,7 +167,7 @@ def test_memory_get_obs_traj_padding_required(memory):
 
     info = {}
     obs = torch.tensor([1.0, 2.0, 3.0, 4.0])
-    done = torch.tensor([1.0, 2.0, 3.0, 4.0])
+    done = torch.tensor([0.0, 1.0, 0.0, 1.0])
     action = torch.tensor([1.0, 2.0, 3.0, 4.0])
     logprob = torch.tensor([1.0, 2.0, 3.0, 4.0])
     value = torch.tensor([1.0, 2.0, 3.0, 4.0])
@@ -181,7 +181,7 @@ def test_memory_get_obs_traj_padding_required(memory):
     obs_traj = memory.get_obs_traj(steps=3, pad_to_length=10)
 
     # assert shape matches
-    assert obs_traj.shape == (10, 4)
+    assert obs_traj.shape == (4, 10)
 
     torch.testing.assert_allclose(
         obs_traj,
@@ -196,7 +196,7 @@ def test_memory_get_obs_traj_padding_required(memory):
             [1.0, 2.0, 3.0, 4.0],
             [1.0, 2.0, 3.0, 4.0],
             [1.0, 2.0, 3.0, 4.0]
-        ])
+        ]).T
     )
 
 
@@ -206,7 +206,7 @@ def test_memory_get_obs_traj_truncation_required(memory):
 
     info = {}
     obs = torch.tensor([1.0, 2.0, 3.0, 4.0])
-    done = torch.tensor([1.0, 2.0, 3.0, 4.0])
+    done = torch.tensor([0.0, 1.0, 0.0, 1.0])
     action = torch.tensor([1.0, 2.0, 3.0, 4.0])
     logprob = torch.tensor([1.0, 2.0, 3.0, 4.0])
     value = torch.tensor([1.0, 2.0, 3.0, 4.0])
@@ -220,7 +220,7 @@ def test_memory_get_obs_traj_truncation_required(memory):
     obs_traj = memory.get_obs_traj(steps=14, pad_to_length=10)
 
     # assert shape matches
-    assert obs_traj.shape == (10, 4)
+    assert obs_traj.shape == (4, 10)
 
     torch.testing.assert_allclose(
         obs_traj,
@@ -235,7 +235,7 @@ def test_memory_get_obs_traj_truncation_required(memory):
             [1.0, 2.0, 3.0, 4.0],
             [1.0, 2.0, 3.0, 4.0],
             [1.0, 2.0, 3.0, 4.0]
-        ])
+        ]).T
     )
 
 
@@ -245,7 +245,7 @@ def test_memory_get_act_traj(memory):
 
     info = {}
     obs = torch.tensor([1.0, 2.0, 3.0])
-    done = torch.tensor([1.0, 2.0, 3.0])
+    done = torch.tensor([0.0, 1.0, 0.0, 1.0])
     action = torch.tensor([1.0, 2.0, 3.0])
     logprob = torch.tensor([1.0, 2.0, 3.0])
     value = torch.tensor([1.0, 2.0, 3.0])
@@ -267,7 +267,7 @@ def test_memory_get_act_traj(memory):
             [1.0, 2.0, 3.0],
             [1.0, 2.0, 3.0],
             [1.0, 2.0, 3.0]
-        ])
+        ]).T
     )
 
 
@@ -277,7 +277,7 @@ def test_memory_get_act_traj_padding_required(memory):
 
     info = {}
     obs = torch.tensor([1.0, 2.0, 3.0, 4.0])
-    done = torch.tensor([1.0, 2.0, 3.0, 4.0])
+    done = torch.tensor([0.0, 1.0, 0.0, 1.0])
     action = torch.tensor([1.0, 2.0, 3.0, 4.0])
     logprob = torch.tensor([1.0, 2.0, 3.0, 4.0])
     value = torch.tensor([1.0, 2.0, 3.0, 4.0])
@@ -291,7 +291,7 @@ def test_memory_get_act_traj_padding_required(memory):
     obs_traj = memory.get_act_traj(steps=3, pad_to_length=10)
 
     # assert shape matches
-    assert obs_traj.shape == (10, 4)
+    assert obs_traj.shape == (4, 10)
 
     torch.testing.assert_allclose(
         obs_traj,
@@ -306,7 +306,7 @@ def test_memory_get_act_traj_padding_required(memory):
             [1.0, 2.0, 3.0, 4.0],
             [1.0, 2.0, 3.0, 4.0],
             [1.0, 2.0, 3.0, 4.0]
-        ])
+        ]).T
     )
 
 
@@ -316,7 +316,7 @@ def test_memory_get_act_traj_truncation_required(memory):
 
     info = {}
     obs = torch.tensor([1.0, 2.0, 3.0, 4.0])
-    done = torch.tensor([1.0, 2.0, 3.0, 4.0])
+    done = torch.tensor([0.0, 1.0, 0.0, 1.0])
     action = torch.tensor([1.0, 2.0, 3.0, 4.0])
     logprob = torch.tensor([1.0, 2.0, 3.0, 4.0])
     value = torch.tensor([1.0, 2.0, 3.0, 4.0])
@@ -330,7 +330,7 @@ def test_memory_get_act_traj_truncation_required(memory):
     obs_traj = memory.get_act_traj(steps=14, pad_to_length=10)
 
     # assert shape matches
-    assert obs_traj.shape == (10, 4)
+    assert obs_traj.shape == (4, 10)
 
     torch.testing.assert_allclose(
         obs_traj,
@@ -345,5 +345,5 @@ def test_memory_get_act_traj_truncation_required(memory):
             [1.0, 2.0, 3.0, 4.0],
             [1.0, 2.0, 3.0, 4.0],
             [1.0, 2.0, 3.0, 4.0]
-        ])
+        ]).T
     )

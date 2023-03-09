@@ -199,7 +199,7 @@ class Memory():
             wandb.log(vars_to_log, step=step)
 
     # TODO work out how to TT with obs shape at end
-    def get_obs_traj(self, steps: int, pad_to_length: int):
+    def get_obs_traj(self, steps: int, pad_to_length: int) -> TT["env", "T", "obs"]:
         '''Returns a tensor of shape (steps, envs, obs_shape) containing the observations from the last steps.
 
         Args:
@@ -210,15 +210,15 @@ class Memory():
         - TT["T", "env", "obs"]: a tensor of shape (steps, envs, obs_shape) containing
         the observations from the last steps.
         '''
-        if self.experiences[0][1][0].shape == ():  # if obs is a scalar
-            obs_shape = 1
-        else:
-            obs_shape = self.experiences[0][1][0].shape
+        # if self.experiences[0][1][0].shape == ():  # if obs is a scalar
+        #     obs_shape = 1
+        # else:
+        #     obs_shape = self.experiences[0][1][0].shape
 
-        obs_shape = self.experiences[0][1].shape
+        # obs_shape = self.experiences[0][1].shape
 
         # total bullshit because of how these experiences are stored.
-        obs = [exp[1] for exp in self.experiences]
+        obs = [exp[0] for exp in self.experiences]
         obs = t.stack(obs)  # obs now has shape (steps, envs, obs_shape)
 
         # then get the last steps
@@ -238,9 +238,10 @@ class Memory():
         else:
             obs_traj = obs_traj[-pad_to_length:]
 
+        obs_traj = rearrange(obs_traj, 't e ... -> e t ...')
         return obs_traj
 
-    def get_act_traj(self, steps: int, pad_to_length: int):
+    def get_act_traj(self, steps: int, pad_to_length: int) -> TT["env", "T", "act"]:
         '''Returns a tensor of shape (steps, envs, obs_shape) containing the observations from the last steps.
 
         Args:
@@ -253,7 +254,7 @@ class Memory():
         '''
 
         # total bullshit because of how these experiences are stored.
-        act = [exp[3] for exp in self.experiences]
+        act = [exp[2] for exp in self.experiences]
         act = t.stack(act)  # obs now has shape (steps, envs, obs_shape)
 
         # then get the last steps
@@ -269,4 +270,5 @@ class Memory():
         else:
             act_traj = act_traj[-pad_to_length:]
 
+        act_traj = rearrange(act_traj, 't e ... -> e t ...')
         return act_traj
