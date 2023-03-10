@@ -389,7 +389,7 @@ class Memory():
             wandb.log(vars_to_log, step=step)
 
     # TODO work out how to TT with obs shape at end
-    def get_obs_traj(self, steps: int, pad_to_length: int) -> TT["env", "T", "obs"]:
+    def get_obs_traj(self, steps: int, pad_to_length: int) -> TT["env", "T", "obs"]:  # noqa: F821
         '''
         Returns a tensor of shape (steps, envs, obs_shape) containing the observations from the last steps.
 

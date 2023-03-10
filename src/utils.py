@@ -42,7 +42,13 @@ class TrajectoryWriter():
         self.args = args
 
     @typechecked
-    def accumulate_trajectory(self, next_obs: np.ndarray, reward: np.ndarray, done: np.ndarray, truncated: np.ndarray, action: np.ndarray, info: Dict):
+    def accumulate_trajectory(self,
+                              next_obs: np.ndarray,
+                              reward: np.ndarray,
+                              done: np.ndarray,
+                              truncated: np.ndarray,
+                              action: np.ndarray,
+                              info: Dict):
         self.observations.append(next_obs)
         self.actions.append(action)
         self.rewards.append(reward)
