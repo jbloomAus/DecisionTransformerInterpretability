@@ -54,13 +54,14 @@ def test_ppo_runner_traj_model():
         exp_name="Test-PPO-Basic",
         seed=1,
         cuda=True,
-        track=False,
+        track=True,
         wandb_project_name="PPO-MiniGrid",
         wandb_entity=None,
     )
 
     environment_config = EnvironmentConfig(
-        env_id="MiniGrid-Dynamic-Obstacles-8x8-v0",
+        # env_id="MiniGrid-Dynamic-Obstacles-8x8-v0",
+        env_id="MiniGrid-Empty-Random-5x5-v0",
         view_size=3,
         max_steps=300,
         one_hot_obs=True,
@@ -87,6 +88,7 @@ def test_ppo_runner_traj_model():
         vf_coef=0.5,
         max_grad_norm=2,
         trajectory_path=None,
+        prob_go_from_end=0.1,
     )
 
     transformer_model_config = TransformerModelConfig(
@@ -94,7 +96,7 @@ def test_ppo_runner_traj_model():
         n_heads=2,
         d_mlp=256,
         n_layers=1,
-        n_ctx=3,
+        n_ctx=2,
         time_embedding_type="embedding",
         state_embedding_type="grid",
         seed=1,

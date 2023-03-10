@@ -121,6 +121,7 @@ class OnlineTrainConfig:
     max_grad_norm: float = 2
     trajectory_path: str = None
     fully_observed: bool = False
+    prob_go_from_end: float = 0.0
 
     def __post_init__(self):
         self.batch_size = int(self.num_envs * self.num_steps)

@@ -515,7 +515,8 @@ class TrajPPOAgent(PPOAgent):
         """
         for _ in range(args.update_epochs):
             minibatches = memory.get_trajectory_minibatches(
-                self.actor.transformer_config.n_ctx // 2
+                self.actor.transformer_config.n_ctx // 2,
+                prob_go_from_end=args.prob_go_from_end,
             )
             # Compute loss on each minibatch, and step the optimizer
             for mb in minibatches:

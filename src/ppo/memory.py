@@ -1,3 +1,4 @@
+import random
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import List
@@ -9,10 +10,10 @@ from einops import rearrange
 from torchtyping import TensorType as TT
 
 import wandb
-
 from src.config import OnlineTrainConfig
-from .utils import PPOArgs, get_obs_preprocessor
 from src.utils import pad_tensor
+
+from .utils import PPOArgs, get_obs_preprocessor
 
 
 @dataclass
@@ -205,7 +206,7 @@ class Memory():
 
         return minibatches
 
-    def get_trajectory_minibatches(self, timesteps: int) -> List[TrajectoryMinibatch]:
+    def get_trajectory_minibatches(self, timesteps: int, prob_go_from_end: float = 0.1) -> List[TrajectoryMinibatch]:
         '''Return a list of trajectory minibatches, where each minibatch contains
         experiences from a single trajectory.
 
@@ -285,12 +286,21 @@ class Memory():
                 # randomly select an end index from the trajectory
                 # TODO later add a hyperparameter to oversample last step
                 traj_len = trajectory_lengths[traj_idx]
+
                 if traj_len <= timesteps:
                     end_idx = traj_len
                     start_idx = 0
                 else:
-                    end_idx = np.random.randint(timesteps, traj_len)
-                    start_idx = end_idx - timesteps
+                    if prob_go_from_end is not None:
+                        if random.random() < prob_go_from_end:
+                            end_idx = traj_len
+                            start_idx = end_idx - timesteps
+                        else:
+                            end_idx = np.random.randint(timesteps, traj_len)
+                            start_idx = end_idx - timesteps
+                    else:
+                        end_idx = np.random.randint(timesteps, traj_len)
+                        start_idx = end_idx - timesteps
 
                 # get the trajectory
                 current_traj_obs = traj_obs[traj_idx][start_idx:end_idx]
