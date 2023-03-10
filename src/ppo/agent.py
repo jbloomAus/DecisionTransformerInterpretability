@@ -62,7 +62,10 @@ class PPOAgent(nn.Module):
     def layer_init(self, layer: nn.Linear, std: float, bias_const: float) -> nn.Linear:
         pass
 
-    def make_optimizer(self, num_updates: int, initial_lr: float, end_lr: float) -> Tuple[optim.Optimizer, PPOScheduler]:
+    def make_optimizer(self,
+                       num_updates: int,
+                       initial_lr: float,
+                       end_lr: float) -> Tuple[optim.Optimizer, PPOScheduler]:
         """Returns an Adam optimizer with a learning rate schedule for updating the agent's parameters.
 
         Args:
@@ -140,11 +143,13 @@ class FCAgent(PPOAgent):
 
     # TODO work out why this is std not gain for orthogonal init
     def layer_init(self, layer: nn.Linear, std: float = np.sqrt(2), bias_const: float = 0.0) -> nn.Linear:
-        """Initializes the weights of a linear layer with orthogonal initialization and the biases with a constant value.
+        """Initializes the weights of a linear layer with orthogonal
+        initialization and the biases with a constant value.
 
         Args:
             layer (nn.Linear): The linear layer to be initialized.
-            std (float, optional): The standard deviation of the distribution used to initialize the weights. Defaults to np.sqrt(2).
+            std (float, optional): The standard deviation of the
+                distribution used to initialize the weights. Defaults to np.sqrt(2).
             bias_const (float, optional): The constant value to initialize the biases with. Defaults to 0.0.
 
         Returns:
@@ -161,10 +166,13 @@ class FCAgent(PPOAgent):
             memory (Memory): The replay buffer to store the experiences.
             num_steps (int): The number of steps to collect.
             envs (gym.vector.SyncVectorEnv): The vectorized environment to interact with.
-            trajectory_writer (TrajectoryWriter, optional): The writer to log the collected trajectories. Defaults to None.
+            trajectory_writer (TrajectoryWriter, optional): The writer to log the
+                collected trajectories. Defaults to None.
         """
 
         device = memory.device
+        if isinstance(device, str):
+            device = t.device(device)
         cuda = device.type == "cuda"
         obs = memory.next_obs
         done = memory.next_done
@@ -190,26 +198,34 @@ class FCAgent(PPOAgent):
                 # first_obs = obs
                 if not cuda:
                     trajectory_writer.accumulate_trajectory(
-                        # the observation stored with an action and reward is the observation which the agent responded to.
+                        # the observation stored with an action and reward is
+                        # the observation which the agent responded to.
                         next_obs=obs.detach().numpy(),
-                        # the reward stored with an action and observation is the reward the agent received for taking that action in that state
+                        # the reward stored with an action and observation is
+                        # the reward the agent received for taking that action in that state
                         reward=reward.detach().numpy(),
-                        # the action stored with an observation and reward is the action the agent took to get to that reward
+                        # the action stored with an observation and reward is
+                        # the action the agent took to get to that reward
                         action=action.detach().numpy(),
-                        # the done stored with an action and observation is the done the agent received for taking that action in that state
+                        # the done stored with an action and observation is
+                        # the done the agent received for taking that action in that state
                         done=next_done,
                         truncated=next_truncated,
                         info=info
                     )
                 else:
                     trajectory_writer.accumulate_trajectory(
-                        # the observation stored with an action and reward is the observation which the agent responded to.
+                        # the observation stored with an action and reward
+                        # is the observation which the agent responded to.
                         next_obs=obs.detach().cpu().numpy(),
-                        # the reward stored with an action and observation is the reward the agent received for taking that action in that state
+                        # the reward stored with an action and observation
+                        # is the reward the agent received for taking that action in that state
                         reward=reward.detach().cpu().numpy(),
-                        # the action stored with an observation and reward is the action the agent took to get to that reward
+                        # the action stored with an observation and reward
+                        # is the action the agent took to get to that reward
                         action=action.detach().cpu().numpy(),
-                        # the done stored with an action and observation is the done the agent received for taking that action in that state
+                        # the done stored with an action and observation
+                        # is the done the agent received for taking that action in that state
                         done=next_done,
                         truncated=next_truncated,
                         info=info
@@ -341,11 +357,13 @@ class TrajPPOAgent(PPOAgent):
 
     # TODO work out why this is std not gain for orthogonal init
     def layer_init(self, layer: nn.Linear, std: float = np.sqrt(2), bias_const: float = 0.0) -> nn.Linear:
-        """Initializes the weights of a linear layer with orthogonal initialization and the biases with a constant value.
+        """Initializes the weights of a linear layer with orthogonal
+        initialization and the biases with a constant value.
 
         Args:
             layer (nn.Linear): The linear layer to be initialized.
-            std (float, optional): The standard deviation of the distribution used to initialize the weights. Defaults to np.sqrt(2).
+            std (float, optional): The standard deviation of the distribution used to
+                initialize the weights. Defaults to np.sqrt(2).
             bias_const (float, optional): The constant value to initialize the biases with. Defaults to 0.0.
 
         Returns:
@@ -366,10 +384,12 @@ class TrajPPOAgent(PPOAgent):
             memory (Memory): The replay buffer to store the experiences.
             num_steps (int): The number of steps to collect.
             envs (gym.vector.SyncVectorEnv): The vectorized environment to interact with.
-            trajectory_writer (TrajectoryWriter, optional): The writer to log the collected trajectories. Defaults to None.
+            trajectory_writer (TrajectoryWriter, optional): The writer to
+                log the collected trajectories. Defaults to None.
         """
 
-        # since there's no reset here, we're going to continue sampling from the trajectories present in the replay buffer.
+        # since there's no reset here, we're going to continue sampling
+        # from the trajectories present in the replay buffer.
         # to do so, we need to go back a context window lenght of the steps and get these out of the replay buffer.
         # after we do that, we can hand them to the actor/critic.
         # the actor will then generate a new action, and the critic will generate a new value function.
@@ -433,26 +453,34 @@ class TrajPPOAgent(PPOAgent):
                 # first_obs = obs
                 if not cuda:
                     trajectory_writer.accumulate_trajectory(
-                        # the observation stored with an action and reward is the observation which the agent responded to.
+                        # the observation stored with an action and reward is
+                        # the observation which the agent responded to.
                         next_obs=obs.detach().numpy(),
-                        # the reward stored with an action and observation is the reward the agent received for taking that action in that state
+                        # the reward stored with an action and observation is
+                        # the reward the agent received for taking that action in that state
                         reward=reward.detach().numpy(),
-                        # the action stored with an observation and reward is the action the agent took to get to that reward
+                        # the action stored with an observation and reward is
+                        # the action the agent took to get to that reward
                         action=action.detach().numpy(),
-                        # the done stored with an action and observation is the done the agent received for taking that action in that state
+                        # the done stored with an action and observation is
+                        # the done the agent received for taking that action in that state
                         done=next_done,
                         truncated=next_truncated,
                         info=info
                     )
                 else:
                     trajectory_writer.accumulate_trajectory(
-                        # the observation stored with an action and reward is the observation which the agent responded to.
+                        # the observation stored with an action and reward is
+                        # the observation which the agent responded to.
                         next_obs=obs.detach().cpu().numpy(),
-                        # the reward stored with an action and observation is the reward the agent received for taking that action in that state
+                        # the reward stored with an action and observation is
+                        # the reward the agent received for taking that action in that state
                         reward=reward.detach().cpu().numpy(),
-                        # the action stored with an observation and reward is the action the agent took to get to that reward
+                        # the action stored with an observation and reward
+                        # is the action the agent took to get to that reward
                         action=action.detach().cpu().numpy(),
-                        # the done stored with an action and observation is the done the agent received for taking that action in that state
+                        # the done stored with an action and observation is
+                        # the done the agent received for taking that action in that state
                         done=next_done,
                         truncated=next_truncated,
                         info=info
@@ -490,7 +518,7 @@ class TrajPPOAgent(PPOAgent):
             # Compute loss on each minibatch, and step the optimizer
             for mb in minibatches:
 
-                timesteps = memory.get_timestep_traj(steps=mb.obs.size[1])
+                timesteps = memory.get_timestep_traj(steps=mb.obs.size()[1])
 
                 logits = self.actor(
                     states=mb.obs,
@@ -544,10 +572,13 @@ def calc_clipped_surrogate_objective(
     Return the clipped surrogate objective, suitable for maximisation with gradient ascent.
 
     Args:
-        probs (Categorical): A distribution containing the actor's unnormalized logits of shape (minibatch, num_actions).
+        probs (Categorical): A distribution containing the actor's
+            unnormalized logits of shape (minibatch, num_actions).
         mb_action (Tensor): A tensor of shape (minibatch,) containing the actions taken by the agent in the minibatch.
-        mb_advantages (Tensor): A tensor of shape (minibatch,) containing the advantages estimated for each state in the minibatch.
-        mb_logprobs (Tensor): A tensor of shape (minibatch,) containing the log probabilities of the actions taken by the agent in the minibatch.
+        mb_advantages (Tensor): A tensor of shape (minibatch,) containing the
+            advantages estimated for each state in the minibatch.
+        mb_logprobs (Tensor): A tensor of shape (minibatch,) containing the
+            log probabilities of the actions taken by the agent in the minibatch.
         clip_coef (float): Amount of clipping, denoted by epsilon in Eq 7.
 
     Returns:
@@ -573,9 +604,12 @@ def calc_value_function_loss(values: TT["batch"], mb_returns: TT["batch"], vf_co
     Compute the value function portion of the loss function.
 
     Args:
-        values (Tensor): A tensor of shape (minibatch,) containing the value function estimates for the states in the minibatch.
-        mb_returns (Tensor): A tensor of shape (minibatch,) containing the discounted returns estimated for each state in the minibatch.
-        vf_coef (float): The coefficient for the value loss, which weights its contribution to the overall loss. Denoted by c_1 in the paper.
+        values (Tensor): A tensor of shape (minibatch,) containing the value function
+            estimates for the states in the minibatch.
+        mb_returns (Tensor): A tensor of shape (minibatch,) containing the discounted
+            returns estimated for each state in the minibatch.
+        vf_coef (float): The coefficient for the value loss, which weights its
+            contribution to the overall loss. Denoted by c_1 in the paper.
 
     Returns:
         Tensor: The value function loss computed over the minibatch, with shape ().
@@ -589,8 +623,10 @@ def calc_entropy_bonus(probs: Categorical, ent_coef: float):
     Return the entropy bonus term, suitable for gradient ascent.
 
     Args:
-        probs (Categorical): A distribution containing the actor's unnormalized logits of shape (minibatch, num_actions).
-        ent_coef (float): The coefficient for the entropy loss, which weights its contribution to the overall loss. Denoted by c_2 in the paper.
+        probs (Categorical): A distribution containing the actor's unnormalized
+            logits of shape (minibatch, num_actions).
+        ent_coef (float): The coefficient for the entropy loss, which weights its
+            contribution to the overall loss. Denoted by c_2 in the paper.
 
     Returns:
         Tensor: The entropy bonus computed over the minibatch, with shape ().

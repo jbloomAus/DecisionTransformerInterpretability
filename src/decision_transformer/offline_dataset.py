@@ -40,7 +40,14 @@ class TrajectoryReader():
 
 class TrajectoryDataset(Dataset):
 
-    def __init__(self, trajectory_path, max_len=1, prob_go_from_end=0, pct_traj=1.0, rtg_scale=1, normalize_state=False, device='cpu'):
+    def __init__(self,
+                 trajectory_path,
+                 max_len=1,
+                 prob_go_from_end=0,
+                 pct_traj=1.0,
+                 rtg_scale=1,
+                 normalize_state=False,
+                 device='cpu'):
         self.trajectory_path = trajectory_path
         self.max_len = max_len
         self.prob_go_from_end = prob_go_from_end
@@ -92,11 +99,11 @@ class TrajectoryDataset(Dataset):
         t_done_or_truncated = t.logical_or(t_dones, t_truncated)
         done_indices = t.where(t_done_or_truncated)[0]
 
-        self.actions = t.tensor_split(t_actions, done_indices+1)
-        self.rewards = t.tensor_split(t_rewards, done_indices+1)
-        self.dones = t.tensor_split(t_dones, done_indices+1)
-        self.truncated = t.tensor_split(t_truncated, done_indices+1)
-        self.states = t.tensor_split(t_observations, done_indices+1)
+        self.actions = t.tensor_split(t_actions, done_indices + 1)
+        self.rewards = t.tensor_split(t_rewards, done_indices + 1)
+        self.dones = t.tensor_split(t_dones, done_indices + 1)
+        self.truncated = t.tensor_split(t_truncated, done_indices + 1)
+        self.states = t.tensor_split(t_observations, done_indices + 1)
         self.returns = [r.sum() for r in self.rewards]
         self.timesteps = [t.arange(len(i)) for i in self.states]
         self.traj_lens = np.array([len(i) for i in self.states])
@@ -132,7 +139,7 @@ class TrajectoryDataset(Dataset):
             self.state_std = 1
 
     def get_indices_of_top_p_trajectories(self, pct_traj):
-        num_timesteps = max(int(pct_traj*self.num_timesteps), 1)
+        num_timesteps = max(int(pct_traj * self.num_timesteps), 1)
         sorted_inds = np.argsort(self.returns)
 
         num_trajectories = 1
@@ -156,8 +163,8 @@ class TrajectoryDataset(Dataset):
     def discount_cumsum(self, x, gamma):
         discount_cumsum = np.zeros_like(x)
         discount_cumsum[-1] = x[-1]
-        for t in reversed(range(x.shape[0]-1)):
-            discount_cumsum[t] = x[t] + gamma * discount_cumsum[t+1]
+        for time in reversed(range(x.shape[0] - 1)):
+            discount_cumsum[time] = x[time] + gamma * discount_cumsum[time + 1]
         return discount_cumsum
 
     def get_state_mean_std(self):
