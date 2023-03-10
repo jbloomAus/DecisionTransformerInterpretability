@@ -5,13 +5,11 @@ import pytest
 import torch as t
 from gymnasium.spaces import Discrete
 
-from src.config import (EnvironmentConfig, OnlineTrainConfig, RunConfig,
-                        TransformerModelConfig)
 from src.environments.environments import make_env
 from src.ppo.agent import FCAgent as Agent
 from src.ppo.my_probe_envs import Probe1, Probe2, Probe3, Probe4, Probe5
+from src.ppo.memory import Memory, Minibatch, TrajectoryMinibatch
 from src.ppo.train import train_ppo
-from src.ppo.utils import PPOArgs
 
 for i in range(5):
     probes = [Probe1, Probe2, Probe3, Probe4, Probe5]
@@ -58,14 +56,14 @@ def online_config():
     class DummyOnlineConfig:
         use_trajectory_model: bool = False
         hidden_size: int = 64
-        total_timesteps: int = 10000
+        total_timesteps: int = 1000
         learning_rate: float = 0.00025
         decay_lr: bool = False,
         num_envs: int = 4
         num_steps: int = 128
         gamma: float = 0.99
         gae_lambda: float = 0.95
-        num_minibatches: int = 4
+        num_minibatches: int = 8
         update_epochs: int = 4
         clip_coef: float = 0.4
         ent_coef: float = 0.2
@@ -177,3 +175,89 @@ def test_ppo_agent_minigrid():
     # depends on whether you wrapped in Fully observed or not
     assert agent.num_obs == 7 * 7 * 3
     assert agent.num_actions == 7
+
+
+def test_ppo_agent_rollout_minibatches_minigrid(online_config):
+
+    envs = gym.vector.SyncVectorEnv(
+        [make_env('MiniGrid-Empty-8x8-v0', 1, 1, False, "test")
+         for i in range(2)]
+    )
+    assert envs.single_action_space.shape is not None
+    assert isinstance(envs.single_action_space,
+                      Discrete), "only discrete action space is supported"
+
+    memory = Memory(
+        envs, online_config, "cpu")
+
+    agent = Agent(envs, "cpu")
+    agent.rollout(memory, online_config.num_steps, envs, None)
+
+    minibatches = memory.get_minibatches()
+    assert len(minibatches) == online_config.num_minibatches
+
+    observation_shape = envs.single_observation_space['image'].shape
+    minibatch = minibatches[0]
+    assert isinstance(minibatch, Minibatch)
+    assert minibatch.obs.shape == (
+        online_config.minibatch_size, *observation_shape), "obs shape is wrong"
+    assert minibatch.actions.shape == (
+        online_config.minibatch_size, ), "actions shape is wrong"
+    assert minibatch.values.shape == (
+        online_config.minibatch_size, ), "values shape is wrong"
+    assert minibatch.logprobs.shape == (
+        online_config.minibatch_size, ), "log_probs shape is wrong"
+    assert minibatch.returns.shape == (
+        online_config.minibatch_size, ), "returns shape is wrong"
+    assert minibatch.advantages.shape == (
+        online_config.minibatch_size, ), "advantages shape is wrong"
+
+
+def test_ppo_agent_rollout_trajectory_minibatches_minigrid_no_padding(online_config):
+    envs = gym.vector.SyncVectorEnv(
+        [make_env('MiniGrid-Dynamic-Obstacles-8x8-v0', 1, 1, False, "test")
+         for i in range(2)]
+    )
+    memory = Memory(envs, online_config, "cpu")
+    agent = Agent(envs, "cpu")
+    agent.rollout(memory, online_config.num_steps, envs, None)
+
+    timesteps = 1
+    minibatches = memory.get_trajectory_minibatches(timesteps)
+    assert len(minibatches) > 0
+
+    minibatch = minibatches[0]
+
+    assert isinstance(minibatch, TrajectoryMinibatch)
+    assert minibatch.obs.shape[1] == timesteps
+    assert minibatch.obs.shape[0] == minibatch.actions.shape[0] == minibatch.logprobs.shape[0] == \
+        minibatch.advantages.shape[0] == minibatch.values.shape[0] == minibatch.returns.shape[0]
+    assert minibatch.obs.ndim == 2 + \
+        len(envs.single_observation_space['image'].shape)
+    assert minibatch.actions.ndim == 2
+    assert minibatch.logprobs.ndim == minibatch.advantages.ndim == minibatch.values.ndim == minibatch.returns.ndim == 1
+
+
+def test_ppo_agent_rollout_trajectory_minibatches_minigrid_extra_padding(online_config):
+    envs = gym.vector.SyncVectorEnv(
+        [make_env('MiniGrid-Dynamic-Obstacles-8x8-v0', 1, 1, False, "test")
+         for i in range(2)]
+    )
+    memory = Memory(envs, online_config, "cpu")
+    agent = Agent(envs, "cpu")
+    agent.rollout(memory, online_config.num_steps, envs, None)
+
+    timesteps = 10
+    minibatches = memory.get_trajectory_minibatches(10)
+    assert len(minibatches) > 0
+
+    minibatch = minibatches[0]
+
+    assert isinstance(minibatch, TrajectoryMinibatch)
+    assert minibatch.obs.shape[1] == timesteps
+    assert minibatch.obs.shape[0] == minibatch.actions.shape[0] == minibatch.logprobs.shape[0] == \
+        minibatch.advantages.shape[0] == minibatch.values.shape[0] == minibatch.returns.shape[0]
+    assert minibatch.obs.ndim == 2 + \
+        len(envs.single_observation_space['image'].shape)
+    assert minibatch.actions.ndim == 2
+    assert minibatch.logprobs.ndim == minibatch.advantages.ndim == minibatch.values.ndim == minibatch.returns.ndim == 1

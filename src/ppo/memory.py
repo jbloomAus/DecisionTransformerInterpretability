@@ -12,6 +12,7 @@ import wandb
 
 from src.config import OnlineTrainConfig
 from .utils import PPOArgs, get_obs_preprocessor
+from src.utils import pad_tensor
 
 
 @dataclass
@@ -21,6 +22,20 @@ class Minibatch:
     '''
     obs: TT["batch", "obs_shape"]  # noqa: F821
     actions: TT["batch"]  # noqa: F821
+    logprobs: TT["batch"]  # noqa: F821
+    advantages: TT["batch"]  # noqa: F821
+    values: TT["batch"]  # noqa: F821
+    returns: TT["batch"]  # noqa: F821
+
+
+@dataclass
+class TrajectoryMinibatch:
+    '''
+    A dataclass containing the tensors of a minibatch of experiences,
+    including trajectory information leading up to each step.
+    '''
+    obs: TT["batch", "T", "obs_shape"]  # noqa: F821
+    actions: TT["batch", "T"]  # noqa: F821
     logprobs: TT["batch"]  # noqa: F821
     advantages: TT["batch"]  # noqa: F821
     values: TT["batch"]  # noqa: F821
@@ -120,7 +135,26 @@ class Memory():
         gamma: float,
         gae_lambda: float
     ) -> TT["T", "env"]:  # noqa: F821
-        '''Compute advantages using Generalized Advantage Estimation.
+        '''
+        Compute advantages using Generalized Advantage Estimation.
+
+        Generalized Advantage Estimation (GAE) is a technique used in
+        Proximal Policy Optimization (PPO) to estimate the advantage
+        function, which is the difference between the expected value
+        of the cumulative reward and the estimated value of the current state.
+
+        Args:
+        - next_value (Tensor): the estimated value of the next state.
+        - next_done (Tensor): whether the next state is terminal.
+        - rewards (Tensor): the rewards received from taking actions.
+        - values (Tensor): the estimated values of the states.
+        - dones (Tensor): whether the states are terminal.
+        - device (torch.device): the device to store the tensors on.
+        - gamma (float): the discount factor.
+        - gae_lambda (float): the GAE lambda parameter.
+
+        Returns:
+        - advantages (Tensor): the advantages of the states.
         '''
         T = values.shape[0]
         next_values = t.concat([values[1:], next_value.unsqueeze(0)])
@@ -170,6 +204,154 @@ class Memory():
 
         return minibatches
 
+    def get_trajectory_minibatches(self, timesteps: int) -> List[TrajectoryMinibatch]:
+        '''Return a list of trajectory minibatches, where each minibatch contains
+        experiences from a single trajectory.
+
+        Args:
+        - timesteps (int): the number of timesteps to include in each minibatch.
+
+        Returns:
+        - List[TrajectoryMinibatch]: a list of minibatches.
+        '''
+        obs, dones, actions, logprobs, values, rewards = [
+            t.stack(arr) for arr in zip(*self.experiences)]
+
+        next_values = t.cat([values[1:], self.next_value.unsqueeze(0)])
+        next_dones = t.cat([dones[1:], self.next_done.unsqueeze(0)])
+
+        # px.imshow(obs[:,1,:,:,0].transpose(-1,-2), animation_frame = 0, range_color = [0,10]).show()
+        # set last value of dones to 1
+        dones[-1] = t.ones(dones.shape[-1])
+
+        # rearrange to flatten out the env dimension (2nd dimension)
+        obs = rearrange(obs, "T E ... -> (E T) ...")
+        dones = rearrange(dones, "T E -> (E T)")
+        next_dones = rearrange(next_dones, "T E -> (E T)")
+        actions = rearrange(actions, "T E ... -> (E T) ...")
+        logprobs = rearrange(logprobs, "T E -> (E T)")
+        values = rearrange(values, "T E -> (E T)")
+        next_values = rearrange(next_values, "T E -> (E T)")
+        rewards = rearrange(rewards, "T E -> (E T)")
+
+        # find the indices of the end of each trajectory
+        traj_end_idxs = (t.where(dones)[0] + 1).tolist()
+
+        # split these trajectories on the dones
+        traj_obs = t.tensor_split(obs, traj_end_idxs)
+        traj_actions = t.tensor_split(actions, traj_end_idxs)
+        traj_logprobs = t.tensor_split(logprobs, traj_end_idxs)
+        traj_values = t.tensor_split(values, traj_end_idxs)
+        traj_rewards = t.tensor_split(rewards, traj_end_idxs)
+        traj_dones = t.tensor_split(dones, traj_end_idxs)
+        traj_next_values = t.tensor_split(next_values, traj_end_idxs)
+        traj_next_dones = t.tensor_split(next_dones, traj_end_idxs)
+
+        # px.imshow(traj_obs[0][:,:,:,0].transpose(-1,-2), animation_frame = 0, range_color = [0,10]).show()
+
+        # so now we have lists of trajectories, what we want is to split each trajectory
+        # so for each trajectory, sample an index and go n_steps back from that.
+        # since we're encoding  states and actions, we want to go context_length//2 back
+        # if that happens to go off the end, then we
+        minibatches = []
+
+        # remove trajectories of length 0
+        traj_obs = [traj for traj in traj_obs if len(traj) > 0]
+
+        n_trajectories = len(traj_obs)
+        trajectory_lengths = [len(traj) for traj in traj_obs]
+
+        for _ in range(self.args.num_minibatches):
+
+            minibatch_obs = []
+            minibatch_actions = []
+            minibatch_logprobs = []
+            minibatch_advantages = []
+            minibatch_values = []
+            minibatch_returns = []
+
+            for _ in range(self.args.minibatch_size):
+
+                # randomly select a trajectory
+                traj_idx = np.random.randint(n_trajectories)
+
+                # randomly select an end index from the trajectory
+                # TODO later add a hyperparameter to oversample last step
+
+                end_idx = np.random.randint(1, len(traj_obs[traj_idx]))
+                start_idx = max(0, end_idx - timesteps)
+
+                # get the trajectory
+                current_traj_obs = traj_obs[traj_idx][start_idx:end_idx]
+                current_traj_actions = traj_actions[traj_idx][start_idx:end_idx]
+                current_traj_logprobs = traj_logprobs[traj_idx][start_idx:end_idx]
+                current_traj_values = traj_values[traj_idx][start_idx:end_idx]
+                current_traj_dones = traj_dones[traj_idx][start_idx:end_idx]
+                current_traj_rewards = traj_rewards[traj_idx][start_idx:end_idx]
+                current_traj_next_value = traj_next_values[traj_idx][end_idx]
+                current_traj_next_done = traj_next_dones[traj_idx][end_idx]
+
+                # Compute the advantages and returns for this trajectory.
+                current_traj_advantages = self.compute_advantages(
+                    current_traj_next_value,
+                    current_traj_next_done,
+                    current_traj_rewards,
+                    current_traj_values,
+                    current_traj_dones,
+                    self.device,
+                    self.args.gamma,
+                    self.args.gae_lambda
+                )
+
+                current_traj_returns = current_traj_advantages + current_traj_values
+
+                # we need to pad current_traj_obs and current_traj_actions
+                current_traj_obs = pad_tensor(
+                    current_traj_obs,
+                    timesteps,
+                    ignore_first_dim=False,
+                    pad_token=0,
+                    pad_left=True
+                )
+
+                current_traj_actions = pad_tensor(
+                    current_traj_actions,
+                    timesteps,
+                    ignore_first_dim=False,
+                    pad_token=0,
+                    pad_left=True
+                )
+
+                # add to minibatch
+                minibatch_obs.append(current_traj_obs)
+                minibatch_actions.append(current_traj_actions)
+                minibatch_logprobs.append(current_traj_logprobs[-1])
+                minibatch_advantages.append(current_traj_advantages[-1])
+                minibatch_values.append(current_traj_values[-1])
+                minibatch_returns.append(current_traj_returns[-1])
+
+            # stack the minibatch
+            minibatch_obs = t.stack(minibatch_obs)
+            minibatch_actions = t.stack(minibatch_actions)
+
+            # only take the last values of the logprob, advantage,
+            # value and return (relevant to the last step of each trajectory)
+            minibatch_logprobs = t.stack(minibatch_logprobs)
+            minibatch_advantages = t.stack(minibatch_advantages)
+            minibatch_values = t.stack(minibatch_values)
+            minibatch_returns = t.stack(minibatch_returns)
+
+            minibatches.append(TrajectoryMinibatch(
+                obs=minibatch_obs,
+                actions=minibatch_actions,
+                logprobs=minibatch_logprobs,
+                advantages=minibatch_advantages,
+                values=minibatch_values,
+                returns=minibatch_values,
+            ))
+
+        return minibatches
+
     def get_printable_output(self) -> str:
         '''Sets a new progress bar description, if any episodes have terminated.
         If not, then the bar's description won't change.
@@ -207,24 +389,18 @@ class Memory():
             wandb.log(vars_to_log, step=step)
 
     # TODO work out how to TT with obs shape at end
-    def get_obs_traj(self, steps: int, pad_to_length: int) -> TT["env", "T", "obs"]:  # noqa: F821
-        '''Returns a tensor of shape (steps, envs, obs_shape) containing the observations from the last steps.
+    def get_obs_traj(self, steps: int, pad_to_length: int) -> TT["env", "T", "obs"]:
+        '''
+        Returns a tensor of shape (steps, envs, obs_shape) containing the observations from the last steps.
 
         Args:
         - steps (int): number of steps to return.
         - pad_to_length (int): if the number of steps is less than this, then the tensor will be padded with zeros.
 
         Returns:
-        - TT["T", "env", "obs"]: a tensor of shape (steps, envs, obs_shape) containing
+        - TT["env", "T", "obs"]: a tensor of shape (steps, envs, obs_shape) containing
         the observations from the last steps.
         '''
-        # if self.experiences[0][1][0].shape == ():  # if obs is a scalar
-        #     obs_shape = 1
-        # else:
-        #     obs_shape = self.experiences[0][1][0].shape
-
-        # obs_shape = self.experiences[0][1].shape
-
         # total bullshit because of how these experiences are stored.
         obs = [exp[0] for exp in self.experiences]
         obs = t.stack(obs)  # obs now has shape (steps, envs, obs_shape)
@@ -232,21 +408,16 @@ class Memory():
         # then get the last steps
         obs_traj = obs[-steps:]
 
-        # then pad with zeros if needed
-        # TODO check if 0 padding is the right way to pad obs in this codebase
-        if steps < pad_to_length:
-            if len(self.experiences[0][1].shape) == 1:
-                pad = t.zeros((pad_to_length - steps, self.envs.num_envs))
-            else:
-                pad = t.zeros((pad_to_length - steps, self.envs.num_envs,
-                               self.envs.observation_space.shape[0]))
-
-            obs_traj = t.cat([pad, obs_traj], dim=0)
-
-        else:
-            obs_traj = obs_traj[-pad_to_length:]
-
+        # then rearrange
         obs_traj = rearrange(obs_traj, 't e ... -> e t ...')
+
+        # then pad with zeros if needed
+        obs_traj = pad_tensor(obs_traj, pad_to_length,
+                              ignore_first_dim=True, pad_left=True)
+
+        # truncate if required
+        obs_traj = obs_traj[:, -pad_to_length:]
+
         return obs_traj
 
     def get_act_traj(self, steps: int, pad_to_length: int) -> TT["env", "T", "act"]:  # noqa: F821
@@ -268,17 +439,16 @@ class Memory():
         # then get the last steps
         act_traj = act[-steps:]
 
-        # then pad with zeros if needed
-        if steps < pad_to_length:
-            pad = t.ones((pad_to_length - steps, self.envs.num_envs)
-                         ) * self.envs.single_action_space.n
-
-            act_traj = t.cat([pad, act_traj], dim=0)
-
-        else:
-            act_traj = act_traj[-pad_to_length:]
-
+        # then rearrange
         act_traj = rearrange(act_traj, 't e ... -> e t ...')
+
+        # then pad with zeros if needed
+        act_traj = pad_tensor(act_traj, pad_to_length, ignore_first_dim=True, pad_left=True,
+                              pad_token=self.envs.single_action_space.n)
+
+        # truncate if required
+        act_traj = act_traj[:, -pad_to_length:]
+
         return act_traj
 
     def get_timestep_traj(self, steps: int, pad_to_length: int) -> TT["env", "T", "1"]:  # noqa: F821
