@@ -514,16 +514,16 @@ class TrajPPOAgent(PPOAgent):
             track (bool): Whether to track the training progress.
         """
         for _ in range(args.update_epochs):
-            minibatches = memory.get_minibatches()
+            minibatches = memory.get_trajectory_minibatches(
+                self.actor.transformer_config.n_ctx // 2
+            )
             # Compute loss on each minibatch, and step the optimizer
             for mb in minibatches:
-
-                timesteps = memory.get_timestep_traj(steps=mb.obs.size()[1])
 
                 logits = self.actor(
                     states=mb.obs,
                     actions=mb.actions,
-                    timesteps=timesteps
+                    timesteps=mb.timesteps
                 )
 
                 probs = Categorical(logits=logits)

@@ -40,6 +40,7 @@ class TrajectoryMinibatch:
     advantages: TT["batch"]  # noqa: F821
     values: TT["batch"]  # noqa: F821
     returns: TT["batch"]  # noqa: F821
+    timesteps: TT["batch", "T"]  # noqa: F821
 
 
 class Memory():
@@ -224,6 +225,11 @@ class Memory():
         # set last value of dones to 1
         dones[-1] = t.ones(dones.shape[-1])
 
+        # hack for now.
+        # will cause problems if you only have one environment
+        if logprobs.shape[-1] == 1:
+            logprobs = logprobs.squeeze(-1)
+
         # rearrange to flatten out the env dimension (2nd dimension)
         obs = rearrange(obs, "T E ... -> (E T) ...")
         dones = rearrange(dones, "T E -> (E T)")
@@ -269,6 +275,7 @@ class Memory():
             minibatch_advantages = []
             minibatch_values = []
             minibatch_returns = []
+            minibatch_timesteps = []
 
             for _ in range(self.args.minibatch_size):
 
@@ -277,9 +284,13 @@ class Memory():
 
                 # randomly select an end index from the trajectory
                 # TODO later add a hyperparameter to oversample last step
-
-                end_idx = np.random.randint(1, len(traj_obs[traj_idx]))
-                start_idx = max(0, end_idx - timesteps)
+                traj_len = trajectory_lengths[traj_idx]
+                if traj_len <= timesteps:
+                    end_idx = traj_len
+                    start_idx = 0
+                else:
+                    end_idx = np.random.randint(timesteps, traj_len)
+                    start_idx = end_idx - timesteps
 
                 # get the trajectory
                 current_traj_obs = traj_obs[traj_idx][start_idx:end_idx]
@@ -288,8 +299,12 @@ class Memory():
                 current_traj_values = traj_values[traj_idx][start_idx:end_idx]
                 current_traj_dones = traj_dones[traj_idx][start_idx:end_idx]
                 current_traj_rewards = traj_rewards[traj_idx][start_idx:end_idx]
-                current_traj_next_value = traj_next_values[traj_idx][end_idx]
-                current_traj_next_done = traj_next_dones[traj_idx][end_idx]
+                current_traj_next_value = traj_next_values[traj_idx][end_idx - 1]
+                current_traj_next_done = traj_next_dones[traj_idx][end_idx - 1]
+
+                # make timesteps
+                current_traj_timesteps = t.arange(
+                    start_idx, end_idx).unsqueeze(0)
 
                 # Compute the advantages and returns for this trajectory.
                 current_traj_advantages = self.compute_advantages(
@@ -322,6 +337,14 @@ class Memory():
                     pad_left=True
                 )
 
+                current_traj_timesteps = pad_tensor(
+                    current_traj_timesteps,
+                    timesteps,
+                    ignore_first_dim=False,
+                    pad_token=0,
+                    pad_left=True
+                )
+
                 # add to minibatch
                 minibatch_obs.append(current_traj_obs)
                 minibatch_actions.append(current_traj_actions)
@@ -329,6 +352,7 @@ class Memory():
                 minibatch_advantages.append(current_traj_advantages[-1])
                 minibatch_values.append(current_traj_values[-1])
                 minibatch_returns.append(current_traj_returns[-1])
+                minibatch_timesteps.append(current_traj_timesteps)
 
             # stack the minibatch
             minibatch_obs = t.stack(minibatch_obs)
@@ -340,6 +364,7 @@ class Memory():
             minibatch_advantages = t.stack(minibatch_advantages)
             minibatch_values = t.stack(minibatch_values)
             minibatch_returns = t.stack(minibatch_returns)
+            minibatch_timesteps = t.stack(minibatch_timesteps)
 
             minibatches.append(TrajectoryMinibatch(
                 obs=minibatch_obs,
@@ -348,6 +373,7 @@ class Memory():
                 advantages=minibatch_advantages,
                 values=minibatch_values,
                 returns=minibatch_values,
+                timesteps=minibatch_timesteps
             ))
 
         return minibatches
