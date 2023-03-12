@@ -229,10 +229,14 @@
           <li><a href="src.ppo.html#src.ppo.my_probe_envs.Probe5.action_space">(src.ppo.my_probe_envs.Probe5 attribute)</a>
 </li>
         </ul></li>
+        <li><a href="src.ppo.html#src.ppo.memory.Minibatch.actions">actions (src.ppo.memory.Minibatch attribute)</a>
+
+        <ul>
+          <li><a href="src.ppo.html#src.ppo.memory.TrajectoryMinibatch.actions">(src.ppo.memory.TrajectoryMinibatch attribute)</a>
+</li>
+        </ul></li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="src.ppo.html#src.ppo.memory.Minibatch.actions">actions (src.ppo.memory.Minibatch attribute)</a>
-</li>
         <li><a href="src.ppo.html#src.ppo.agent.FCAgent.actor">actor (src.ppo.agent.FCAgent attribute)</a>
 
         <ul>
@@ -248,7 +252,11 @@
         <li><a href="src.ppo.html#src.ppo.memory.Memory.add_vars_to_log">add_vars_to_log() (src.ppo.memory.Memory method)</a>
 </li>
         <li><a href="src.ppo.html#src.ppo.memory.Minibatch.advantages">advantages (src.ppo.memory.Minibatch attribute)</a>
+
+        <ul>
+          <li><a href="src.ppo.html#src.ppo.memory.TrajectoryMinibatch.advantages">(src.ppo.memory.TrajectoryMinibatch attribute)</a>
 </li>
+        </ul></li>
         <li><a href="src.ppo.html#src.ppo.utils.arg_help">arg_help() (in module src.ppo.utils)</a>
 </li>
     </ul></td>
@@ -541,6 +549,8 @@
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryDataset.get_traj">get_traj() (src.decision_transformer.offline_dataset.TrajectoryDataset method)</a>
 </li>
+        <li><a href="src.ppo.html#src.ppo.memory.Memory.get_trajectory_minibatches">get_trajectory_minibatches() (src.ppo.memory.Memory method)</a>
+</li>
     </ul></td>
   </tr></table>
 </section>
@@ -624,7 +634,11 @@
         <li><a href="src.ppo.html#src.ppo.memory.Memory.log">log() (src.ppo.memory.Memory method)</a>
 </li>
         <li><a href="src.ppo.html#src.ppo.memory.Minibatch.logprobs">logprobs (src.ppo.memory.Minibatch attribute)</a>
+
+        <ul>
+          <li><a href="src.ppo.html#src.ppo.memory.TrajectoryMinibatch.logprobs">(src.ppo.memory.TrajectoryMinibatch attribute)</a>
 </li>
+        </ul></li>
         <li><a href="src.html#src.config.OfflineTrainConfig.lr">lr (src.config.OfflineTrainConfig attribute)</a>
 </li>
     </ul></td>
@@ -831,7 +845,11 @@
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.ppo.html#src.ppo.memory.Minibatch.obs">obs (src.ppo.memory.Minibatch attribute)</a>
+
+        <ul>
+          <li><a href="src.ppo.html#src.ppo.memory.TrajectoryMinibatch.obs">(src.ppo.memory.TrajectoryMinibatch attribute)</a>
 </li>
+        </ul></li>
         <li><a href="src.environments.html#src.environments.wrappers.ViewSizeWrapper.observation">observation() (src.environments.wrappers.ViewSizeWrapper method)</a>
 </li>
         <li><a href="src.html#src.config.EnvironmentConfig.observation_space">observation_space (src.config.EnvironmentConfig attribute)</a>
@@ -906,10 +924,10 @@
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.model.PosEmbedTokens">PosEmbedTokens (class in src.decision_transformer.model)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.ppo.html#src.ppo.runner.ppo_runner">ppo_runner() (in module src.ppo.runner)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.ppo.html#src.ppo.agent.PPOAgent">PPOAgent (class in src.ppo.agent)</a>
 </li>
         <li><a href="src.ppo.html#src.ppo.utils.PPOArgs">PPOArgs (class in src.ppo.utils)</a>
@@ -921,6 +939,8 @@
         <li><a href="src.html#src.config.OfflineTrainConfig.prob_go_from_end">prob_go_from_end (src.config.OfflineTrainConfig attribute)</a>
 
         <ul>
+          <li><a href="src.html#src.config.OnlineTrainConfig.prob_go_from_end">(src.config.OnlineTrainConfig attribute)</a>
+</li>
           <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.prob_go_from_end">(src.decision_transformer.utils.DTArgs attribute)</a>
 </li>
         </ul></li>
@@ -985,7 +1005,11 @@
         <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryDataset.return_tensors">return_tensors() (src.decision_transformer.offline_dataset.TrajectoryDataset method)</a>
 </li>
         <li><a href="src.ppo.html#src.ppo.memory.Minibatch.returns">returns (src.ppo.memory.Minibatch attribute)</a>
+
+        <ul>
+          <li><a href="src.ppo.html#src.ppo.memory.TrajectoryMinibatch.returns">(src.ppo.memory.TrajectoryMinibatch attribute)</a>
 </li>
+        </ul></li>
         <li><a href="src.html#src.dummy_agent.RandomAgent.rollout">rollout() (src.dummy_agent.RandomAgent method)</a>
 
         <ul>
@@ -1437,6 +1461,12 @@
 </li>
         <li><a href="tests.acceptance.html#tests.acceptance.test_ppo.test_ppo_agent_minigrid">test_ppo_agent_minigrid() (in module tests.acceptance.test_ppo)</a>
 </li>
+        <li><a href="tests.acceptance.html#tests.acceptance.test_ppo.test_ppo_agent_rollout_minibatches_minigrid">test_ppo_agent_rollout_minibatches_minigrid() (in module tests.acceptance.test_ppo)</a>
+</li>
+        <li><a href="tests.acceptance.html#tests.acceptance.test_ppo.test_ppo_agent_rollout_trajectory_minibatches_minigrid_extra_padding">test_ppo_agent_rollout_trajectory_minibatches_minigrid_extra_padding() (in module tests.acceptance.test_ppo)</a>
+</li>
+        <li><a href="tests.acceptance.html#tests.acceptance.test_ppo.test_ppo_agent_rollout_trajectory_minibatches_minigrid_no_padding">test_ppo_agent_rollout_trajectory_minibatches_minigrid_no_padding() (in module tests.acceptance.test_ppo)</a>
+</li>
         <li><a href="tests.end_end.html#tests.end_end.test_ppo.test_ppo_runner">test_ppo_runner() (in module tests.end_end.test_ppo)</a>
 </li>
         <li><a href="tests.end_end.html#tests.end_end.test_ppo.test_ppo_runner_traj_model">test_ppo_runner_traj_model() (in module tests.end_end.test_ppo)</a>
@@ -1459,10 +1489,10 @@
 </li>
         <li><a href="tests.acceptance.html#tests.acceptance.test_offline_dataset.test_train_test_split_other_data">test_train_test_split_other_data() (in module tests.acceptance.test_offline_dataset)</a>
 </li>
-        <li><a href="tests.acceptance.html#tests.acceptance.test_offline_dataset.test_trajectory_dataset__getitem__">test_trajectory_dataset__getitem__() (in module tests.acceptance.test_offline_dataset)</a>
-</li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="tests.acceptance.html#tests.acceptance.test_offline_dataset.test_trajectory_dataset__getitem__">test_trajectory_dataset__getitem__() (in module tests.acceptance.test_offline_dataset)</a>
+</li>
         <li><a href="tests.acceptance.html#tests.acceptance.test_offline_dataset.test_trajectory_dataset_as_dataloader">test_trajectory_dataset_as_dataloader() (in module tests.acceptance.test_offline_dataset)</a>
 </li>
         <li><a href="tests.acceptance.html#tests.acceptance.test_offline_dataset.test_trajectory_dataset_discount_cumusum_10">test_trajectory_dataset_discount_cumusum_10() (in module tests.acceptance.test_offline_dataset)</a>
@@ -1661,6 +1691,8 @@
         </ul></li>
         <li><a href="src.html#src.config.TransformerModelConfig.time_embedding_type">time_embedding_type (src.config.TransformerModelConfig attribute)</a>
 </li>
+        <li><a href="src.ppo.html#src.ppo.memory.TrajectoryMinibatch.timesteps">timesteps (src.ppo.memory.TrajectoryMinibatch attribute)</a>
+</li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.to_tokens">to_tokens() (src.decision_transformer.model.DecisionTransformer method)</a>
 </li>
         <li><a href="src.html#src.config.OnlineTrainConfig.total_timesteps">total_timesteps (src.config.OnlineTrainConfig attribute)</a>
@@ -1719,6 +1751,8 @@
         </ul></li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryDataset">TrajectoryDataset (class in src.decision_transformer.offline_dataset)</a>
 </li>
+        <li><a href="src.ppo.html#src.ppo.memory.TrajectoryMinibatch">TrajectoryMinibatch (class in src.ppo.memory)</a>
+</li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryReader">TrajectoryReader (class in src.decision_transformer.offline_dataset)</a>
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryVisualizer">TrajectoryVisualizer (class in src.decision_transformer.offline_dataset)</a>
@@ -1758,7 +1792,11 @@
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.ppo.html#src.ppo.memory.Minibatch.values">values (src.ppo.memory.Minibatch attribute)</a>
+
+        <ul>
+          <li><a href="src.ppo.html#src.ppo.memory.TrajectoryMinibatch.values">(src.ppo.memory.TrajectoryMinibatch attribute)</a>
 </li>
+        </ul></li>
         <li><a href="src.html#src.config.OnlineTrainConfig.vf_coef">vf_coef (src.config.OnlineTrainConfig attribute)</a>
 
         <ul>
