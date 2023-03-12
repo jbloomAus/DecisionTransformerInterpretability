@@ -1,4 +1,3 @@
-# %%
 import argparse
 import gymnasium as gym
 import minigrid
@@ -44,7 +43,7 @@ def cummean(arr: Arr):
     """
     return np.cumsum(arr) / np.arange(1, len(arr) + 1)
 
-# Taken from https://stackoverflow.com/questions/42869495/numpy-version-of-exponential-weighted-moving-average-equivalent-to-pandas-ewm
+# https://stackoverflow.com/questions/42869495/numpy-version-of-exponential-weighted-moving-average-equivalent-to-pandas-ewm
 # See https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
 
 
@@ -64,7 +63,7 @@ def ewma(arr: Arr, alpha: float):
     s = np.zeros_like(arr)
     s[0] = arr[0]
     for i in range(1, len(arr)):
-        s[i] = alpha * arr[i] + (1-alpha)*s[i-1]
+        s[i] = alpha * arr[i] + (1 - alpha) * s[i - 1]
     return s
 
 
@@ -246,12 +245,12 @@ def arg_help(args: Optional[PPOArgs], print_df=False):
                 {'selector': 'td', 'props': 'text-align: left;'},
                 {'selector': 'th', 'props': 'text-align: left;'}
             ])
-            .apply(lambda row: ['background-color: red' if row.name in changed_args else None] + [None,] * (len(row) - 1), axis=1)
+            .apply(lambda row: [
+                'background-color: red' if row.name in changed_args else None
+            ] + [None, ] * (len(row) - 1), axis=1)
         )
         with pd.option_context("max_colwidth", 0):
             display(s)
-
-# %%
 
 
 def plot_cartpole_obs_and_dones(obs: t.Tensor, done: t.Tensor):
@@ -276,14 +275,14 @@ def plot_cartpole_obs_and_dones(obs: t.Tensor, done: t.Tensor):
     for i, (name0, color, y) in enumerate(zip(["posn", "angle"], px.colors.qualitative.D3, [2.4, 0.2095]), 1):
         for name1 in ["", "_min", "_max"]:
             fig.add_trace(go.Scatter(
-                y=d[name0+name1], name=name0+name1, mode="lines", marker_color=color), col=1, row=i)
+                y=d[name0 + name1], name=name0 + name1, mode="lines", marker_color=color), col=1, row=i)
         for x in done_indices:
             fig.add_vline(x=x, y1=1, y0=0, line_width=2,
                           line_color="black", line_dash="dash", col=1, row=i)
     for sign, text0 in zip([-1, 1], ["Min", "Max"]):
         for row, (y, text1) in enumerate(zip([2.4, 0.2095], ["posn", "angle"]), 1):
             fig.add_annotation(text=" ".join(
-                [text0, text1]), xref="paper", yref="paper", x=550, y=sign*y, showarrow=False, row=row, col=1)
+                [text0, text1]), xref="paper", yref="paper", x=550, y=sign * y, showarrow=False, row=row, col=1)
     fig.show()
 
 
