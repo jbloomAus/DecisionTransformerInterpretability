@@ -528,7 +528,8 @@ class TrajPPOAgent(PPOAgent):
                 )
 
                 probs = Categorical(logits=logits)
-                values = self.critic(mb.obs).squeeze()
+                # critic is a DNN so let's the last state obs at each time step.
+                values = self.critic(mb.obs[:, -1]).squeeze()
                 clipped_surrogate_objective = calc_clipped_surrogate_objective(
                     probs, mb.actions, mb.advantages, mb.logprobs, args.clip_coef)
                 value_loss = calc_value_function_loss(
