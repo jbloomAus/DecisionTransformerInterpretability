@@ -313,8 +313,7 @@ class Memory():
                 current_traj_next_done = traj_next_dones[traj_idx][end_idx - 1]
 
                 # make timesteps
-                current_traj_timesteps = t.arange(
-                    start_idx, end_idx).unsqueeze(0)
+                current_traj_timesteps = t.arange(start_idx, end_idx)
 
                 # Compute the advantages and returns for this trajectory.
                 current_traj_advantages = self.compute_advantages(
