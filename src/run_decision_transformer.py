@@ -31,7 +31,7 @@ if __name__ == "__main__":
         layer_norm=args.layer_norm,
         time_embedding_type=TIME_EMBEDDING_TYPE,
         n_ctx=args.n_ctx,
-        model_type=args.model_type,
+        # model_type=args.model_type,
     )
 
     offline_config = OfflineTrainConfig(
