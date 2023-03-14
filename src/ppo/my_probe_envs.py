@@ -1,4 +1,3 @@
-# %%
 import gymnasium as gym
 import numpy as np
 from typing import Union, Tuple
@@ -10,8 +9,6 @@ MAIN = __name__ == "__main__"
 Arr = np.ndarray
 ObsType = np.ndarray
 ActType = int
-
-# %
 
 
 class Probe1(gym.Env):
@@ -46,7 +43,6 @@ if MAIN:
     assert env.action_space.shape == ()
 
 
-# %%
 class Probe2(gym.Env):
     """One action, observation of [-1.0] or [+1.0], one timestep long, reward equals observation.
     We expect the agent to rapidly learn the value of each observation is equal to the observation.
@@ -76,7 +72,6 @@ class Probe2(gym.Env):
         return np.array([self.reward])
 
 
-# %%
 class Probe3(gym.Env):
     """One action, [0.0] then [1.0] observation, two timesteps, +1 reward at the end.
     We expect the agent to rapidly learn the discounted value of the initial observation.
@@ -109,7 +104,6 @@ class Probe3(gym.Env):
         return np.array([0.0])
 
 
-# %%
 class Probe4(gym.Env):
     """Two actions, [0.0] observation, one timestep, reward is -1.0 or +1.0 dependent on the action.
     We expect the agent to learn to choose the +1.0 action.
@@ -137,7 +131,6 @@ class Probe4(gym.Env):
         return np.array([0.0])
 
 
-# %%
 class Probe5(gym.Env):
     """Two actions, random 0/1 observation, one timestep, reward is 1 if action equals observation otherwise -1.
     We expect the agent to learn to match its action to the observation.

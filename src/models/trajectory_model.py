@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Dict, Tuple, Union
+from typing import Tuple, Union
 
 import einops
 import numpy as np
@@ -10,8 +10,6 @@ from einops import rearrange
 from gymnasium.spaces import Box, Dict
 from torchtyping import TensorType as TT
 from transformer_lens import HookedTransformer, HookedTransformerConfig
-
-from src.decision_transformer.model import PosEmbedTokens, StateEncoder
 
 from src.config import EnvironmentConfig, TransformerModelConfig
 
@@ -34,13 +32,14 @@ class TrajectoryTransformer(nn.Module):
         self.environment_config = environment_config
 
         self.action_embedding = nn.Sequential(
-            nn.Embedding(environment_config.action_space.n+1, self.transformer_config.d_model))
+            nn.Embedding(environment_config.action_space.n + 1, self.transformer_config.d_model))
         self.time_embedding = self.initialize_time_embedding()
         self.state_embedding = self.initialize_state_embedding()
 
         # Initialize weights
         nn.init.normal_(
-            self.action_embedding[0].weight, mean=0.0, std=1/((environment_config.action_space.n+1 + 1)*self.transformer_config.d_model))
+            self.action_embedding[0].weight, mean=0.0, std=1 / (
+                (environment_config.action_space.n + 1 + 1) * self.transformer_config.d_model))
 
         self.transformer = self.initialize_easy_transformer()
 
@@ -74,11 +73,16 @@ class TrajectoryTransformer(nn.Module):
                 states, 'batch block height width channel -> (batch block) channel height width')
             state_embeddings = self.state_embedding(states.type(
                 torch.float32).contiguous())  # (batch * block_size, n_embd)
-        else:
+        elif self.transformer_config.state_embedding_type == "grid":
             states = rearrange(
                 states, 'batch block height width channel -> (batch block) (channel height width)')
             state_embeddings = self.state_embedding(states.type(
                 torch.float32).contiguous())  # (batch * block_size, n_embd)
+        else:
+            states = rearrange(
+                states, 'batch block state_dim -> (batch block) state_dim')
+            state_embeddings = self.state_embedding(states.type(
+                torch.float32).contiguous())
         state_embeddings = rearrange(
             state_embeddings, '(batch block) n_embd -> batch block n_embd', block=block_size)
         return state_embeddings
@@ -132,7 +136,7 @@ class TrajectoryTransformer(nn.Module):
 
         if not (self.transformer_config.time_embedding_type == 'linear'):
             self.time_embedding = nn.Embedding(
-                self.environment_config.max_steps+1, self.transformer_config.d_model)
+                self.environment_config.max_steps + 1, self.transformer_config.d_model)
         else:
             self.time_embedding = nn.Linear(
                 1, self.transformer_config.d_model)
@@ -144,10 +148,16 @@ class TrajectoryTransformer(nn.Module):
         if self.transformer_config.state_embedding_type == 'CNN':
             state_embedding = StateEncoder(self.transformer_config.d_model)
         else:
-            n_obs = np.prod(
-                self.environment_config.observation_space['image'].shape)
+            if isinstance(self.environment_config.observation_space, Dict):
+                n_obs = np.prod(
+                    self.environment_config.observation_space['image'].shape)
+            else:
+                n_obs = np.prod(
+                    self.environment_config.observation_space.shape)
+
             state_embedding = nn.Linear(
                 n_obs, self.transformer_config.d_model, bias=False)
+
             nn.init.normal_(state_embedding.weight, mean=0.0, std=0.02)
 
         return state_embedding
@@ -210,7 +220,7 @@ class DecisionTransformer(TrajectoryTransformer):
         self.reward_predictor = nn.Linear(self.transformer_config.d_model, 1)
 
         nn.init.normal_(
-            self.reward_embedding[0].weight, mean=0.0, std=1/self.transformer_config.d_model)
+            self.reward_embedding[0].weight, mean=0.0, std=1 / self.transformer_config.d_model)
 
     def predict_rewards(self, x):
         return self.reward_predictor(x)
@@ -250,10 +260,10 @@ class DecisionTransformer(TrajectoryTransformer):
                     1, "Action embeddings must be one timestep less than state embeddings"
                 action_embeddings = action_embeddings + \
                     time_embeddings[:, :action_embeddings.shape[1]]
-                trajectory_length = timesteps*3-1
+                trajectory_length = timesteps * 3 - 1
             else:
                 action_embeddings = action_embeddings + time_embeddings
-                trajectory_length = timesteps*3
+                trajectory_length = timesteps * 3
         else:
             trajectory_length = 2  # one timestep, no action yet
 
@@ -354,11 +364,11 @@ class DecisionTransformer(TrajectoryTransformer):
         no_actions = actions is None
 
         if no_actions is False:
-            if actions.shape[1] < seq_length-1:
+            if actions.shape[1] < seq_length - 1:
                 raise ValueError(
                     f"Actions must be provided for all timesteps except the last, got {actions.shape[1]} and {seq_length}")
 
-            if actions.shape[1] == seq_length-1:
+            if actions.shape[1] == seq_length - 1:
                 if pad_action:
                     print(
                         "Warning: actions are missing for the last timestep, padding with zeros")
@@ -414,7 +424,7 @@ class CloneTransformer(TrajectoryTransformer):
 
         if action_embeddings is not None:
             action_embeddings = action_embeddings + time_embeddings
-            trajectory_length = timesteps*2
+            trajectory_length = timesteps * 2
         else:
             trajectory_length = 1  # one timestep, no action yet
 
@@ -463,11 +473,11 @@ class CloneTransformer(TrajectoryTransformer):
         no_actions = actions is None
 
         if no_actions is False:
-            if actions.shape[1] < seq_length-1:
+            if actions.shape[1] < seq_length - 1:
                 raise ValueError(
                     f"Actions must be provided for all timesteps except the last, got {actions.shape[1]} and {seq_length}")
 
-            if actions.shape[1] == seq_length-1:
+            if actions.shape[1] == seq_length - 1:
                 if pad_action:
                     print(
                         "Warning: actions are missing for the last timestep, padding with zeros")
