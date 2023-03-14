@@ -67,7 +67,7 @@ def online_config():
         num_minibatches: int = 8
         update_epochs: int = 4
         clip_coef: float = 0.4
-        ent_coef: float = 0.01
+        ent_coef: float = 0.00
         vf_coef: float = 0.5
         max_grad_norm: float = 2
         trajectory_path: str = None
@@ -194,6 +194,8 @@ def test_probe_envs_traj_model(env_name, run_config, environment_config, online_
     online_config.use_trajectory_model = True
     transformer_model_config.state_embedding_type = "other"
     online_config.total_timesteps = 2000
+    if env_name == "Probe3-v0":
+        online_config.total_timesteps = 10000
     agent = train_ppo(
         run_config=run_config,
         online_config=online_config,
@@ -209,6 +211,40 @@ def test_probe_envs_traj_model(env_name, run_config, environment_config, online_
         [[0.0], [0.0]],
         [[0.0], [1.0]]]
 
+    match = re.match(r"Probe(\d)-v0", env_name)
+    probe_idx = int(match.group(1)) - 1
+    obs = t.tensor(obs_for_probes[probe_idx])
+
+    # test action quality first since if actions actor isn't working
+    # out expected value will be wrong
+    if probe_idx == 3:  # probe env 4, action should be +1.0
+        action = agent.actor(
+            obs.unsqueeze(1),
+            actions=None,
+            timesteps=t.tensor([[0], [0]]).unsqueeze(-1)
+        )
+        prob = t.nn.functional.softmax(action, dim=-1).squeeze(1)
+        t.testing.assert_close(
+            prob,
+            t.tensor([[0.0, 1.0], [0.0, 1.0]]),
+            atol=1e-2,
+            rtol=1
+        )
+
+    if probe_idx == 4:  # probe env 4, action should be +1.0
+        action = agent.actor(
+            obs.unsqueeze(1),
+            actions=None,
+            timesteps=t.tensor([[0], [0]]).unsqueeze(-1)
+        )
+        prob = t.nn.functional.softmax(action, dim=-1).squeeze(1)
+        t.testing.assert_close(
+            prob,
+            t.tensor([[1.0, 0.0], [0.0, 1.0]]),
+            atol=1e-2,
+            rtol=1
+        )
+
     expected_value_for_probes = [
         [[1.0]],
         [[-1.0], [+1.0]],
@@ -218,35 +254,12 @@ def test_probe_envs_traj_model(env_name, run_config, environment_config, online_
     ]
 
     tolerances_for_value = [5e-4, 5e-4, 5e-4, 5e-4, 1e-3]
-    match = re.match(r"Probe(\d)-v0", env_name)
-    probe_idx = int(match.group(1)) - 1
-    obs = t.tensor(obs_for_probes[probe_idx])
+
     value = agent.critic(obs)
     print("Value: ", value)
     expected_value = t.tensor(expected_value_for_probes[probe_idx])
     t.testing.assert_close(value, expected_value,
                            atol=tolerances_for_value[probe_idx], rtol=0.1)
-
-    if probe_idx == 3:  # probe env 4, action should be +1.0
-        action = agent.actor(
-            obs)
-        prob = t.nn.functional.softmax(action, dim=-1)
-        t.testing.assert_close(
-            prob,
-            t.tensor([[0.0, 1.0], [0.0, 1.0]]),
-            atol=1e-2,
-            rtol=1
-        )
-
-    if probe_idx == 4:  # probe env 4, action should be +1.0
-        action = agent.actor(obs)
-        prob = t.nn.functional.softmax(action, dim=-1)
-        t.testing.assert_close(
-            prob,
-            t.tensor([[1.0, 0.0], [0.0, 1.0]]),
-            atol=1e-2,
-            rtol=1
-        )
 
 
 def test_empty_env(run_config, environment_config, online_config):

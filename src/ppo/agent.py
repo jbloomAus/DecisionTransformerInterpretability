@@ -388,17 +388,6 @@ class TrajPPOAgent(PPOAgent):
                 log the collected trajectories. Defaults to None.
         """
 
-        # since there's no reset here, we're going to continue sampling
-        # from the trajectories present in the replay buffer.
-        # to do so, we need to go back a context window lenght of the steps and get these out of the replay buffer.
-        # after we do that, we can hand them to the actor/critic.
-        # the actor will then generate a new action, and the critic will generate a new value function.
-        # nothing will change with the value function/logits actually.
-
-        # So it seems like our to do list is:
-        # 1. add a function to the memory object to get the last n-steps
-        # 2. convert these to states/actions for input into the actor
-
         device = memory.device
         obs = memory.next_obs
         done = memory.next_done
@@ -437,7 +426,6 @@ class TrajPPOAgent(PPOAgent):
                         timesteps=timesteps.unsqueeze(-1)
                     )
                     # Our critic generates a value function (which we use in the value loss, and to estimate advantages)
-
                     value = self.critic(obs).flatten()
 
             probs = Categorical(logits=logits)
