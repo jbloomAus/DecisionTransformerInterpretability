@@ -37,12 +37,6 @@ class Probe1(gym.Env):
         return np.array([0.0])
 
 
-if MAIN:
-    env = gym.make("Probe1-v0")
-    assert env.observation_space.shape == (1,)
-    assert env.action_space.shape == ()
-
-
 class Probe2(gym.Env):
     """One action, observation of [-1.0] or [+1.0], one timestep long, reward equals observation.
     We expect the agent to rapidly learn the value of each observation is equal to the observation.
