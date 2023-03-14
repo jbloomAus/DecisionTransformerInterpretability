@@ -42,6 +42,7 @@ class TrajectoryMinibatch:
     values: TT["batch"]  # noqa: F821
     returns: TT["batch"]  # noqa: F821
     timesteps: TT["batch", "T"]  # noqa: F821
+    rewards: TT["batch", "T"]  # noqa: F821
 
 
 class Memory():
@@ -277,6 +278,7 @@ class Memory():
             minibatch_values = []
             minibatch_returns = []
             minibatch_timesteps = []
+            minibatch_rewards = []
 
             for _ in range(self.args.minibatch_size):
 
@@ -361,6 +363,7 @@ class Memory():
                 minibatch_advantages.append(current_traj_advantages[-1])
                 minibatch_values.append(current_traj_values[-1])
                 minibatch_returns.append(current_traj_returns[-1])
+                minibatch_rewards.append(current_traj_rewards[-1])
                 minibatch_timesteps.append(current_traj_timesteps)
 
             # stack the minibatch
@@ -374,6 +377,7 @@ class Memory():
             minibatch_values = t.stack(minibatch_values)
             minibatch_returns = t.stack(minibatch_returns)
             minibatch_timesteps = t.stack(minibatch_timesteps)
+            minibatch_rewards = t.stack(minibatch_rewards)
 
             minibatches.append(TrajectoryMinibatch(
                 obs=minibatch_obs,
@@ -381,8 +385,9 @@ class Memory():
                 logprobs=minibatch_logprobs,
                 advantages=minibatch_advantages,
                 values=minibatch_values,
-                returns=minibatch_values,
-                timesteps=minibatch_timesteps
+                returns=minibatch_returns,
+                timesteps=minibatch_timesteps,
+                rewards=minibatch_rewards
             ))
 
         return minibatches
