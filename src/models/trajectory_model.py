@@ -366,7 +366,7 @@ class DecisionTransformer(TrajectoryTransformer):
         if no_actions is False:
             if actions.shape[1] < seq_length - 1:
                 raise ValueError(
-                    f"Actions must be provided for all timesteps except the last, got {actions.shape[1]} and {seq_length}")
+                    f"Actions required for all timesteps except the last, got {actions.shape[1]} and {seq_length}")
 
             if actions.shape[1] == seq_length - 1:
                 if pad_action:
@@ -475,7 +475,7 @@ class CloneTransformer(TrajectoryTransformer):
         if no_actions is False:
             if actions.shape[1] < seq_length - 1:
                 raise ValueError(
-                    f"Actions must be provided for all timesteps except the last, got {actions.shape[1]} and {seq_length}")
+                    f"Actions required for all timesteps except the last, got {actions.shape[1]} and {seq_length}")
 
             if actions.shape[1] == seq_length - 1:
                 if pad_action:
