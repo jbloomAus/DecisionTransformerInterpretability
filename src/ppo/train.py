@@ -105,6 +105,8 @@ def train_ppo(
 
     envs.close()
 
+    return agent
+
 
 def check_and_upload_new_video(video_path, videos, step=None):
     """

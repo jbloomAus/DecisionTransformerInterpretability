@@ -84,7 +84,7 @@ def ppo_runner(
         ) for i in range(online_config.num_envs)]
     )
 
-    train_ppo(
+    agent = train_ppo(
         run_config=run_config,
         online_config=online_config,
         environment_config=environment_config,

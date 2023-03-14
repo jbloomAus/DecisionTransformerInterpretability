@@ -524,7 +524,7 @@ class TrajPPOAgent(PPOAgent):
                 logits = self.actor(
                     states=mb.obs,
                     actions=mb.actions,
-                    timesteps=mb.timesteps
+                    timesteps=mb.timesteps.unsqueeze(-1)
                 )
 
                 probs = Categorical(logits=logits)
