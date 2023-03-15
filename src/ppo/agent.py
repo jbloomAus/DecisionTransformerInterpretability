@@ -515,13 +515,20 @@ class TrajPPOAgent(PPOAgent):
                     timesteps=mb.timesteps.unsqueeze(-1)
                 )
 
-                probs = Categorical(logits=logits)
+                # squeeze sequence dimension
+                probs = Categorical(logits=logits.squeeze(1))
                 # critic is a DNN so let's the last state obs at each time step.
                 values = self.critic(mb.obs[:, -1]).squeeze()
                 clipped_surrogate_objective = calc_clipped_surrogate_objective(
-                    probs, mb.actions, mb.advantages, mb.logprobs, args.clip_coef)
+                    probs=probs,
+                    mb_action=mb.actions.squeeze(-1).squeeze(-1),
+                    mb_advantages=mb.advantages,
+                    mb_logprobs=mb.logprobs,
+                    clip_coef=args.clip_coef)
+
                 value_loss = calc_value_function_loss(
                     values, mb.returns, args.vf_coef)
+
                 entropy_bonus = calc_entropy_bonus(probs, args.ent_coef)
                 total_objective_function = clipped_surrogate_objective - value_loss + entropy_bonus
                 optimizer.zero_grad()
