@@ -991,8 +991,8 @@
 <span id="src-run-decision-transformer-module"></span><h2>src.run_decision_transformer module<a class="headerlink" href="#module-src.run_decision_transformer" title="Permalink to this heading">#</a></h2>
 <p>This file is the entry point for running the decision transformer.</p>
 </section>
-<section id="module-src.run_ppo">
-<span id="src-run-ppo-module"></span><h2>src.run_ppo module<a class="headerlink" href="#module-src.run_ppo" title="Permalink to this heading">#</a></h2>
+<section id="src-run-ppo-module">
+<h2>src.run_ppo module<a class="headerlink" href="#src-run-ppo-module" title="Permalink to this heading">#</a></h2>
 </section>
 <section id="module-src.utils">
 <span id="src-utils-module"></span><h2>src.utils module<a class="headerlink" href="#module-src.utils" title="Permalink to this heading">#</a></h2>
@@ -1033,6 +1033,11 @@ or ended in the environment.</p>
 <dd></dd></dl>
 
 </dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.utils.accumulate_trajectory">
+<span class="sig-prename descclassname"><span class="pre">src.utils.</span></span><span class="sig-name descname"><span class="pre">accumulate_trajectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">next_obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reward</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">done</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">truncated</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.utils.accumulate_trajectory" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="src.utils.pad_tensor">
@@ -1199,7 +1204,7 @@ or ended in the environment.</p>
 </li>
 <li><a class="reference internal" href="#module-src.run_calibration">src.run_calibration module</a></li>
 <li><a class="reference internal" href="#module-src.run_decision_transformer">src.run_decision_transformer module</a></li>
-<li><a class="reference internal" href="#module-src.run_ppo">src.run_ppo module</a></li>
+<li><a class="reference internal" href="#src-run-ppo-module">src.run_ppo module</a></li>
 <li><a class="reference internal" href="#module-src.utils">src.utils module</a><ul>
 <li><a class="reference internal" href="#src.utils.TrajectoryWriter"><code class="docutils literal notranslate"><span class="pre">TrajectoryWriter</span></code></a><ul>
 <li><a class="reference internal" href="#src.utils.TrajectoryWriter.accumulate_trajectory"><code class="docutils literal notranslate"><span class="pre">TrajectoryWriter.accumulate_trajectory()</span></code></a></li>
@@ -1207,6 +1212,7 @@ or ended in the environment.</p>
 <li><a class="reference internal" href="#src.utils.TrajectoryWriter.write"><code class="docutils literal notranslate"><span class="pre">TrajectoryWriter.write()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#src.utils.accumulate_trajectory"><code class="docutils literal notranslate"><span class="pre">accumulate_trajectory()</span></code></a></li>
 <li><a class="reference internal" href="#src.utils.pad_tensor"><code class="docutils literal notranslate"><span class="pre">pad_tensor()</span></code></a></li>
 </ul>
 </li>
