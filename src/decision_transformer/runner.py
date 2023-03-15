@@ -27,11 +27,11 @@ def run_decision_transformer(
     else:
         device = t.device("cpu")
 
-    if run_config.trajectory_path is None:
+    if offline_config.trajectory_path is None:
         raise ValueError("Must specify a trajectory path.")
 
     trajectory_data_set = TrajectoryDataset(
-        trajectory_path=run_config.trajectory_path,
+        trajectory_path=offline_config.trajectory_path,
         max_len=transformer_config.n_ctx // 3,
         pct_traj=offline_config.pct_traj,
         prob_go_from_end=offline_config.prob_go_from_end,

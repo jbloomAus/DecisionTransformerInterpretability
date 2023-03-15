@@ -17,7 +17,6 @@ if __name__ == "__main__":
         track=args.track,
         wandb_project_name=args.wandb_project_name,
         wandb_entity=args.wandb_entity,
-        trajectory_path=args.trajectory_path
     )
 
     TIME_EMBEDDING_TYPE = "linear" if args.linear_time_embedding \

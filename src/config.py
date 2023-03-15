@@ -77,6 +77,7 @@ class OfflineTrainConfig:
     '''
     Configuration class for offline training.
     '''
+    trajectory_path: str
     batch_size: int = 128
     lr: float = 0.0001
     weight_decay: float = 0.0
@@ -92,7 +93,6 @@ class OfflineTrainConfig:
     model_type: str = 'decision_transformer'
     initial_rtg: list[float] = (0.0, 1.0)
     eval_max_time_steps: int = 100
-    trajectory_path: Optional[str] = None
 
     def __post__init__(self):
 
@@ -127,6 +127,10 @@ class OnlineTrainConfig:
         self.batch_size = int(self.num_envs * self.num_steps)
         self.minibatch_size = self.batch_size // self.num_minibatches
 
+        if self.trajectory_path is None:
+            self.trajectory_path = os.path.join(
+                "trajectories", str(uuid.uuid4()) + ".gz")
+
 
 @dataclass
 class RunConfig:
@@ -139,12 +143,6 @@ class RunConfig:
     track: bool = True
     wandb_project_name: str = "PPO-MiniGrid"
     wandb_entity: str = None
-    trajectory_path: Optional[str] = None
-
-    def __post_init__(self):
-        if self.trajectory_path is None:
-            self.trajectory_path = os.path.join(
-                "trajectories", self.exp_name + str(uuid.uuid4()) + ".gz")
 
 
 def parse_metadata_to_environment_config(metadata: dict):

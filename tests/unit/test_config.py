@@ -77,7 +77,7 @@ def test_online_train_config():
 
 def test_offline_train_config():
     # test existence of properties
-    config = OfflineTrainConfig()
+    config = OfflineTrainConfig(trajectory_path='tests/data/trajectories')
     assert hasattr(config, 'batch_size')
     assert hasattr(config, 'lr')
     assert hasattr(config, 'weight_decay')
@@ -90,6 +90,13 @@ def test_offline_train_config():
     assert hasattr(config, 'eval_episodes')
     assert hasattr(config, 'initial_rtg')
     assert hasattr(config, 'eval_max_time_steps')
+    assert hasattr(config, 'trajectory_path')
+
+
+def test_offline_train_config_raise_error_no_traj_path():
+
+    with pytest.raises(TypeError):
+        OfflineTrainConfig()
 
 
 def test_run_config():
@@ -101,4 +108,4 @@ def test_run_config():
     assert hasattr(config, 'track')
     assert hasattr(config, 'wandb_project_name')
     assert hasattr(config, 'wandb_entity')
-    assert hasattr(config, 'trajectory_path')
+    assert not hasattr(config, 'trajectory_path')
