@@ -1,22 +1,22 @@
 python -m src.run_decision_transformer \
-    --exp_name MiniGrid-Dynamic-Obstacles-8x8-v0-Refactor \
-    --trajectory_path trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl \
+    --exp_name MiniGrid-DoorKey-8x8-v0-Test \
+    --trajectory_path trajectories/0efb210c-6f04-4478-8ae1-e2c4ab147e1d.gz \
     --d_model 128 \
     --n_heads 2 \
     --d_mlp 256 \
     --n_layers 1 \
     --learning_rate 0.0001 \
     --batch_size 128 \
-    --train_epochs 5000 \
+    --train_epochs 500 \
     --test_epochs 10 \
     --n_ctx 3 \
     --pct_traj 1 \
     --weight_decay 0.001 \
     --seed 1 \
     --wandb_project_name DecisionTransformerInterpretability-Dev \
-    --test_frequency 1000 \
-    --eval_frequency 1000 \
-    --eval_episodes 10 \
+    --test_frequency 100 \
+    --eval_frequency 100 \
+    --eval_episodes 5 \
     --initial_rtg -1 \
     --initial_rtg 0 \
     --initial_rtg 1 \
