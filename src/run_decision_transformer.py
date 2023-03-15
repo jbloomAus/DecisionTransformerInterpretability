@@ -6,6 +6,8 @@ from .decision_transformer.utils import parse_args
 from .config import RunConfig, TransformerModelConfig, OfflineTrainConfig
 from .environments.environments import make_env
 
+import torch as t
+
 if __name__ == "__main__":
 
     args = parse_args()
@@ -30,6 +32,7 @@ if __name__ == "__main__":
         layer_norm=args.layer_norm,
         time_embedding_type=TIME_EMBEDDING_TYPE,
         n_ctx=args.n_ctx,
+        device='cuda' if args.cuda and t.cuda.is_available() else 'cpu'
     )
 
     offline_config = OfflineTrainConfig(

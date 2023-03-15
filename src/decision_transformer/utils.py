@@ -77,7 +77,7 @@ def parse_args():
                         help='<Required> Set flag', required=False, default=[0, 1])
     parser.add_argument("--prob_go_from_end", type=float, default=0.1)
     parser.add_argument("--eval_max_time_steps", type=int, default=1000)
-    parser.add_argument("--cuda", type=bool, default=True)
+    parser.add_argument("--cuda", action=argparse.BooleanOptionalAction)
     parser.add_argument("--model_type", type=str,
                         default="decision_transformer")
     args = parser.parse_args()
