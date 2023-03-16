@@ -17,7 +17,7 @@ class TrajectoryReader():
     '''
 
     def __init__(self, path):
-        self.path = path
+        self.path = path.strip()
 
     def read(self):
         # if path ends in .pkl, read as pickle
