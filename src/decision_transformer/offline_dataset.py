@@ -261,22 +261,22 @@ class TrajectoryDataset(Dataset):
     def return_tensors(self, s, a, r, rtg, d, timesteps, mask):
 
         if isinstance(s, t.Tensor):
-            s.to(dtype=t.float32, device=self.device)
+            s = s.to(dtype=t.float32, device=self.device)
         else:
             s = t.from_numpy(s).to(dtype=t.float32, device=self.device)
 
         if isinstance(a, t.Tensor):
-            a.to(dtype=t.long, device=self.device)
+            a = a.to(dtype=t.long, device=self.device)
         else:
             a = t.from_numpy(a).to(dtype=t.long, device=self.device)
 
         if isinstance(r, t.Tensor):
-            r.to(dtype=t.float32, device=self.device)
+            r = r.to(dtype=t.float32, device=self.device)
         else:
             r = t.from_numpy(r).to(dtype=t.float32, device=self.device)
 
         if isinstance(rtg, t.Tensor):
-            rtg.to(dtype=t.float32, device=self.device)
+            rtg = rtg.to(dtype=t.float32, device=self.device)
         else:
             rtg = t.from_numpy(rtg).to(dtype=t.float32, device=self.device)
 
