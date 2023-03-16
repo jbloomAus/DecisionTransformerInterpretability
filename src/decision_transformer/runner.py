@@ -36,7 +36,7 @@ def run_decision_transformer(
         max_len=transformer_config.n_ctx // 3,
         pct_traj=offline_config.pct_traj,
         prob_go_from_end=offline_config.prob_go_from_end,
-        device=transformer_config.device,
+        device=device,
     )
 
     # make an environment

@@ -398,6 +398,8 @@ class CloneTransformer(TrajectoryTransformer):
     ):
         super().__init__(transformer_config, environment_config)
 
+        # n_ctx must be odd (previous state, action, next state)
+        assert (transformer_config.n_ctx - 1) % 2 == 0
         self.transformer = self.initialize_easy_transformer()
 
     def get_token_embeddings(self,
