@@ -1,10 +1,11 @@
 '''
 This module contains the configuration classes for the project.
 '''
+import dataclasses
+import json
 import os
 import uuid
 from dataclasses import dataclass
-from typing import Optional
 
 import gymnasium as gym
 
@@ -143,6 +144,11 @@ class RunConfig:
     track: bool = True
     wandb_project_name: str = "PPO-MiniGrid"
     wandb_entity: str = None
+
+
+class ConfigJsonEncoder(json.JSONEncoder):
+    def default(self, config):
+        return dataclasses.asdict(config)
 
 
 def parse_metadata_to_environment_config(metadata: dict):
