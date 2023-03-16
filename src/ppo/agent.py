@@ -393,7 +393,9 @@ class TrajPPOAgent(PPOAgent):
         done = memory.next_done
         context_window_size = self.actor.transformer_config.n_ctx
         n_envs = envs.num_envs
-        cuda = self.device.type == 'cuda'
+        if isinstance(device, str):
+            device = t.device(device)
+        cuda = device.type == "cuda"
 
         for step in range(num_steps):
 
@@ -410,25 +412,44 @@ class TrajPPOAgent(PPOAgent):
                 # if no experience,s you have one timestep and you buffer out to the context size.
                 # if you have some experiences, than you fill out at much of the context window as you can.
                 # if you have more experiences than the context window, you have to truncate.
+
+                # we have one more obs than action
+                obs_timesteps = (context_window_size - 1) // 2 + \
+                    1  # (the current obs)
+                actions_timesteps = obs_timesteps - 1
+
                 obss = memory.get_obs_traj(
-                    steps=step, pad_to_length=context_window_size // 2)
-                actions = memory.get_act_traj(
-                    steps=context_window_size // 2, pad_to_length=context_window_size // 2)
+                    steps=step,
+                    pad_to_length=obs_timesteps
+                )
+
+                obss = t.cat((obss[:, 1:], obs.unsqueeze(-1)), dim=1)
+
+                if actions_timesteps == 0:
+                    actions = None
+                else:
+                    actions = memory.get_act_traj(
+                        steps=step - 1,
+                        pad_to_length=actions_timesteps
+                    ).to(dtype=t.long)
+
                 timesteps = memory.get_timestep_traj(
-                    steps=context_window_size // 2, pad_to_length=context_window_size // 2)
+                    steps=step,
+                    pad_to_length=obs_timesteps,
+                )
 
                 # Generate the next set of new experiences (one for each env)
                 with t.inference_mode():
                     # Our actor generates logits over actions which we can then sample from
                     logits = self.actor.forward(
                         states=obss,
-                        actions=actions.to(dtype=t.long),
+                        actions=actions,
                         timesteps=timesteps.unsqueeze(-1)
                     )
                     # Our critic generates a value function (which we use in the value loss, and to estimate advantages)
                     value = self.critic(obs).flatten()
 
-            probs = Categorical(logits=logits)
+            probs = Categorical(logits=logits.squeeze(1))
             action = probs.sample()
             logprob = probs.log_prob(action)
             next_obs, reward, next_done, next_truncated, info = envs.step(
@@ -503,7 +524,8 @@ class TrajPPOAgent(PPOAgent):
         """
         for _ in range(args.update_epochs):
             minibatches = memory.get_trajectory_minibatches(
-                self.actor.transformer_config.n_ctx // 2,
+                (self.actor.transformer_config.n_ctx - 1) // 2 +
+                1,  # this is max timesteps
                 prob_go_from_end=args.prob_go_from_end,
             )
             # Compute loss on each minibatch, and step the optimizer
@@ -511,7 +533,9 @@ class TrajPPOAgent(PPOAgent):
 
                 logits = self.actor(
                     states=mb.obs,
-                    actions=mb.actions,
+                    # these should be the previous actions
+                    actions=mb.actions[:, :- \
+                                       1] if mb.actions.shape[1] > 1 else None,
                     timesteps=mb.timesteps.unsqueeze(-1)
                 )
 
@@ -521,14 +545,15 @@ class TrajPPOAgent(PPOAgent):
                 values = self.critic(mb.obs[:, -1]).squeeze()
                 clipped_surrogate_objective = calc_clipped_surrogate_objective(
                     probs=probs,
-                    mb_action=mb.actions.squeeze(-1).squeeze(-1),
+                    # these should be the current actions
+                    mb_action=mb.actions[:, -1].squeeze(-1),
                     mb_advantages=mb.advantages,
                     mb_logprobs=mb.logprobs,
                     clip_coef=args.clip_coef)
 
                 value_loss = calc_value_function_loss(
                     values, mb.returns, args.vf_coef)
-
+                print("value_loss:", value_loss.item())
                 entropy_bonus = calc_entropy_bonus(probs, args.ent_coef)
                 total_objective_function = clipped_surrogate_objective - value_loss + entropy_bonus
                 optimizer.zero_grad()

@@ -142,9 +142,9 @@ def test_memory_get_obs_traj(memory):
     reward = torch.tensor([1.0, 2.0, 3.0])
 
     for i in range(10):
-        memory.add(info, obs, done, action, logprob, value, reward)
+        memory.add(info, obs + i, done, action, logprob, value, reward)
 
-    memory.add(info_final, obs, done, action, logprob, value, reward)
+    memory.add(info_final, obs + 10, done, action, logprob, value, reward)
 
     obs_traj = memory.get_obs_traj(steps=3, pad_to_length=3)
 
@@ -154,9 +154,9 @@ def test_memory_get_obs_traj(memory):
     torch.testing.assert_allclose(
         obs_traj,
         torch.tensor([
-            [1.0, 2.0, 3.0],
-            [1.0, 2.0, 3.0],
-            [1.0, 2.0, 3.0]
+            [9.0, 10.0, 11.0],
+            [10.0, 11.0, 12.0],
+            [11.0, 12.0, 13.0]
         ]).T
     )
 

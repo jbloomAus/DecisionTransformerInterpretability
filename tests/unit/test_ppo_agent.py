@@ -5,7 +5,8 @@ import torch.nn as nn
 import torch.optim as optim
 from dataclasses import dataclass
 
-from src.ppo.agent import PPOScheduler, PPOAgent, FCAgent
+from src.ppo.agent import PPOScheduler, PPOAgent, FCAgent, TrajPPOAgent
+from src.models.trajectory_model import TrajectoryTransformer
 from src.ppo.memory import Memory
 
 
@@ -32,8 +33,68 @@ def online_config():
         fully_observed: bool = False
         batch_size: int = 16
         minibatch_size = 4
+        prob_go_from_end = 0.1
 
     return DummyOnlineConfig()
+
+
+@pytest.fixture
+def transformer_model_config():
+    @dataclass
+    class DummyTransformerModelConfig:
+        d_model: int = 128
+        n_heads: int = 2
+        d_mlp: int = 256
+        n_layers: int = 1
+        n_ctx: int = 1
+        time_embedding_type: str = "embedding"
+        state_embedding_type: str = "grid"
+        seed: int = 1
+        device: str = "cpu"
+        d_head: int = 64  # d_model // n_heads
+        layer_norm = False
+
+    return DummyTransformerModelConfig()
+
+
+@pytest.fixture
+def big_transformer_model_config():
+    @dataclass
+    class DummyTransformerModelConfig:
+        d_model: int = 128
+        n_heads: int = 2
+        d_mlp: int = 256
+        n_layers: int = 1
+        n_ctx: int = 9  # look at previous actions and 4 actions before that.
+        time_embedding_type: str = "embedding"
+        state_embedding_type: str = "grid"
+        seed: int = 1
+        device: str = "cpu"
+        d_head: int = 64  # d_model // n_heads
+        layer_norm = False
+
+    return DummyTransformerModelConfig()
+
+
+@pytest.fixture
+def environment_config():
+    @dataclass
+    class DummyEnvironmentConfig:
+        env_id: str = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
+        one_hot_obs: bool = False
+        img_obs: bool = False
+        fully_observed: bool = False
+        max_steps: int = 1000
+        seed: int = 1
+        view_size: int = 7  # 7 ensure view size wrapper isn't added
+        capture_video: bool = False
+        video_dir: str = 'videos'
+        render_mode: str = 'rgb_array'
+        action_space: None = None
+        observation_space: None = None
+        device: str = 'cpu'
+
+    return DummyEnvironmentConfig()
 
 
 @pytest.fixture
@@ -129,7 +190,7 @@ def test_fc_agent_rollout(fc_agent, online_config):
     assert len(memory.experiences[0]) == 6
 
 
-def test_learn(fc_agent, online_config):
+def test_fc_agent_learn(fc_agent, online_config):
 
     envs = gym.vector.SyncVectorEnv(
         [lambda: gym.make('CartPole-v0') for _ in range(4)])
@@ -151,4 +212,172 @@ def test_learn(fc_agent, online_config):
     assert len(memory.next_done) == envs.num_envs
     assert len(memory.next_value) == envs.num_envs
     assert len(memory.experiences) == online_config.num_steps
+    assert len(memory.experiences[0]) == 6
+
+
+def test_traj_agent_init(transformer_model_config, environment_config):
+
+    envs = gym.vector.SyncVectorEnv(
+        [lambda: gym.make(environment_config.env_id) for _ in range(4)])
+    environment_config.action_space = envs.single_action_space
+    environment_config.observation_space = envs.single_observation_space
+
+    agent = TrajPPOAgent(
+        envs=envs,
+        environment_config=environment_config,
+        transformer_model_config=transformer_model_config,
+        device="cpu"
+    )
+
+    assert isinstance(agent, PPOAgent)
+    assert isinstance(agent.critic, nn.Sequential)
+    assert isinstance(agent.actor, TrajectoryTransformer)
+    assert agent.obs_shape == (7, 7, 3)
+    assert agent.num_obs == 147
+    assert agent.num_actions == 3
+    # assert agent.hidden_dim == hidden_dim
+
+
+def test_traj_agent_rollout(transformer_model_config, environment_config):
+
+    num_steps = 10
+    envs = gym.vector.SyncVectorEnv(
+        [lambda: gym.make(environment_config.env_id) for _ in range(4)])
+    environment_config.action_space = envs.single_action_space
+    environment_config.observation_space = envs.single_observation_space
+
+    agent = TrajPPOAgent(
+        envs=envs,
+        environment_config=environment_config,
+        transformer_model_config=transformer_model_config,
+        device="cpu"
+    )
+    memory = Memory(envs=envs, args=online_config, device="cpu")
+
+    agent.rollout(memory, num_steps, envs)
+
+    assert memory.next_obs.shape[0] == envs.num_envs
+    assert memory.next_obs.shape[1] == envs.single_observation_space['image'].shape[0]
+    assert len(memory.next_done) == envs.num_envs
+    assert len(memory.next_value) == envs.num_envs
+    assert len(memory.experiences) == num_steps
+    assert len(memory.experiences[0]) == 6
+
+
+def test_traj_agent_learn(transformer_model_config, environment_config, online_config):
+
+    num_steps = 10
+    envs = gym.vector.SyncVectorEnv(
+        [lambda: gym.make(environment_config.env_id) for _ in range(4)])
+    environment_config.action_space = envs.single_action_space
+    environment_config.observation_space = envs.single_observation_space
+
+    agent = TrajPPOAgent(
+        envs=envs,
+        environment_config=environment_config,
+        transformer_model_config=transformer_model_config,
+        device="cpu"
+    )
+
+    num_updates = online_config.total_timesteps // online_config.batch_size
+    optimizer, scheduler = agent.make_optimizer(
+        num_updates,
+        online_config.learning_rate,
+        online_config.learning_rate * 1e-4
+    )
+
+    memory = Memory(envs=envs, args=online_config, device="cpu")
+
+    agent.rollout(memory, num_steps, envs)
+    agent.learn(memory, online_config, optimizer, scheduler, track=False)
+
+    assert memory.next_obs.shape[0] == envs.num_envs
+    assert memory.next_obs.shape[1] == envs.single_observation_space['image'].shape[0]
+    assert len(memory.next_done) == envs.num_envs
+    assert len(memory.next_value) == envs.num_envs
+    assert len(memory.experiences) == num_steps
+    assert len(memory.experiences[0]) == 6
+
+
+def test_traj_agent_larger_context_init(transformer_model_config, environment_config):
+
+    envs = gym.vector.SyncVectorEnv(
+        [lambda: gym.make(environment_config.env_id) for _ in range(4)])
+    environment_config.action_space = envs.single_action_space
+    environment_config.observation_space = envs.single_observation_space
+
+    agent = TrajPPOAgent(
+        envs=envs,
+        environment_config=environment_config,
+        transformer_model_config=transformer_model_config,
+        device="cpu"
+    )
+
+    assert isinstance(agent, PPOAgent)
+    assert isinstance(agent.critic, nn.Sequential)
+    assert isinstance(agent.actor, TrajectoryTransformer)
+    assert agent.obs_shape == (7, 7, 3)
+    assert agent.num_obs == 147
+    assert agent.num_actions == 3
+    # assert agent.hidden_dim == hidden_dim
+
+
+def test_traj_agent_larger_context_rollout(transformer_model_config, environment_config):
+
+    num_steps = 10
+    envs = gym.vector.SyncVectorEnv(
+        [lambda: gym.make(environment_config.env_id) for _ in range(4)])
+    environment_config.action_space = envs.single_action_space
+    environment_config.observation_space = envs.single_observation_space
+
+    agent = TrajPPOAgent(
+        envs=envs,
+        environment_config=environment_config,
+        transformer_model_config=transformer_model_config,
+        device="cpu"
+    )
+    memory = Memory(envs=envs, args=online_config, device="cpu")
+
+    agent.rollout(memory, num_steps, envs)
+
+    assert memory.next_obs.shape[0] == envs.num_envs
+    assert memory.next_obs.shape[1] == envs.single_observation_space['image'].shape[0]
+    assert len(memory.next_done) == envs.num_envs
+    assert len(memory.next_value) == envs.num_envs
+    assert len(memory.experiences) == num_steps
+    assert len(memory.experiences[0]) == 6
+
+
+def test_traj_agent_larger_context_learn(transformer_model_config, environment_config, online_config):
+
+    num_steps = 10
+    envs = gym.vector.SyncVectorEnv(
+        [lambda: gym.make(environment_config.env_id) for _ in range(4)])
+    environment_config.action_space = envs.single_action_space
+    environment_config.observation_space = envs.single_observation_space
+
+    agent = TrajPPOAgent(
+        envs=envs,
+        environment_config=environment_config,
+        transformer_model_config=transformer_model_config,
+        device="cpu"
+    )
+
+    num_updates = online_config.total_timesteps // online_config.batch_size
+    optimizer, scheduler = agent.make_optimizer(
+        num_updates,
+        online_config.learning_rate,
+        online_config.learning_rate * 1e-4
+    )
+
+    memory = Memory(envs=envs, args=online_config, device="cpu")
+
+    agent.rollout(memory, num_steps, envs)
+    agent.learn(memory, online_config, optimizer, scheduler, track=False)
+
+    assert memory.next_obs.shape[0] == envs.num_envs
+    assert memory.next_obs.shape[1] == envs.single_observation_space['image'].shape[0]
+    assert len(memory.next_done) == envs.num_envs
+    assert len(memory.next_value) == envs.num_envs
+    assert len(memory.experiences) == num_steps
     assert len(memory.experiences[0]) == 6
