@@ -72,7 +72,7 @@ def online_config():
         max_grad_norm: float = 2
         trajectory_path: str = None
         fully_observed: bool = False
-        batch_size: int = 32
+        batch_size: int = 64
         minibatch_size: int = 4
         prob_go_from_end: float = 0.0
 
@@ -219,6 +219,8 @@ def test_probe_envs_traj_model_1_context(
     transformer_model_config.state_embedding_type = "other"
     online_config.total_timesteps = 2000
     if env_name == "Probe3-v0":
+        online_config.total_timesteps = 10000
+    if env_name == "Probe5-v0":
         online_config.total_timesteps = 10000
     agent = train_ppo(
         run_config=run_config,

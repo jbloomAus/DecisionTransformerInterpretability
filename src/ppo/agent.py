@@ -423,7 +423,7 @@ class TrajPPOAgent(PPOAgent):
                     pad_to_length=obs_timesteps
                 )
 
-                obss = t.cat((obss[:, 1:], obs.unsqueeze(-1)), dim=1)
+                obss = t.cat((obss[:, 1:], obs.unsqueeze(1)), dim=1)
 
                 if actions_timesteps == 0:
                     actions = None
@@ -444,7 +444,7 @@ class TrajPPOAgent(PPOAgent):
                     logits = self.actor.forward(
                         states=obss,
                         actions=actions,
-                        timesteps=timesteps.unsqueeze(-1)
+                        timesteps=t.tensor([0]).repeat(n_envs, 1, 1).to(int)
                     )
                     # Our critic generates a value function (which we use in the value loss, and to estimate advantages)
                     value = self.critic(obs).flatten()
@@ -536,7 +536,9 @@ class TrajPPOAgent(PPOAgent):
                     # these should be the previous actions
                     actions=mb.actions[:, :- \
                                        1] if mb.actions.shape[1] > 1 else None,
-                    timesteps=mb.timesteps.unsqueeze(-1)
+                    timesteps=t.tensor([0]).repeat(
+                        mb.obs.shape[0], 1, 1).to(int)
+                    # t.zeros_like(mb.obs).to(int)  # mb.timesteps[:, :-1] / mb.timesteps.max()
                 )
 
                 # squeeze sequence dimension
@@ -553,7 +555,6 @@ class TrajPPOAgent(PPOAgent):
 
                 value_loss = calc_value_function_loss(
                     values, mb.returns, args.vf_coef)
-                print("value_loss:", value_loss.item())
                 entropy_bonus = calc_entropy_bonus(probs, args.ent_coef)
                 total_objective_function = clipped_surrogate_objective - value_loss + entropy_bonus
                 optimizer.zero_grad()

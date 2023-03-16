@@ -133,8 +133,8 @@ def pad_tensor(tensor, length=100, ignore_first_dim=True, pad_token=0, pad_left=
 
     if ignore_first_dim:
         if tensor.shape[1] < length:
-            pad_shape = (tensor.shape[0], length -
-                         tensor.shape[1], *tensor.shape[2:])
+            pad_shape = (tensor.shape[0], length - tensor.shape[1],
+                         *tensor.shape[2:])
             pad = t.ones(pad_shape) * pad_token
 
             if pad_left:
@@ -159,8 +159,10 @@ def pad_tensor(tensor, length=100, ignore_first_dim=True, pad_token=0, pad_left=
 def load_model_data(model_path):
     model_info = t.load(model_path)
     state_dict = model_info["model_state_dict"]
-    transformer_config = TransformerModelConfig(**json.loads(model_info["transformer_config"]))
-    offline_config = OfflineTrainConfig(**json.loads(model_info["offline_config"]))
+    transformer_config = TransformerModelConfig(
+        **json.loads(model_info["transformer_config"]))
+    offline_config = OfflineTrainConfig(
+        **json.loads(model_info["offline_config"]))
 
     trajectory_data_set = TrajectoryDataset(
         trajectory_path=offline_config.trajectory_path,
@@ -171,4 +173,3 @@ def load_model_data(model_path):
     )
 
     return state_dict, trajectory_data_set, transformer_config, offline_config
-
