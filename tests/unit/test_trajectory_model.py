@@ -43,7 +43,7 @@ def test_get_time_embedding(transformer):
     result = transformer.get_time_embedding(timesteps)
     assert result.shape == (1, 6, transformer.transformer_config.d_model)
 
-    timesteps = torch.tensor([[max_timestep+1, 1], [2, 3]])
+    timesteps = torch.tensor([[max_timestep + 1, 1], [2, 3]])
     with pytest.raises(AssertionError):
         transformer.get_time_embedding(timesteps)
 

@@ -87,7 +87,26 @@ def transformer_model_config():
         n_heads: int = 2
         d_mlp: int = 256
         n_layers: int = 1
-        n_ctx: int = 2
+        n_ctx: int = 1
+        time_embedding_type: str = "embedding"
+        state_embedding_type: str = "grid"
+        seed: int = 1
+        device: str = "cpu"
+        d_head: int = 64  # d_model // n_heads
+        layer_norm = False
+
+    return DummyTransformerModelConfig()
+
+
+@pytest.fixture
+def large_transformer_model_config():
+    @dataclass
+    class DummyTransformerModelConfig:
+        d_model: int = 128
+        n_heads: int = 2
+        d_mlp: int = 256
+        n_layers: int = 1
+        n_ctx: int = 1
         time_embedding_type: str = "embedding"
         state_embedding_type: str = "grid"
         seed: int = 1
@@ -173,7 +192,107 @@ def test_probe_envs(env_name, run_config, environment_config, online_config):
 
 
 @pytest.mark.parametrize("env_name", ["Probe1-v0", "Probe2-v0", "Probe3-v0", "Probe4-v0", "Probe5-v0"])
-def test_probe_envs_traj_model(env_name, run_config, environment_config, online_config, transformer_model_config):
+def test_probe_envs_traj_model_1_context(
+        env_name,
+        run_config,
+        environment_config,
+        online_config,
+        transformer_model_config):
+
+    for i in range(5):
+        probes = [Probe1, Probe2, Probe3, Probe4, Probe5]
+        gym.envs.registration.register(
+            id=f"Probe{i+1}-v0", entry_point=probes[i])
+
+    envs = gym.vector.SyncVectorEnv(
+        [make_env(env_name, i, i, False, "test",
+                  render_mode=None, max_steps=None, fully_observed=False) for i in range(4)]
+    )
+
+    # currently, ppo has tests which run inside main if it
+    # detects "Probe" in the env name. We will fix this
+    # eventually.
+    environment_config.env_id = env_name
+    environment_config.action_space = envs.single_action_space
+    environment_config.observation_space = envs.single_observation_space
+    online_config.use_trajectory_model = True
+    transformer_model_config.state_embedding_type = "other"
+    online_config.total_timesteps = 2000
+    if env_name == "Probe3-v0":
+        online_config.total_timesteps = 10000
+    agent = train_ppo(
+        run_config=run_config,
+        online_config=online_config,
+        environment_config=environment_config,
+        transformer_model_config=transformer_model_config,
+        envs=envs
+    )
+
+    obs_for_probes = [
+        [[0.0]],
+        [[-1.0], [+1.0]],
+        [[0.0], [1.0]],
+        [[0.0], [0.0]],
+        [[0.0], [1.0]]]
+
+    match = re.match(r"Probe(\d)-v0", env_name)
+    probe_idx = int(match.group(1)) - 1
+    obs = t.tensor(obs_for_probes[probe_idx])
+
+    # test action quality first since if actions actor isn't working
+    # out expected value will be wrong
+    if probe_idx == 3:
+        action = agent.actor(
+            obs.unsqueeze(1),
+            actions=None,
+            timesteps=t.tensor([[0], [0]]).unsqueeze(-1)
+        )
+        prob = t.nn.functional.softmax(action, dim=-1).squeeze(1)
+        t.testing.assert_close(
+            prob,
+            t.tensor([[0.0, 1.0], [0.0, 1.0]]),
+            atol=1e-2,
+            rtol=1
+        )
+
+    if probe_idx == 4:
+        action = agent.actor(
+            obs.unsqueeze(1),
+            actions=None,
+            timesteps=t.tensor([[0], [0]]).unsqueeze(-1)
+        )
+        prob = t.nn.functional.softmax(action, dim=-1).squeeze(1)
+        t.testing.assert_close(
+            prob,
+            t.tensor([[1.0, 0.0], [0.0, 1.0]]),
+            atol=1e-2,
+            rtol=1
+        )
+
+    expected_value_for_probes = [
+        [[1.0]],
+        [[-1.0], [+1.0]],
+        [[online_config.gamma], [1.0]],
+        [[+1.0], [+1.0]],  # can achieve high reward independently of obs
+        [[+1.0], [+1.0]]
+    ]
+
+    tolerances_for_value = [5e-4, 5e-4, 5e-4, 5e-4, 1e-3]
+
+    value = agent.critic(obs)
+    print("Value: ", value)
+    expected_value = t.tensor(expected_value_for_probes[probe_idx])
+    t.testing.assert_close(value, expected_value,
+                           atol=tolerances_for_value[probe_idx], rtol=0.1)
+
+
+@pytest.mark.parametrize("env_name", ["Probe1-v0", "Probe2-v0", "Probe3-v0", "Probe4-v0", "Probe5-v0"])
+def test_probe_envs_traj_model_2_context(
+        env_name,
+        run_config,
+        environment_config,
+        online_config,
+        transformer_model_config):
 
     for i in range(5):
         probes = [Probe1, Probe2, Probe3, Probe4, Probe5]
