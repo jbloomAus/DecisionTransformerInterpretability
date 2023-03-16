@@ -264,6 +264,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tests.acceptance.html#module-tests.acceptance.test_ppo">tests.acceptance.test_ppo module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="tests.acceptance.html#tests.acceptance.test_ppo.environment_config"><code class="docutils literal notranslate"><span class="pre">environment_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tests.acceptance.html#tests.acceptance.test_ppo.large_transformer_model_config"><code class="docutils literal notranslate"><span class="pre">large_transformer_model_config()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tests.acceptance.html#tests.acceptance.test_ppo.online_config"><code class="docutils literal notranslate"><span class="pre">online_config()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tests.acceptance.html#tests.acceptance.test_ppo.run_config"><code class="docutils literal notranslate"><span class="pre">run_config()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tests.acceptance.html#tests.acceptance.test_ppo.test_empty_env"><code class="docutils literal notranslate"><span class="pre">test_empty_env()</span></code></a></li>
@@ -274,7 +275,8 @@
 <li class="toctree-l3"><a class="reference internal" href="tests.acceptance.html#tests.acceptance.test_ppo.test_ppo_agent_rollout_trajectory_minibatches_minigrid_extra_padding"><code class="docutils literal notranslate"><span class="pre">test_ppo_agent_rollout_trajectory_minibatches_minigrid_extra_padding()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tests.acceptance.html#tests.acceptance.test_ppo.test_ppo_agent_rollout_trajectory_minibatches_minigrid_no_padding"><code class="docutils literal notranslate"><span class="pre">test_ppo_agent_rollout_trajectory_minibatches_minigrid_no_padding()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tests.acceptance.html#tests.acceptance.test_ppo.test_probe_envs"><code class="docutils literal notranslate"><span class="pre">test_probe_envs()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tests.acceptance.html#tests.acceptance.test_ppo.test_probe_envs_traj_model"><code class="docutils literal notranslate"><span class="pre">test_probe_envs_traj_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tests.acceptance.html#tests.acceptance.test_ppo.test_probe_envs_traj_model_1_context"><code class="docutils literal notranslate"><span class="pre">test_probe_envs_traj_model_1_context()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tests.acceptance.html#tests.acceptance.test_ppo.test_probe_envs_traj_model_2_context"><code class="docutils literal notranslate"><span class="pre">test_probe_envs_traj_model_2_context()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tests.acceptance.html#tests.acceptance.test_ppo.transformer_model_config"><code class="docutils literal notranslate"><span class="pre">transformer_model_config()</span></code></a></li>
 </ul>
 </li>
@@ -321,16 +323,25 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tests.unit.html#module-tests.unit.test_ppo_agent">tests.unit.test_ppo_agent module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tests.unit.html#tests.unit.test_ppo_agent.big_transformer_model_config"><code class="docutils literal notranslate"><span class="pre">big_transformer_model_config()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tests.unit.html#tests.unit.test_ppo_agent.environment_config"><code class="docutils literal notranslate"><span class="pre">environment_config()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tests.unit.html#tests.unit.test_ppo_agent.fc_agent"><code class="docutils literal notranslate"><span class="pre">fc_agent()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tests.unit.html#tests.unit.test_ppo_agent.online_config"><code class="docutils literal notranslate"><span class="pre">online_config()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tests.unit.html#tests.unit.test_ppo_agent.optimizer"><code class="docutils literal notranslate"><span class="pre">optimizer()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tests.unit.html#tests.unit.test_ppo_agent.test_fc_agent_init"><code class="docutils literal notranslate"><span class="pre">test_fc_agent_init()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tests.unit.html#tests.unit.test_ppo_agent.test_fc_agent_layer_init"><code class="docutils literal notranslate"><span class="pre">test_fc_agent_layer_init()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tests.unit.html#tests.unit.test_ppo_agent.test_fc_agent_learn"><code class="docutils literal notranslate"><span class="pre">test_fc_agent_learn()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tests.unit.html#tests.unit.test_ppo_agent.test_fc_agent_make_optimizer"><code class="docutils literal notranslate"><span class="pre">test_fc_agent_make_optimizer()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tests.unit.html#tests.unit.test_ppo_agent.test_fc_agent_rollout"><code class="docutils literal notranslate"><span class="pre">test_fc_agent_rollout()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="tests.unit.html#tests.unit.test_ppo_agent.test_learn"><code class="docutils literal notranslate"><span class="pre">test_learn()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tests.unit.html#tests.unit.test_ppo_agent.test_ppo_agent_init"><code class="docutils literal notranslate"><span class="pre">test_ppo_agent_init()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tests.unit.html#tests.unit.test_ppo_agent.test_ppo_scheduler_step"><code class="docutils literal notranslate"><span class="pre">test_ppo_scheduler_step()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tests.unit.html#tests.unit.test_ppo_agent.test_traj_agent_init"><code class="docutils literal notranslate"><span class="pre">test_traj_agent_init()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tests.unit.html#tests.unit.test_ppo_agent.test_traj_agent_larger_context_init"><code class="docutils literal notranslate"><span class="pre">test_traj_agent_larger_context_init()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tests.unit.html#tests.unit.test_ppo_agent.test_traj_agent_larger_context_learn"><code class="docutils literal notranslate"><span class="pre">test_traj_agent_larger_context_learn()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tests.unit.html#tests.unit.test_ppo_agent.test_traj_agent_larger_context_rollout"><code class="docutils literal notranslate"><span class="pre">test_traj_agent_larger_context_rollout()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tests.unit.html#tests.unit.test_ppo_agent.test_traj_agent_learn"><code class="docutils literal notranslate"><span class="pre">test_traj_agent_learn()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tests.unit.html#tests.unit.test_ppo_agent.test_traj_agent_rollout"><code class="docutils literal notranslate"><span class="pre">test_traj_agent_rollout()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tests.unit.html#tests.unit.test_ppo_agent.transformer_model_config"><code class="docutils literal notranslate"><span class="pre">transformer_model_config()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tests.unit.html#module-tests.unit.test_ppo_memory">tests.unit.test_ppo_memory module</a><ul>

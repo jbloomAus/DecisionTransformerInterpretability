@@ -283,6 +283,16 @@
 <section id="module-tests.unit.test_ppo_agent">
 <span id="tests-unit-test-ppo-agent-module"></span><h2>tests.unit.test_ppo_agent module<a class="headerlink" href="#module-tests.unit.test_ppo_agent" title="Permalink to this heading">#</a></h2>
 <dl class="py function">
+<dt class="sig sig-object py" id="tests.unit.test_ppo_agent.big_transformer_model_config">
+<span class="sig-prename descclassname"><span class="pre">tests.unit.test_ppo_agent.</span></span><span class="sig-name descname"><span class="pre">big_transformer_model_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tests.unit.test_ppo_agent.big_transformer_model_config" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tests.unit.test_ppo_agent.environment_config">
+<span class="sig-prename descclassname"><span class="pre">tests.unit.test_ppo_agent.</span></span><span class="sig-name descname"><span class="pre">environment_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tests.unit.test_ppo_agent.environment_config" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="tests.unit.test_ppo_agent.fc_agent">
 <span class="sig-prename descclassname"><span class="pre">tests.unit.test_ppo_agent.</span></span><span class="sig-name descname"><span class="pre">fc_agent</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tests.unit.test_ppo_agent.fc_agent" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
@@ -308,6 +318,11 @@
 <dd></dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="tests.unit.test_ppo_agent.test_fc_agent_learn">
+<span class="sig-prename descclassname"><span class="pre">tests.unit.test_ppo_agent.</span></span><span class="sig-name descname"><span class="pre">test_fc_agent_learn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fc_agent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">online_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tests.unit.test_ppo_agent.test_fc_agent_learn" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="tests.unit.test_ppo_agent.test_fc_agent_make_optimizer">
 <span class="sig-prename descclassname"><span class="pre">tests.unit.test_ppo_agent.</span></span><span class="sig-name descname"><span class="pre">test_fc_agent_make_optimizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fc_agent</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tests.unit.test_ppo_agent.test_fc_agent_make_optimizer" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
@@ -318,11 +333,6 @@
 <dd></dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="tests.unit.test_ppo_agent.test_learn">
-<span class="sig-prename descclassname"><span class="pre">tests.unit.test_ppo_agent.</span></span><span class="sig-name descname"><span class="pre">test_learn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fc_agent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">online_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tests.unit.test_ppo_agent.test_learn" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="tests.unit.test_ppo_agent.test_ppo_agent_init">
 <span class="sig-prename descclassname"><span class="pre">tests.unit.test_ppo_agent.</span></span><span class="sig-name descname"><span class="pre">test_ppo_agent_init</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tests.unit.test_ppo_agent.test_ppo_agent_init" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
@@ -330,6 +340,41 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="tests.unit.test_ppo_agent.test_ppo_scheduler_step">
 <span class="sig-prename descclassname"><span class="pre">tests.unit.test_ppo_agent.</span></span><span class="sig-name descname"><span class="pre">test_ppo_scheduler_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizer</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tests.unit.test_ppo_agent.test_ppo_scheduler_step" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tests.unit.test_ppo_agent.test_traj_agent_init">
+<span class="sig-prename descclassname"><span class="pre">tests.unit.test_ppo_agent.</span></span><span class="sig-name descname"><span class="pre">test_traj_agent_init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transformer_model_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">environment_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tests.unit.test_ppo_agent.test_traj_agent_init" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tests.unit.test_ppo_agent.test_traj_agent_larger_context_init">
+<span class="sig-prename descclassname"><span class="pre">tests.unit.test_ppo_agent.</span></span><span class="sig-name descname"><span class="pre">test_traj_agent_larger_context_init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transformer_model_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">environment_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tests.unit.test_ppo_agent.test_traj_agent_larger_context_init" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tests.unit.test_ppo_agent.test_traj_agent_larger_context_learn">
+<span class="sig-prename descclassname"><span class="pre">tests.unit.test_ppo_agent.</span></span><span class="sig-name descname"><span class="pre">test_traj_agent_larger_context_learn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transformer_model_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">environment_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">online_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tests.unit.test_ppo_agent.test_traj_agent_larger_context_learn" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tests.unit.test_ppo_agent.test_traj_agent_larger_context_rollout">
+<span class="sig-prename descclassname"><span class="pre">tests.unit.test_ppo_agent.</span></span><span class="sig-name descname"><span class="pre">test_traj_agent_larger_context_rollout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transformer_model_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">environment_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tests.unit.test_ppo_agent.test_traj_agent_larger_context_rollout" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tests.unit.test_ppo_agent.test_traj_agent_learn">
+<span class="sig-prename descclassname"><span class="pre">tests.unit.test_ppo_agent.</span></span><span class="sig-name descname"><span class="pre">test_traj_agent_learn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transformer_model_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">environment_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">online_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tests.unit.test_ppo_agent.test_traj_agent_learn" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tests.unit.test_ppo_agent.test_traj_agent_rollout">
+<span class="sig-prename descclassname"><span class="pre">tests.unit.test_ppo_agent.</span></span><span class="sig-name descname"><span class="pre">test_traj_agent_rollout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transformer_model_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">environment_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tests.unit.test_ppo_agent.test_traj_agent_rollout" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tests.unit.test_ppo_agent.transformer_model_config">
+<span class="sig-prename descclassname"><span class="pre">tests.unit.test_ppo_agent.</span></span><span class="sig-name descname"><span class="pre">transformer_model_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tests.unit.test_ppo_agent.transformer_model_config" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 </section>
@@ -674,16 +719,25 @@
 </ul>
 </li>
 <li><a class="reference internal" href="#module-tests.unit.test_ppo_agent">tests.unit.test_ppo_agent module</a><ul>
+<li><a class="reference internal" href="#tests.unit.test_ppo_agent.big_transformer_model_config"><code class="docutils literal notranslate"><span class="pre">big_transformer_model_config()</span></code></a></li>
+<li><a class="reference internal" href="#tests.unit.test_ppo_agent.environment_config"><code class="docutils literal notranslate"><span class="pre">environment_config()</span></code></a></li>
 <li><a class="reference internal" href="#tests.unit.test_ppo_agent.fc_agent"><code class="docutils literal notranslate"><span class="pre">fc_agent()</span></code></a></li>
 <li><a class="reference internal" href="#tests.unit.test_ppo_agent.online_config"><code class="docutils literal notranslate"><span class="pre">online_config()</span></code></a></li>
 <li><a class="reference internal" href="#tests.unit.test_ppo_agent.optimizer"><code class="docutils literal notranslate"><span class="pre">optimizer()</span></code></a></li>
 <li><a class="reference internal" href="#tests.unit.test_ppo_agent.test_fc_agent_init"><code class="docutils literal notranslate"><span class="pre">test_fc_agent_init()</span></code></a></li>
 <li><a class="reference internal" href="#tests.unit.test_ppo_agent.test_fc_agent_layer_init"><code class="docutils literal notranslate"><span class="pre">test_fc_agent_layer_init()</span></code></a></li>
+<li><a class="reference internal" href="#tests.unit.test_ppo_agent.test_fc_agent_learn"><code class="docutils literal notranslate"><span class="pre">test_fc_agent_learn()</span></code></a></li>
 <li><a class="reference internal" href="#tests.unit.test_ppo_agent.test_fc_agent_make_optimizer"><code class="docutils literal notranslate"><span class="pre">test_fc_agent_make_optimizer()</span></code></a></li>
 <li><a class="reference internal" href="#tests.unit.test_ppo_agent.test_fc_agent_rollout"><code class="docutils literal notranslate"><span class="pre">test_fc_agent_rollout()</span></code></a></li>
-<li><a class="reference internal" href="#tests.unit.test_ppo_agent.test_learn"><code class="docutils literal notranslate"><span class="pre">test_learn()</span></code></a></li>
 <li><a class="reference internal" href="#tests.unit.test_ppo_agent.test_ppo_agent_init"><code class="docutils literal notranslate"><span class="pre">test_ppo_agent_init()</span></code></a></li>
 <li><a class="reference internal" href="#tests.unit.test_ppo_agent.test_ppo_scheduler_step"><code class="docutils literal notranslate"><span class="pre">test_ppo_scheduler_step()</span></code></a></li>
+<li><a class="reference internal" href="#tests.unit.test_ppo_agent.test_traj_agent_init"><code class="docutils literal notranslate"><span class="pre">test_traj_agent_init()</span></code></a></li>
+<li><a class="reference internal" href="#tests.unit.test_ppo_agent.test_traj_agent_larger_context_init"><code class="docutils literal notranslate"><span class="pre">test_traj_agent_larger_context_init()</span></code></a></li>
+<li><a class="reference internal" href="#tests.unit.test_ppo_agent.test_traj_agent_larger_context_learn"><code class="docutils literal notranslate"><span class="pre">test_traj_agent_larger_context_learn()</span></code></a></li>
+<li><a class="reference internal" href="#tests.unit.test_ppo_agent.test_traj_agent_larger_context_rollout"><code class="docutils literal notranslate"><span class="pre">test_traj_agent_larger_context_rollout()</span></code></a></li>
+<li><a class="reference internal" href="#tests.unit.test_ppo_agent.test_traj_agent_learn"><code class="docutils literal notranslate"><span class="pre">test_traj_agent_learn()</span></code></a></li>
+<li><a class="reference internal" href="#tests.unit.test_ppo_agent.test_traj_agent_rollout"><code class="docutils literal notranslate"><span class="pre">test_traj_agent_rollout()</span></code></a></li>
+<li><a class="reference internal" href="#tests.unit.test_ppo_agent.transformer_model_config"><code class="docutils literal notranslate"><span class="pre">transformer_model_config()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-tests.unit.test_ppo_memory">tests.unit.test_ppo_memory module</a><ul>
