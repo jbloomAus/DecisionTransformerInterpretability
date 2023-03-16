@@ -1,16 +1,12 @@
-
 from dataclasses import dataclass, field
 import argparse
-import torch as t
 import re
 from typing import List
 from .model import DecisionTransformer as DecisionTransformerLegacy
 
-from src.environments.wrappers import RenderResizeWrapper, ViewSizeWrapper
-from minigrid.wrappers import FullyObsWrapper, OneHotPartialObsWrapper, RGBImgPartialObsWrapper
-
 from src.models.trajectory_model import DecisionTransformer
-from src.config import EnvironmentConfig, TransformerModelConfig, RunConfig, OfflineTrainConfig
+from src.config import EnvironmentConfig
+from ..utils import load_model_data
 
 
 @dataclass
@@ -85,53 +81,22 @@ def parse_args():
 
 
 def load_decision_transformer(model_path, env):
+    state_dict, trajectory_data_set, transformer_config, _ = load_model_data(model_path)
 
-    state_dict = t.load(model_path)
     if "state_encoder.weight" in state_dict.keys():
-        return load_legacy_decision_transformer(model_path, env)
-
-    # get number of layers from the state dict
-    num_layers = max([int(re.findall(r'\d+', k)[0])
-                      for k in state_dict.keys() if "transformer.blocks" in k]) + 1
-    d_model = state_dict['reward_embedding.0.weight'].shape[0]
-    d_mlp = state_dict['transformer.blocks.0.mlp.W_out'].shape[0]
-    n_heads = state_dict['transformer.blocks.0.attn.W_O'].shape[0]
-    max_timestep = state_dict['time_embedding.weight'].shape[0] - 1
-    n_ctx = state_dict['transformer.pos_embed.W_pos'].shape[0]
-    layer_norm = 'transformer.blocks.0.ln1.w' in state_dict
-
-    if 'state_encoder.weight' in state_dict:
-        # otherwise it would be a sequential and wouldn't have this
-        state_embedding_type = 'grid'
-
-    if state_dict['time_embedding.weight'].shape[1] == 1:
-        time_embedding_type = "linear"
-    else:
-        time_embedding_type = "embedding"
+        return load_legacy_decision_transformer(state_dict, env)
 
     # now we can create the model
     # model = DecisionTransformer(
     #     EnvironmentConfig(env.__spec__),
     # )
     environment_config = EnvironmentConfig(
-        env_id=env.unwrapped.spec.id,
-        one_hot_obs=isinstance(env.observation_space, OneHotPartialObsWrapper),
-        img_obs=isinstance(env.observation_space, RGBImgPartialObsWrapper),
-        view_size=env.unwrapped.observation_space["image"].shape[0],
+        env_id=trajectory_data_set.metadata['args']['env_id'],
+        one_hot_obs=trajectory_data_set.observation_type == "one_hot",
+        view_size=trajectory_data_set.metadata['args']['view_size'],
         fully_observed=False,
         capture_video=False,
         render_mode='rgb_array')
-
-    transformer_config = TransformerModelConfig(
-        d_model=d_model,
-        n_heads=n_heads,
-        d_mlp=d_mlp,
-        n_layers=num_layers,
-        n_ctx=n_ctx,
-        layer_norm=layer_norm,
-        time_embedding_type=time_embedding_type,
-        state_embedding_type=state_embedding_type,
-    )
 
     model = DecisionTransformer(
         environment_config=environment_config,
@@ -144,9 +109,7 @@ def load_decision_transformer(model_path, env):
 # To maintain backwards compatibility with the old models.
 
 
-def load_legacy_decision_transformer(model_path, env):
-
-    state_dict = t.load(model_path)
+def load_legacy_decision_transformer(state_dict, env):
 
     # get number of layers from the state dict
     num_layers = max([int(re.findall(r'\d+', k)[0])

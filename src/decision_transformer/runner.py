@@ -1,3 +1,4 @@
+import json
 import os
 import time
 import warnings
@@ -7,7 +8,7 @@ import torch as t
 
 import wandb
 from src.config import (EnvironmentConfig, OfflineTrainConfig, RunConfig,
-                        TransformerModelConfig)
+                        TransformerModelConfig, ConfigJsonEncoder)
 from src.models.trajectory_model import CloneTransformer, DecisionTransformer
 
 # from .model import DecisionTransformer
@@ -125,7 +126,11 @@ def run_decision_transformer(
             os.mkdir("models")
 
         model_path = f"models/{run_name}.pt"
-        t.save(model.state_dict(), model_path)
+        t.save({
+            "model_state_dict": model.state_dict(),
+            "transformer_config": json.dumps(transformer_config, cls=ConfigJsonEncoder),
+            "offline_config": json.dumps(offline_config, cls=ConfigJsonEncoder),
+        }, model_path)
         artifact = wandb.Artifact(run_name, type="model")
         artifact.add_file(model_path)
         wandb.log_artifact(artifact)
