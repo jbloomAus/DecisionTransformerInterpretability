@@ -6,7 +6,7 @@ import torch
 from src.config import EnvironmentConfig, ConfigJsonEncoder, TransformerModelConfig, OfflineTrainConfig
 from src.decision_transformer.offline_dataset import TrajectoryDataset
 from src.models.trajectory_model import DecisionTransformer
-from src.utils import load_model_data
+from src.decision_transformer.utils import load_model_data
 
 
 @pytest.fixture()

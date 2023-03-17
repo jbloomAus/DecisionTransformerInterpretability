@@ -1,5 +1,4 @@
 import gzip
-import json
 import lzma
 import os
 import pickle
@@ -13,9 +12,6 @@ import torch as t
 from typeguard import typechecked
 
 import wandb
-
-from src.config import TransformerModelConfig, OfflineTrainConfig
-from src.decision_transformer.offline_dataset import TrajectoryDataset
 
 
 class TrajectoryWriter():
@@ -154,22 +150,3 @@ def pad_tensor(tensor, length=100, ignore_first_dim=True, pad_token=0, pad_left=
                 tensor = t.cat([tensor, pad], dim=0)
 
         return tensor
-
-
-def load_model_data(model_path):
-    model_info = t.load(model_path)
-    state_dict = model_info["model_state_dict"]
-    transformer_config = TransformerModelConfig(
-        **json.loads(model_info["transformer_config"]))
-    offline_config = OfflineTrainConfig(
-        **json.loads(model_info["offline_config"]))
-
-    trajectory_data_set = TrajectoryDataset(
-        trajectory_path=offline_config.trajectory_path,
-        max_len=transformer_config.n_ctx // 3,
-        pct_traj=offline_config.pct_traj,
-        prob_go_from_end=offline_config.prob_go_from_end,
-        device=transformer_config.device,
-    )
-
-    return state_dict, trajectory_data_set, transformer_config, offline_config
