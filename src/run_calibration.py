@@ -1,15 +1,15 @@
 from src.environments.environments import make_env
-from src.decision_transformer.utils import load_decision_transformer
+from src.decision_transformer.utils import load_decision_transformer, model_stored_in_legacy_format, load_model_data
 from src.decision_transformer.calibration import calibration_statistics, plot_calibration_statistics
 import argparse
 import warnings
 import numpy as np
 import os
+import torch as t
+import math
 
 # import a  base python logger
 import logging
-
-from src.utils import load_model_data
 
 logging.basicConfig(level=logging.INFO)
 
@@ -37,16 +37,51 @@ if __name__ == "__main__":
     logger.info(f"Loading model from {args.model_path}")
     logger.info(f"Using environment {args.env_id}")
 
-    state_dict, trajectory_data_set, _, _ = load_model_data(args.model_path)
+    if model_stored_in_legacy_format(args.model_path):
+        state_dict = t.load(args.model_path)
+        one_hot_encoded = not (
+                state_dict["state_encoder.weight"].shape[-1] % 20)  # hack for now
 
-    env_func = make_env(
-        args.env_id, seed=1, idx=0, capture_video=False,
-        run_name="dev", fully_observed=False, flat_one_hot=(trajectory_data_set.observation_type == "one_hot"),
-        max_steps=trajectory_data_set.metadata['args']['max_steps'],
-        agent_view_size=trajectory_data_set.metadata['args']['view_size']
-    )
+        if one_hot_encoded:
+            view_size = int(
+                math.sqrt(state_dict["state_encoder.weight"].shape[-1] // 20))
+        else:
+            view_size = int(
+                math.sqrt(state_dict["state_encoder.weight"].shape[-1] // 3))
 
-    dt = load_decision_transformer(args.model_path, env_func())
+        max_time_steps = state_dict["time_embedding.weight"].shape[0]
+        env_func = make_env(
+            args.env_id, seed=1, idx=0, capture_video=False,
+            run_name="dev", fully_observed=False, flat_one_hot=one_hot_encoded,
+            max_steps=max_time_steps, agent_view_size=args.view_size
+        )
+
+        dt = load_decision_transformer(args.model_path, env_func())
+
+        d_model = dt.d_model
+        n_heads = dt.n_heads
+        d_mlp = dt.d_mlp
+        n_ctx = dt.n_ctx
+        n_layers = dt.n_layers
+        max_timestep = dt.max_timestep
+    else:
+        state_dict, trajectory_data_set, transformer_config, _ = load_model_data(args.model_path)
+
+        env_func = make_env(
+            args.env_id, seed=1, idx=0, capture_video=False,
+            run_name="dev", fully_observed=False, flat_one_hot=(trajectory_data_set.observation_type == "one_hot"),
+            max_steps=trajectory_data_set.metadata['args']['max_steps'],
+            agent_view_size=trajectory_data_set.metadata['args']['view_size']
+        )
+
+        dt = load_decision_transformer(args.model_path, env_func())
+
+        d_model = transformer_config.d_model
+        n_heads = transformer_config.n_heads
+        d_mlp = transformer_config.d_mlp
+        n_ctx = transformer_config.n_ctx
+        n_layers = transformer_config.n_layers
+        max_timestep = trajectory_data_set.metadata['args']['max_steps']
 
     warnings.filterwarnings("ignore", category=UserWarning)
     statistics = calibration_statistics(
@@ -62,7 +97,8 @@ if __name__ == "__main__":
     # add all the hyperparameters to the title (env id, d_model, n_heads, d_mlp, n_ctx, n_layers, max_timestep, layernorm)
     # make font title smaller
     fig.update_layout(
-        title=f"{args.env_id} - d_model: {dt.d_model} - n_heads: {dt.n_heads} - d_mlp: {dt.d_mlp} - n_ctx: {dt.n_ctx} - n_layers: {dt.n_layers} - max_timestep: {dt.max_timestep}",
+        title=f"{args.env_id} - d_model: {d_model} - n_heads: {n_heads} - d_mlp: {d_mlp} - n_ctx: {n_ctx} "
+              f"- n_layers: {n_layers} - max_timestep: {max_timestep}",
         title_font_size=10
     )
 

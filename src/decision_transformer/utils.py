@@ -1,12 +1,17 @@
+import json
 from dataclasses import dataclass, field
 import argparse
 import re
 from typing import List
+
+from minigrid.wrappers import OneHotPartialObsWrapper, RGBImgPartialObsWrapper
+
 from .model import DecisionTransformer as DecisionTransformerLegacy
+import torch as t
 
 from src.models.trajectory_model import DecisionTransformer
-from src.config import EnvironmentConfig
-from ..utils import load_model_data
+from src.config import EnvironmentConfig, TransformerModelConfig, OfflineTrainConfig
+from .offline_dataset import TrajectoryDataset
 
 
 @dataclass
@@ -81,22 +86,66 @@ def parse_args():
 
 
 def load_decision_transformer(model_path, env):
-    state_dict, trajectory_data_set, transformer_config, _ = load_model_data(model_path)
+    if model_stored_in_legacy_format(model_path):
+        state_dict = t.load(model_path)
+        if "state_encoder.weight" in state_dict.keys():
+            return load_legacy_decision_transformer(state_dict, env)
 
-    if "state_encoder.weight" in state_dict.keys():
-        return load_legacy_decision_transformer(state_dict, env)
+        # get number of layers from the state dict
+        num_layers = max([int(re.findall(r'\d+', k)[0])
+                          for k in state_dict.keys() if "transformer.blocks" in k]) + 1
+        d_model = state_dict['reward_embedding.0.weight'].shape[0]
+        d_mlp = state_dict['transformer.blocks.0.mlp.W_out'].shape[0]
+        n_heads = state_dict['transformer.blocks.0.attn.W_O'].shape[0]
+        max_timestep = state_dict['time_embedding.weight'].shape[0] - 1
+        n_ctx = state_dict['transformer.pos_embed.W_pos'].shape[0]
+        layer_norm = 'transformer.blocks.0.ln1.w' in state_dict
 
-    # now we can create the model
-    # model = DecisionTransformer(
-    #     EnvironmentConfig(env.__spec__),
-    # )
-    environment_config = EnvironmentConfig(
-        env_id=trajectory_data_set.metadata['args']['env_id'],
-        one_hot_obs=trajectory_data_set.observation_type == "one_hot",
-        view_size=trajectory_data_set.metadata['args']['view_size'],
-        fully_observed=False,
-        capture_video=False,
-        render_mode='rgb_array')
+        if 'state_encoder.weight' in state_dict:
+            # otherwise it would be a sequential and wouldn't have this
+            state_embedding_type = 'grid'
+
+        if state_dict['time_embedding.weight'].shape[1] == 1:
+            time_embedding_type = "linear"
+        else:
+            time_embedding_type = "embedding"
+
+        environment_config = EnvironmentConfig(
+            env_id=env.unwrapped.spec.id,
+            one_hot_obs=isinstance(env.observation_space, OneHotPartialObsWrapper),
+            img_obs=isinstance(env.observation_space, RGBImgPartialObsWrapper),
+            view_size=env.unwrapped.observation_space["image"].shape[0],
+            fully_observed=False,
+            capture_video=False,
+            render_mode='rgb_array')
+
+        transformer_config = TransformerModelConfig(
+            d_model=d_model,
+            n_heads=n_heads,
+            d_mlp=d_mlp,
+            n_layers=num_layers,
+            n_ctx=n_ctx,
+            layer_norm=layer_norm,
+            time_embedding_type=time_embedding_type,
+            state_embedding_type=state_embedding_type,
+        )
+    else:
+        state_dict, trajectory_data_set, transformer_config, _ = load_model_data(model_path)
+
+        if "state_encoder.weight" in state_dict.keys():
+            return load_legacy_decision_transformer(state_dict, env)
+
+        # now we can create the model
+        # model = DecisionTransformer(
+        #     EnvironmentConfig(env.__spec__),
+        # )
+        environment_config = EnvironmentConfig(
+            env_id=trajectory_data_set.metadata['args']['env_id'],
+            one_hot_obs=trajectory_data_set.observation_type == "one_hot",
+            view_size=trajectory_data_set.metadata['args']['view_size'],
+            fully_observed=False,
+            capture_video=False,
+            render_mode='rgb_array')
 
     model = DecisionTransformer(
         environment_config=environment_config,
@@ -146,3 +195,27 @@ def load_legacy_decision_transformer(state_dict, env):
 
     model.load_state_dict(state_dict)
     return model
+
+
+def model_stored_in_legacy_format(model_path):
+    model_info = t.load(model_path)
+    return "model_state_dict" not in model_info
+
+
+def load_model_data(model_path):
+    model_info = t.load(model_path)
+    state_dict = model_info["model_state_dict"]
+    transformer_config = TransformerModelConfig(
+        **json.loads(model_info["transformer_config"]))
+    offline_config = OfflineTrainConfig(
+        **json.loads(model_info["offline_config"]))
+
+    trajectory_data_set = TrajectoryDataset(
+        trajectory_path=offline_config.trajectory_path,
+        max_len=transformer_config.n_ctx // 3,
+        pct_traj=offline_config.pct_traj,
+        prob_go_from_end=offline_config.prob_go_from_end,
+        device=transformer_config.device,
+    )
+
+    return state_dict, trajectory_data_set, transformer_config, offline_config
