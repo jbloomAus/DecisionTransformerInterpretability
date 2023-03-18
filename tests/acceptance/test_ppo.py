@@ -64,7 +64,7 @@ def online_config():
         num_steps: int = 128
         gamma: float = 0.99
         gae_lambda: float = 0.95
-        num_minibatches: int = 8
+        num_minibatches: int = 16
         update_epochs: int = 4
         clip_coef: float = 0.4
         ent_coef: float = 0.00
