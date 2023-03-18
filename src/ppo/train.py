@@ -84,18 +84,8 @@ def train_ppo(
             videos = check_and_upload_new_video(
                 video_path=video_path, videos=videos, step=memory.global_step)
 
-        # Print output (different behaviour for probe envs vs normal envs)
-        if probe_idx is None:
-            output = memory.get_printable_output()
-
-        else:
-            output = get_printable_output_for_probe_envs(
-                online_config, agent, probe_idx, update, num_updates)
-        if output:
-            # with out:
-            #     # print(output)
-            #     # out.clear_output(wait=True)
-            progress_bar.set_description(output)
+        output = memory.get_printable_output()
+        progress_bar.set_description(output)
 
         memory.reset()
 
