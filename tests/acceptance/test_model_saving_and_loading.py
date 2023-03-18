@@ -4,6 +4,8 @@ import pytest
 import torch
 
 from src.config import EnvironmentConfig, ConfigJsonEncoder, TransformerModelConfig, OfflineTrainConfig
+from src.config import RunConfig, OnlineTrainConfig
+from src.ppo.runner import ppo_runner
 from src.decision_transformer.offline_dataset import TrajectoryDataset
 from src.models.trajectory_model import DecisionTransformer
 from src.decision_transformer.utils import load_model_data
@@ -15,7 +17,63 @@ def cleanup_test_results() -> None:
     os.remove('models/model_data.pt')
 
 
-def test_load_model_data(cleanup_test_results):
+@pytest.fixture()
+def generate_trajectory_data() -> None:
+
+    if not os.path.exists('trajectories/MiniGrid-DoorKey-8x8-trajectories.pkl'):
+
+        print("Generating trajectory data for test, requires ppo code is working.")
+
+        run_config = RunConfig(
+            exp_name="Test-PPO-Basic",
+            seed=1,
+            cuda=True,
+            track=False,
+            wandb_project_name="PPO-MiniGrid",
+            wandb_entity=None,
+        )
+
+        environment_config = EnvironmentConfig(
+            env_id="MiniGrid-Dynamic-Obstacles-8x8-v0",
+            view_size=3,
+            max_steps=300,
+            one_hot_obs=True,
+            fully_observed=False,
+            render_mode="rgb_array",
+            capture_video=True,
+            video_dir="videos",
+        )
+
+        online_config = OnlineTrainConfig(
+            hidden_size=64,
+            total_timesteps=2000,
+            learning_rate=0.00025,
+            decay_lr=True,
+            num_envs=30,
+            num_steps=64,
+            gamma=0.99,
+            gae_lambda=0.95,
+            num_minibatches=30,
+            update_epochs=4,
+            clip_coef=0.4,
+            ent_coef=0.25,
+            vf_coef=0.5,
+            max_grad_norm=2,
+            trajectory_path="trajectories/MiniGrid-DoorKey-8x8-trajectories.pkl",
+        )
+
+        agent = ppo_runner(
+            run_config=run_config,
+            environment_config=environment_config,
+            online_config=online_config,
+            transformer_model_config=None
+        )
+
+        assert os.path.exists(
+            "trajectories/MiniGrid-DoorKey-8x8-trajectories.pkl"), "Trajectory file not saved"
+
+
+def test_load_model_data(generate_trajectory_data, cleanup_test_results):
     transformer_config = TransformerModelConfig(
         d_model=128,
         n_heads=4,
