@@ -49,3 +49,6 @@ moviepy==1.0.3
 
 # streamlit
 streamlit==1.16.0
+
+# typeguard
+typeguard==2.13.3
