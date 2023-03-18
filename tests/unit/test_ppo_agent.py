@@ -65,7 +65,8 @@ def big_transformer_model_config():
         n_heads: int = 2
         d_mlp: int = 256
         n_layers: int = 1
-        n_ctx: int = 9  # look at previous actions and 4 actions before that.
+        # look at previous state (s,) and 4 full timesteps (s,a) before that.
+        n_ctx: int = 9
         time_embedding_type: str = "embedding"
         state_embedding_type: str = "grid"
         seed: int = 1
@@ -299,7 +300,7 @@ def test_traj_agent_learn(transformer_model_config, environment_config, online_c
     assert len(memory.experiences[0]) == 6
 
 
-def test_traj_agent_larger_context_init(transformer_model_config, environment_config):
+def test_traj_agent_larger_context_init(big_transformer_model_config, environment_config):
 
     envs = gym.vector.SyncVectorEnv(
         [lambda: gym.make(environment_config.env_id) for _ in range(4)])
@@ -309,7 +310,7 @@ def test_traj_agent_larger_context_init(transformer_model_config, environment_co
     agent = TrajPPOAgent(
         envs=envs,
         environment_config=environment_config,
-        transformer_model_config=transformer_model_config,
+        transformer_model_config=big_transformer_model_config,
         device="cpu"
     )
 
@@ -322,7 +323,7 @@ def test_traj_agent_larger_context_init(transformer_model_config, environment_co
     # assert agent.hidden_dim == hidden_dim
 
 
-def test_traj_agent_larger_context_rollout(transformer_model_config, environment_config):
+def test_traj_agent_larger_context_rollout(big_transformer_model_config, environment_config):
 
     num_steps = 10
     envs = gym.vector.SyncVectorEnv(
@@ -333,7 +334,7 @@ def test_traj_agent_larger_context_rollout(transformer_model_config, environment
     agent = TrajPPOAgent(
         envs=envs,
         environment_config=environment_config,
-        transformer_model_config=transformer_model_config,
+        transformer_model_config=big_transformer_model_config,
         device="cpu"
     )
     memory = Memory(envs=envs, args=online_config, device="cpu")
@@ -348,7 +349,7 @@ def test_traj_agent_larger_context_rollout(transformer_model_config, environment
     assert len(memory.experiences[0]) == 6
 
 
-def test_traj_agent_larger_context_learn(transformer_model_config, environment_config, online_config):
+def test_traj_agent_larger_context_learn(big_transformer_model_config, environment_config, online_config):
 
     num_steps = 10
     envs = gym.vector.SyncVectorEnv(
@@ -359,7 +360,7 @@ def test_traj_agent_larger_context_learn(transformer_model_config, environment_c
     agent = TrajPPOAgent(
         envs=envs,
         environment_config=environment_config,
-        transformer_model_config=transformer_model_config,
+        transformer_model_config=big_transformer_model_config,
         device="cpu"
     )
 

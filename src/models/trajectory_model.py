@@ -425,8 +425,17 @@ class CloneTransformer(TrajectoryTransformer):
         state_embeddings = state_embeddings + time_embeddings
 
         if action_embeddings is not None:
-            action_embeddings = action_embeddings + time_embeddings
-            trajectory_length = timesteps * 2
+            if action_embeddings.shape[1] == time_embeddings.shape[1] - 1:
+                # missing action for last t-step.
+                action_embeddings = action_embeddings + time_embeddings[:, :-1]
+                # repeat the last action embedding for the last timestep
+                action_embeddings = torch.cat(
+                    [action_embeddings, action_embeddings[:, -1, :].unsqueeze(1)], dim=1)
+                # now the last action and second last are duplicates but we can fix this later. (TODO)
+                trajectory_length = timesteps * 2
+            else:
+                action_embeddings = action_embeddings + time_embeddings
+                trajectory_length = timesteps * 2
         else:
             trajectory_length = 1  # one timestep, no action yet
 
@@ -479,19 +488,34 @@ class CloneTransformer(TrajectoryTransformer):
                 raise ValueError(
                     f"Actions required for all timesteps except the last, got {actions.shape[1]} and {seq_length}")
 
-            if actions.shape[1] == seq_length - 1:
+            if actions.shape[1] != seq_length - 1:
                 if pad_action:
                     print(
                         "Warning: actions are missing for the last timestep, padding with zeros")
                     # This means that you can't interpret Reward or State predictions for the last timestep!!!
-                    actions = torch.cat([actions, torch.zeros(
-                        batch_size, 1, 1, dtype=torch.long, device=actions.device)], dim=1)
+                    actions = torch.cat(
+                        [torch.zeros(batch_size, 1, 1, dtype=torch.long, device=actions.device),
+                         actions], dim=1)
 
         # embed states and recast back to (batch, block_size, n_embd)
         token_embeddings = self.to_tokens(states, actions, timesteps)
-        x = self.transformer(token_embeddings)
-        state_preds, action_preds = self.get_logits(
-            x, batch_size, seq_length, no_actions=no_actions)
+
+        if actions is not None:
+            if actions.shape[1] == states.shape[1] - 1:
+                x = self.transformer(token_embeddings[:, :-1])
+                # concat last action embedding to the end of the transformer output x[:,-2].unsqueeze(1)
+                x = torch.cat(
+                    [x, token_embeddings[:, -2, :].unsqueeze(1)], dim=1)
+                state_preds, action_preds = self.get_logits(
+                    x, batch_size, seq_length, no_actions=no_actions)
+            else:
+                x = self.transformer(token_embeddings)
+                state_preds, action_preds = self.get_logits(
+                    x, batch_size, seq_length, no_actions=no_actions)
+        else:
+            x = self.transformer(token_embeddings)
+            state_preds, action_preds = self.get_logits(
+                x, batch_size, seq_length, no_actions=no_actions)
 
         return state_preds, action_preds
 

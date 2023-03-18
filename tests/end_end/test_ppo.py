@@ -55,7 +55,7 @@ def test_ppo_runner():
 
 def test_ppo_runner_traj_model():
     run_config = RunConfig(
-        exp_name="Test-PPO-Basic",
+        exp_name="Test-PPO-Traj",
         seed=1,
         cuda=True,
         track=True,
@@ -100,6 +100,67 @@ def test_ppo_runner_traj_model():
         d_mlp=256,
         n_layers=1,
         n_ctx=1,
+        time_embedding_type="embedding",
+        state_embedding_type="grid",
+        seed=1,
+        device="cpu"
+    )
+
+    ppo_runner(
+        run_config=run_config,
+        environment_config=environment_config,
+        online_config=online_config,
+        transformer_model_config=transformer_model_config
+    )
+
+
+def test_ppo_runner_traj_model_memory():
+    run_config = RunConfig(
+        exp_name="Test-PPO-Traj-Memory",
+        seed=1,
+        cuda=True,
+        track=True,
+        wandb_project_name="PPO-MiniGrid",
+        wandb_entity=None,
+    )
+
+    environment_config = EnvironmentConfig(
+        env_id="MiniGrid-MemoryS7-v0",
+        view_size=3,
+        max_steps=30,
+        one_hot_obs=False,
+        fully_observed=False,
+        render_mode="rgb_array",
+        capture_video=True,
+        video_dir="videos",
+    )
+
+    online_config = OnlineTrainConfig(
+        use_trajectory_model=True,
+        hidden_size=64,
+        total_timesteps=200000,
+        learning_rate=0.00025,
+        decay_lr=True,
+        num_envs=10,
+        num_steps=64,
+        gamma=0.99,
+        gae_lambda=0.95,
+        num_minibatches=10,
+        update_epochs=4,
+        clip_coef=0.4,
+        ent_coef=0.01,
+        vf_coef=0.5,
+        max_grad_norm=2,
+        trajectory_path=None,
+        prob_go_from_end=0.4,
+    )
+
+    transformer_model_config = TransformerModelConfig(
+        d_model=64,
+        n_heads=2,
+        d_mlp=128,
+        n_layers=1,
+        n_ctx=21,
         time_embedding_type="embedding",
         state_embedding_type="grid",
         seed=1,

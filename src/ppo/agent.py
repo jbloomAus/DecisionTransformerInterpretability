@@ -443,13 +443,16 @@ class TrajPPOAgent(PPOAgent):
                     # Our actor generates logits over actions which we can then sample from
                     logits = self.actor.forward(
                         states=obss,
-                        actions=actions,
-                        timesteps=t.tensor([0]).repeat(n_envs, 1, 1).to(int)
+                        actions=actions.unsqueeze(
+                            -1) if actions is not None else None,
+                        timesteps=t.tensor([0]).repeat(
+                            n_envs, obss.shape[1], 1).to(int)
                     )
                     # Our critic generates a value function (which we use in the value loss, and to estimate advantages)
                     value = self.critic(obs).flatten()
 
-            probs = Categorical(logits=logits.squeeze(1))
+            # get the last state action prediction
+            probs = Categorical(logits=logits[:, -1])
             action = probs.sample()
             logprob = probs.log_prob(action)
             next_obs, reward, next_done, next_truncated, info = envs.step(
@@ -535,14 +538,14 @@ class TrajPPOAgent(PPOAgent):
                     states=mb.obs,
                     # these should be the previous actions
                     actions=mb.actions[:, :- \
-                                       1] if mb.actions.shape[1] > 1 else None,
+                                       1].unsqueeze(-1).to(int) if mb.actions.shape[1] > 1 else None,
                     timesteps=t.tensor([0]).repeat(
-                        mb.obs.shape[0], 1, 1).to(int)
+                        mb.obs.shape[0], mb.obs.shape[1], 1).to(int)
                     # t.zeros_like(mb.obs).to(int)  # mb.timesteps[:, :-1] / mb.timesteps.max()
                 )
 
                 # squeeze sequence dimension
-                probs = Categorical(logits=logits.squeeze(1))
+                probs = Categorical(logits=logits[:, -1])
                 # critic is a DNN so let's the last state obs at each time step.
                 values = self.critic(mb.obs[:, -1]).squeeze()
                 clipped_surrogate_objective = calc_clipped_surrogate_objective(
@@ -568,7 +571,7 @@ class TrajPPOAgent(PPOAgent):
         # Get debug variables, for just the most recent minibatch (otherwise there's too much logging!)
         if track:
             with t.inference_mode():
-                newlogprob = probs.log_prob(mb.actions)
+                newlogprob = probs.log_prob(mb.actions.unsqueeze(-1))
                 logratio = newlogprob - mb.logprobs
                 ratio = logratio.exp()
                 approx_kl = (ratio - 1 - logratio).mean().item()
