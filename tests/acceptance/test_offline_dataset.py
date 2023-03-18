@@ -184,9 +184,9 @@ def test_trajectory_dataset_as_dataloader():
         assert timesteps.shape == (8, 100)
         assert mask.shape == (8, 100)
 
-        assert s.dtype == torch.float64
+        assert s.dtype == torch.float32
         assert a.dtype == torch.long
-        assert r.dtype == torch.float64
+        assert r.dtype == torch.float32
         assert d.dtype == torch.bool
         assert rtg.dtype == torch.float32
         assert timesteps.dtype == torch.int64
