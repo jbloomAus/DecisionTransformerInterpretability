@@ -457,7 +457,7 @@ def test_clone_transformer_grid_obs_one_fewer_action_forward():
     env = gym.make('MiniGrid-Empty-8x8-v0')
     obs, _ = env.reset()  # This now produces an RGB tensor only
 
-    transformer_config = TransformerModelConfig(n_ctx=6)
+    transformer_config = TransformerModelConfig(n_ctx=7)
     environment_config = EnvironmentConfig(
         env_id='MiniGrid-Empty-8x8-v0',
         img_obs=False,
