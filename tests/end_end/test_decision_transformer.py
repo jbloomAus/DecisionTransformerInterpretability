@@ -59,7 +59,7 @@ def test_clone_transformer():
         wandb_project_name="DecisionTransformerInterpretability",
         seed=1,
         track=True,
-        trajectory_path="trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl",
+
     )
 
     transformer_model_config = TransformerModelConfig(
@@ -74,6 +74,7 @@ def test_clone_transformer():
     )
 
     offline_config = OfflineTrainConfig(
+        trajectory_path="trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl",
         model_type="clone_transformer",
         batch_size=128,
         lr=0.0001,
