@@ -10,7 +10,7 @@ from src.environments.environments import make_env
 def download_training_data() -> None:
     ''' uses gdown to get data'''
     if not os.path.exists("trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl"):
-        os.system("gdown https://drive.google.com/uc?id=1Z4gY0Q9Xr6Hr1aWJgV0vz6Jj7VZlJmZu -O trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl")
+        os.system("gdown 1UBMuhRrM3aYDdHeJBFdTn1RzXDrCL_sr -O trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl")
 
 
 def test_decision_transformer(download_training_data):
@@ -20,7 +20,6 @@ def test_decision_transformer(download_training_data):
         wandb_project_name="DecisionTransformerInterpretability",
         seed=1,
         track=True,
-        trajectory_path="trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl",
     )
 
     transformer_model_config = TransformerModelConfig(
@@ -35,6 +34,7 @@ def test_decision_transformer(download_training_data):
     )
 
     offline_config = OfflineTrainConfig(
+        trajectory_path="trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl",
         batch_size=128,
         lr=0.0001,
         weight_decay=0.001,
