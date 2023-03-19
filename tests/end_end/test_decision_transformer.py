@@ -1,11 +1,19 @@
 import pytest
+import os
 # from src.decision_transformer.utils import DTArgs
 from src.config import RunConfig, TransformerModelConfig, EnvironmentConfig, OfflineTrainConfig
 from src.run_decision_transformer import run_decision_transformer
 from src.environments.environments import make_env
 
 
-def test_decision_transformer():
+@pytest.fixture
+def download_training_data() -> None:
+    ''' uses gdown to get data'''
+    if not os.path.exists("trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl"):
+        os.system("gdown https://drive.google.com/uc?id=1Z4gY0Q9Xr6Hr1aWJgV0vz6Jj7VZlJmZu -O trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl")
+
+
+def test_decision_transformer(download_training_data):
 
     run_config = RunConfig(
         exp_name="Test-DT",
@@ -52,7 +60,7 @@ def test_decision_transformer():
     print("Test passed! Look at wandb and compare to the previous run.")
 
 
-def test_clone_transformer():
+def test_clone_transformer(download_training_data):
 
     run_config = RunConfig(
         exp_name="Test-BC",

@@ -107,6 +107,13 @@ python -m src.run_decision_transformer \
 
 ```
 
+Note, if you want the training data from the blog post, you can download it like so
+
+```bash
+cd trajectories
+gdown 1UBMuhRrM3aYDdHeJBFdTn1RzXDrCL_sr
+```
+
 ### Running the streamlit app
 
 To run the streamlit app:
