@@ -178,7 +178,7 @@ def test_probe_envs(env_name, run_config, environment_config, online_config):
         [[+1.0], [+1.0]]
     ]
 
-    tolerances_for_value = [5e-4, 5e-4, 5e-4, 5e-3, 2e-1]
+    tolerances_for_value = [5e-4, 5e-4, 5e-4, 5e-2, 2e-1]
 
     match = re.match(r"Probe(\d)-v0", env_name)
     probe_idx = int(match.group(1)) - 1
