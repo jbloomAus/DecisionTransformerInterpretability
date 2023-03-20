@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from gymnasium.spaces import Box, Dict
 from src.config import EnvironmentConfig, TransformerModelConfig
-from src.models.trajectory_model import TrajectoryTransformer, DecisionTransformer, CloneTransformer
+from src.models.trajectory_model import TrajectoryTransformer, DecisionTransformer, CloneTransformer, ActorTransformer, CriticTransfomer
 from src.models.trajectory_model import PosEmbedTokens, StateEncoder
 from transformer_lens import HookedTransformer
 
@@ -31,6 +31,26 @@ def clone_transformer():
     transformer_config = TransformerModelConfig()
     environment_config = EnvironmentConfig()
     return CloneTransformer(
+        transformer_config=transformer_config,
+        environment_config=environment_config
+    )
+
+
+@pytest.fixture
+def actor_transformer():
+    transformer_config = TransformerModelConfig()
+    environment_config = EnvironmentConfig()
+    return ActorTransformer(
+        transformer_config=transformer_config,
+        environment_config=environment_config
+    )
+
+
+@pytest.fixture
+def critic_transformer():
+    transformer_config = TransformerModelConfig()
+    environment_config = EnvironmentConfig()
+    return CriticTransfomer(
         transformer_config=transformer_config,
         environment_config=environment_config
     )
@@ -325,3 +345,44 @@ def test_clone_transformer_get_logits(clone_transformer):
         clone_transformer.environment_config.observation_space['image'].shape))
     assert action_preds.shape == (
         batch_size, seq_length, clone_transformer.environment_config.action_space.n)
+
+
+def test_actor_transformer_forward(actor_transformer):
+    batch_size = 4
+    seq_length = 2
+    d_model = actor_transformer.transformer_config.d_model
+
+    states = torch.randn((batch_size, seq_length, 7, 7, 3))
+    actions = torch.randint(
+        0, 4, (batch_size, seq_length - 1, 1)).to(torch.int64)
+    timesteps = torch.ones((batch_size, seq_length)
+                           ).unsqueeze(-1).to(torch.int64)
+
+    action_preds = actor_transformer(
+        states=states,
+        actions=actions,
+        timesteps=timesteps,
+        pad_action=True)
+
+    assert action_preds.shape == (
+        batch_size, seq_length, actor_transformer.environment_config.action_space.n)
+
+
+def test_critic_transformer_forward(critic_transformer):
+    batch_size = 4
+    seq_length = 2
+    d_model = critic_transformer.transformer_config.d_model
+
+    states = torch.randn((batch_size, seq_length, 7, 7, 3))
+    actions = torch.randint(
+        0, 4, (batch_size, seq_length - 1, 1)).to(torch.int64)
+    timesteps = torch.ones((batch_size, seq_length)
+                           ).unsqueeze(-1).to(torch.int64)
+
+    value_pred = critic_transformer(
+        states=states,
+        actions=actions,
+        timesteps=timesteps,
+        pad_action=True)
+
+    assert value_pred.shape == (batch_size, seq_length, 1)

@@ -582,6 +582,40 @@ class ActorTransformer(CloneTransformer):
         return action_preds
 
 
+class CriticTransfomer(CloneTransformer):
+    '''
+    Identical to clone transformer but forward pass can only return state predictions
+    '''
+
+    def __init__(
+        self,
+        transformer_config: TransformerModelConfig,
+        environment_config: EnvironmentConfig,
+    ):
+
+        super().__init__(transformer_config, environment_config)
+        self.value_predictor = nn.Linear(
+            transformer_config.d_model, 1, bias=False
+        )
+
+    def forward(self,
+                # has variable shape, starting with batch, position
+                states: TT[...],
+                actions: TT["batch", "position"],  # noqa: F821
+                timesteps: TT["batch", "position"],  # noqa: F821
+                pad_action: bool = True
+                ) -> TT[...]:  # noqa: F821
+
+        _, value_pred = super().forward(
+            states, actions, timesteps, pad_action=pad_action)
+
+        return value_pred
+
+    # hacky way to predict values instead of actions with same information
+    def predict_actions(self, x):
+        return self.value_predictor(x)
+
+
 class StateEncoder(nn.Module):
     def __init__(self, n_embed):
         super(StateEncoder, self).__init__()
