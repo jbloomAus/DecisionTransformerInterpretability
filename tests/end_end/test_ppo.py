@@ -8,7 +8,7 @@ def test_ppo_runner():
         exp_name="Test-PPO-Basic",
         seed=1,
         cuda=True,
-        track=False,
+        track=True,
         wandb_project_name="PPO-MiniGrid",
         wandb_entity=None,
     )
@@ -26,7 +26,7 @@ def test_ppo_runner():
 
     online_config = OnlineTrainConfig(
         hidden_size=64,
-        total_timesteps=2000,
+        total_timesteps=200000,
         learning_rate=0.00025,
         decay_lr=True,
         num_envs=30,
