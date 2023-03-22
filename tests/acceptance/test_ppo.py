@@ -305,7 +305,11 @@ def test_probe_envs_traj_model_1_context(
 
     tolerances_for_value = [5e-4, 5e-4, 5e-4, 5e-4, 2e-1]
 
-    value = agent.critic(obs)
+    value = agent.critic(
+        states=obs.unsqueeze(1),
+        actions=None,
+        timesteps=t.tensor([0]).repeat(obs.shape[0], obs.shape[1], 1)
+    )[:, -1]
     print("Value: ", value)
     expected_value = t.tensor(expected_value_for_probes[probe_idx])
     t.testing.assert_close(value, expected_value,

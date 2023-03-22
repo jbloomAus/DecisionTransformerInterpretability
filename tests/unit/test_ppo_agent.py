@@ -231,7 +231,7 @@ def test_traj_agent_init(transformer_model_config, environment_config):
     )
 
     assert isinstance(agent, PPOAgent)
-    assert isinstance(agent.critic, nn.Sequential)
+    assert isinstance(agent.critic, TrajectoryTransformer)
     assert isinstance(agent.actor, TrajectoryTransformer)
     assert agent.obs_shape == (7, 7, 3)
     assert agent.num_obs == 147
@@ -315,7 +315,7 @@ def test_traj_agent_larger_context_init(big_transformer_model_config, environmen
     )
 
     assert isinstance(agent, PPOAgent)
-    assert isinstance(agent.critic, nn.Sequential)
+    assert isinstance(agent.critic, TrajectoryTransformer)
     assert isinstance(agent.actor, TrajectoryTransformer)
     assert agent.obs_shape == (7, 7, 3)
     assert agent.num_obs == 147

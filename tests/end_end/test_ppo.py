@@ -125,10 +125,11 @@ def test_ppo_runner_traj_model_memory():
     )
 
     environment_config = EnvironmentConfig(
+        # env_id="MiniGrid-RedBlueDoors-6x6-v0",
         env_id="MiniGrid-MemoryS7-v0",
-        view_size=5,
-        max_steps=30,
-        one_hot_obs=False,
+        view_size=3,
+        max_steps=20,
+        one_hot_obs=True,
         fully_observed=False,
         render_mode="rgb_array",
         capture_video=True,
@@ -138,8 +139,8 @@ def test_ppo_runner_traj_model_memory():
     online_config = OnlineTrainConfig(
         use_trajectory_model=True,
         hidden_size=64,
-        total_timesteps=400000,
-        learning_rate=0.00025,
+        total_timesteps=200000,
+        learning_rate=0.00015,
         decay_lr=True,
         num_envs=14,
         num_steps=256,
@@ -147,19 +148,19 @@ def test_ppo_runner_traj_model_memory():
         gae_lambda=0.95,
         num_minibatches=14,
         update_epochs=4,
-        clip_coef=0.4,
+        clip_coef=0.6,
         ent_coef=0.10,
-        vf_coef=0.2,
+        vf_coef=0.5,
         max_grad_norm=2,
         trajectory_path=None,
-        prob_go_from_end=1.0,
+        prob_go_from_end=0.5,
     )
 
     transformer_model_config = TransformerModelConfig(
-        d_model=64,
-        n_heads=2,
-        d_mlp=128,
-        n_layers=1,
+        d_model=128,
+        n_heads=4,
+        d_mlp=256,
+        n_layers=2,
         n_ctx=31,
         time_embedding_type="embedding",
         state_embedding_type="grid",

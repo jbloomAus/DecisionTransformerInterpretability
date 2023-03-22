@@ -4,7 +4,8 @@ import torch
 import torch.nn as nn
 from gymnasium.spaces import Box, Dict
 from src.config import EnvironmentConfig, TransformerModelConfig
-from src.models.trajectory_model import TrajectoryTransformer, DecisionTransformer, CloneTransformer, ActorTransformer, CriticTransfomer
+from src.models.trajectory_model import TrajectoryTransformer, DecisionTransformer
+from src.models.trajectory_model import CloneTransformer, ActorTransformer, CriticTransfomer
 from src.models.trajectory_model import PosEmbedTokens, StateEncoder
 from transformer_lens import HookedTransformer
 
@@ -368,9 +369,49 @@ def test_actor_transformer_forward(actor_transformer):
         batch_size, seq_length, actor_transformer.environment_config.action_space.n)
 
 
-def test_critic_transformer_forward(critic_transformer):
+def test_actor_transformer_forward_context_1_no_actions(actor_transformer):
     batch_size = 4
-    seq_length = 2
+    seq_length = 1
+    d_model = actor_transformer.transformer_config.d_model
+
+    states = torch.randn((batch_size, seq_length, 7, 7, 3))
+    timesteps = torch.ones((batch_size, seq_length)
+                           ).unsqueeze(-1).to(torch.int64)
+
+    # assert raises error
+    action_preds = actor_transformer(
+        states=states,
+        actions=None,
+        timesteps=timesteps,
+        pad_action=True)
+
+    assert action_preds.shape == (
+        batch_size, seq_length, actor_transformer.environment_config.action_space.n)
+
+
+def test_actor_transformer_forward_seq_too_long(actor_transformer):
+    batch_size = 4
+    seq_length = 30
+    d_model = actor_transformer.transformer_config.d_model
+
+    states = torch.randn((batch_size, seq_length, 7, 7, 3))
+    actions = torch.randint(
+        0, 4, (batch_size, seq_length - 1, 1)).to(torch.int64)
+    timesteps = torch.ones((batch_size, seq_length)
+                           ).unsqueeze(-1).to(torch.int64)
+
+    # assert raises error
+    with pytest.raises(ValueError):
+        action_preds = actor_transformer(
+            states=states,
+            actions=actions,
+            timesteps=timesteps,
+            pad_action=True)
+
+
+def test_critic_transformer_forward_seq_too_long(critic_transformer):
+    batch_size = 4
+    seq_length = 30
     d_model = critic_transformer.transformer_config.d_model
 
     states = torch.randn((batch_size, seq_length, 7, 7, 3))
@@ -379,10 +420,10 @@ def test_critic_transformer_forward(critic_transformer):
     timesteps = torch.ones((batch_size, seq_length)
                            ).unsqueeze(-1).to(torch.int64)
 
-    value_pred = critic_transformer(
-        states=states,
-        actions=actions,
-        timesteps=timesteps,
-        pad_action=True)
-
-    assert value_pred.shape == (batch_size, seq_length, 1)
+    # assert raises error
+    with pytest.raises(ValueError):
+        value_pred = critic_transformer(
+            states=states,
+            actions=actions,
+            timesteps=timesteps,
+            pad_action=True)

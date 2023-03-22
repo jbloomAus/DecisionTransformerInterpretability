@@ -481,6 +481,10 @@ class CloneTransformer(TrajectoryTransformer):
         batch_size = states.shape[0]
         seq_length = states.shape[1]
 
+        if seq_length + (seq_length - 1) * (actions is not None) > self.transformer_config.n_ctx:
+            raise ValueError(
+                f"Sequence length is too long for transformer, got {seq_length} and {self.transformer_config.n_ctx}")
+
         no_actions = actions is None
 
         if no_actions is False:
@@ -595,7 +599,7 @@ class CriticTransfomer(CloneTransformer):
 
         super().__init__(transformer_config, environment_config)
         self.value_predictor = nn.Linear(
-            transformer_config.d_model, 1, bias=False
+            transformer_config.d_model, 1, bias=True
         )
 
     def forward(self,

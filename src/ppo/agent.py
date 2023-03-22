@@ -12,7 +12,7 @@ from typeguard import typechecked
 
 from .memory import Memory
 
-from src.models.trajectory_model import ActorTransformer
+from src.models.trajectory_model import ActorTransformer, CriticTransfomer
 from src.config import TransformerModelConfig, EnvironmentConfig, OnlineTrainConfig
 
 
@@ -335,14 +335,14 @@ class TrajPPOAgent(PPOAgent):
         self.num_actions = envs.single_action_space.n
 
         self.hidden_dim = transformer_model_config.d_model
-        self.critic = nn.Sequential(
-            nn.Flatten(),
-            self.layer_init(nn.Linear(self.num_obs, self.hidden_dim)),
-            nn.Tanh(),
-            self.layer_init(nn.Linear(self.hidden_dim, self.hidden_dim)),
-            nn.Tanh(),
-            self.layer_init(nn.Linear(self.hidden_dim, 1), std=1.0)
+
+        critic_transformer = CriticTransfomer(
+            transformer_config=transformer_model_config,
+            environment_config=environment_config,
         )
+
+        self.layer_init(critic_transformer.value_predictor, std=0.01)
+        self.critic = critic_transformer
 
         actor_transformer = ActorTransformer(
             transformer_config=transformer_model_config,
@@ -406,7 +406,11 @@ class TrajPPOAgent(PPOAgent):
                         actions=None,
                         timesteps=t.tensor([0]).repeat(n_envs, 1, 1)
                     )
-                    value = self.critic(obs).flatten()
+                    value = self.critic.forward(
+                        states=obs.unsqueeze(1),
+                        actions=None,
+                        timesteps=t.tensor([0]).repeat(n_envs, 1, 1)
+                    )[:, -1].squeeze(-1)  # value is scalar
             else:
 
                 # if no experience,s you have one timestep and you buffer out to the context size.
@@ -433,10 +437,10 @@ class TrajPPOAgent(PPOAgent):
                         pad_to_length=actions_timesteps
                     ).to(dtype=t.long)
 
-                timesteps = memory.get_timestep_traj(
-                    steps=step,
-                    pad_to_length=obs_timesteps,
-                )
+                # timesteps = memory.get_timestep_traj(
+                #     steps=step,
+                #     pad_to_length=obs_timesteps,
+                # )
 
                 # Generate the next set of new experiences (one for each env)
                 with t.inference_mode():
@@ -449,7 +453,13 @@ class TrajPPOAgent(PPOAgent):
                             n_envs, obss.shape[1], 1).to(int)
                     )
                     # Our critic generates a value function (which we use in the value loss, and to estimate advantages)
-                    value = self.critic(obs).flatten()
+                    value = self.critic.forward(
+                        states=obss,
+                        actions=actions.unsqueeze(
+                            -1) if actions is not None else None,
+                        timesteps=t.tensor([0]).repeat(
+                            n_envs, obss.shape[1], 1).to(int)
+                    )[:, -1].squeeze(-1)  # value is scalar
 
             # get the last state action prediction
             probs = Categorical(logits=logits[:, -1])
@@ -500,6 +510,7 @@ class TrajPPOAgent(PPOAgent):
 
             # Store (s_t, d_t, a_t, logpi(a_t|s_t), v(s_t), r_t+1)
             memory.add(info, obs, done, action, logprob, value, reward)
+            previous_obs = obs
             obs = t.from_numpy(next_obs).to(device)
             done = t.from_numpy(next_done).to(device, dtype=t.float)
 
@@ -507,7 +518,34 @@ class TrajPPOAgent(PPOAgent):
         memory.next_obs = obs
         memory.next_done = done
         with t.inference_mode():
-            memory.next_value = self.critic(obs).flatten()
+
+            # if this is the first loop, obss is none and we have to concat obs and previous_obs
+            if obss is None:
+                obss = t.cat((previous_obs.unsqueeze(1),
+                              obs.unsqueeze(1)), dim=1)
+                assert actions is None
+                # one seq step and actions are 1d
+                actions = action.unsqueeze(0).unsqueeze(-1)
+            else:
+                obss = t.cat((obss, obs.unsqueeze(1)), dim=1)
+                if actions is None:
+                    # should only be 2 steps and missing the most recent action
+                    assert obss.shape[1] == 2
+                    actions = action.unsqueeze(-1)
+                else:
+                    actions = t.cat((actions, action.unsqueeze(1)), dim=1)
+            print(obss.shape, actions.shape)
+            # TODO: ensure that if the critic context window is small enough, we truncate appropriately
+
+            obss = self.truncate_obss(obss)
+            actions = self.truncate_actions(actions)
+            if actions is not None:
+                assert obss.shape[1] == actions.shape[1] + 1
+            memory.next_value = self.critic.forward(
+                states=obss,
+                actions=actions.unsqueeze(-1) if actions is not None else None,
+                timesteps=t.tensor([0]).repeat(n_envs, obss.shape[1], 1)
+            )[:, -1].squeeze(-1)
 
     def learn(self,
               memory: Memory,
@@ -537,8 +575,8 @@ class TrajPPOAgent(PPOAgent):
                 logits = self.actor(
                     states=mb.obs,
                     # these should be the previous actions
-                    actions=mb.actions[:, :- \
-                                       1].unsqueeze(-1).to(int) if mb.actions.shape[1] > 1 else None,
+                    actions=mb.actions[:, : -1].unsqueeze(-1).to(
+                        int) if mb.actions.shape[1] > 1 else None,
                     timesteps=t.tensor([0]).repeat(
                         mb.obs.shape[0], mb.obs.shape[1], 1).to(int)
                     # t.zeros_like(mb.obs).to(int)  # mb.timesteps[:, :-1] / mb.timesteps.max()
@@ -547,7 +585,14 @@ class TrajPPOAgent(PPOAgent):
                 # squeeze sequence dimension
                 probs = Categorical(logits=logits[:, -1])
                 # critic is a DNN so let's the last state obs at each time step.
-                values = self.critic(mb.obs[:, -1]).squeeze()
+                values = self.critic(
+                    states=mb.obs,
+                    actions=mb.actions[:, :-1].unsqueeze(-1).to(
+                        int) if mb.actions.shape[1] > 1 else None,
+                    timesteps=t.tensor([0]).repeat(
+                        mb.obs.shape[0], mb.obs.shape[1], 1).to(int)
+                )[:, -1].squeeze(-1)
+
                 clipped_surrogate_objective = calc_clipped_surrogate_objective(
                     probs=probs,
                     # these should be the current actions
@@ -586,6 +631,22 @@ class TrajPPOAgent(PPOAgent):
                 approx_kl=approx_kl,
                 clipfrac=np.mean(clipfracs)
             )
+
+    def truncate_obss(self, obss):
+        '''assume actor and critic have same config'''
+        max_obss_length = (self.actor.transformer_config.n_ctx + 1) // 2
+        if obss.shape[1] > max_obss_length:
+            obss = obss[:, -max_obss_length:, :]
+        return obss
+
+    def truncate_actions(self, actions):
+        '''assume actor and critic have same config'''
+        max_actions_length = (self.actor.transformer_config.n_ctx + 1) // 2 - 1
+        if max_actions_length == 0:
+            return None
+        elif actions.shape[1] > max_actions_length:
+            actions = actions[:, -max_actions_length:]
+        return actions
 
 
 patch_typeguard()
