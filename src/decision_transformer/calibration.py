@@ -6,7 +6,8 @@ from .train import evaluate_dt_agent
 import plotly.graph_objects as go
 
 
-def calibration_statistics(dt, env_id, env_func, initial_rtg_range=np.linspace(-1, 1, 21), trajectories=100):
+def calibration_statistics(dt, env_id, env_func, initial_rtg_range=np.linspace(-1, 1, 21), trajectories=100,
+                           num_envs=8):
     statistics = []
     pbar = tqdm(initial_rtg_range, desc="initial_rtg")
     for initial_rtg in pbar:
@@ -18,7 +19,8 @@ def calibration_statistics(dt, env_id, env_func, initial_rtg_range=np.linspace(-
             batch_number=0,
             initial_rtg=initial_rtg,
             trajectories=trajectories,
-            use_tqdm=False))
+            use_tqdm=False,
+            num_envs=num_envs))
         pbar.set_description(f"initial_rtg: {initial_rtg}")
     return statistics
 

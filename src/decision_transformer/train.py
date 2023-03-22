@@ -1,4 +1,6 @@
 import os
+
+import gymnasium.vector
 import torch as t
 import torch.nn as nn
 from einops import rearrange
@@ -9,6 +11,7 @@ from src.models.trajectory_model import TrajectoryTransformer, DecisionTransform
 from .offline_dataset import TrajectoryDataset
 from torch.utils.data.sampler import WeightedRandomSampler
 from torch.utils.data import random_split, DataLoader
+import numpy as np
 
 
 def train(
@@ -28,7 +31,6 @@ def train(
         eval_episodes=10,
         initial_rtg=[0.0, 1.0],
         eval_max_time_steps=100):
-
     loss_fn = nn.CrossEntropyLoss()
     model = model.to(device)
     optimizer = t.optim.Adam(model.parameters(), lr=lr,
@@ -101,7 +103,7 @@ def train(
             if track:
                 wandb.log({"train/loss": loss.item()}, step=total_batches)
                 tokens_seen = (total_batches + 1) * \
-                    batch_size * (model.transformer_config.n_ctx // 3)
+                              batch_size * (model.transformer_config.n_ctx // 3)
                 wandb.log({"metrics/tokens_seen": tokens_seen},
                           step=total_batches)
 
@@ -125,7 +127,7 @@ def train(
             run_name=f"dt_eval_videos_{batch}",
             fully_observed=False,
             flat_one_hot=(
-                trajectory_data_set.observation_type == "one_hot"),
+                    trajectory_data_set.observation_type == "one_hot"),
             # defensive coding, fix later.
             agent_view_size=env.observation_space['image'].shape[0] if "image" in list(
                 env.observation_space.keys()) else 7,
@@ -153,7 +155,6 @@ def test(
         epochs=10,
         track=False,
         batch_number=0):
-
     model.eval()
 
     loss_fn = nn.CrossEntropyLoss()
@@ -221,12 +222,14 @@ def evaluate_dt_agent(
         batch_number=0,
         initial_rtg=0.98,
         use_tqdm=True,
-        device="cpu"):
-
+        device="cpu",
+        num_envs=8):
     model.eval()
 
-    env = env_func()
-    video_path = os.path.join("videos", env.run_name)
+    env = gymnasium.vector.SyncVectorEnv(
+        [env_func for _ in range(num_envs)]
+    )
+    video_path = os.path.join("videos", env.envs[0].run_name)
 
     if not hasattr(model, "transformer_config"):
         model.transformer_config = Namespace(
@@ -254,114 +257,119 @@ def evaluate_dt_agent(
 
     if use_tqdm:
         pbar = tqdm(range(trajectories), desc="Evaluating DT")
+        pbar_it = iter(pbar)
     else:
         pbar = range(trajectories)
 
-    for seed in pbar:
-        obs, _ = env.reset(seed=seed)
-        obs = t.tensor(obs['image']).unsqueeze(0).unsqueeze(0)
-        rtg = t.tensor([initial_rtg]).unsqueeze(0).unsqueeze(0)
-        a = t.tensor([0]).unsqueeze(0).unsqueeze(0)
-        timesteps = t.tensor([0]).unsqueeze(0).unsqueeze(0)
+    obs, _ = env.reset(seed=0)  # each env will get its own seed by incrementing on the given seed
+    obs = t.tensor(obs['image']).unsqueeze(1)
+    rtg = rearrange(t.ones(num_envs, dtype=t.int) * initial_rtg, 'e -> e 1 1')
+    a = rearrange(t.zeros(num_envs, dtype=t.int), 'e -> e 1 1')
+    timesteps = rearrange(t.zeros(num_envs, dtype=t.int), 'e -> e 1 1')
 
-        obs = obs.to(device)
-        rtg = rtg.to(device)
-        a = a.to(device)
-        timesteps = timesteps.to(device)
+    obs = obs.to(device)
+    rtg = rtg.to(device)
+    a = a.to(device)
+    timesteps = timesteps.to(device)
+
+    if model.transformer_config.time_embedding_type == "linear":
+        timesteps = timesteps.to(t.float32)
+
+    # get first action
+    if isinstance(model, DecisionTransformer):
+        state_preds, action_preds, reward_preds = model.forward(
+            states=obs, actions=a, rtgs=rtg, timesteps=timesteps)
+    elif isinstance(model, CloneTransformer):
+        state_preds, action_preds = model.forward(
+            states=obs, actions=a, timesteps=timesteps)
+    else:  # it's probably a legacy model in which case the interface is:
+        state_preds, action_preds, reward_preds = model.forward(
+            states=obs, actions=a, rtgs=rtg, timesteps=timesteps)
+
+    new_action = t.argmax(action_preds, dim=-1).squeeze(-1)
+    new_obs, new_reward, terminated, truncated, info = env.step(new_action)
+
+    current_trajectory_length = t.ones(num_envs, dtype=t.int)
+    while n_terminated + n_truncated < trajectories:
+
+        # concat init obs to new obs
+        obs = t.cat([obs, t.tensor(new_obs['image']).unsqueeze(1).to(device)], dim=1)
+
+        # add new reward to init reward
+        rtg = t.cat([rtg, rtg[:, -1:, :] - rearrange(t.tensor(new_reward).to(device), 'e -> e 1 1')], dim=1)
+
+        # add new timesteps
+        timesteps = t.cat([timesteps, rearrange(current_trajectory_length.to(device), 'e -> e 1 1')], dim=1)
 
         if model.transformer_config.time_embedding_type == "linear":
             timesteps = timesteps.to(t.float32)
 
-        # get first action
+        a = t.cat([a, rearrange(new_action, 'e -> e 1 1')], dim=1)
+
         if isinstance(model, DecisionTransformer):
-            state_preds, action_preds, reward_preds = model.forward(
-                states=obs, actions=a, rtgs=rtg, timesteps=timesteps)
+            _, action_preds, _ = model.forward(
+                states=obs[:, -max_len:] if obs.shape[1] > max_len else obs,
+                actions=a[:, -max_len:] if a.shape[1] > max_len else a,
+                rtgs=rtg[:, -max_len:] if rtg.shape[1] > max_len else rtg,
+                timesteps=timesteps[:, -
+                                       max_len:] if timesteps.shape[1] > max_len else timesteps
+            )
         elif isinstance(model, CloneTransformer):
-            state_preds, action_preds = model.forward(
-                states=obs, actions=a, timesteps=timesteps)
-        else:  # it's probably a legacy model in which case the interface is:
-            state_preds, action_preds, reward_preds = model.forward(
-                states=obs, actions=a, rtgs=rtg, timesteps=timesteps)
+            _, action_preds = model.forward(
+                states=obs[:, -max_len:] if obs.shape[1] > max_len else obs,
+                actions=a[:, -max_len:] if a.shape[1] > max_len else a,
+                timesteps=timesteps[:, -
+                                       max_len:] if timesteps.shape[1] > max_len else timesteps
+            )
+        action = t.argmax(action_preds, dim=-1).squeeze(-1)
+        new_obs, new_reward, terminated, truncated, info = env.step(action)
 
-        new_action = t.argmax(action_preds, dim=-1)[0].item()
-        new_obs, new_reward, terminated, truncated, info = env.step(new_action)
+        # print(f"took action  {action} at timestep {i} for reward {new_reward}")
 
-        i = 0
-        while not (terminated or truncated):
+        n_positive = n_positive + sum(new_reward > 0)
+        reward_total += sum(new_reward)
+        n_terminated += sum(terminated)
+        n_truncated += sum(truncated)
 
-            # concat init obs to new obs
-            obs = t.cat(
-                [obs, t.tensor(new_obs['image']).unsqueeze(0).unsqueeze(0).to(device)], dim=1)
+        if use_tqdm:
+            pbar.set_description(
+                f"Evaluating DT: Finished running {n_terminated + n_truncated} episodes."
+                f"Current episodes are at timestep {current_trajectory_length.tolist()} for reward {new_reward}"
+            )
 
-            # add new reward to init reward
-            rtg = t.cat([rtg, t.tensor(
-                [rtg[-1][-1].item() - new_reward]).unsqueeze(0).unsqueeze(0).to(device)], dim=1)
+        dones = np.logical_or(terminated, truncated)
+        current_trajectory_length += np.invert(dones)
+        traj_lengths.extend(current_trajectory_length[dones].tolist())
+        rewards.extend(new_reward[dones])
+        current_trajectory_length[dones] = 0
 
-            # add new timesteps
-            timesteps = t.cat([timesteps, t.tensor(
-                [timesteps[-1][-1].item() + 1]).unsqueeze(0).unsqueeze(0).to(device)], dim=1)
-
-            if model.transformer_config.time_embedding_type == "linear":
-                timesteps = timesteps.to(t.float32)
-
-            a = t.cat(
-                [a, t.tensor([new_action]).unsqueeze(0).unsqueeze(0).to(device)], dim=1)
-
-            if isinstance(model, DecisionTransformer):
-                _, action_preds, _ = model.forward(
-                    states=obs[:, -max_len:] if obs.shape[1] > max_len else obs,
-                    actions=a[:, -max_len:] if a.shape[1] > max_len else a,
-                    rtgs=rtg[:, -max_len:] if rtg.shape[1] > max_len else rtg,
-                    timesteps=timesteps[:, -
-                                        max_len:] if timesteps.shape[1] > max_len else timesteps
-                )
-            elif isinstance(model, CloneTransformer):
-                _, action_preds = model.forward(
-                    states=obs[:, -max_len:] if obs.shape[1] > max_len else obs,
-                    actions=a[:, -max_len:] if a.shape[1] > max_len else a,
-                    timesteps=timesteps[:, -
-                                        max_len:] if timesteps.shape[1] > max_len else timesteps
-                )
-            action = t.argmax(action_preds, dim=-1)[0][-1].item()
-            new_obs, new_reward, terminated, truncated, info = env.step(action)
-
-            # print(f"took action  {action} at timestep {i} for reward {new_reward}")
-            i = i + 1
-
+        if np.any(dones):
             if use_tqdm:
-                pbar.set_description(
-                    f"Evaluating DT: Episode {seed} at timestep {i} for reward {new_reward}")
+                [next(pbar_it, None) for _ in range(sum(dones))]
 
-        traj_lengths.append(i)
-        rewards.append(new_reward)
+            current_videos = [i for i in os.listdir(
+                video_path) if i.endswith(".mp4")]
+            if track and (len(current_videos) > len(videos)):  # we have a new video
+                new_videos = [i for i in current_videos if i not in videos]
+                for new_video in new_videos:
+                    path_to_video = os.path.join(video_path, new_video)
+                    wandb.log({f"media/video/{initial_rtg}/": wandb.Video(
+                        path_to_video,
+                        fps=4,
+                        format="mp4",
+                        caption=f"{env_id}, after {n_terminated + n_truncated} episodes, reward {new_reward}, rtg {initial_rtg}"
+                    )}, step=batch_number)
+            videos = current_videos  # update videos
 
-        n_positive = n_positive + (new_reward > 0)
-        reward_total = reward_total + new_reward
-        n_terminated = n_terminated + terminated
-        n_truncated = n_truncated + truncated
-
-        current_videos = [i for i in os.listdir(
-            video_path) if i.endswith(".mp4")]
-        if track and (len(current_videos) > len(videos)):  # we have a new video
-            new_videos = [i for i in current_videos if i not in videos]
-            assert len(new_videos) == 1, "more than one new video found, new videos: {}".format(
-                new_videos)
-            path_to_video = os.path.join(video_path, new_videos[0])
-            wandb.log({f"media/video/{initial_rtg}/": wandb.Video(
-                path_to_video,
-                fps=4,
-                format="mp4",
-                caption=f"{env_id}, after {batch_number} batch, episode length {i}, reward {new_reward}, rtg {initial_rtg}"
-            )}, step=batch_number)
-        videos = current_videos  # update videos
+    collected_trajectories = (n_terminated + n_truncated)
 
     statistics = {
         "initial_rtg": initial_rtg,
-        "prop_completed": n_terminated / trajectories,
-        "prop_truncated": n_truncated / trajectories,
-        "mean_reward": reward_total / trajectories,
-        "prop_positive_reward": n_positive / trajectories,
-        "mean_traj_length": sum(traj_lengths) / trajectories,
+        "prop_completed": n_terminated / collected_trajectories,
+        "prop_truncated": n_truncated / collected_trajectories,
+        "mean_reward": reward_total / collected_trajectories,
+        "prop_positive_reward": n_positive / collected_trajectories,
+        "mean_traj_length": sum(traj_lengths) / collected_trajectories,
         "traj_lengths": traj_lengths,
         "rewards": rewards
     }
