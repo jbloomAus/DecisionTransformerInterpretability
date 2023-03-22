@@ -14,6 +14,7 @@ from src.models.trajectory_model import CloneTransformer, DecisionTransformer
 # from .model import DecisionTransformer
 from .offline_dataset import TrajectoryDataset, TrajectoryVisualizer
 from .train import train
+from .utils import get_max_len_from_model_type
 
 
 def run_decision_transformer(
@@ -31,9 +32,14 @@ def run_decision_transformer(
     if offline_config.trajectory_path is None:
         raise ValueError("Must specify a trajectory path.")
 
+    max_len = get_max_len_from_model_type(
+        offline_config.model_type,
+        transformer_config.n_ctx
+    )
+
     trajectory_data_set = TrajectoryDataset(
         trajectory_path=offline_config.trajectory_path,
-        max_len=transformer_config.n_ctx // 3,
+        max_len=max_len,
         pct_traj=offline_config.pct_traj,
         prob_go_from_end=offline_config.prob_go_from_end,
         device=device,

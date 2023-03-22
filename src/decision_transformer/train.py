@@ -9,6 +9,7 @@ from src.models.trajectory_model import TrajectoryTransformer, DecisionTransform
 from .offline_dataset import TrajectoryDataset
 from torch.utils.data.sampler import WeightedRandomSampler
 from torch.utils.data import random_split, DataLoader
+from .utils import get_max_len_from_model_type
 
 
 def train(
@@ -73,14 +74,18 @@ def train(
             if isinstance(model, DecisionTransformer):
                 _, action_preds, _ = model.forward(
                     states=s,
-                    actions=a.unsqueeze(-1),
-                    rtgs=rtg[:, :-1],
+                    # remove last action
+                    actions=a[:, :- \
+                              1].unsqueeze(-1) if a.shape[1] > 1 else None,
+                    rtgs=rtg[:, :-1],  # remove last rtg
                     timesteps=ti.unsqueeze(-1)
                 )
             elif isinstance(model, CloneTransformer):
                 _, action_preds = model.forward(
                     states=s,
-                    actions=a.unsqueeze(-1),
+                    # remove last action
+                    actions=a[:, :- \
+                              1].unsqueeze(-1) if a.shape[1] > 1 else None,
                     timesteps=ti.unsqueeze(-1)
                 )
 
@@ -182,7 +187,9 @@ def test(
             elif isinstance(model, CloneTransformer):
                 _, action_preds = model.forward(
                     states=s,
-                    actions=a.unsqueeze(-1),
+                    # remove last action
+                    actions=a[:, :- \
+                              1].unsqueeze(-1) if a.shape[1] > 1 else None,
                     timesteps=ti.unsqueeze(-1)
                 )
 
@@ -234,8 +241,11 @@ def evaluate_dt_agent(
             time_embedding_type=model.time_embedding_type,
         )
 
-    assert model.transformer_config.n_ctx % 3 == 0, "n_ctx must be divisible by 3"
-    max_len = model.transformer_config.n_ctx // 3
+    max_len = get_max_len_from_model_type(
+        model_type="decision_transformer" if isinstance(
+            model, DecisionTransformer) else "clone_transformer",
+        n_ctx=model.transformer_config.n_ctx,
+    )
 
     traj_lengths = []
     rewards = []
@@ -275,10 +285,17 @@ def evaluate_dt_agent(
         # get first action
         if isinstance(model, DecisionTransformer):
             state_preds, action_preds, reward_preds = model.forward(
-                states=obs, actions=a, rtgs=rtg, timesteps=timesteps)
+                states=obs,
+                actions=a,
+                rtgs=rtg,
+                timesteps=timesteps
+            )
         elif isinstance(model, CloneTransformer):
             state_preds, action_preds = model.forward(
-                states=obs, actions=a, timesteps=timesteps)
+                states=obs,
+                actions=None,  # no action for first timestep
+                timesteps=timesteps
+            )
         else:  # it's probably a legacy model in which case the interface is:
             state_preds, action_preds, reward_preds = model.forward(
                 states=obs, actions=a, rtgs=rtg, timesteps=timesteps)
@@ -304,8 +321,8 @@ def evaluate_dt_agent(
             if model.transformer_config.time_embedding_type == "linear":
                 timesteps = timesteps.to(t.float32)
 
-            a = t.cat(
-                [a, t.tensor([new_action]).unsqueeze(0).unsqueeze(0).to(device)], dim=1)
+            a = t.cat([a, t.tensor([new_action]).unsqueeze(
+                0).unsqueeze(0).to(device)], dim=1)
 
             if isinstance(model, DecisionTransformer):
                 _, action_preds, _ = model.forward(
@@ -316,11 +333,13 @@ def evaluate_dt_agent(
                                         max_len:] if timesteps.shape[1] > max_len else timesteps
                 )
             elif isinstance(model, CloneTransformer):
+                obs = obs[:, -max_len:] if obs.shape[1] > max_len else obs
+                actions = a[:, -(obs.shape[1] - 1):] if (a.shape[1]
+                                                         > 1 and max_len > 1) else None
+                timesteps = timesteps[:, -
+                                      max_len:] if timesteps.shape[1] > max_len else timesteps
                 _, action_preds = model.forward(
-                    states=obs[:, -max_len:] if obs.shape[1] > max_len else obs,
-                    actions=a[:, -max_len:] if a.shape[1] > max_len else a,
-                    timesteps=timesteps[:, -
-                                        max_len:] if timesteps.shape[1] > max_len else timesteps
+                    states=obs, actions=actions, timesteps=timesteps
                 )
             action = t.argmax(action_preds, dim=-1)[0][-1].item()
             new_obs, new_reward, terminated, truncated, info = env.step(action)
