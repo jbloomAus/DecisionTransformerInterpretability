@@ -468,7 +468,7 @@ class Memory():
         - pad_to_length (int): if the number of steps is less than this, then the tensor will be padded with zeros.
 
         Returns:
-        - TT["T", "env", "obs"]: a tensor of shape (steps, envs, obs_shape) containing
+        - TT["T", "env", "act"]: a tensor of shape (steps, envs, obs_shape) containing
         the observations from the last steps.
         '''
 
@@ -489,7 +489,8 @@ class Memory():
         # truncate if required
         act_traj = act_traj[:, -pad_to_length:]
 
-        return act_traj
+        # assume for now that actions are scalars
+        return act_traj.unsqueeze(-1)
 
     def get_timestep_traj(self, steps: int, pad_to_length: int) -> TT["env", "T", "1"]:  # noqa: F821
         '''

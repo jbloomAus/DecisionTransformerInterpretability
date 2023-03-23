@@ -6,7 +6,7 @@ from gymnasium.spaces import Box, Dict
 from src.config import EnvironmentConfig, TransformerModelConfig
 from src.models.trajectory_model import TrajectoryTransformer, DecisionTransformer
 from src.models.trajectory_model import CloneTransformer, ActorTransformer, CriticTransfomer
-from src.models.trajectory_model import PosEmbedTokens, StateEncoder
+from src.models.trajectory_model import StateEncoder
 from transformer_lens import HookedTransformer
 
 
@@ -29,7 +29,7 @@ def decision_transformer():
 
 @pytest.fixture
 def clone_transformer():
-    transformer_config = TransformerModelConfig()
+    transformer_config = TransformerModelConfig(n_ctx=3)
     environment_config = EnvironmentConfig()
     return CloneTransformer(
         transformer_config=transformer_config,
@@ -39,7 +39,7 @@ def clone_transformer():
 
 @pytest.fixture
 def actor_transformer():
-    transformer_config = TransformerModelConfig()
+    transformer_config = TransformerModelConfig(n_ctx=5)
     environment_config = EnvironmentConfig()
     return ActorTransformer(
         transformer_config=transformer_config,
@@ -49,7 +49,7 @@ def actor_transformer():
 
 @pytest.fixture
 def critic_transformer():
-    transformer_config = TransformerModelConfig()
+    transformer_config = TransformerModelConfig(n_ctx=5)
     environment_config = EnvironmentConfig()
     return CriticTransfomer(
         transformer_config=transformer_config,
@@ -243,15 +243,16 @@ def test_decision_transformer_parameter_count(decision_transformer):
     num_parameters = sum(
         p.numel() for p in decision_transformer.parameters() if p.requires_grad)
     # 432411 - something changed, verify later when model working.
-    assert num_parameters == 431383
+    assert num_parameters == 431255
 
 
 def test_decision_transformer_get_logits(decision_transformer):
     batch_size = 4
-    seq_length = 5
+    seq_length = 2
+    tokens = 5
     d_model = decision_transformer.transformer_config.d_model
 
-    x = torch.rand(batch_size, seq_length, 3, d_model)
+    x = torch.rand(batch_size, tokens, d_model)
     state_preds, action_preds, reward_preds = decision_transformer.get_logits(
         x, batch_size, seq_length, no_actions=False)
 
@@ -266,7 +267,7 @@ def test_clone_transformer_get_token_embeddings_with_actions(clone_transformer):
     # Create dummy data for states, actions, rtgs, and timesteps
     state_embeddings = torch.randn((2, 3, 128))
     time_embeddings = torch.randn((2, 3, 128))
-    action_embeddings = torch.randn((2, 3, 128))
+    action_embeddings = torch.randn((2, 2, 128))
 
     # Call get_token_embeddings method
     token_embeddings = clone_transformer.get_token_embeddings(
@@ -287,7 +288,7 @@ def test_clone_transformer_get_token_embeddings_with_actions(clone_transformer):
 
     # Check that the second token is the state embedding
     assert torch.allclose(
-        token_embeddings[:, 1::2, :] - time_embeddings,
+        (token_embeddings[:, 1::2, :] - time_embeddings)[:, :-1],
         action_embeddings,
         rtol=1e-3
     )

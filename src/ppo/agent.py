@@ -171,13 +171,13 @@ class FCAgent(PPOAgent):
             reward = t.from_numpy(reward).to(device)
 
             if trajectory_writer is not None:
-                obs = obs.detach().cpu().numpy() if cuda else obs.detach().numpy()
-                reward = reward.detach().cpu().numpy() if cuda else reward.detach().numpy()
-                action = action.detach().cpu().numpy() if cuda else action.detach().numpy()
+                obs_np = obs.detach().cpu().numpy() if cuda else obs.detach().numpy()
+                reward_np = reward.detach().cpu().numpy() if cuda else reward.detach().numpy()
+                action_np = action.detach().cpu().numpy() if cuda else action.detach().numpy()
                 trajectory_writer.accumulate_trajectory(
-                    next_obs=obs,
-                    reward=reward,
-                    action=action,
+                    next_obs=obs_np,
+                    reward=reward_np,
+                    action=action_np,
                     done=next_done,
                     truncated=next_truncated,
                     info=info
@@ -314,31 +314,20 @@ class TrajPPOAgent(PPOAgent):
         for step in range(num_steps):
 
             if len(memory.experiences) == 0:
+                states = obs.unsqueeze(1)
+                timesteps = t.tensor([0]).repeat(n_envs, 1, 1)
                 with t.inference_mode():
-                    logits = self.actor.forward(
-                        states=obs.unsqueeze(1),
-                        actions=None,
-                        timesteps=t.tensor([0]).repeat(n_envs, 1, 1)
-                    )
-                    value = self.critic.forward(
-                        states=obs.unsqueeze(1),
-                        actions=None,
-                        timesteps=t.tensor([0]).repeat(n_envs, 1, 1)
-                    )[:, -1].squeeze(-1)  # value is scalar
+                    logits = self.actor(states, None, timesteps)
+                    values = self.critic(states, None, timesteps)
+                    value = values[:, -1].squeeze(-1)  # value is scalar
             else:
-
                 # we have one more obs than action
                 obs_timesteps = (context_window_size - 1) // 2 + \
                     1  # (the current obs)
                 actions_timesteps = obs_timesteps - 1
 
-                obss = memory.get_obs_traj(
-                    steps=step,
-                    pad_to_length=obs_timesteps
-                )
-
+                obss = memory.get_obs_traj(step, pad_to_length=obs_timesteps)
                 obss = t.cat((obss[:, 1:], obs.unsqueeze(1)), dim=1)
-
                 if actions_timesteps == 0:
                     actions = None
                 else:
@@ -347,29 +336,17 @@ class TrajPPOAgent(PPOAgent):
                         pad_to_length=actions_timesteps
                     ).to(dtype=t.long)
 
-                # timesteps = memory.get_timestep_traj(
-                #     steps=step,
-                #     pad_to_length=obs_timesteps,
-                # )
-
                 # Generate the next set of new experiences (one for each env)
                 with t.inference_mode():
                     # Our actor generates logits over actions which we can then sample from
-                    logits = self.actor.forward(
-                        states=obss,
-                        actions=actions.unsqueeze(
-                            -1) if actions is not None else None,
-                        timesteps=t.tensor([0]).repeat(
-                            n_envs, obss.shape[1], 1).to(int)
-                    )
+                    timesteps = t.tensor([0]).repeat(
+                        n_envs, obss.shape[1], 1).to(int)
+                    logits = self.actor(
+                        states=obss, actions=actions, timesteps=timesteps)
                     # Our critic generates a value function (which we use in the value loss, and to estimate advantages)
-                    value = self.critic.forward(
-                        states=obss,
-                        actions=actions.unsqueeze(
-                            -1) if actions is not None else None,
-                        timesteps=t.tensor([0]).repeat(
-                            n_envs, obss.shape[1], 1).to(int)
-                    )[:, -1].squeeze(-1)  # value is scalar
+                    values = self.critic(
+                        states=obss, actions=actions, timesteps=timesteps)
+                    values = values[:, -1].squeeze(-1)  # value is scalar
 
             # get the last state action prediction
             probs = Categorical(logits=logits[:, -1])
@@ -380,43 +357,18 @@ class TrajPPOAgent(PPOAgent):
             next_obs = memory.obs_preprocessor(next_obs)
             reward = t.from_numpy(reward).to(device)
 
-            # TODO refactor to use ternary statements
             if trajectory_writer is not None:
-                # first_obs = obs
-                if not cuda:
-                    trajectory_writer.accumulate_trajectory(
-                        # the observation stored with an action and reward is
-                        # the observation which the agent responded to.
-                        next_obs=obs.detach().numpy(),
-                        # the reward stored with an action and observation is
-                        # the reward the agent received for taking that action in that state
-                        reward=reward.detach().numpy(),
-                        # the action stored with an observation and reward is
-                        # the action the agent took to get to that reward
-                        action=action.detach().numpy(),
-                        # the done stored with an action and observation is
-                        # the done the agent received for taking that action in that state
-                        done=next_done,
-                        truncated=next_truncated,
-                        info=info
-                    )
-                else:
-                    trajectory_writer.accumulate_trajectory(
-                        # the observation stored with an action and reward is
-                        # the observation which the agent responded to.
-                        next_obs=obs.detach().cpu().numpy(),
-                        # the reward stored with an action and observation is
-                        # the reward the agent received for taking that action in that state
-                        reward=reward.detach().cpu().numpy(),
-                        # the action stored with an observation and reward
-                        # is the action the agent took to get to that reward
-                        action=action.detach().cpu().numpy(),
-                        # the done stored with an action and observation is
-                        # the done the agent received for taking that action in that state
-                        done=next_done,
-                        truncated=next_truncated,
-                        info=info
-                    )
+                obs_np = obs.detach().cpu().numpy() if cuda else obs.detach().numpy()
+                reward_np = reward.detach().cpu().numpy() if cuda else reward.detach().numpy()
+                action_np = action.detach().cpu().numpy() if cuda else action.detach().numpy()
+                trajectory_writer.accumulate_trajectory(
+                    next_obs=obs_np,
+                    reward=reward_np,
+                    action=action_np,
+                    done=next_done,
+                    truncated=next_truncated,
+                    info=info
+                )
 
             # Store (s_t, d_t, a_t, logpi(a_t|s_t), v(s_t), r_t+1)
             memory.add(info, obs, done, action, logprob, value, reward)
@@ -429,33 +381,16 @@ class TrajPPOAgent(PPOAgent):
         memory.next_done = done
         with t.inference_mode():
 
-            # if this is the first loop, obss is none and we have to concat obs and previous_obs
-            if obss is None:
-                obss = t.cat((previous_obs.unsqueeze(1),
-                              obs.unsqueeze(1)), dim=1)
-                assert actions is None
-                # one seq step and actions are 1d
-                actions = action.unsqueeze(0).unsqueeze(-1)
-            else:
-                obss = t.cat((obss, obs.unsqueeze(1)), dim=1)
-                if actions is None:
-                    # should only be 2 steps and missing the most recent action
-                    assert obss.shape[1] == 2
-                    actions = action.unsqueeze(-1)
-                else:
-                    actions = t.cat((actions, action.unsqueeze(1)), dim=1)
+            # get obss and actions whether the trajectories have been instantiated or not
+            obss = self.append_obs(obss, previous_obs, obs)
+            actions = self.append_action(actions, action.unsqueeze(-1))
 
             # TODO: ensure that if the critic context window is small enough, we truncate appropriately
-
             obss = self.truncate_obss(obss)
             actions = self.truncate_actions(actions)
-            if actions is not None:
-                assert obss.shape[1] == actions.shape[1] + 1
-            memory.next_value = self.critic.forward(
-                states=obss,
-                actions=actions.unsqueeze(-1) if actions is not None else None,
-                timesteps=t.tensor([0]).repeat(n_envs, obss.shape[1], 1)
-            )[:, -1].squeeze(-1)
+            timesteps = t.tensor([0]).repeat(n_envs, obss.shape[1], 1)
+            values = self.critic(obss, actions, timesteps)
+            memory.next_value = values[:, -1].squeeze(-1)
 
     def learn(self,
               memory: Memory,
@@ -556,4 +491,35 @@ class TrajPPOAgent(PPOAgent):
             return None
         elif actions.shape[1] > max_actions_length:
             actions = actions[:, -max_actions_length:]
+        return actions
+
+    def append_obs(self, obss, previous_obs, obs):
+        '''
+        Args:
+            obss: (n_envs, n_timesteps, obs_dim) A tensor of observations.
+            previous_obs: (n_envs, obs_dim) A tensor of the previous observations.
+            obs: (n_envs, obs_dim) A tensor of the current observations.
+
+        Returns:
+            obss: (n_envs, n_timesteps + 1, obs_dim) A tensor of observations.
+        '''
+        if obss is None:
+            obss = t.cat((previous_obs.unsqueeze(1), obs.unsqueeze(1)), dim=1)
+        else:
+            obss = t.cat((obss, obs.unsqueeze(1)), dim=1)
+        return obss
+
+    def append_action(self, actions, action):
+        '''
+        Args:
+            actions: (n_envs, n_timesteps, action_dim) A tensor of the previous actions.
+            action: (n_envs, action_dim) A tensor of the current action just taken
+
+        Returns:
+            actions: (n_envs, n_timesteps + 1, action_dim) A tensor of actions.
+        '''
+        if actions is None:
+            actions = action.unsqueeze(1)
+        else:
+            actions = t.cat((actions, action.unsqueeze(1)), dim=1)
         return actions

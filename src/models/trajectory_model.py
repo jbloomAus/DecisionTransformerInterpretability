@@ -335,11 +335,13 @@ class DecisionTransformer(TrajectoryTransformer):
 
         if no_actions is False:
             # TODO replace with einsum
-            if x.shape[1] % 3 != 0:
-                if (x.shape[1] + 1) % 3 == 0:
-                    x = torch.concat((x, x[:, -2].unsqueeze(1)), dim=1)
+            if (x.shape[1] % 3 != 0) and ((x.shape[1] + 1) % 3 == 0):
+                x = torch.concat((x, x[:, -2].unsqueeze(1)), dim=1)
+
             x = x.reshape(batch_size, seq_length, 3,
-                          self.transformer_config.d_model).permute(0, 2, 1, 3)
+                          self.transformer_config.d_model)
+            x = x.permute(0, 2, 1, 3)
+
             # predict next return given state and action
             reward_preds = self.predict_rewards(x[:, 2])
             # predict next state given state and action
@@ -351,7 +353,8 @@ class DecisionTransformer(TrajectoryTransformer):
         else:
             # TODO replace with einsum
             x = x.reshape(batch_size, seq_length, 2,
-                          self.transformer_config.d_model).permute(0, 2, 1, 3)
+                          self.transformer_config.d_model)
+            x = x.permute(0, 2, 1, 3)
             # predict next action given state and RTG
             action_preds = self.predict_actions(x[:, 1])
             return None, action_preds, None
