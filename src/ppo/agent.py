@@ -107,7 +107,7 @@ class FCAgent(PPOAgent):
     critic: nn.Sequential
     actor: nn.Sequential
 
-    def __init__(self, envs: gym.vector.SyncVectorEnv, device=t.device, hidden_dim: int = 64):
+    def __init__(self, envs: gym.vector.SyncVectorEnv, device: t.device = t.device('cpu'), hidden_dim: int = 64):
         '''
         An agent for a Proximal Policy Optimization (PPO) algorithm.
 
@@ -255,7 +255,7 @@ class TrajPPOAgent(PPOAgent):
                  envs: gym.vector.SyncVectorEnv,
                  environment_config: EnvironmentConfig,
                  transformer_model_config: TransformerModelConfig,
-                 device=t.device
+                 device: t.device = t.device("cpu")
                  ):
         '''
         An agent for a Proximal Policy Optimization (PPO) algorithm.
@@ -418,7 +418,7 @@ class TrajPPOAgent(PPOAgent):
             for mb in minibatches:
                 obs = mb.obs
                 actions = mb.actions[:, :-1].unsqueeze(-1).to(
-                    int) if mb.actions.shape[1] > 1 else None,
+                    int) if mb.actions.shape[1] > 1 else None
                 timesteps = t.tensor([0]).repeat(
                     mb.obs.shape[0], mb.obs.shape[1], 1).to(int)
 

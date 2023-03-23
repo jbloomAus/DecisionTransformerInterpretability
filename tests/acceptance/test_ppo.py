@@ -498,10 +498,9 @@ def test_ppo_agent_rollout_minibatches_minigrid(online_config):
     assert isinstance(envs.single_action_space,
                       Discrete), "only discrete action space is supported"
 
-    memory = Memory(
-        envs, online_config, "cpu")
+    memory = Memory(envs, online_config)
 
-    agent = Agent(envs, "cpu")
+    agent = Agent(envs)
     agent.rollout(memory, online_config.num_steps, envs, None)
 
     minibatches = memory.get_minibatches()
@@ -530,8 +529,8 @@ def test_ppo_agent_rollout_trajectory_minibatches_minigrid_no_padding(online_con
         [make_env('MiniGrid-Dynamic-Obstacles-8x8-v0', 1, 1, False, "test")
          for i in range(2)]
     )
-    memory = Memory(envs, online_config, "cpu")
-    agent = Agent(envs, "cpu")
+    memory = Memory(envs, online_config)
+    agent = Agent(envs)
     agent.rollout(memory, online_config.num_steps, envs, None)
 
     timesteps = 1
@@ -555,8 +554,8 @@ def test_ppo_agent_rollout_trajectory_minibatches_minigrid_extra_padding(online_
         [make_env('MiniGrid-Dynamic-Obstacles-8x8-v0', 1, 1, False, "test")
          for i in range(2)]
     )
-    memory = Memory(envs, online_config, "cpu")
-    agent = Agent(envs, "cpu")
+    memory = Memory(envs, online_config)
+    agent = Agent(envs)
     agent.rollout(memory, online_config.num_steps, envs, None)
 
     timesteps = 10
