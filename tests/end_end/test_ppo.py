@@ -126,7 +126,8 @@ def test_ppo_runner_traj_model_memory():
 
     environment_config = EnvironmentConfig(
         # env_id="MiniGrid-RedBlueDoors-6x6-v0",
-        env_id="MiniGrid-MemoryS7-v0",
+        # env_id="MiniGrid-MemoryS7-v0",
+        env_id="MiniGrid-Dynamic-Obstacles-8x8-v0",
         view_size=3,
         max_steps=20,
         one_hot_obs=True,

@@ -408,39 +408,28 @@ class TrajPPOAgent(PPOAgent):
             scheduler (PPOScheduler): The scheduler attached to the optimizer.
             track (bool): Whether to track the training progress.
         """
+
         for _ in range(args.update_epochs):
+            n_timesteps = (self.actor.transformer_config.n_ctx - 1) // 2 + 1
             minibatches = memory.get_trajectory_minibatches(
-                (self.actor.transformer_config.n_ctx - 1) // 2 +
-                1,  # this is max timesteps
-                prob_go_from_end=args.prob_go_from_end,
-            )
+                n_timesteps, args.prob_go_from_end)
+
             # Compute loss on each minibatch, and step the optimizer
             for mb in minibatches:
+                obs = mb.obs
+                actions = mb.actions[:, :-1].unsqueeze(-1).to(
+                    int) if mb.actions.shape[1] > 1 else None,
+                timesteps = t.tensor([0]).repeat(
+                    mb.obs.shape[0], mb.obs.shape[1], 1).to(int)
 
-                logits = self.actor(
-                    states=mb.obs,
-                    # these should be the previous actions
-                    actions=mb.actions[:, : -1].unsqueeze(-1).to(
-                        int) if mb.actions.shape[1] > 1 else None,
-                    timesteps=t.tensor([0]).repeat(
-                        mb.obs.shape[0], mb.obs.shape[1], 1).to(int)
-                    # t.zeros_like(mb.obs).to(int)  # mb.timesteps[:, :-1] / mb.timesteps.max()
-                )
+                logits = self.actor(obs, actions, timesteps)
+                values = self.critic(obs, actions, timesteps)
+                values = values[:, -1].squeeze(-1)
 
-                # squeeze sequence dimension
                 probs = Categorical(logits=logits[:, -1])
-                # critic is a DNN so let's the last state obs at each time step.
-                values = self.critic(
-                    states=mb.obs,
-                    actions=mb.actions[:, :-1].unsqueeze(-1).to(
-                        int) if mb.actions.shape[1] > 1 else None,
-                    timesteps=t.tensor([0]).repeat(
-                        mb.obs.shape[0], mb.obs.shape[1], 1).to(int)
-                )[:, -1].squeeze(-1)
 
                 clipped_surrogate_objective = calc_clipped_surrogate_objective(
                     probs=probs,
-                    # these should be the current actions
                     mb_action=mb.actions[:, -1].squeeze(-1),
                     mb_advantages=mb.advantages,
                     mb_logprobs=mb.logprobs,
