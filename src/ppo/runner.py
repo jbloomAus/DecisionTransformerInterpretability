@@ -5,7 +5,6 @@ import torch as t
 import wandb
 import time
 
-from argparse import Namespace
 from typing import Optional
 
 from src.config import RunConfig, TransformerModelConfig, EnvironmentConfig, OnlineTrainConfig

@@ -9,9 +9,8 @@ import wandb
 from src.config import (EnvironmentConfig, OnlineTrainConfig, RunConfig,
                         TransformerModelConfig)
 
-from .agent import FCAgent, TrajPPOAgent
+from .agent import PPOAgent, FCAgent, TrajPPOAgent
 from .memory import Memory
-from .utils import get_printable_output_for_probe_envs
 
 device = t.device("cuda" if t.cuda.is_available() else "cpu")
 
@@ -22,8 +21,7 @@ def train_ppo(
         environment_config: EnvironmentConfig,
         transformer_model_config: Optional[TransformerModelConfig],
         envs: SyncVectorEnv,
-        trajectory_writer=None,
-        probe_idx=None):
+        trajectory_writer=None):
     """
     Trains a PPO agent on a given environment.
 
@@ -38,42 +36,22 @@ def train_ppo(
     """
 
     memory = Memory(envs, online_config, device)
-
-    if transformer_model_config is None:
-        agent = FCAgent(
-            envs,
-            device=device,
-            hidden_dim=online_config.hidden_size
-        )
-    else:
-        agent = TrajPPOAgent(
-            envs=envs,
-            transformer_model_config=transformer_model_config,
-            environment_config=environment_config,
-            device=device,
-        )
-
+    agent = get_agent(transformer_model_config, envs,
+                      environment_config, online_config)
     num_updates = online_config.total_timesteps // online_config.batch_size
 
     optimizer, scheduler = agent.make_optimizer(
-        num_updates,
+        num_updates=num_updates,
         initial_lr=online_config.learning_rate,
         end_lr=online_config.learning_rate if not online_config.decay_lr else 0.0)
 
-    # out = wg.Output(layout={"padding": "15px"})
-    # display(out)
-    progress_bar = tqdm(range(num_updates), position=0, leave=True)
-
     if run_config.track:
         video_path = os.path.join("videos", run_config.run_name)
-        if not os.path.exists(video_path):
-            os.makedirs(video_path)
-        videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
-        for video in videos:
-            os.remove(os.path.join(video_path, video))
-        videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
+        prepare_video_dir(video_path)
+        videos = []
 
-    for update in progress_bar:
+    progress_bar = tqdm(range(num_updates), position=0, leave=True)
+    for _ in progress_bar:
 
         agent.rollout(memory, online_config.num_steps, envs, trajectory_writer)
         agent.learn(memory, online_config, optimizer,
@@ -124,3 +102,46 @@ def check_and_upload_new_video(video_path, videos, step=None):
                 format="mp4",
             )}, step=step)
     return current_videos
+
+
+def prepare_video_dir(video_path):
+    if not os.path.exists(video_path):
+        os.makedirs(video_path)
+    videos = [i for i in os.listdir(video_path) if i.endswith(".mp4")]
+    for video in videos:
+        os.remove(os.path.join(video_path, video))
+    videos = []
+
+
+def get_agent(
+        transformer_model_config: TransformerModelConfig,
+        envs: SyncVectorEnv,
+        environment_config: EnvironmentConfig,
+        online_config) -> PPOAgent:
+    """
+    Returns an agent based on the given configuration.
+
+    Args:
+    - transformer_model_config: The configuration for the transformer model.
+    - envs: The environment to train on.
+    - environment_config: The configuration for the environment.
+    - online_config: The configuration for online training.
+
+    Returns:
+    - An agent.
+    """
+    if transformer_model_config is None:
+        agent = FCAgent(
+            envs,
+            device=device,
+            hidden_dim=online_config.hidden_size
+        )
+    else:
+        agent = TrajPPOAgent(
+            envs=envs,
+            transformer_model_config=transformer_model_config,
+            environment_config=environment_config,
+            device=device,
+        )
+
+    return agent

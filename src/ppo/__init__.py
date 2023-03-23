@@ -4,7 +4,6 @@ Modules:
     - agent: Contains the Agent class, which encapsulates the neural networks used to represent the policy and value function, as well as the methods used for interacting with the environment and updating the network weights.
     - memory: Contains the Memory class, which stores experiences collected during the rollout phase and provides methods for computing advantages and generating minibatches for training.
     - utils: Contains utility functions used throughout the PPO subpackage.
-    -
 
 Classes:
     - PPOArgs: A dataclass that stores hyperparameters and other configuration options for PPO training.
@@ -13,7 +12,6 @@ Classes:
 Functions:
     - get_obs_preprocessor: A function that takes an OpenAI gym observation space and returns a function that preprocesses observations for use in neural networks.
     - check_and_upload_new_video: A function that checks for new video files in a specified directory and logs them to a WandB run if they are found.
-    - get_printable_output_for_probe_envs: A function that tests a probe environment and prints output in the form of a widget, showing the actual and expected values and actions for the environment.
     - train_ppo: The main function for training an agent using the PPO algorithm. Calls the Agent and Memory classes, and uses an optimizer and learning rate scheduler to update the network weights.
 
 Dependencies:

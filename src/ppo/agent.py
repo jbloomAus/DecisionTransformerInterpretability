@@ -6,11 +6,11 @@ import numpy as np
 import torch as t
 from torch import nn, optim
 from torch.distributions.categorical import Categorical
-from torchtyping import TensorType as TT
-from torchtyping import patch_typeguard
-from typeguard import typechecked
+
 
 from .memory import Memory
+from .utils import get_obs_shape
+from .loss_functions import calc_clipped_surrogate_objective, calc_value_function_loss, calc_entropy_bonus
 
 from src.models.trajectory_model import ActorTransformer, CriticTransfomer
 from src.config import TransformerModelConfig, EnvironmentConfig, OnlineTrainConfig
@@ -58,10 +58,6 @@ class PPOAgent(nn.Module):
         self.critic = nn.Sequential()
         self.actor = nn.Sequential()
 
-    @abc.abstractmethod
-    def layer_init(self, layer: nn.Linear, std: float, bias_const: float) -> nn.Linear:
-        pass
-
     def make_optimizer(self,
                        num_updates: int,
                        initial_lr: float,
@@ -89,6 +85,23 @@ class PPOAgent(nn.Module):
     def learn(self, memory, args, optimizer, scheduler) -> None:
         pass
 
+    def layer_init(self, layer: nn.Linear, std: float = np.sqrt(2), bias_const: float = 0.0) -> nn.Linear:
+        """Initializes the weights of a linear layer with orthogonal
+        initialization and the biases with a constant value.
+
+        Args:
+            layer (nn.Linear): The linear layer to be initialized.
+            std (float, optional): The standard deviation of the
+                distribution used to initialize the weights. Defaults to np.sqrt(2).
+            bias_const (float, optional): The constant value to initialize the biases with. Defaults to 0.0.
+
+        Returns:
+            nn.Linear: The initialized linear layer.
+        """
+        t.nn.init.orthogonal_(layer.weight, std)
+        t.nn.init.constant_(layer.bias, bias_const)
+        return layer
+
 
 class FCAgent(PPOAgent):
     critic: nn.Sequential
@@ -105,21 +118,10 @@ class FCAgent(PPOAgent):
         '''
         super().__init__(envs=envs, device=device)
 
-        # obs_shape will be a tuple (e.g. for RGB images this would be an array (h, w, c))
-        if isinstance(envs.single_observation_space, gym.spaces.Box):
-            self.obs_shape = envs.single_observation_space.shape
-        elif isinstance(envs.single_observation_space, gym.spaces.Discrete):
-            self.obs_shape = (envs.single_observation_space.n,)
-        elif isinstance(envs.single_observation_space, gym.spaces.Dict):
-            self.obs_shape = envs.single_observation_space.spaces["image"].shape
-        else:
-            raise ValueError("Unsupported observation space")
-        # num_obs is num elements in observations (e.g. for RGB images this would be h * w * c)
+        self.obs_shape = get_obs_shape(envs.single_observation_space)
         self.num_obs = np.array(self.obs_shape).prod()
-        # assuming a discrete action space
         self.num_actions = envs.single_action_space.n
         self.hidden_dim = hidden_dim
-
         self.critic = nn.Sequential(
             nn.Flatten(),
             self.layer_init(nn.Linear(self.num_obs, self.hidden_dim)),
@@ -137,27 +139,8 @@ class FCAgent(PPOAgent):
             self.layer_init(nn.Linear(self.hidden_dim,
                                       self.num_actions), std=0.01)
         )
-
         self.device = device
         self.to(device)
-
-    # TODO work out why this is std not gain for orthogonal init
-    def layer_init(self, layer: nn.Linear, std: float = np.sqrt(2), bias_const: float = 0.0) -> nn.Linear:
-        """Initializes the weights of a linear layer with orthogonal
-        initialization and the biases with a constant value.
-
-        Args:
-            layer (nn.Linear): The linear layer to be initialized.
-            std (float, optional): The standard deviation of the
-                distribution used to initialize the weights. Defaults to np.sqrt(2).
-            bias_const (float, optional): The constant value to initialize the biases with. Defaults to 0.0.
-
-        Returns:
-            nn.Linear: The initialized linear layer.
-        """
-        t.nn.init.orthogonal_(layer.weight, std)
-        t.nn.init.constant_(layer.bias, bias_const)
-        return layer
 
     def rollout(self, memory: Memory, num_steps: int, envs: gym.vector.SyncVectorEnv, trajectory_writer=None) -> None:
         """Performs the rollout phase of the PPO algorithm, collecting experience by interacting with the environment.
@@ -319,59 +302,22 @@ class TrajPPOAgent(PPOAgent):
         super().__init__(envs=envs, device=device)
         self.environment_config = environment_config
         self.transformer_model_config = transformer_model_config
-
-        # obs_shape will be a tuple (e.g. for RGB images this would be an array (h, w, c))
-        if isinstance(envs.single_observation_space, gym.spaces.Box):
-            self.obs_shape = envs.single_observation_space.shape
-        elif isinstance(envs.single_observation_space, gym.spaces.Discrete):
-            self.obs_shape = (envs.single_observation_space.n,)
-        elif isinstance(envs.single_observation_space, gym.spaces.Dict):
-            self.obs_shape = envs.single_observation_space.spaces["image"].shape
-        else:
-            raise ValueError("Unsupported observation space")
-        # num_obs is num elements in observations (e.g. for RGB images this would be h * w * c)
+        self.obs_shape = get_obs_shape(envs.single_observation_space)
         self.num_obs = np.array(self.obs_shape).prod()
-        # assuming a discrete action space
         self.num_actions = envs.single_action_space.n
-
         self.hidden_dim = transformer_model_config.d_model
-
-        critic_transformer = CriticTransfomer(
+        self.critic = CriticTransfomer(
             transformer_config=transformer_model_config,
             environment_config=environment_config,
         )
-
-        self.layer_init(critic_transformer.value_predictor, std=0.01)
-        self.critic = critic_transformer
-
-        actor_transformer = ActorTransformer(
+        self.layer_init(self.critic.value_predictor, std=0.01)
+        self.actor = ActorTransformer(
             transformer_config=transformer_model_config,
             environment_config=environment_config,
         )
-
-        self.layer_init(actor_transformer.action_predictor, std=0.01)
-        self.actor = actor_transformer
-
+        self.layer_init(self.actor.action_predictor, std=0.01)
         self.device = device
         self.to(device)
-
-    # TODO work out why this is std not gain for orthogonal init
-    def layer_init(self, layer: nn.Linear, std: float = np.sqrt(2), bias_const: float = 0.0) -> nn.Linear:
-        """Initializes the weights of a linear layer with orthogonal
-        initialization and the biases with a constant value.
-
-        Args:
-            layer (nn.Linear): The linear layer to be initialized.
-            std (float, optional): The standard deviation of the distribution used to
-                initialize the weights. Defaults to np.sqrt(2).
-            bias_const (float, optional): The constant value to initialize the biases with. Defaults to 0.0.
-
-        Returns:
-            nn.Linear: The initialized linear layer.
-        """
-        t.nn.init.orthogonal_(layer.weight, std)
-        t.nn.init.constant_(layer.bias, bias_const)
-        return layer
 
     def rollout(self,
                 memory: Memory,
@@ -647,75 +593,3 @@ class TrajPPOAgent(PPOAgent):
         elif actions.shape[1] > max_actions_length:
             actions = actions[:, -max_actions_length:]
         return actions
-
-
-patch_typeguard()
-
-
-def calc_clipped_surrogate_objective(
-    probs: Categorical, mb_action: t.Tensor, mb_advantages: t.Tensor, mb_logprobs: t.Tensor, clip_coef: float
-) -> t.Tensor:
-    '''
-    Return the clipped surrogate objective, suitable for maximisation with gradient ascent.
-
-    Args:
-        probs (Categorical): A distribution containing the actor's
-            unnormalized logits of shape (minibatch, num_actions).
-        mb_action (Tensor): A tensor of shape (minibatch,) containing the actions taken by the agent in the minibatch.
-        mb_advantages (Tensor): A tensor of shape (minibatch,) containing the
-            advantages estimated for each state in the minibatch.
-        mb_logprobs (Tensor): A tensor of shape (minibatch,) containing the
-            log probabilities of the actions taken by the agent in the minibatch.
-        clip_coef (float): Amount of clipping, denoted by epsilon in Eq 7.
-
-    Returns:
-        Tensor: The clipped surrogate objective computed over the minibatch, with shape ().
-
-    '''
-    logits_diff = probs.log_prob(mb_action) - mb_logprobs
-
-    r_theta = t.exp(logits_diff)
-
-    mb_advantages = (mb_advantages - mb_advantages.mean()) / \
-        (mb_advantages.std() + 10e-8)
-
-    non_clipped = r_theta * mb_advantages
-    clipped = t.clip(r_theta, 1 - clip_coef, 1 + clip_coef) * mb_advantages
-
-    return t.minimum(non_clipped, clipped).mean()
-
-
-@typechecked
-def calc_value_function_loss(values: TT["batch"], mb_returns: TT["batch"], vf_coef: float) -> t.Tensor:  # noqa: F821
-    '''
-    Compute the value function portion of the loss function.
-
-    Args:
-        values (Tensor): A tensor of shape (minibatch,) containing the value function
-            estimates for the states in the minibatch.
-        mb_returns (Tensor): A tensor of shape (minibatch,) containing the discounted
-            returns estimated for each state in the minibatch.
-        vf_coef (float): The coefficient for the value loss, which weights its
-            contribution to the overall loss. Denoted by c_1 in the paper.
-
-    Returns:
-        Tensor: The value function loss computed over the minibatch, with shape ().
-
-    '''
-    return 0.5 * vf_coef * (values - mb_returns).pow(2).mean()
-
-
-def calc_entropy_bonus(probs: Categorical, ent_coef: float):
-    '''
-    Return the entropy bonus term, suitable for gradient ascent.
-
-    Args:
-        probs (Categorical): A distribution containing the actor's unnormalized
-            logits of shape (minibatch, num_actions).
-        ent_coef (float): The coefficient for the entropy loss, which weights its
-            contribution to the overall loss. Denoted by c_2 in the paper.
-
-    Returns:
-        Tensor: The entropy bonus computed over the minibatch, with shape ().
-    '''
-    return ent_coef * probs.entropy().mean()

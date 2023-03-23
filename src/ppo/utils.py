@@ -316,42 +316,22 @@ def preprocess_images(images, device=None):
     return images
 
 
-def get_printable_output_for_probe_envs(args, agent, probe_idx: int, update: int, num_updates: int, device="cpu"):
-    """Tests a probe environment and returns a widget-style output for the environment.
-
-    The function prints and returns output showing how well the agent performs on a given probe environment. The output
-    includes the agent's computed values and expected values for the observations in the probe environment, as well as
-    the agent's computed probabilities and the expected action for the probe environment, if applicable.
+def get_obs_shape(single_observation_space) -> tuple:
+    '''
+    Returns the shape of a single observation.
 
     Args:
-    - args: a PPOArgs object containing arguments for the PPO training algorithm
-    - agent: an Agent object containing a trained PPO agent
-    - probe_idx: the index of the probe environment to test
-    - update: the current training update number
-    - num_updates: the total number of training updates
+        single_observation_space (gym.spaces.Box, gym.spaces.Discrete, gym.spaces.Dict): The observation space of a single agent.
 
     Returns:
-    - output: a string representing the output widget for the probe environment
-    """
-    obs_for_probes = [[[0.0]], [[-1.0], [+1.0]],
-                      [[0.0], [1.0]], [[0.0]], [[0.0], [1.0]]]
-    expected_value_for_probes = [
-        1.0, [-1.0, +1.0], [args.gamma, 1.0], 1.0, [1.0, 1.0]]
-    expected_actions_for_probs = [None, None, None, 1, [0, 1]]
-
-    obs = t.tensor(obs_for_probes[probe_idx]).to(device)
-    output = ""
-
-    # Check if the value is what you expect
-    value = agent.critic(obs).detach().cpu().numpy().squeeze()
-    expected_value = expected_value_for_probes[probe_idx]
-    output += f"Obs: {update+1}/{num_updates}\n\nActual value: {value}\nExpected value: {expected_value}"
-    # Check if the action is what you expect
-    expected_action = expected_actions_for_probs[probe_idx]
-    if expected_action is not None:
-        logits = agent.actor(obs)
-        probs = logits.softmax(-1).detach().cpu().numpy().squeeze()
-        probs = str(probs).replace('\n', '')
-        output += f"\n\nActual prob: {probs}\nExpected action: {expected_action}"
-
-    return output
+        tuple: The shape of a single observation.
+    '''
+    if isinstance(single_observation_space, gym.spaces.Box):
+        obs_shape = single_observation_space.shape
+    elif isinstance(single_observation_space, gym.spaces.Discrete):
+        obs_shape = (single_observation_space.n,)
+    elif isinstance(single_observation_space, gym.spaces.Dict):
+        obs_shape = single_observation_space.spaces["image"].shape
+    else:
+        raise ValueError("Unsupported observation space")
+    return obs_shape
