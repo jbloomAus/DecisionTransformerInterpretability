@@ -219,6 +219,9 @@ class DecisionTransformer(TrajectoryTransformer):
             nn.Linear(1, self.transformer_config.d_model, bias=False))
         self.reward_predictor = nn.Linear(self.transformer_config.d_model, 1)
 
+        # n_ctx include full timesteps except for the last where it doesn't know the action
+        assert (transformer_config.n_ctx - 2) % 3 == 0
+
         nn.init.normal_(
             self.reward_embedding[0].weight, mean=0.0, std=1 / self.transformer_config.d_model)
 
@@ -332,6 +335,9 @@ class DecisionTransformer(TrajectoryTransformer):
 
         if no_actions is False:
             # TODO replace with einsum
+            if x.shape[1] % 3 != 0:
+                if (x.shape[1] + 1) % 3 == 0:
+                    x = torch.concat((x, x[:, -2].unsqueeze(1)), dim=1)
             x = x.reshape(batch_size, seq_length, 3,
                           self.transformer_config.d_model).permute(0, 2, 1, 3)
             # predict next return given state and action
@@ -368,13 +374,13 @@ class DecisionTransformer(TrajectoryTransformer):
                 raise ValueError(
                     f"Actions required for all timesteps except the last, got {actions.shape[1]} and {seq_length}")
 
-            if actions.shape[1] == seq_length - 1:
-                if pad_action:
-                    print(
-                        "Warning: actions are missing for the last timestep, padding with zeros")
-                    # This means that you can't interpret Reward or State predictions for the last timestep!!!
-                    actions = torch.cat([actions, torch.zeros(
-                        batch_size, 1, 1, dtype=torch.long, device=actions.device)], dim=1)
+            # if actions.shape[1] == seq_length - 1:
+            #     if pad_action:
+            #         print(
+            #             "Warning: actions are missing for the last timestep, padding with zeros")
+            #         # This means that you can't interpret Reward or State predictions for the last timestep!!!
+            #         actions = torch.cat([actions, torch.zeros(
+            #             batch_size, 1, 1, dtype=torch.long, device=actions.device)], dim=1)
 
         # embed states and recast back to (batch, block_size, n_embd)
         token_embeddings = self.to_tokens(states, actions, rtgs, timesteps)
@@ -400,7 +406,7 @@ class CloneTransformer(TrajectoryTransformer):
 
         # n_ctx must be odd (previous state, action, next state)
         assert (transformer_config.n_ctx - 1) % 2 == 0
-        self.transformer = self.initialize_easy_transformer()
+        self.transformer = self.initialize_easy_transformer()  # this might not be needed?
 
     def get_token_embeddings(self,
                              state_embeddings,

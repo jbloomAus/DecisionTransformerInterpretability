@@ -55,7 +55,7 @@ def test_evaluate_dt_agent():
             n_layers=2,
             state_embedding_type="grid",  # hard-coded for now to minigrid.
             # max_timestep=1000,
-            n_ctx=3,  # one timestep of context
+            n_ctx=2,  # one timestep of context
             device="cuda" if torch.cuda.is_available() else "cpu",
         ))
 

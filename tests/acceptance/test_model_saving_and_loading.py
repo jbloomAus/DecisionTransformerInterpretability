@@ -79,7 +79,7 @@ def test_load_model_data(generate_trajectory_data, cleanup_test_results):
         n_heads=4,
         d_mlp=256,
         n_layers=2,
-        n_ctx=3,
+        n_ctx=2,
         layer_norm=False,
         state_embedding_type='grid',
         time_embedding_type='embedding',

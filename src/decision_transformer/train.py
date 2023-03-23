@@ -72,11 +72,11 @@ def train(
             optimizer.zero_grad()
 
             if isinstance(model, DecisionTransformer):
+                action = a[:, :-1].unsqueeze(-1) if a.shape[1] > 1 else None
                 _, action_preds, _ = model.forward(
                     states=s,
                     # remove last action
-                    actions=a[:, :- \
-                              1].unsqueeze(-1) if a.shape[1] > 1 else None,
+                    actions=action,
                     rtgs=rtg[:, :-1],  # remove last rtg
                     timesteps=ti.unsqueeze(-1)
                 )
@@ -180,7 +180,8 @@ def test(
             if isinstance(model, DecisionTransformer):
                 _, action_preds, _ = model.forward(
                     states=s,
-                    actions=a.unsqueeze(-1),
+                    actions=a[:, :-
+                              1].unsqueeze(-1) if a.shape[1] > 1 else None,
                     rtgs=rtg[:, :-1],
                     timesteps=ti.unsqueeze(-1)
                 )
@@ -286,7 +287,7 @@ def evaluate_dt_agent(
         if isinstance(model, DecisionTransformer):
             state_preds, action_preds, reward_preds = model.forward(
                 states=obs,
-                actions=a,
+                actions=None,
                 rtgs=rtg,
                 timesteps=timesteps
             )
@@ -324,20 +325,19 @@ def evaluate_dt_agent(
             a = t.cat([a, t.tensor([new_action]).unsqueeze(
                 0).unsqueeze(0).to(device)], dim=1)
 
+            # truncations:
+            obs = obs[:, -max_len:] if obs.shape[1] > max_len else obs
+            actions = a[:, -(obs.shape[1] - 1):] if (a.shape[1]
+                                                     > 1 and max_len > 1) else None
+            timesteps = timesteps[:, -
+                                  max_len:] if timesteps.shape[1] > max_len else timesteps
+
             if isinstance(model, DecisionTransformer):
+                rtg = rtg[:, -max_len:] if rtg.shape[1] > max_len else rtg
                 _, action_preds, _ = model.forward(
-                    states=obs[:, -max_len:] if obs.shape[1] > max_len else obs,
-                    actions=a[:, -max_len:] if a.shape[1] > max_len else a,
-                    rtgs=rtg[:, -max_len:] if rtg.shape[1] > max_len else rtg,
-                    timesteps=timesteps[:, -
-                                        max_len:] if timesteps.shape[1] > max_len else timesteps
+                    states=obs, actions=actions, rtgs=rtg, timesteps=timesteps
                 )
             elif isinstance(model, CloneTransformer):
-                obs = obs[:, -max_len:] if obs.shape[1] > max_len else obs
-                actions = a[:, -(obs.shape[1] - 1):] if (a.shape[1]
-                                                         > 1 and max_len > 1) else None
-                timesteps = timesteps[:, -
-                                      max_len:] if timesteps.shape[1] > max_len else timesteps
                 _, action_preds = model.forward(
                     states=obs, actions=actions, timesteps=timesteps
                 )

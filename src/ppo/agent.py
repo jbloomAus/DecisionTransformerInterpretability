@@ -534,7 +534,7 @@ class TrajPPOAgent(PPOAgent):
                     actions = action.unsqueeze(-1)
                 else:
                     actions = t.cat((actions, action.unsqueeze(1)), dim=1)
-            print(obss.shape, actions.shape)
+
             # TODO: ensure that if the critic context window is small enough, we truncate appropriately
 
             obss = self.truncate_obss(obss)

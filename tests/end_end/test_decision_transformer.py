@@ -13,11 +13,11 @@ def download_training_data() -> None:
         os.system("gdown 1UBMuhRrM3aYDdHeJBFdTn1RzXDrCL_sr -O trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl")
 
 
-@pytest.mark.parametrize("n_ctx", [1, 3])
+@pytest.mark.parametrize("n_ctx", [2, 5, 8])
 def test_decision_transformer(download_training_data, n_ctx):
 
     run_config = RunConfig(
-        exp_name="Test-DT",
+        exp_name="Test-DT-n_ctx" + str(n_ctx),
         wandb_project_name="DecisionTransformerInterpretability",
         seed=1,
         track=True,
@@ -28,7 +28,7 @@ def test_decision_transformer(download_training_data, n_ctx):
         n_heads=2,
         d_mlp=256,
         n_layers=1,
-        n_ctx=3,
+        n_ctx=n_ctx,
         time_embedding_type="embedding",
         seed=1,
         device="cpu"
@@ -42,7 +42,7 @@ def test_decision_transformer(download_training_data, n_ctx):
         pct_traj=1,
         prob_go_from_end=0.1,
         device="cpu",
-        track=True,
+        track=run_config.track,
         train_epochs=500,
         test_epochs=10,
         test_frequency=100,
@@ -59,8 +59,6 @@ def test_decision_transformer(download_training_data, n_ctx):
         make_env=make_env)
 
     print("Test passed! Look at wandb and compare to the previous run.")
-
-# parameterize with n_ctx 1 or 3
 
 
 @pytest.mark.parametrize("n_ctx", [1, 3, 9])
