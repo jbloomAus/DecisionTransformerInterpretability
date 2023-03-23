@@ -154,19 +154,13 @@ class FCAgent(PPOAgent):
         """
 
         device = memory.device
-        if isinstance(device, str):
-            device = t.device(device)
         cuda = device.type == "cuda"
         obs = memory.next_obs
         done = memory.next_done
 
-        for step in range(num_steps):
-
-            # Generate the next set of new experiences (one for each env)
+        for _ in range(num_steps):
             with t.inference_mode():
-                # Our actor generates logits over actions which we can then sample from
                 logits = self.actor(obs)
-                # Our critic generates a value function (which we use in the value loss, and to estimate advantages)
                 value = self.critic(obs).flatten()
             probs = Categorical(logits=logits)
             action = probs.sample()
@@ -176,44 +170,18 @@ class FCAgent(PPOAgent):
             next_obs = memory.obs_preprocessor(next_obs)
             reward = t.from_numpy(reward).to(device)
 
-            # TODO refactor to use ternary statements
             if trajectory_writer is not None:
-                # first_obs = obs
-                if not cuda:
-                    trajectory_writer.accumulate_trajectory(
-                        # the observation stored with an action and reward is
-                        # the observation which the agent responded to.
-                        next_obs=obs.detach().numpy(),
-                        # the reward stored with an action and observation is
-                        # the reward the agent received for taking that action in that state
-                        reward=reward.detach().numpy(),
-                        # the action stored with an observation and reward is
-                        # the action the agent took to get to that reward
-                        action=action.detach().numpy(),
-                        # the done stored with an action and observation is
-                        # the done the agent received for taking that action in that state
-                        done=next_done,
-                        truncated=next_truncated,
-                        info=info
-                    )
-                else:
-                    trajectory_writer.accumulate_trajectory(
-                        # the observation stored with an action and reward
-                        # is the observation which the agent responded to.
-                        next_obs=obs.detach().cpu().numpy(),
-                        # the reward stored with an action and observation
-                        # is the reward the agent received for taking that action in that state
-                        reward=reward.detach().cpu().numpy(),
-                        # the action stored with an observation and reward
-                        # is the action the agent took to get to that reward
-                        action=action.detach().cpu().numpy(),
-                        # the done stored with an action and observation
-                        # is the done the agent received for taking that action in that state
-                        done=next_done,
-                        truncated=next_truncated,
-                        info=info
-                    )
-
+                obs = obs.detach().cpu().numpy() if cuda else obs.detach().numpy()
+                reward = reward.detach().cpu().numpy() if cuda else reward.detach().numpy()
+                action = action.detach().cpu().numpy() if cuda else action.detach().numpy()
+                trajectory_writer.accumulate_trajectory(
+                    next_obs=obs,
+                    reward=reward,
+                    action=action,
+                    done=next_done,
+                    truncated=next_truncated,
+                    info=info
+                )
             # Store (s_t, d_t, a_t, logpi(a_t|s_t), v(s_t), r_t+1)
             memory.add(info, obs, done, action, logprob, value, reward)
             obs = t.from_numpy(next_obs).to(device)
@@ -358,10 +326,6 @@ class TrajPPOAgent(PPOAgent):
                         timesteps=t.tensor([0]).repeat(n_envs, 1, 1)
                     )[:, -1].squeeze(-1)  # value is scalar
             else:
-
-                # if no experience,s you have one timestep and you buffer out to the context size.
-                # if you have some experiences, than you fill out at much of the context window as you can.
-                # if you have more experiences than the context window, you have to truncate.
 
                 # we have one more obs than action
                 obs_timesteps = (context_window_size - 1) // 2 + \
