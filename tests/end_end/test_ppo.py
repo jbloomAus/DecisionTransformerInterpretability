@@ -119,7 +119,7 @@ def test_ppo_runner_traj_model_memory():
         exp_name="Test-PPO-Traj-Memory",
         seed=1,
         cuda=True,
-        track=True,
+        track=False,
         wandb_project_name="PPO-MiniGrid",
         wandb_entity=None,
     )
@@ -128,9 +128,9 @@ def test_ppo_runner_traj_model_memory():
         # env_id="MiniGrid-RedBlueDoors-6x6-v0",
         # env_id="MiniGrid-MemoryS7-v0",
         env_id="MiniGrid-Dynamic-Obstacles-8x8-v0",
-        view_size=3,
-        max_steps=20,
-        one_hot_obs=True,
+        view_size=7,
+        max_steps=50,
+        one_hot_obs=False,
         fully_observed=False,
         render_mode="rgb_array",
         capture_video=True,
@@ -141,7 +141,7 @@ def test_ppo_runner_traj_model_memory():
         use_trajectory_model=True,
         hidden_size=64,
         total_timesteps=200000,
-        learning_rate=0.00015,
+        learning_rate=0.00025,
         decay_lr=True,
         num_envs=14,
         num_steps=256,
@@ -154,7 +154,7 @@ def test_ppo_runner_traj_model_memory():
         vf_coef=0.5,
         max_grad_norm=2,
         trajectory_path=None,
-        prob_go_from_end=0.5,
+        prob_go_from_end=0.2,
     )
 
     transformer_model_config = TransformerModelConfig(
@@ -162,7 +162,7 @@ def test_ppo_runner_traj_model_memory():
         n_heads=4,
         d_mlp=256,
         n_layers=2,
-        n_ctx=31,
+        n_ctx=15,
         time_embedding_type="embedding",
         state_embedding_type="grid",
         seed=1,

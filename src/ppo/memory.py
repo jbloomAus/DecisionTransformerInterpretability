@@ -1,7 +1,7 @@
 import random
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import List
+from typing import List, Any
 
 import gymnasium as gym
 import numpy as np
@@ -50,7 +50,7 @@ class Memory():
     A memory buffer for storing experiences during the rollout phase.
     '''
 
-    def __init__(self, envs: gym.vector.SyncVectorEnv, args: OnlineTrainConfig, device: t.device):
+    def __init__(self, envs: gym.vector.SyncVectorEnv, args: OnlineTrainConfig, device: t.device = t.device("cpu")):
         """Initializes the memory buffer.
 
         envs: A SyncVectorEnv object.
@@ -73,7 +73,8 @@ class Memory():
 
         *data: A tuple containing the tensors of (obs, done, action, logprob, value, reward) for an agent.
         """
-        info, *experiences = data
+        info = data[0]
+        experiences = data[1:]
         self.experiences.append(experiences)
         if info and isinstance(info, dict):
             if "final_info" in info.keys():
@@ -427,83 +428,3 @@ class Memory():
         '''
         for step, vars_to_log in self.vars_to_log.items():
             wandb.log(vars_to_log, step=step)
-
-    # TODO work out how to TT with obs shape at end
-    def get_obs_traj(self, steps: int, pad_to_length: int) -> TT["env", "T", "obs"]:  # noqa: F821
-        '''
-        Returns a tensor of shape (steps, envs, obs_shape) containing the observations from the last steps.
-
-        Args:
-        - steps (int): number of steps to return.
-        - pad_to_length (int): if the number of steps is less than this, then the tensor will be padded with zeros.
-
-        Returns:
-        - TT["env", "T", "obs"]: a tensor of shape (steps, envs, obs_shape) containing
-        the observations from the last steps.
-        '''
-        # total bullshit because of how these experiences are stored.
-        obs = [exp[0] for exp in self.experiences]
-        obs = t.stack(obs)  # obs now has shape (steps, envs, obs_shape)
-
-        # then get the last steps
-        obs_traj = obs[-steps:]
-
-        # then rearrange
-        obs_traj = rearrange(obs_traj, 't e ... -> e t ...')
-
-        # then pad with zeros if needed
-        obs_traj = pad_tensor(obs_traj, pad_to_length,
-                              ignore_first_dim=True, pad_left=True)
-
-        # truncate if required
-        obs_traj = obs_traj[:, -pad_to_length:]
-
-        return obs_traj
-
-    def get_act_traj(self, steps: int, pad_to_length: int) -> TT["env", "T", "act"]:  # noqa: F821
-        '''Returns a tensor of shape (steps, envs, obs_shape) containing the observations from the last steps.
-
-        Args:
-        - steps (int): number of steps to return.
-        - pad_to_length (int): if the number of steps is less than this, then the tensor will be padded with zeros.
-
-        Returns:
-        - TT["T", "env", "act"]: a tensor of shape (steps, envs, obs_shape) containing
-        the observations from the last steps.
-        '''
-
-        # total bullshit because of how these experiences are stored.
-        act = [exp[2] for exp in self.experiences]
-        act = t.stack(act)  # obs now has shape (steps, envs, obs_shape)
-
-        # then get the last steps
-        act_traj = act[-steps:]
-
-        # then rearrange
-        act_traj = rearrange(act_traj, 't e ... -> e t ...')
-
-        # then pad with zeros if needed
-        act_traj = pad_tensor(act_traj, pad_to_length, ignore_first_dim=True, pad_left=True,
-                              pad_token=self.envs.single_action_space.n)
-
-        # truncate if required
-        act_traj = act_traj[:, -pad_to_length:]
-
-        # assume for now that actions are scalars
-        return act_traj.unsqueeze(-1)
-
-    def get_timestep_traj(self, steps: int, pad_to_length: int) -> TT["env", "T", "1"]:  # noqa: F821
-        '''
-        Returns a tensor of shape (steps, envs, 1) containing the time steps from the last steps.
-
-        Args:
-        - steps (int): number of steps to return.
-        - pad_to_length (int): if the number of steps is less than this, then the tensor will be padded with zeros.
-
-        Returns:
-        - a tensor of shape (steps, envs, 1) containing
-        the time steps from the last steps.
-        '''
-        n_envs = self.envs.num_envs
-        timesteps = t.arange(0, steps).repeat(n_envs, 1)[:, -pad_to_length:]
-        return timesteps

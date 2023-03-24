@@ -304,48 +304,60 @@ class TrajPPOAgent(PPOAgent):
 
         device = memory.device
         obs = memory.next_obs
+        action = None  # will be set before used
         done = memory.next_done
+        truncated = memory.next_done  # mem done represents done | truncated
         context_window_size = self.actor.transformer_config.n_ctx
+        obs_timesteps = (context_window_size - 1) // 2 + 1  # (the current obs)
+        actions_timesteps = obs_timesteps - 1
+        action_pad_token = self.actor.environment_config.action_space.n
         n_envs = envs.num_envs
         if isinstance(device, str):
             device = t.device(device)
         cuda = device.type == "cuda"
 
+        obss = t.zeros((n_envs, obs_timesteps, *obs.shape[1:]), device=device)
+        acts = t.ones((n_envs, actions_timesteps, 1),
+                      device=device).to(t.long) * action_pad_token
+        timesteps = t.zeros((n_envs, obs_timesteps, 1),
+                            device=device).to(t.long)
+        obss[:, -1] = obs
         for step in range(num_steps):
 
             if len(memory.experiences) == 0:
-                states = obs.unsqueeze(1)
-                timesteps = t.tensor([0]).repeat(n_envs, 1, 1)
                 with t.inference_mode():
-                    logits = self.actor(states, None, timesteps)
-                    values = self.critic(states, None, timesteps)
+                    logits = self.actor(obss[:, -1:], None, timesteps[:, -1:])
+                    values = self.critic(obss[:, -1:], None, timesteps[:, -1:])
                     value = values[:, -1].squeeze(-1)  # value is scalar
             else:
-                # we have one more obs than action
-                obs_timesteps = (context_window_size - 1) // 2 + \
-                    1  # (the current obs)
-                actions_timesteps = obs_timesteps - 1
-
-                obss = memory.get_obs_traj(step, pad_to_length=obs_timesteps)
-                obss = t.cat((obss[:, 1:], obs.unsqueeze(1)), dim=1)
-                if actions_timesteps == 0:
-                    actions = None
+                # temporarily making this code worse, refactor soon.
+                if obs_timesteps - 1 == 0:
+                    obss = obs.unsqueeze(1)  # just add the current obs
+                    acts = None
                 else:
-                    actions = memory.get_act_traj(
-                        steps=step - 1,
-                        pad_to_length=actions_timesteps
-                    ).to(dtype=t.long)
+                    # obss
+                    obss = t.cat((obss, obs.unsqueeze(1)),
+                                 dim=1)  # add current obs
+                    obss = obss[:, -obs_timesteps:]  # truncate
+                    # acts
+                    # add current action
+                    acts = t.cat(
+                        (acts, action.unsqueeze(1).unsqueeze(-1)), dim=1)
+                    acts = acts[:, -actions_timesteps:]  # truncate
+                    # timesteps
+                    # add current timestep
+                    timesteps = t.cat(
+                        (timesteps, timesteps[:, -1:] + 1), dim=1)
+                    if timesteps.max() > self.environment_config.max_steps:
+                        assert False
+                    timesteps = timesteps[:, -obs_timesteps:]  # truncate
 
                 # Generate the next set of new experiences (one for each env)
                 with t.inference_mode():
                     # Our actor generates logits over actions which we can then sample from
-                    timesteps = t.tensor([0]).repeat(
-                        n_envs, obss.shape[1], 1).to(int)
-                    logits = self.actor(
-                        states=obss, actions=actions, timesteps=timesteps)
+                    logits = self.actor(obss, acts, timesteps)
                     # Our critic generates a value function (which we use in the value loss, and to estimate advantages)
-                    values = self.critic(
-                        states=obss, actions=actions, timesteps=timesteps)
+                    values = self.critic(obss, acts, timesteps)
                     values = values[:, -1].squeeze(-1)  # value is scalar
 
             # get the last state action prediction
@@ -356,6 +368,19 @@ class TrajPPOAgent(PPOAgent):
                 action.cpu().numpy())
             next_obs = memory.obs_preprocessor(next_obs)
             reward = t.from_numpy(reward).to(device)
+
+            # in each case where an episode is done, we need to reset the context window
+            # this is done by setting the last obs to the current obs and the rest to 0
+            # all the actions are set to zero
+            # timesteps are also reset
+            next_done_or_truncated = next_done | next_truncated
+            for i, d in enumerate(next_done_or_truncated):
+                if d:
+                    obss[i, -1] = obs[i]
+                    obss[i, :-1] = 0
+                    if acts is not None:
+                        acts[i] = action_pad_token
+                    timesteps[i] = 0
 
             if trajectory_writer is not None:
                 obs_np = obs.detach().cpu().numpy() if cuda else obs.detach().numpy()
@@ -371,24 +396,26 @@ class TrajPPOAgent(PPOAgent):
                 )
 
             # Store (s_t, d_t, a_t, logpi(a_t|s_t), v(s_t), r_t+1)
-            memory.add(info, obs, done, action, logprob, value, reward)
-            previous_obs = obs
+            mem_done = (done.to(bool) | truncated.to(bool)).to(float)
+            memory.add(info, obs, mem_done, action, logprob, value, reward)
             obs = t.from_numpy(next_obs).to(device)
             done = t.from_numpy(next_done).to(device, dtype=t.float)
+            truncated = t.from_numpy(next_truncated).to(device, dtype=t.float)
 
         # Store last (obs, done, value) tuple, since we need it to compute advantages
         memory.next_obs = obs
         memory.next_done = done
         with t.inference_mode():
 
-            # get obss and actions whether the trajectories have been instantiated or not
-            obss = self.append_obs(obss, previous_obs, obs)
-            actions = self.append_action(actions, action.unsqueeze(-1))
+            obss = t.cat((obss, obs.unsqueeze(1)), dim=1)
+            acts = t.cat((acts, action.unsqueeze(1).unsqueeze(-1)),
+                         dim=1) if acts is not None else None
 
-            # TODO: ensure that if the critic context window is small enough, we truncate appropriately
-            obss = self.truncate_obss(obss)
-            actions = self.truncate_actions(actions)
-            timesteps = t.tensor([0]).repeat(n_envs, obss.shape[1], 1)
+            obss = obss[:, -obs_timesteps:]
+            actions = acts[:, -
+                           actions_timesteps:] if acts is not None else None
+            timesteps = timesteps[:, -obs_timesteps:]
+
             values = self.critic(obss, actions, timesteps)
             memory.next_value = values[:, -1].squeeze(-1)
 
@@ -418,9 +445,8 @@ class TrajPPOAgent(PPOAgent):
             for mb in minibatches:
                 obs = mb.obs
                 actions = mb.actions[:, :-1].unsqueeze(-1).to(
-                    int) if mb.actions.shape[1] > 1 else None
-                timesteps = t.tensor([0]).repeat(
-                    mb.obs.shape[0], mb.obs.shape[1], 1).to(int)
+                    int) if mb.obs.shape[1] > 1 else None
+                timesteps = mb.timesteps.unsqueeze(-1).to(int)
 
                 logits = self.actor(obs, actions, timesteps)
                 values = self.critic(obs, actions, timesteps)
@@ -465,50 +491,3 @@ class TrajPPOAgent(PPOAgent):
                 approx_kl=approx_kl,
                 clipfrac=np.mean(clipfracs)
             )
-
-    def truncate_obss(self, obss):
-        '''assume actor and critic have same config'''
-        max_obss_length = (self.actor.transformer_config.n_ctx + 1) // 2
-        if obss.shape[1] > max_obss_length:
-            obss = obss[:, -max_obss_length:, :]
-        return obss
-
-    def truncate_actions(self, actions):
-        '''assume actor and critic have same config'''
-        max_actions_length = (self.actor.transformer_config.n_ctx + 1) // 2 - 1
-        if max_actions_length == 0:
-            return None
-        elif actions.shape[1] > max_actions_length:
-            actions = actions[:, -max_actions_length:]
-        return actions
-
-    def append_obs(self, obss, previous_obs, obs):
-        '''
-        Args:
-            obss: (n_envs, n_timesteps, obs_dim) A tensor of observations.
-            previous_obs: (n_envs, obs_dim) A tensor of the previous observations.
-            obs: (n_envs, obs_dim) A tensor of the current observations.
-
-        Returns:
-            obss: (n_envs, n_timesteps + 1, obs_dim) A tensor of observations.
-        '''
-        if obss is None:
-            obss = t.cat((previous_obs.unsqueeze(1), obs.unsqueeze(1)), dim=1)
-        else:
-            obss = t.cat((obss, obs.unsqueeze(1)), dim=1)
-        return obss
-
-    def append_action(self, actions, action):
-        '''
-        Args:
-            actions: (n_envs, n_timesteps, action_dim) A tensor of the previous actions.
-            action: (n_envs, action_dim) A tensor of the current action just taken
-
-        Returns:
-            actions: (n_envs, n_timesteps + 1, action_dim) A tensor of actions.
-        '''
-        if actions is None:
-            actions = action.unsqueeze(1)
-        else:
-            actions = t.cat((actions, action.unsqueeze(1)), dim=1)
-        return actions
