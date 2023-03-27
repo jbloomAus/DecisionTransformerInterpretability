@@ -12,6 +12,7 @@ from .offline_dataset import TrajectoryDataset
 from torch.utils.data.sampler import WeightedRandomSampler
 from torch.utils.data import random_split, DataLoader
 import numpy as np
+from .utils import get_max_len_from_model_type
 
 
 def train(
@@ -73,16 +74,20 @@ def train(
             optimizer.zero_grad()
 
             if isinstance(model, DecisionTransformer):
+                action = a[:, :-1].unsqueeze(-1) if a.shape[1] > 1 else None
                 _, action_preds, _ = model.forward(
                     states=s,
-                    actions=a.unsqueeze(-1),
-                    rtgs=rtg[:, :-1],
+                    # remove last action
+                    actions=action,
+                    rtgs=rtg[:, :-1],  # remove last rtg
                     timesteps=ti.unsqueeze(-1)
                 )
             elif isinstance(model, CloneTransformer):
                 _, action_preds = model.forward(
                     states=s,
-                    actions=a.unsqueeze(-1),
+                    # remove last action
+                    actions=a[:, :- \
+                              1].unsqueeze(-1) if a.shape[1] > 1 else None,
                     timesteps=ti.unsqueeze(-1)
                 )
 
@@ -103,7 +108,7 @@ def train(
             if track:
                 wandb.log({"train/loss": loss.item()}, step=total_batches)
                 tokens_seen = (total_batches + 1) * \
-                              batch_size * (model.transformer_config.n_ctx // 3)
+                    batch_size * (model.transformer_config.n_ctx // 3)
                 wandb.log({"metrics/tokens_seen": tokens_seen},
                           step=total_batches)
 
@@ -127,7 +132,7 @@ def train(
             run_name=f"dt_eval_videos_{batch}",
             fully_observed=False,
             flat_one_hot=(
-                    trajectory_data_set.observation_type == "one_hot"),
+                trajectory_data_set.observation_type == "one_hot"),
             # defensive coding, fix later.
             agent_view_size=env.observation_space['image'].shape[0] if "image" in list(
                 env.observation_space.keys()) else 7,
@@ -176,14 +181,17 @@ def test(
             if isinstance(model, DecisionTransformer):
                 _, action_preds, _ = model.forward(
                     states=s,
-                    actions=a.unsqueeze(-1),
+                    actions=a[:, :-
+                              1].unsqueeze(-1) if a.shape[1] > 1 else None,
                     rtgs=rtg[:, :-1],
                     timesteps=ti.unsqueeze(-1)
                 )
             elif isinstance(model, CloneTransformer):
                 _, action_preds = model.forward(
                     states=s,
-                    actions=a.unsqueeze(-1),
+                    # remove last action
+                    actions=a[:, :- \
+                              1].unsqueeze(-1) if a.shape[1] > 1 else None,
                     timesteps=ti.unsqueeze(-1)
                 )
 
@@ -237,8 +245,11 @@ def evaluate_dt_agent(
             time_embedding_type=model.time_embedding_type,
         )
 
-    assert model.transformer_config.n_ctx % 3 == 0, "n_ctx must be divisible by 3"
-    max_len = model.transformer_config.n_ctx // 3
+    max_len = get_max_len_from_model_type(
+        model_type="decision_transformer" if isinstance(
+            model, DecisionTransformer) else "clone_transformer",
+        n_ctx=model.transformer_config.n_ctx,
+    )
 
     traj_lengths = []
     rewards = []
@@ -261,7 +272,8 @@ def evaluate_dt_agent(
     else:
         pbar = range(trajectories)
 
-    obs, _ = env.reset(seed=0)  # each env will get its own seed by incrementing on the given seed
+    # each env will get its own seed by incrementing on the given seed
+    obs, _ = env.reset(seed=0)
     obs = t.tensor(obs['image']).unsqueeze(1)
     rtg = rearrange(t.ones(num_envs, dtype=t.int) * initial_rtg, 'e -> e 1 1')
     a = rearrange(t.zeros(num_envs, dtype=t.int), 'e -> e 1 1')
@@ -278,10 +290,10 @@ def evaluate_dt_agent(
     # get first action
     if isinstance(model, DecisionTransformer):
         state_preds, action_preds, reward_preds = model.forward(
-            states=obs, actions=a, rtgs=rtg, timesteps=timesteps)
+            states=obs, actions=None, rtgs=rtg, timesteps=timesteps)
     elif isinstance(model, CloneTransformer):
         state_preds, action_preds = model.forward(
-            states=obs, actions=a, timesteps=timesteps)
+            states=obs, actions=None, timesteps=timesteps)
     else:  # it's probably a legacy model in which case the interface is:
         state_preds, action_preds, reward_preds = model.forward(
             states=obs, actions=a, rtgs=rtg, timesteps=timesteps)
@@ -293,37 +305,41 @@ def evaluate_dt_agent(
     while n_terminated + n_truncated < trajectories:
 
         # concat init obs to new obs
-        obs = t.cat([obs, t.tensor(new_obs['image']).unsqueeze(1).to(device)], dim=1)
+        obs = t.cat(
+            [obs, t.tensor(new_obs['image']).unsqueeze(1).to(device)], dim=1)
 
         # add new reward to init reward
-        rtg = t.cat([rtg, rtg[:, -1:, :] - rearrange(t.tensor(new_reward).to(device), 'e -> e 1 1')], dim=1)
+        rtg = t.cat([rtg, rtg[:, -1:, :] -
+                     rearrange(t.tensor(new_reward).to(device), 'e -> e 1 1')], dim=1)
 
         # add new timesteps
-        timesteps = t.cat([timesteps, rearrange(current_trajectory_length.to(device), 'e -> e 1 1')], dim=1)
+        timesteps = t.cat([timesteps, rearrange(
+            current_trajectory_length.to(device), 'e -> e 1 1')], dim=1)
 
         if model.transformer_config.time_embedding_type == "linear":
             timesteps = timesteps.to(t.float32)
 
         a = t.cat([a, rearrange(new_action, 'e -> e 1 1')], dim=1)
 
+        # truncations:
+        obs = obs[:, -max_len:] if obs.shape[1] > max_len else obs
+        actions = a[:, -(obs.shape[1] - 1):] if (a.shape[1]
+                                                 > 1 and max_len > 1) else None
+        timesteps = timesteps[:, -
+                              max_len:] if timesteps.shape[1] > max_len else timesteps
+
         if isinstance(model, DecisionTransformer):
-            _, action_preds, _ = model.forward(
-                states=obs[:, -max_len:] if obs.shape[1] > max_len else obs,
-                actions=a[:, -max_len:] if a.shape[1] > max_len else a,
-                rtgs=rtg[:, -max_len:] if rtg.shape[1] > max_len else rtg,
-                timesteps=timesteps[:, -
-                                       max_len:] if timesteps.shape[1] > max_len else timesteps
-            )
+            state_preds, action_preds, reward_preds = model.forward(
+                states=obs, actions=actions, rtgs=rtg, timesteps=timesteps)
         elif isinstance(model, CloneTransformer):
-            _, action_preds = model.forward(
-                states=obs[:, -max_len:] if obs.shape[1] > max_len else obs,
-                actions=a[:, -max_len:] if a.shape[1] > max_len else a,
-                timesteps=timesteps[:, -
-                                       max_len:] if timesteps.shape[1] > max_len else timesteps
-            )
+            state_preds, action_preds = model.forward(
+                states=obs, actions=actions, timesteps=timesteps)
+        else:  # it's probably a legacy model in which case the interface is:
+            state_preds, action_preds, reward_preds = model.forward(
+                states=obs, actions=a, rtgs=rtg, timesteps=timesteps)
+
         action = t.argmax(action_preds, dim=-1).squeeze(-1)
         new_obs, new_reward, terminated, truncated, info = env.step(action)
-
         # print(f"took action  {action} at timestep {i} for reward {new_reward}")
 
         n_positive = n_positive + sum(new_reward > 0)

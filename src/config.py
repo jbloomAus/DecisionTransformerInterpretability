@@ -22,7 +22,7 @@ class TransformerModelConfig():
     n_heads: int = 4
     d_mlp: int = 256
     n_layers: int = 2
-    n_ctx: int = 3
+    n_ctx: int = 2
     layer_norm: bool = False
     state_embedding_type: str = 'grid'
     time_embedding_type: str = 'embedding'

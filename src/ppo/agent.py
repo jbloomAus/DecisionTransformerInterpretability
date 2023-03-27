@@ -6,13 +6,13 @@ import numpy as np
 import torch as t
 from torch import nn, optim
 from torch.distributions.categorical import Categorical
-from torchtyping import TensorType as TT
-from torchtyping import patch_typeguard
-from typeguard import typechecked
+
 
 from .memory import Memory
+from .utils import get_obs_shape
+from .loss_functions import calc_clipped_surrogate_objective, calc_value_function_loss, calc_entropy_bonus
 
-from src.models.trajectory_model import ActorTransformer
+from src.models.trajectory_model import ActorTransformer, CriticTransfomer
 from src.config import TransformerModelConfig, EnvironmentConfig, OnlineTrainConfig
 
 
@@ -58,10 +58,6 @@ class PPOAgent(nn.Module):
         self.critic = nn.Sequential()
         self.actor = nn.Sequential()
 
-    @abc.abstractmethod
-    def layer_init(self, layer: nn.Linear, std: float, bias_const: float) -> nn.Linear:
-        pass
-
     def make_optimizer(self,
                        num_updates: int,
                        initial_lr: float,
@@ -89,59 +85,6 @@ class PPOAgent(nn.Module):
     def learn(self, memory, args, optimizer, scheduler) -> None:
         pass
 
-
-class FCAgent(PPOAgent):
-    critic: nn.Sequential
-    actor: nn.Sequential
-
-    def __init__(self, envs: gym.vector.SyncVectorEnv, device=t.device, hidden_dim: int = 64):
-        '''
-        An agent for a Proximal Policy Optimization (PPO) algorithm.
-
-        Args:
-        - envs (gym.vector.SyncVectorEnv): the environment(s) to interact with.
-        - device (t.device): the device on which to run the agent.
-        - hidden_dim (int): the number of neurons in the hidden layer.
-        '''
-        super().__init__(envs=envs, device=device)
-
-        # obs_shape will be a tuple (e.g. for RGB images this would be an array (h, w, c))
-        if isinstance(envs.single_observation_space, gym.spaces.Box):
-            self.obs_shape = envs.single_observation_space.shape
-        elif isinstance(envs.single_observation_space, gym.spaces.Discrete):
-            self.obs_shape = (envs.single_observation_space.n,)
-        elif isinstance(envs.single_observation_space, gym.spaces.Dict):
-            self.obs_shape = envs.single_observation_space.spaces["image"].shape
-        else:
-            raise ValueError("Unsupported observation space")
-        # num_obs is num elements in observations (e.g. for RGB images this would be h * w * c)
-        self.num_obs = np.array(self.obs_shape).prod()
-        # assuming a discrete action space
-        self.num_actions = envs.single_action_space.n
-        self.hidden_dim = hidden_dim
-
-        self.critic = nn.Sequential(
-            nn.Flatten(),
-            self.layer_init(nn.Linear(self.num_obs, self.hidden_dim)),
-            nn.Tanh(),
-            self.layer_init(nn.Linear(self.hidden_dim, self.hidden_dim)),
-            nn.Tanh(),
-            self.layer_init(nn.Linear(self.hidden_dim, 1), std=1.0)
-        )
-        self.actor = nn.Sequential(
-            nn.Flatten(),
-            self.layer_init(nn.Linear(self.num_obs, self.hidden_dim)),
-            nn.Tanh(),
-            self.layer_init(nn.Linear(self.hidden_dim, self.hidden_dim)),
-            nn.Tanh(),
-            self.layer_init(nn.Linear(self.hidden_dim,
-                                      self.num_actions), std=0.01)
-        )
-
-        self.device = device
-        self.to(device)
-
-    # TODO work out why this is std not gain for orthogonal init
     def layer_init(self, layer: nn.Linear, std: float = np.sqrt(2), bias_const: float = 0.0) -> nn.Linear:
         """Initializes the weights of a linear layer with orthogonal
         initialization and the biases with a constant value.
@@ -159,6 +102,46 @@ class FCAgent(PPOAgent):
         t.nn.init.constant_(layer.bias, bias_const)
         return layer
 
+
+class FCAgent(PPOAgent):
+    critic: nn.Sequential
+    actor: nn.Sequential
+
+    def __init__(self, envs: gym.vector.SyncVectorEnv, device: t.device = t.device('cpu'), hidden_dim: int = 64):
+        '''
+        An agent for a Proximal Policy Optimization (PPO) algorithm.
+
+        Args:
+        - envs (gym.vector.SyncVectorEnv): the environment(s) to interact with.
+        - device (t.device): the device on which to run the agent.
+        - hidden_dim (int): the number of neurons in the hidden layer.
+        '''
+        super().__init__(envs=envs, device=device)
+
+        self.obs_shape = get_obs_shape(envs.single_observation_space)
+        self.num_obs = np.array(self.obs_shape).prod()
+        self.num_actions = envs.single_action_space.n
+        self.hidden_dim = hidden_dim
+        self.critic = nn.Sequential(
+            nn.Flatten(),
+            self.layer_init(nn.Linear(self.num_obs, self.hidden_dim)),
+            nn.Tanh(),
+            self.layer_init(nn.Linear(self.hidden_dim, self.hidden_dim)),
+            nn.Tanh(),
+            self.layer_init(nn.Linear(self.hidden_dim, 1), std=1.0)
+        )
+        self.actor = nn.Sequential(
+            nn.Flatten(),
+            self.layer_init(nn.Linear(self.num_obs, self.hidden_dim)),
+            nn.Tanh(),
+            self.layer_init(nn.Linear(self.hidden_dim, self.hidden_dim)),
+            nn.Tanh(),
+            self.layer_init(nn.Linear(self.hidden_dim,
+                                      self.num_actions), std=0.01)
+        )
+        self.device = device
+        self.to(device)
+
     def rollout(self, memory: Memory, num_steps: int, envs: gym.vector.SyncVectorEnv, trajectory_writer=None) -> None:
         """Performs the rollout phase of the PPO algorithm, collecting experience by interacting with the environment.
 
@@ -171,19 +154,13 @@ class FCAgent(PPOAgent):
         """
 
         device = memory.device
-        if isinstance(device, str):
-            device = t.device(device)
         cuda = device.type == "cuda"
         obs = memory.next_obs
         done = memory.next_done
 
-        for step in range(num_steps):
-
-            # Generate the next set of new experiences (one for each env)
+        for _ in range(num_steps):
             with t.inference_mode():
-                # Our actor generates logits over actions which we can then sample from
                 logits = self.actor(obs)
-                # Our critic generates a value function (which we use in the value loss, and to estimate advantages)
                 value = self.critic(obs).flatten()
             probs = Categorical(logits=logits)
             action = probs.sample()
@@ -193,44 +170,18 @@ class FCAgent(PPOAgent):
             next_obs = memory.obs_preprocessor(next_obs)
             reward = t.from_numpy(reward).to(device)
 
-            # TODO refactor to use ternary statements
             if trajectory_writer is not None:
-                # first_obs = obs
-                if not cuda:
-                    trajectory_writer.accumulate_trajectory(
-                        # the observation stored with an action and reward is
-                        # the observation which the agent responded to.
-                        next_obs=obs.detach().numpy(),
-                        # the reward stored with an action and observation is
-                        # the reward the agent received for taking that action in that state
-                        reward=reward.detach().numpy(),
-                        # the action stored with an observation and reward is
-                        # the action the agent took to get to that reward
-                        action=action.detach().numpy(),
-                        # the done stored with an action and observation is
-                        # the done the agent received for taking that action in that state
-                        done=next_done,
-                        truncated=next_truncated,
-                        info=info
-                    )
-                else:
-                    trajectory_writer.accumulate_trajectory(
-                        # the observation stored with an action and reward
-                        # is the observation which the agent responded to.
-                        next_obs=obs.detach().cpu().numpy(),
-                        # the reward stored with an action and observation
-                        # is the reward the agent received for taking that action in that state
-                        reward=reward.detach().cpu().numpy(),
-                        # the action stored with an observation and reward
-                        # is the action the agent took to get to that reward
-                        action=action.detach().cpu().numpy(),
-                        # the done stored with an action and observation
-                        # is the done the agent received for taking that action in that state
-                        done=next_done,
-                        truncated=next_truncated,
-                        info=info
-                    )
-
+                obs_np = obs.detach().cpu().numpy() if cuda else obs.detach().numpy()
+                reward_np = reward.detach().cpu().numpy() if cuda else reward.detach().numpy()
+                action_np = action.detach().cpu().numpy() if cuda else action.detach().numpy()
+                trajectory_writer.accumulate_trajectory(
+                    next_obs=obs_np,
+                    reward=reward_np,
+                    action=action_np,
+                    done=next_done,
+                    truncated=next_truncated,
+                    info=info
+                )
             # Store (s_t, d_t, a_t, logpi(a_t|s_t), v(s_t), r_t+1)
             memory.add(info, obs, done, action, logprob, value, reward)
             obs = t.from_numpy(next_obs).to(device)
@@ -304,7 +255,7 @@ class TrajPPOAgent(PPOAgent):
                  envs: gym.vector.SyncVectorEnv,
                  environment_config: EnvironmentConfig,
                  transformer_model_config: TransformerModelConfig,
-                 device=t.device
+                 device: t.device = t.device("cpu")
                  ):
         '''
         An agent for a Proximal Policy Optimization (PPO) algorithm.
@@ -319,59 +270,22 @@ class TrajPPOAgent(PPOAgent):
         super().__init__(envs=envs, device=device)
         self.environment_config = environment_config
         self.transformer_model_config = transformer_model_config
-
-        # obs_shape will be a tuple (e.g. for RGB images this would be an array (h, w, c))
-        if isinstance(envs.single_observation_space, gym.spaces.Box):
-            self.obs_shape = envs.single_observation_space.shape
-        elif isinstance(envs.single_observation_space, gym.spaces.Discrete):
-            self.obs_shape = (envs.single_observation_space.n,)
-        elif isinstance(envs.single_observation_space, gym.spaces.Dict):
-            self.obs_shape = envs.single_observation_space.spaces["image"].shape
-        else:
-            raise ValueError("Unsupported observation space")
-        # num_obs is num elements in observations (e.g. for RGB images this would be h * w * c)
+        self.obs_shape = get_obs_shape(envs.single_observation_space)
         self.num_obs = np.array(self.obs_shape).prod()
-        # assuming a discrete action space
         self.num_actions = envs.single_action_space.n
-
         self.hidden_dim = transformer_model_config.d_model
-        self.critic = nn.Sequential(
-            nn.Flatten(),
-            self.layer_init(nn.Linear(self.num_obs, self.hidden_dim)),
-            nn.Tanh(),
-            self.layer_init(nn.Linear(self.hidden_dim, self.hidden_dim)),
-            nn.Tanh(),
-            self.layer_init(nn.Linear(self.hidden_dim, 1), std=1.0)
-        )
-
-        actor_transformer = ActorTransformer(
+        self.critic = CriticTransfomer(
             transformer_config=transformer_model_config,
             environment_config=environment_config,
         )
-
-        self.layer_init(actor_transformer.action_predictor, std=0.01)
-        self.actor = actor_transformer
-
+        self.layer_init(self.critic.value_predictor, std=0.01)
+        self.actor = ActorTransformer(
+            transformer_config=transformer_model_config,
+            environment_config=environment_config,
+        )
+        self.layer_init(self.actor.action_predictor, std=0.01)
         self.device = device
         self.to(device)
-
-    # TODO work out why this is std not gain for orthogonal init
-    def layer_init(self, layer: nn.Linear, std: float = np.sqrt(2), bias_const: float = 0.0) -> nn.Linear:
-        """Initializes the weights of a linear layer with orthogonal
-        initialization and the biases with a constant value.
-
-        Args:
-            layer (nn.Linear): The linear layer to be initialized.
-            std (float, optional): The standard deviation of the distribution used to
-                initialize the weights. Defaults to np.sqrt(2).
-            bias_const (float, optional): The constant value to initialize the biases with. Defaults to 0.0.
-
-        Returns:
-            nn.Linear: The initialized linear layer.
-        """
-        t.nn.init.orthogonal_(layer.weight, std)
-        t.nn.init.constant_(layer.bias, bias_const)
-        return layer
 
     def rollout(self,
                 memory: Memory,
@@ -390,66 +304,61 @@ class TrajPPOAgent(PPOAgent):
 
         device = memory.device
         obs = memory.next_obs
+        action = None  # will be set before used
         done = memory.next_done
+        truncated = memory.next_done  # mem done represents done | truncated
         context_window_size = self.actor.transformer_config.n_ctx
+        obs_timesteps = (context_window_size - 1) // 2 + 1  # (the current obs)
+        actions_timesteps = obs_timesteps - 1
+        action_pad_token = self.actor.environment_config.action_space.n
         n_envs = envs.num_envs
         if isinstance(device, str):
             device = t.device(device)
         cuda = device.type == "cuda"
 
+        obss = t.zeros((n_envs, obs_timesteps, *obs.shape[1:]), device=device)
+        acts = t.ones((n_envs, actions_timesteps, 1),
+                      device=device).to(t.long) * action_pad_token
+        timesteps = t.zeros((n_envs, obs_timesteps, 1),
+                            device=device).to(t.long)
+        obss[:, -1] = obs
         for step in range(num_steps):
 
             if len(memory.experiences) == 0:
                 with t.inference_mode():
-                    logits = self.actor.forward(
-                        states=obs.unsqueeze(1),
-                        actions=None,
-                        timesteps=t.tensor([0]).repeat(n_envs, 1, 1)
-                    )
-                    value = self.critic(obs).flatten()
+                    logits = self.actor(obss[:, -1:], None, timesteps[:, -1:])
+                    values = self.critic(obss[:, -1:], None, timesteps[:, -1:])
+                    value = values[:, -1].squeeze(-1)  # value is scalar
             else:
-
-                # if no experience,s you have one timestep and you buffer out to the context size.
-                # if you have some experiences, than you fill out at much of the context window as you can.
-                # if you have more experiences than the context window, you have to truncate.
-
-                # we have one more obs than action
-                obs_timesteps = (context_window_size - 1) // 2 + \
-                    1  # (the current obs)
-                actions_timesteps = obs_timesteps - 1
-
-                obss = memory.get_obs_traj(
-                    steps=step,
-                    pad_to_length=obs_timesteps
-                )
-
-                obss = t.cat((obss[:, 1:], obs.unsqueeze(1)), dim=1)
-
-                if actions_timesteps == 0:
-                    actions = None
+                # temporarily making this code worse, refactor soon.
+                if obs_timesteps - 1 == 0:
+                    obss = obs.unsqueeze(1)  # just add the current obs
+                    acts = None
                 else:
-                    actions = memory.get_act_traj(
-                        steps=step - 1,
-                        pad_to_length=actions_timesteps
-                    ).to(dtype=t.long)
-
-                timesteps = memory.get_timestep_traj(
-                    steps=step,
-                    pad_to_length=obs_timesteps,
-                )
+                    # obss
+                    obss = t.cat((obss, obs.unsqueeze(1)),
+                                 dim=1)  # add current obs
+                    obss = obss[:, -obs_timesteps:]  # truncate
+                    # acts
+                    # add current action
+                    acts = t.cat(
+                        (acts, action.unsqueeze(1).unsqueeze(-1)), dim=1)
+                    acts = acts[:, -actions_timesteps:]  # truncate
+                    # timesteps
+                    # add current timestep
+                    timesteps = t.cat(
+                        (timesteps, timesteps[:, -1:] + 1), dim=1)
+                    if timesteps.max() > self.environment_config.max_steps:
+                        assert False
+                    timesteps = timesteps[:, -obs_timesteps:]  # truncate
 
                 # Generate the next set of new experiences (one for each env)
                 with t.inference_mode():
                     # Our actor generates logits over actions which we can then sample from
-                    logits = self.actor.forward(
-                        states=obss,
-                        actions=actions.unsqueeze(
-                            -1) if actions is not None else None,
-                        timesteps=t.tensor([0]).repeat(
-                            n_envs, obss.shape[1], 1).to(int)
-                    )
+                    logits = self.actor(obss, acts, timesteps)
                     # Our critic generates a value function (which we use in the value loss, and to estimate advantages)
-                    value = self.critic(obs).flatten()
+                    values = self.critic(obss, acts, timesteps)
+                    values = values[:, -1].squeeze(-1)  # value is scalar
 
             # get the last state action prediction
             probs = Categorical(logits=logits[:, -1])
@@ -460,54 +369,55 @@ class TrajPPOAgent(PPOAgent):
             next_obs = memory.obs_preprocessor(next_obs)
             reward = t.from_numpy(reward).to(device)
 
-            # TODO refactor to use ternary statements
+            # in each case where an episode is done, we need to reset the context window
+            # this is done by setting the last obs to the current obs and the rest to 0
+            # all the actions are set to zero
+            # timesteps are also reset
+            next_done_or_truncated = next_done | next_truncated
+            for i, d in enumerate(next_done_or_truncated):
+                if d:
+                    obss[i, -1] = obs[i]
+                    obss[i, :-1] = 0
+                    if acts is not None:
+                        acts[i] = action_pad_token
+                    timesteps[i] = 0
+
             if trajectory_writer is not None:
-                # first_obs = obs
-                if not cuda:
-                    trajectory_writer.accumulate_trajectory(
-                        # the observation stored with an action and reward is
-                        # the observation which the agent responded to.
-                        next_obs=obs.detach().numpy(),
-                        # the reward stored with an action and observation is
-                        # the reward the agent received for taking that action in that state
-                        reward=reward.detach().numpy(),
-                        # the action stored with an observation and reward is
-                        # the action the agent took to get to that reward
-                        action=action.detach().numpy(),
-                        # the done stored with an action and observation is
-                        # the done the agent received for taking that action in that state
-                        done=next_done,
-                        truncated=next_truncated,
-                        info=info
-                    )
-                else:
-                    trajectory_writer.accumulate_trajectory(
-                        # the observation stored with an action and reward is
-                        # the observation which the agent responded to.
-                        next_obs=obs.detach().cpu().numpy(),
-                        # the reward stored with an action and observation is
-                        # the reward the agent received for taking that action in that state
-                        reward=reward.detach().cpu().numpy(),
-                        # the action stored with an observation and reward
-                        # is the action the agent took to get to that reward
-                        action=action.detach().cpu().numpy(),
-                        # the done stored with an action and observation is
-                        # the done the agent received for taking that action in that state
-                        done=next_done,
-                        truncated=next_truncated,
-                        info=info
-                    )
+                obs_np = obs.detach().cpu().numpy() if cuda else obs.detach().numpy()
+                reward_np = reward.detach().cpu().numpy() if cuda else reward.detach().numpy()
+                action_np = action.detach().cpu().numpy() if cuda else action.detach().numpy()
+                trajectory_writer.accumulate_trajectory(
+                    next_obs=obs_np,
+                    reward=reward_np,
+                    action=action_np,
+                    done=next_done,
+                    truncated=next_truncated,
+                    info=info
+                )
 
             # Store (s_t, d_t, a_t, logpi(a_t|s_t), v(s_t), r_t+1)
-            memory.add(info, obs, done, action, logprob, value, reward)
+            mem_done = (done.to(bool) | truncated.to(bool)).to(float)
+            memory.add(info, obs, mem_done, action, logprob, value, reward)
             obs = t.from_numpy(next_obs).to(device)
             done = t.from_numpy(next_done).to(device, dtype=t.float)
+            truncated = t.from_numpy(next_truncated).to(device, dtype=t.float)
 
         # Store last (obs, done, value) tuple, since we need it to compute advantages
         memory.next_obs = obs
         memory.next_done = done
         with t.inference_mode():
-            memory.next_value = self.critic(obs).flatten()
+
+            obss = t.cat((obss, obs.unsqueeze(1)), dim=1)
+            acts = t.cat((acts, action.unsqueeze(1).unsqueeze(-1)),
+                         dim=1) if acts is not None else None
+
+            obss = obss[:, -obs_timesteps:]
+            actions = acts[:, -
+                           actions_timesteps:] if acts is not None else None
+            timesteps = timesteps[:, -obs_timesteps:]
+
+            values = self.critic(obss, actions, timesteps)
+            memory.next_value = values[:, -1].squeeze(-1)
 
     def learn(self,
               memory: Memory,
@@ -525,32 +435,27 @@ class TrajPPOAgent(PPOAgent):
             scheduler (PPOScheduler): The scheduler attached to the optimizer.
             track (bool): Whether to track the training progress.
         """
+
         for _ in range(args.update_epochs):
+            n_timesteps = (self.actor.transformer_config.n_ctx - 1) // 2 + 1
             minibatches = memory.get_trajectory_minibatches(
-                (self.actor.transformer_config.n_ctx - 1) // 2 +
-                1,  # this is max timesteps
-                prob_go_from_end=args.prob_go_from_end,
-            )
+                n_timesteps, args.prob_go_from_end)
+
             # Compute loss on each minibatch, and step the optimizer
             for mb in minibatches:
+                obs = mb.obs
+                actions = mb.actions[:, :-1].unsqueeze(-1).to(
+                    int) if mb.obs.shape[1] > 1 else None
+                timesteps = mb.timesteps.unsqueeze(-1).to(int)
 
-                logits = self.actor(
-                    states=mb.obs,
-                    # these should be the previous actions
-                    actions=mb.actions[:, :- \
-                                       1].unsqueeze(-1).to(int) if mb.actions.shape[1] > 1 else None,
-                    timesteps=t.tensor([0]).repeat(
-                        mb.obs.shape[0], mb.obs.shape[1], 1).to(int)
-                    # t.zeros_like(mb.obs).to(int)  # mb.timesteps[:, :-1] / mb.timesteps.max()
-                )
+                logits = self.actor(obs, actions, timesteps)
+                values = self.critic(obs, actions, timesteps)
+                values = values[:, -1].squeeze(-1)
 
-                # squeeze sequence dimension
                 probs = Categorical(logits=logits[:, -1])
-                # critic is a DNN so let's the last state obs at each time step.
-                values = self.critic(mb.obs[:, -1]).squeeze()
+
                 clipped_surrogate_objective = calc_clipped_surrogate_objective(
                     probs=probs,
-                    # these should be the current actions
                     mb_action=mb.actions[:, -1].squeeze(-1),
                     mb_advantages=mb.advantages,
                     mb_logprobs=mb.logprobs,
@@ -586,75 +491,3 @@ class TrajPPOAgent(PPOAgent):
                 approx_kl=approx_kl,
                 clipfrac=np.mean(clipfracs)
             )
-
-
-patch_typeguard()
-
-
-def calc_clipped_surrogate_objective(
-    probs: Categorical, mb_action: t.Tensor, mb_advantages: t.Tensor, mb_logprobs: t.Tensor, clip_coef: float
-) -> t.Tensor:
-    '''
-    Return the clipped surrogate objective, suitable for maximisation with gradient ascent.
-
-    Args:
-        probs (Categorical): A distribution containing the actor's
-            unnormalized logits of shape (minibatch, num_actions).
-        mb_action (Tensor): A tensor of shape (minibatch,) containing the actions taken by the agent in the minibatch.
-        mb_advantages (Tensor): A tensor of shape (minibatch,) containing the
-            advantages estimated for each state in the minibatch.
-        mb_logprobs (Tensor): A tensor of shape (minibatch,) containing the
-            log probabilities of the actions taken by the agent in the minibatch.
-        clip_coef (float): Amount of clipping, denoted by epsilon in Eq 7.
-
-    Returns:
-        Tensor: The clipped surrogate objective computed over the minibatch, with shape ().
-
-    '''
-    logits_diff = probs.log_prob(mb_action) - mb_logprobs
-
-    r_theta = t.exp(logits_diff)
-
-    mb_advantages = (mb_advantages - mb_advantages.mean()) / \
-        (mb_advantages.std() + 10e-8)
-
-    non_clipped = r_theta * mb_advantages
-    clipped = t.clip(r_theta, 1 - clip_coef, 1 + clip_coef) * mb_advantages
-
-    return t.minimum(non_clipped, clipped).mean()
-
-
-@typechecked
-def calc_value_function_loss(values: TT["batch"], mb_returns: TT["batch"], vf_coef: float) -> t.Tensor:  # noqa: F821
-    '''
-    Compute the value function portion of the loss function.
-
-    Args:
-        values (Tensor): A tensor of shape (minibatch,) containing the value function
-            estimates for the states in the minibatch.
-        mb_returns (Tensor): A tensor of shape (minibatch,) containing the discounted
-            returns estimated for each state in the minibatch.
-        vf_coef (float): The coefficient for the value loss, which weights its
-            contribution to the overall loss. Denoted by c_1 in the paper.
-
-    Returns:
-        Tensor: The value function loss computed over the minibatch, with shape ().
-
-    '''
-    return 0.5 * vf_coef * (values - mb_returns).pow(2).mean()
-
-
-def calc_entropy_bonus(probs: Categorical, ent_coef: float):
-    '''
-    Return the entropy bonus term, suitable for gradient ascent.
-
-    Args:
-        probs (Categorical): A distribution containing the actor's unnormalized
-            logits of shape (minibatch, num_actions).
-        ent_coef (float): The coefficient for the entropy loss, which weights its
-            contribution to the overall loss. Denoted by c_2 in the paper.
-
-    Returns:
-        Tensor: The entropy bonus computed over the minibatch, with shape ().
-    '''
-    return ent_coef * probs.entropy().mean()

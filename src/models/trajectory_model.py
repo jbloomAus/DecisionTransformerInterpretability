@@ -219,6 +219,9 @@ class DecisionTransformer(TrajectoryTransformer):
             nn.Linear(1, self.transformer_config.d_model, bias=False))
         self.reward_predictor = nn.Linear(self.transformer_config.d_model, 1)
 
+        # n_ctx include full timesteps except for the last where it doesn't know the action
+        assert (transformer_config.n_ctx - 2) % 3 == 0
+
         nn.init.normal_(
             self.reward_embedding[0].weight, mean=0.0, std=1 / self.transformer_config.d_model)
 
@@ -332,8 +335,13 @@ class DecisionTransformer(TrajectoryTransformer):
 
         if no_actions is False:
             # TODO replace with einsum
+            if (x.shape[1] % 3 != 0) and ((x.shape[1] + 1) % 3 == 0):
+                x = torch.concat((x, x[:, -2].unsqueeze(1)), dim=1)
+
             x = x.reshape(batch_size, seq_length, 3,
-                          self.transformer_config.d_model).permute(0, 2, 1, 3)
+                          self.transformer_config.d_model)
+            x = x.permute(0, 2, 1, 3)
+
             # predict next return given state and action
             reward_preds = self.predict_rewards(x[:, 2])
             # predict next state given state and action
@@ -345,7 +353,8 @@ class DecisionTransformer(TrajectoryTransformer):
         else:
             # TODO replace with einsum
             x = x.reshape(batch_size, seq_length, 2,
-                          self.transformer_config.d_model).permute(0, 2, 1, 3)
+                          self.transformer_config.d_model)
+            x = x.permute(0, 2, 1, 3)
             # predict next action given state and RTG
             action_preds = self.predict_actions(x[:, 1])
             return None, action_preds, None
@@ -368,13 +377,13 @@ class DecisionTransformer(TrajectoryTransformer):
                 raise ValueError(
                     f"Actions required for all timesteps except the last, got {actions.shape[1]} and {seq_length}")
 
-            if actions.shape[1] == seq_length - 1:
-                if pad_action:
-                    print(
-                        "Warning: actions are missing for the last timestep, padding with zeros")
-                    # This means that you can't interpret Reward or State predictions for the last timestep!!!
-                    actions = torch.cat([actions, torch.zeros(
-                        batch_size, 1, 1, dtype=torch.long, device=actions.device)], dim=1)
+            # if actions.shape[1] == seq_length - 1:
+            #     if pad_action:
+            #         print(
+            #             "Warning: actions are missing for the last timestep, padding with zeros")
+            #         # This means that you can't interpret Reward or State predictions for the last timestep!!!
+            #         actions = torch.cat([actions, torch.zeros(
+            #             batch_size, 1, 1, dtype=torch.long, device=actions.device)], dim=1)
 
         # embed states and recast back to (batch, block_size, n_embd)
         token_embeddings = self.to_tokens(states, actions, rtgs, timesteps)
@@ -400,7 +409,7 @@ class CloneTransformer(TrajectoryTransformer):
 
         # n_ctx must be odd (previous state, action, next state)
         assert (transformer_config.n_ctx - 1) % 2 == 0
-        self.transformer = self.initialize_easy_transformer()
+        self.transformer = self.initialize_easy_transformer()  # this might not be needed?
 
     def get_token_embeddings(self,
                              state_embeddings,
@@ -480,6 +489,10 @@ class CloneTransformer(TrajectoryTransformer):
 
         batch_size = states.shape[0]
         seq_length = states.shape[1]
+
+        if seq_length + (seq_length - 1) * (actions is not None) > self.transformer_config.n_ctx:
+            raise ValueError(
+                f"Sequence length is too long for transformer, got {seq_length} and {self.transformer_config.n_ctx}")
 
         no_actions = actions is None
 
@@ -580,6 +593,40 @@ class ActorTransformer(CloneTransformer):
             states, actions, timesteps, pad_action=pad_action)
 
         return action_preds
+
+
+class CriticTransfomer(CloneTransformer):
+    '''
+    Identical to clone transformer but forward pass can only return state predictions
+    '''
+
+    def __init__(
+        self,
+        transformer_config: TransformerModelConfig,
+        environment_config: EnvironmentConfig,
+    ):
+
+        super().__init__(transformer_config, environment_config)
+        self.value_predictor = nn.Linear(
+            transformer_config.d_model, 1, bias=True
+        )
+
+    def forward(self,
+                # has variable shape, starting with batch, position
+                states: TT[...],
+                actions: TT["batch", "position"],  # noqa: F821
+                timesteps: TT["batch", "position"],  # noqa: F821
+                pad_action: bool = True
+                ) -> TT[...]:  # noqa: F821
+
+        _, value_pred = super().forward(
+            states, actions, timesteps, pad_action=pad_action)
+
+        return value_pred
+
+    # hacky way to predict values instead of actions with same information
+    def predict_actions(self, x):
+        return self.value_predictor(x)
 
 
 class StateEncoder(nn.Module):

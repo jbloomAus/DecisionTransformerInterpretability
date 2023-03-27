@@ -5,7 +5,6 @@ import torch as t
 import wandb
 import time
 
-from argparse import Namespace
 from typing import Optional
 
 from src.config import RunConfig, TransformerModelConfig, EnvironmentConfig, OnlineTrainConfig
@@ -90,8 +89,7 @@ def ppo_runner(
         environment_config=environment_config,
         transformer_model_config=transformer_model_config,
         envs=envs,
-        trajectory_writer=trajectory_writer,
-        probe_idx=None
+        trajectory_writer=trajectory_writer
     )
     if run_config.track:
         run.finish()

@@ -112,7 +112,8 @@ def load_decision_transformer(model_path, env):
 
         environment_config = EnvironmentConfig(
             env_id=env.unwrapped.spec.id,
-            one_hot_obs=isinstance(env.observation_space, OneHotPartialObsWrapper),
+            one_hot_obs=isinstance(env.observation_space,
+                                   OneHotPartialObsWrapper),
             img_obs=isinstance(env.observation_space, RGBImgPartialObsWrapper),
             view_size=env.unwrapped.observation_space["image"].shape[0],
             fully_observed=False,
@@ -130,7 +131,8 @@ def load_decision_transformer(model_path, env):
             state_embedding_type=state_embedding_type,
         )
     else:
-        state_dict, trajectory_data_set, transformer_config, _ = load_model_data(model_path)
+        state_dict, trajectory_data_set, transformer_config, _ = load_model_data(
+            model_path)
 
         if "state_encoder.weight" in state_dict.keys():
             return load_legacy_decision_transformer(state_dict, env)
@@ -219,3 +221,21 @@ def load_model_data(model_path):
     )
 
     return state_dict, trajectory_data_set, transformer_config, offline_config
+
+
+def get_max_len_from_model_type(model_type: str, n_ctx: int):
+    '''
+    Ihe max len in timesteps is 3 for decision transformers
+    and 2 for clone transformers since decision transformers
+    have 3 tokens per timestep and clone transformers have 2.
+
+    This is a map between timestep and tokens. We start with one
+    for the most recent state/action and then add another
+    timestep for every 3 tokens for decision transformers and
+    every 2 tokens for clone transformers.
+    '''
+    assert model_type in ["decision_transformer", "clone_transformer"]
+    if model_type == "decision_transformer":
+        return 1 + n_ctx // 3
+    else:
+        return 1 + n_ctx // 2

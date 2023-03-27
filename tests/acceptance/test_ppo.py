@@ -1,20 +1,13 @@
-import re
 from dataclasses import dataclass
 
 import gymnasium as gym
 import pytest
-import torch as t
 from gymnasium.spaces import Discrete
 
 from src.environments.environments import make_env
-from src.ppo.agent import FCAgent as Agent
+from src.ppo.agent import FCAgent, TrajPPOAgent
 from src.ppo.memory import Memory, Minibatch, TrajectoryMinibatch
-from src.ppo.my_probe_envs import Probe1, Probe2, Probe3, Probe4, Probe5
 from src.ppo.train import train_ppo
-
-for i in range(5):
-    probes = [Probe1, Probe2, Probe3, Probe4, Probe5]
-    gym.envs.registration.register(id=f"Probe{i+1}-v0", entry_point=probes[i])
 
 
 @pytest.fixture
@@ -38,7 +31,7 @@ def environment_config():
         one_hot_obs: bool = False
         img_obs: bool = False
         fully_observed: bool = False
-        max_steps: int = 1000
+        max_steps: int = 30
         seed: int = 1
         view_size: int = 7
         capture_video: bool = False
@@ -99,25 +92,6 @@ def transformer_model_config():
 
 
 @pytest.fixture
-def extra_small_transformer_model_config():
-    @dataclass
-    class DummyTransformerModelConfig:
-        d_model: int = 32
-        n_heads: int = 1
-        d_mlp: int = 128
-        n_layers: int = 0
-        n_ctx: int = 1
-        time_embedding_type: str = "embedding"
-        state_embedding_type: str = "grid"
-        seed: int = 1
-        device: str = "cpu"
-        d_head: int = 64  # d_model // n_heads
-        layer_norm = False
-
-    return DummyTransformerModelConfig()
-
-
-@pytest.fixture
 def large_transformer_model_config():
     @dataclass
     class DummyTransformerModelConfig:
@@ -134,278 +108,6 @@ def large_transformer_model_config():
         layer_norm = False
 
     return DummyTransformerModelConfig()
-
-
-@pytest.mark.parametrize("env_name", ["Probe1-v0", "Probe2-v0", "Probe3-v0", "Probe4-v0", "Probe5-v0"])
-def test_probe_envs(env_name, run_config, environment_config, online_config):
-
-    for i in range(5):
-        probes = [Probe1, Probe2, Probe3, Probe4, Probe5]
-        gym.envs.registration.register(
-            id=f"Probe{i+1}-v0", entry_point=probes[i])
-
-    envs = gym.vector.SyncVectorEnv(
-        [make_env(env_name, i, i, False, "test",
-                  render_mode=None, max_steps=None, fully_observed=False) for i in range(4)]
-    )
-
-    # currently, ppo has tests which run inside main if it
-    # detects "Probe" in the env name. We will fix this
-    # eventually.
-    environment_config.env_id = env_name
-    environment_config.action_space = envs.single_action_space
-    online_config.total_timesteps = 2000
-    agent = train_ppo(
-        run_config=run_config,
-        online_config=online_config,
-        environment_config=environment_config,
-        transformer_model_config=None,
-        envs=envs
-    )
-
-    obs_for_probes = [
-        [[0.0]],
-        [[-1.0], [+1.0]],
-        [[0.0], [1.0]],
-        [[0.0], [0.0]],
-        [[0.0], [1.0]]]
-
-    expected_value_for_probes = [
-        [[1.0]],
-        [[-1.0], [+1.0]],
-        [[online_config.gamma], [1.0]],
-        [[+1.0], [+1.0]],  # can achieve high reward independently of obs
-        [[+1.0], [+1.0]]
-    ]
-
-    tolerances_for_value = [5e-4, 5e-4, 5e-4, 5e-2, 2e-1]
-
-    match = re.match(r"Probe(\d)-v0", env_name)
-    probe_idx = int(match.group(1)) - 1
-    obs = t.tensor(obs_for_probes[probe_idx])
-    value = agent.critic(obs)
-    print("Value: ", value)
-    expected_value = t.tensor(expected_value_for_probes[probe_idx])
-    t.testing.assert_close(value, expected_value,
-                           atol=tolerances_for_value[probe_idx], rtol=0)
-
-    if probe_idx == 3:  # probe env 4, action should be +1.0
-        action = agent.actor(obs)
-        prob = t.nn.functional.softmax(action, dim=-1)
-        t.testing.assert_close(
-            prob,
-            t.tensor([[0.0, 1.0], [0.0, 1.0]]),
-            atol=1e-2,
-            rtol=1
-        )
-
-    if probe_idx == 4:  # probe env 4, action should be +1.0
-        action = agent.actor(obs)
-        prob = t.nn.functional.softmax(action, dim=-1)
-        t.testing.assert_close(
-            prob,
-            t.tensor([[1.0, 0.0], [0.0, 1.0]]),
-            atol=1e-2,
-            rtol=1
-        )
-
-
-@pytest.mark.parametrize("env_name", ["Probe1-v0", "Probe2-v0", "Probe3-v0", "Probe4-v0", "Probe5-v0"])
-def test_probe_envs_traj_model_1_context(
-        env_name,
-        run_config,
-        environment_config,
-        online_config,
-        transformer_model_config,
-        extra_small_transformer_model_config):
-
-    for i in range(5):
-        probes = [Probe1, Probe2, Probe3, Probe4, Probe5]
-        gym.envs.registration.register(
-            id=f"Probe{i+1}-v0", entry_point=probes[i])
-
-    envs = gym.vector.SyncVectorEnv(
-        [make_env(env_name, i, i, False, "test",
-                  render_mode=None, max_steps=None, fully_observed=False) for i in range(4)]
-    )
-
-    online_config.total_timesteps = 2000
-    if env_name == "Probe3-v0":
-        online_config.total_timesteps = 10000
-    if env_name == "Probe5-v0":
-        online_config.total_timesteps = 5000
-        online_config.clip_coef = 0.05
-        online_config.learning_rate = 0.00025
-        # transformer_model_config = extra_small_transformer_model_config
-    # currently, ppo has tests which run inside main if it
-    # detects "Probe" in the env name. We will fix this
-    # eventually.
-    environment_config.env_id = env_name
-    environment_config.action_space = envs.single_action_space
-    environment_config.observation_space = envs.single_observation_space
-    online_config.use_trajectory_model = True
-    transformer_model_config.state_embedding_type = "other"
-
-    agent = train_ppo(
-        run_config=run_config,
-        online_config=online_config,
-        environment_config=environment_config,
-        transformer_model_config=transformer_model_config,
-        envs=envs
-    )
-
-    obs_for_probes = [
-        [[0.0]],
-        [[-1.0], [+1.0]],
-        [[0.0], [1.0]],
-        [[0.0], [0.0]],
-        [[0.0], [1.0]]]
-
-    match = re.match(r"Probe(\d)-v0", env_name)
-    probe_idx = int(match.group(1)) - 1
-    obs = t.tensor(obs_for_probes[probe_idx])
-
-    # test action quality first since if actions actor isn't working
-    # out expected value will be wrong
-    if probe_idx == 3:
-        action = agent.actor(
-            obs.unsqueeze(1),
-            actions=None,
-            timesteps=t.tensor([[0], [0]]).unsqueeze(-1)
-        )
-        prob = t.nn.functional.softmax(action, dim=-1).squeeze(1)
-        t.testing.assert_close(
-            prob,
-            t.tensor([[0.0, 1.0], [0.0, 1.0]]),
-            atol=1e-2,
-            rtol=1
-        )
-
-    if probe_idx == 4:
-        action = agent.actor(
-            obs.unsqueeze(1),
-            actions=None,
-            timesteps=t.tensor([[0], [0]]).unsqueeze(-1)
-        )
-        prob = t.nn.functional.softmax(action, dim=-1).squeeze(1)
-        t.testing.assert_close(
-            prob,
-            t.tensor([[1.0, 0.01], [0.01, 1.0]]),
-            atol=3e-1,
-            rtol=30  # incredibly lax until I work out why this is so bad
-        )
-
-    expected_value_for_probes = [
-        [[1.0]],
-        [[-1.0], [+1.0]],
-        [[online_config.gamma], [1.0]],
-        [[+1.0], [+1.0]],  # can achieve high reward independently of obs
-        [[+1.0], [+1.0]]
-    ]
-
-    tolerances_for_value = [5e-4, 5e-4, 5e-4, 5e-4, 2e-1]
-
-    value = agent.critic(obs)
-    print("Value: ", value)
-    expected_value = t.tensor(expected_value_for_probes[probe_idx])
-    t.testing.assert_close(value, expected_value,
-                           atol=tolerances_for_value[probe_idx], rtol=0)
-
-
-# "Probe5-v0"])
-@pytest.mark.parametrize("env_name", ["Probe1-v0", "Probe2-v0", "Probe3-v0", "Probe4-v0"])
-def test_probe_envs_traj_model_2_context(
-        env_name,
-        run_config,
-        environment_config,
-        online_config,
-        transformer_model_config):
-
-    for i in range(5):
-        probes = [Probe1, Probe2, Probe3, Probe4, Probe5]
-        gym.envs.registration.register(
-            id=f"Probe{i+1}-v0", entry_point=probes[i])
-
-    envs = gym.vector.SyncVectorEnv(
-        [make_env(env_name, i, i, False, "test",
-                  render_mode=None, max_steps=None, fully_observed=False) for i in range(4)]
-    )
-
-    # currently, ppo has tests which run inside main if it
-    # detects "Probe" in the env name. We will fix this
-    # eventually.
-    environment_config.env_id = env_name
-    environment_config.action_space = envs.single_action_space
-    environment_config.observation_space = envs.single_observation_space
-    online_config.use_trajectory_model = True
-    transformer_model_config.state_embedding_type = "other"
-    online_config.total_timesteps = 2000
-    if env_name == "Probe3-v0":
-        online_config.total_timesteps = 10000
-    agent = train_ppo(
-        run_config=run_config,
-        online_config=online_config,
-        environment_config=environment_config,
-        transformer_model_config=transformer_model_config,
-        envs=envs
-    )
-
-    obs_for_probes = [
-        [[0.0]],
-        [[-1.0], [+1.0]],
-        [[0.0], [1.0]],
-        [[0.0], [0.0]],
-        [[0.0], [1.0]]]
-
-    match = re.match(r"Probe(\d)-v0", env_name)
-    probe_idx = int(match.group(1)) - 1
-    obs = t.tensor(obs_for_probes[probe_idx])
-
-    # test action quality first since if actions actor isn't working
-    # out expected value will be wrong
-    if probe_idx == 3:  # probe env 4, action should be +1.0
-        action = agent.actor(
-            obs.unsqueeze(1),
-            actions=None,
-            timesteps=t.tensor([[0], [0]]).unsqueeze(-1)
-        )
-        prob = t.nn.functional.softmax(action, dim=-1).squeeze(1)
-        t.testing.assert_close(
-            prob,
-            t.tensor([[0.0, 1.0], [0.0, 1.0]]),
-            atol=1e-2,
-            rtol=1
-        )
-
-    if probe_idx == 4:  # probe env 4, action should be +1.0
-        action = agent.actor(
-            obs.unsqueeze(1),
-            actions=None,
-            timesteps=t.tensor([[0], [0]]).unsqueeze(-1)
-        )
-        prob = t.nn.functional.softmax(action, dim=-1).squeeze(1)
-        t.testing.assert_close(
-            prob,
-            t.tensor([[1.0, 0.0], [0.0, 1.0]]),
-            atol=3e-1,
-            rtol=30  # incredibly lax until I work out why this is so bad
-        )
-
-    expected_value_for_probes = [
-        [[1.0]],
-        [[-1.0], [+1.0]],
-        [[online_config.gamma], [1.0]],
-        [[+1.0], [+1.0]],  # can achieve high reward independently of obs
-        [[+1.0], [+1.0]]
-    ]
-
-    tolerances_for_value = [5e-4, 5e-4, 5e-4, 5e-4, 1e-3]
-
-    value = agent.critic(obs)
-    print("Value: ", value)
-    expected_value = t.tensor(expected_value_for_probes[probe_idx])
-    t.testing.assert_close(value, expected_value,
-                           atol=tolerances_for_value[probe_idx], rtol=0.1)
 
 
 def test_empty_env(run_config, environment_config, online_config):
@@ -458,7 +160,7 @@ def test_ppo_agent_gym():
                       Discrete), "only discrete action space is supported"
 
     # memory = Memory(envs, args, "cpu")
-    agent = Agent(envs, "cpu")
+    agent = FCAgent(envs, "cpu")
 
     assert agent.num_obs == 4
     assert agent.num_actions == 2
@@ -475,7 +177,7 @@ def test_ppo_agent_minigrid():
                       Discrete), "only discrete action space is supported"
 
     # memory = Memory(envs, args, "cpu")
-    agent = Agent(envs, "cpu")
+    agent = FCAgent(envs, "cpu")
 
     # depends on whether you wrapped in Fully observed or not
     assert agent.num_obs == 7 * 7 * 3
@@ -492,10 +194,9 @@ def test_ppo_agent_rollout_minibatches_minigrid(online_config):
     assert isinstance(envs.single_action_space,
                       Discrete), "only discrete action space is supported"
 
-    memory = Memory(
-        envs, online_config, "cpu")
+    memory = Memory(envs, online_config)
 
-    agent = Agent(envs, "cpu")
+    agent = FCAgent(envs)
     agent.rollout(memory, online_config.num_steps, envs, None)
 
     minibatches = memory.get_minibatches()
@@ -519,16 +220,23 @@ def test_ppo_agent_rollout_minibatches_minigrid(online_config):
         online_config.minibatch_size, ), "advantages shape is wrong"
 
 
-def test_ppo_agent_rollout_trajectory_minibatches_minigrid_no_padding(online_config):
+@pytest.mark.parametrize("n_ctx", [1, 3, 9])
+def test_ppo_traj_agent_rollout_minibatches(
+        online_config, environment_config, transformer_model_config, n_ctx):
+
+    transformer_model_config.n_ctx = n_ctx
     envs = gym.vector.SyncVectorEnv(
-        [make_env('MiniGrid-Dynamic-Obstacles-8x8-v0', 1, 1, False, "test")
+        [make_env('MiniGrid-Dynamic-Obstacles-8x8-v0', 1, 1, False, "test",
+                  max_steps=environment_config.max_steps)
          for i in range(2)]
     )
-    memory = Memory(envs, online_config, "cpu")
-    agent = Agent(envs, "cpu")
+    memory = Memory(envs, online_config)
+    environment_config.action_space = envs.single_action_space
+    environment_config.observation_space = envs.single_observation_space
+    agent = TrajPPOAgent(envs, environment_config, transformer_model_config)
     agent.rollout(memory, online_config.num_steps, envs, None)
 
-    timesteps = 1
+    timesteps = (transformer_model_config.n_ctx - 1) // 2 + 1
     minibatches = memory.get_trajectory_minibatches(timesteps)
     assert len(minibatches) > 0
 
@@ -542,28 +250,31 @@ def test_ppo_agent_rollout_trajectory_minibatches_minigrid_no_padding(online_con
         len(envs.single_observation_space['image'].shape)
     assert minibatch.actions.ndim == 2
     assert minibatch.logprobs.ndim == minibatch.advantages.ndim == minibatch.values.ndim == minibatch.returns.ndim == 1
+    assert minibatch.timesteps.shape == minibatch.obs.shape[:2]
+    assert minibatch.timesteps.max() <= environment_config.max_steps
 
 
-def test_ppo_agent_rollout_trajectory_minibatches_minigrid_extra_padding(online_config):
+@pytest.mark.parametrize("n_ctx", [1, 3, 9])
+def test_ppo_traj_agent_rollout_and_learn_minibatches(
+        online_config, environment_config, transformer_model_config, n_ctx):
+
+    transformer_model_config.n_ctx = n_ctx
     envs = gym.vector.SyncVectorEnv(
-        [make_env('MiniGrid-Dynamic-Obstacles-8x8-v0', 1, 1, False, "test")
+        [make_env('MiniGrid-Dynamic-Obstacles-8x8-v0', 1, 1, False, "test",
+                  max_steps=environment_config.max_steps)
          for i in range(2)]
     )
-    memory = Memory(envs, online_config, "cpu")
-    agent = Agent(envs, "cpu")
+
+    memory = Memory(envs, online_config)
+    environment_config.action_space = envs.single_action_space
+    environment_config.observation_space = envs.single_observation_space
+    agent = TrajPPOAgent(envs, environment_config, transformer_model_config)
+
+    num_updates = online_config.total_timesteps // online_config.batch_size
+    optimizer, scheduler = agent.make_optimizer(
+        num_updates=num_updates,
+        initial_lr=online_config.learning_rate,
+        end_lr=online_config.learning_rate if not online_config.decay_lr else 0.0)
+
     agent.rollout(memory, online_config.num_steps, envs, None)
-
-    timesteps = 10
-    minibatches = memory.get_trajectory_minibatches(10)
-    assert len(minibatches) > 0
-
-    minibatch = minibatches[0]
-
-    assert isinstance(minibatch, TrajectoryMinibatch)
-    assert minibatch.obs.shape[1] == timesteps
-    assert minibatch.obs.shape[0] == minibatch.actions.shape[0] == minibatch.logprobs.shape[0] == \
-        minibatch.advantages.shape[0] == minibatch.values.shape[0] == minibatch.returns.shape[0]
-    assert minibatch.obs.ndim == 2 + \
-        len(envs.single_observation_space['image'].shape)
-    assert minibatch.actions.ndim == 2
-    assert minibatch.logprobs.ndim == minibatch.advantages.ndim == minibatch.values.ndim == minibatch.returns.ndim == 1
+    agent.learn(memory, online_config, optimizer, scheduler, track=False)

@@ -1,5 +1,6 @@
 from gymnasium import register
 from .multienvironments import MultiEnvSampler
+from src.ppo.my_probe_envs import Probe1, Probe2, Probe3, Probe4, Probe5, Probe6
 from minigrid.envs import DynamicObstaclesEnv, CrossingEnv, MultiRoomEnv
 from minigrid.core.world_object import Lava, Wall
 
@@ -77,6 +78,7 @@ def get_multi_room_env(render_mode='rgb_array', max_steps=1000):
 
 print("Registering DynamicObstaclesMultiEnv-v0")
 print("Registering CrossingMultiEnv-v0")
+print("Registering Probe Envs")
 
 
 def register_envs():
@@ -95,3 +97,7 @@ def register_envs():
         id='MultiRoomMultiEnv-v0',
         entry_point='environments.registration:get_multi_room_env',
     )
+
+    probes = [Probe1, Probe2, Probe3, Probe4, Probe5, Probe6]
+    for i in range(6):
+        register(id=f"Probe{i+1}-v0", entry_point=probes[i])
