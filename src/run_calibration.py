@@ -32,6 +32,8 @@ if __name__ == "__main__":
                         default=1, help="Maximum initial RTG")
     parser.add_argument("--initial_rtg_step", type=float,
                         default=0.1, help="Step size for initial RTG")
+    parser.add_argument("--num_envs", type=int,
+                        default=8, help="How many environments to run in parallel")
     args = parser.parse_args()
 
     logger.info(f"Loading model from {args.model_path}")
@@ -90,7 +92,8 @@ if __name__ == "__main__":
         env_func,
         initial_rtg_range=np.linspace(args.initial_rtg_min, args.initial_rtg_max, int(
             (args.initial_rtg_max - args.initial_rtg_min) / args.initial_rtg_step)),
-        trajectories=args.n_trajectories
+        trajectories=args.n_trajectories,
+        num_envs=args.num_envs
     )
 
     fig = plot_calibration_statistics(statistics, show_spread=True, CI=0.95)

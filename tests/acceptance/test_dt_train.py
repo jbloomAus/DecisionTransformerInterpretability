@@ -17,10 +17,11 @@ from src.decision_transformer.offline_dataset import TrajectoryDataset
 
 def test_evaluate_dt_agent():
 
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     trajectory_path = "tests/fixtures/test_trajectories.pkl"
     trajectory_data_set = TrajectoryDataset(
         trajectory_path,
-        pct_traj=1, device="cuda" if torch.cuda.is_available() else "cpu")
+        pct_traj=1, device=device)
 
     env_id = trajectory_data_set.metadata['args']['env_id']
     env = make_env(env_id, seed=1, idx=0, capture_video=False,
@@ -58,6 +59,8 @@ def test_evaluate_dt_agent():
             n_ctx=2,  # one timestep of context
             device="cuda" if torch.cuda.is_available() else "cpu",
         ))
+
+    dt = dt.to(device)
 
     if hasattr(dt, "environment_config"):
         max_steps = min(dt.environment_config.max_steps, 10)
