@@ -639,6 +639,18 @@ registered hooks while the latter silently ignores them.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="src.decision_transformer.utils.get_max_len_from_model_type">
+<span class="sig-prename descclassname"><span class="pre">src.decision_transformer.utils.</span></span><span class="sig-name descname"><span class="pre">get_max_len_from_model_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_ctx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.utils.get_max_len_from_model_type" title="Permalink to this definition">#</a></dt>
+<dd><p>Ihe max len in timesteps is 3 for decision transformers
+and 2 for clone transformers since decision transformers
+have 3 tokens per timestep and clone transformers have 2.</p>
+<p>This is a map between timestep and tokens. We start with one
+for the most recent state/action and then add another
+timestep for every 3 tokens for decision transformers and
+every 2 tokens for clone transformers.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="src.decision_transformer.utils.load_decision_transformer">
 <span class="sig-prename descclassname"><span class="pre">src.decision_transformer.utils.</span></span><span class="sig-name descname"><span class="pre">load_decision_transformer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.utils.load_decision_transformer" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
@@ -831,6 +843,7 @@ registered hooks while the latter silently ignores them.</p>
 <li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.weight_decay"><code class="docutils literal notranslate"><span class="pre">DTArgs.weight_decay</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#src.decision_transformer.utils.get_max_len_from_model_type"><code class="docutils literal notranslate"><span class="pre">get_max_len_from_model_type()</span></code></a></li>
 <li><a class="reference internal" href="#src.decision_transformer.utils.load_decision_transformer"><code class="docutils literal notranslate"><span class="pre">load_decision_transformer()</span></code></a></li>
 <li><a class="reference internal" href="#src.decision_transformer.utils.load_legacy_decision_transformer"><code class="docutils literal notranslate"><span class="pre">load_legacy_decision_transformer()</span></code></a></li>
 <li><a class="reference internal" href="#src.decision_transformer.utils.load_model_data"><code class="docutils literal notranslate"><span class="pre">load_model_data()</span></code></a></li>
