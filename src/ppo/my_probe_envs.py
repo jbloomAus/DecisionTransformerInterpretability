@@ -151,3 +151,41 @@ class Probe5(gym.Env):
         if return_info:
             return np.array([self.obs], dtype=float), {}
         return np.array([self.obs], dtype=float)
+
+
+class Probe6(gym.Env):
+    """Two actions, single float observation that increments by 1 every time step, reward is 1 if action is 1 otherwise 0.
+    We expect the agent to learn to choose action 1 when the observation is odd and action 0 when it is even.
+    """
+
+    action_space: Discrete
+    observation_space: Box
+
+    def __init__(self):
+        super().__init__()
+        self.observation_space = Box(
+            low=0, high=np.inf, shape=(1,), dtype=np.float32)
+        self.action_space = Discrete(2)
+        self.reset()
+
+    def step(self, action: ActType) -> Tuple[ObsType, float, bool, dict]:
+        self.time_step += 1
+        obs = float(self.time_step)
+        self.observation_space.low = np.array([obs + 1], dtype=np.float32)
+        self.observation_space.high = np.array([obs + 1], dtype=np.float32)
+        if self.time_step == 10:
+            reward = 1.0
+            return np.array([obs]), reward, True, False, {}
+        else:
+            reward = 0.0
+            return np.array([obs]), reward, False, False, {}
+
+    def reset(
+        self, seed: Optional[int] = None, return_info=True, options=None
+    ) -> Union[ObsType, Tuple[ObsType, dict]]:
+        self.observation_space.low = np.array([0], dtype=np.float32)
+        self.observation_space.high = np.array([0], dtype=np.float32)
+        self.time_step = 0
+        if return_info:
+            return np.array([0], dtype=np.float32), {}
+        return np.array([0], dtype=np.float32)

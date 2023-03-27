@@ -244,7 +244,7 @@ class Memory():
         rewards = rearrange(rewards, "T E -> (E T)")
 
         # find the indices of the end of each trajectory
-        traj_end_idxs = (t.where(dones)[0] + 1).tolist()
+        traj_end_idxs = (t.where(dones)[0]).tolist()
 
         # split these trajectories on the dones
         traj_obs = t.tensor_split(obs, traj_end_idxs)
@@ -255,7 +255,8 @@ class Memory():
         traj_dones = t.tensor_split(dones, traj_end_idxs)
         traj_next_values = t.tensor_split(next_values, traj_end_idxs)
         traj_next_dones = t.tensor_split(next_dones, traj_end_idxs)
-
+        print([i for i, (next_val, obs) in enumerate(
+            zip(traj_next_values, traj_obs)) if len(next_val) != len(obs)])
         # px.imshow(traj_obs[0][:,:,:,0].transpose(-1,-2), animation_frame = 0, range_color = [0,10]).show()
 
         # so now we have lists of trajectories, what we want is to split each trajectory
@@ -266,6 +267,13 @@ class Memory():
 
         # remove trajectories of length 0
         traj_obs = [traj for traj in traj_obs if len(traj) > 0]
+        traj_actions = [traj for traj in traj_actions if len(traj) > 0]
+        traj_logprobs = [traj for traj in traj_logprobs if len(traj) > 0]
+        traj_values = [traj for traj in traj_values if len(traj) > 0]
+        traj_rewards = [traj for traj in traj_rewards if len(traj) > 0]
+        traj_dones = [traj for traj in traj_dones if len(traj) > 0]
+        traj_next_values = [traj for traj in traj_next_values if len(traj) > 0]
+        traj_next_dones = [traj for traj in traj_next_dones if len(traj) > 0]
 
         n_trajectories = len(traj_obs)
         trajectory_lengths = [len(traj) for traj in traj_obs]
@@ -304,6 +312,12 @@ class Memory():
                     else:
                         end_idx = np.random.randint(timesteps, traj_len)
                         start_idx = end_idx - timesteps
+
+                # print('end_idx:', end_idx)
+                # print('traj_len:', traj_len)
+                # print('len(traj_next_values[traj_idx]):', len(traj_next_values[traj_idx]))
+                # if len(traj_next_values[traj_idx]) != traj_len:
+                #     print("uh oh")
 
                 # get the trajectory
                 current_traj_obs = traj_obs[traj_idx][start_idx:end_idx]
@@ -356,7 +370,7 @@ class Memory():
                     pad_token=0,
                     pad_left=True
                 )
-
+                # print([i for i, (next_val, obs) in enumerate(zip(traj_next_values, traj_obs)) if len(next_val) != len(obs)])
                 # add to minibatch
                 minibatch_obs.append(current_traj_obs)
                 minibatch_actions.append(current_traj_actions)

@@ -9,7 +9,7 @@ from minigrid.wrappers import RGBImgPartialObsWrapper, ImgObsWrapper, FlatObsWra
 
 def test_get_obs_preprocessor_probe1():
 
-    gym.envs.registration.register(id=f"Probe1-v0", entry_point=Probe1)
+    gym.envs.registration.register(id="Probe1-v0", entry_point=Probe1)
 
     env = make_env('Probe1', 0, 0, False, "Test",
                    render_mode=None, max_steps=None)
