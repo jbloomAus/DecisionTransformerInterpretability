@@ -335,8 +335,9 @@ def evaluate_dt_agent(
             state_preds, action_preds = model.forward(
                 states=obs, actions=actions, timesteps=timesteps)
         else:  # it's probably a legacy model in which case the interface is:
+            steps = model.transformer_config.n_ctx // 3
             state_preds, action_preds, reward_preds = model.forward(
-                states=obs, actions=a, rtgs=rtg, timesteps=timesteps)
+                states=obs[:, -steps:], actions=a[:, -steps:], rtgs=rtg[:, -steps:], timesteps=timesteps[:, -steps:])
 
         action = t.argmax(action_preds, dim=-1).squeeze(-1)
         new_obs, new_reward, terminated, truncated, info = env.step(action)
