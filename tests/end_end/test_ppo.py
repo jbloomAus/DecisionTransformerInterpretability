@@ -1,4 +1,5 @@
 import os
+import pytest
 
 import gymnasium as gym
 
