@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 from dataclasses import dataclass
 
-from src.ppo.agent import PPOScheduler, PPOAgent, FCAgent, TrajPPOAgent
+from src.ppo.agent import PPOScheduler, PPOAgent, FCAgent, TransformerPPOAgent
 from src.models.trajectory_transformer import TrajectoryTransformer
 from src.ppo.memory import Memory
 
@@ -223,7 +223,7 @@ def test_traj_agent_init(transformer_model_config, environment_config):
     environment_config.action_space = envs.single_action_space
     environment_config.observation_space = envs.single_observation_space
 
-    agent = TrajPPOAgent(
+    agent = TransformerPPOAgent(
         envs=envs,
         environment_config=environment_config,
         transformer_model_config=transformer_model_config,
@@ -247,7 +247,7 @@ def test_traj_agent_rollout(transformer_model_config, environment_config):
     environment_config.action_space = envs.single_action_space
     environment_config.observation_space = envs.single_observation_space
 
-    agent = TrajPPOAgent(
+    agent = TransformerPPOAgent(
         envs=envs,
         environment_config=environment_config,
         transformer_model_config=transformer_model_config,
@@ -273,7 +273,7 @@ def test_traj_agent_learn(transformer_model_config, environment_config, online_c
     environment_config.action_space = envs.single_action_space
     environment_config.observation_space = envs.single_observation_space
 
-    agent = TrajPPOAgent(
+    agent = TransformerPPOAgent(
         envs=envs,
         environment_config=environment_config,
         transformer_model_config=transformer_model_config,
@@ -307,7 +307,7 @@ def test_traj_agent_larger_context_init(big_transformer_model_config, environmen
     environment_config.action_space = envs.single_action_space
     environment_config.observation_space = envs.single_observation_space
 
-    agent = TrajPPOAgent(
+    agent = TransformerPPOAgent(
         envs=envs,
         environment_config=environment_config,
         transformer_model_config=big_transformer_model_config,
@@ -331,7 +331,7 @@ def test_traj_agent_larger_context_rollout(big_transformer_model_config, environ
     environment_config.action_space = envs.single_action_space
     environment_config.observation_space = envs.single_observation_space
 
-    agent = TrajPPOAgent(
+    agent = TransformerPPOAgent(
         envs=envs,
         environment_config=environment_config,
         transformer_model_config=big_transformer_model_config,
@@ -357,7 +357,7 @@ def test_traj_agent_larger_context_learn(big_transformer_model_config, environme
     environment_config.action_space = envs.single_action_space
     environment_config.observation_space = envs.single_observation_space
 
-    agent = TrajPPOAgent(
+    agent = TransformerPPOAgent(
         envs=envs,
         environment_config=environment_config,
         transformer_model_config=big_transformer_model_config,

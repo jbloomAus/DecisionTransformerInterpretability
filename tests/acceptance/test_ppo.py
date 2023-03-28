@@ -6,7 +6,7 @@ from gymnasium.spaces import Discrete
 
 from src.config import EnvironmentConfig
 from src.environments.environments import make_env
-from src.ppo.agent import FCAgent, TrajPPOAgent
+from src.ppo.agent import FCAgent, TransformerPPOAgent
 from src.ppo.memory import Memory, Minibatch, TrajectoryMinibatch
 from src.ppo.train import train_ppo
 
@@ -229,7 +229,8 @@ def test_ppo_traj_agent_rollout_minibatches(
     memory = Memory(envs, online_config)
     environment_config.action_space = envs.single_action_space
     environment_config.observation_space = envs.single_observation_space
-    agent = TrajPPOAgent(envs, environment_config, transformer_model_config)
+    agent = TransformerPPOAgent(
+        envs, environment_config, transformer_model_config)
     agent.rollout(memory, online_config.num_steps, envs, None)
 
     timesteps = (transformer_model_config.n_ctx - 1) // 2 + 1
@@ -262,7 +263,8 @@ def test_ppo_traj_agent_rollout_and_learn_minibatches(
     memory = Memory(envs, online_config)
     environment_config.action_space = envs.single_action_space
     environment_config.observation_space = envs.single_observation_space
-    agent = TrajPPOAgent(envs, environment_config, transformer_model_config)
+    agent = TransformerPPOAgent(
+        envs, environment_config, transformer_model_config)
 
     num_updates = online_config.total_timesteps // online_config.batch_size
     optimizer, scheduler = agent.make_optimizer(

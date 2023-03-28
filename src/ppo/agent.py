@@ -250,7 +250,7 @@ class FCAgent(PPOAgent):
             )
 
 
-class TrajPPOAgent(PPOAgent):
+class TransformerPPOAgent(PPOAgent):
     def __init__(self,
                  envs: gym.vector.SyncVectorEnv,
                  environment_config: EnvironmentConfig,

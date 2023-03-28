@@ -10,7 +10,7 @@ import wandb
 from src.config import (EnvironmentConfig, OnlineTrainConfig, RunConfig,
                         TransformerModelConfig, ConfigJsonEncoder)
 
-from .agent import PPOAgent, FCAgent, TrajPPOAgent
+from .agent import PPOAgent, FCAgent, TransformerPPOAgent
 from .memory import Memory
 
 device = t.device("cuda" if t.cuda.is_available() else "cpu")
@@ -158,7 +158,7 @@ def get_agent(
             hidden_dim=online_config.hidden_size
         )
     else:
-        agent = TrajPPOAgent(
+        agent = TransformerPPOAgent(
             envs=envs,
             transformer_model_config=transformer_model_config,
             environment_config=environment_config,
