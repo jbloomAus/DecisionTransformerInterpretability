@@ -65,6 +65,10 @@ def test_lstm_model_config():
     assert hasattr(config, 'aux_info')
     assert hasattr(config, 'obs_space')
     assert hasattr(config, 'action_space')
+    assert hasattr(config, 'endpool')
+    assert hasattr(config, 'bow')
+    assert hasattr(config, 'pixel')
+    assert hasattr(config, 'res')
 
 
 def test_online_train_config():

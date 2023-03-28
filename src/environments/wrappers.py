@@ -89,8 +89,6 @@ class RenderResizeWrapper(gym.Wrapper):
 
         return image
 
-# class NumericMissionVocabularyWrapper(ObservationWrapper):
-
 
 class DictObservationSpaceWrapper(ObservationWrapper):
     """

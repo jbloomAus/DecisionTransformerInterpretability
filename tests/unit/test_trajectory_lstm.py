@@ -8,6 +8,7 @@ from minigrid.wrappers import RGBImgPartialObsWrapper
 # stuff I need to commit to MiniGrid
 from src.environments.wrappers import DictObservationSpaceWrapper
 
+from src.config import LSTMModelConfig
 from src.models.trajectory_lstm import TrajectoryLSTM
 
 
@@ -44,11 +45,8 @@ def test__init___standard_env_without_memory(env):
 
     obs, info = env.reset()
 
-    acmodel = TrajectoryLSTM(
-        obs_space=env.observation_space,
-        action_space=env.action_space,
-        use_memory=False
-    )
+    config = LSTMModelConfig(env, use_memory=False)
+    acmodel = TrajectoryLSTM(config)
 
 
 @pytest.mark.parametrize("env", minigrid_envs())
@@ -56,11 +54,8 @@ def test__init_forward_without_memory(env):
 
     obs, info = env.reset()
 
-    acmodel = TrajectoryLSTM(
-        obs_space=env.observation_space,
-        action_space=env.action_space,
-        use_memory=False
-    )
+    config = LSTMModelConfig(env, use_memory=False)
+    acmodel = TrajectoryLSTM(config)
 
     obs, info = env.reset()
     obs = AttrDict(obs)
@@ -74,11 +69,8 @@ def test__init___standard_env_with_memory(env):
 
     obs, info = env.reset()
 
-    acmodel = TrajectoryLSTM(
-        obs_space=env.observation_space,
-        action_space=env.action_space,
-        use_memory=True
-    )
+    config = LSTMModelConfig(env, use_memory=True)
+    acmodel = TrajectoryLSTM(config)
 
 
 @pytest.mark.parametrize("env", minigrid_envs())
@@ -86,11 +78,8 @@ def test__init_forward_with_memory(env):
 
     obs, info = env.reset()
 
-    acmodel = TrajectoryLSTM(
-        obs_space=env.observation_space,
-        action_space=env.action_space,
-        use_memory=True
-    )
+    config = LSTMModelConfig(env, use_memory=True)
+    acmodel = TrajectoryLSTM(config)
 
     obs, info = env.reset()
     obs = AttrDict(obs)
@@ -105,12 +94,8 @@ def test__init___standard_env_with_pixel(env):
     env = RGBImgPartialObsWrapper(env)
     obs, info = env.reset()
 
-    acmodel = TrajectoryLSTM(
-        obs_space=env.observation_space,
-        action_space=env.action_space,
-        use_memory=False,
-        arch="pixels_endpool_res"
-    )
+    config = LSTMModelConfig(env, arch="pixels_endpool_res")
+    acmodel = TrajectoryLSTM(config)
 
 
 @pytest.mark.parametrize("env", minigrid_envs())
@@ -119,12 +104,11 @@ def test__init_forward_with_pixel(env):
     env = RGBImgPartialObsWrapper(env)
     obs, info = env.reset()
 
-    acmodel = TrajectoryLSTM(
-        obs_space=env.observation_space,
-        action_space=env.action_space,
-        use_memory=False,
-        arch="pixels_endpool_res"
-    )
+    config = LSTMModelConfig(env,
+                             use_memory=False,
+                             arch="pixels_endpool_res"
+                             )
+    acmodel = TrajectoryLSTM(config)
 
     obs, info = env.reset()
     obs = AttrDict(obs)
@@ -138,12 +122,11 @@ def test__init___without_endpool_res(env):
 
     obs, info = env.reset()
 
-    acmodel = TrajectoryLSTM(
-        obs_space=env.observation_space,
-        action_space=env.action_space,
-        use_memory=False,
-        arch="bow"
-    )
+    config = LSTMModelConfig(env,
+                             use_memory=False,
+                             arch="bow"
+                             )
+    acmodel = TrajectoryLSTM(config)
 
 
 @pytest.mark.parametrize("env", minigrid_envs())
@@ -151,12 +134,11 @@ def test__init_forward_wwithout_endpool_res(env):
 
     obs, info = env.reset()
 
-    acmodel = TrajectoryLSTM(
-        obs_space=env.observation_space,
-        action_space=env.action_space,
-        use_memory=False,
-        arch="bow"
-    )
+    config = LSTMModelConfig(env,
+                             use_memory=False,
+                             arch="bow"
+                             )
+    acmodel = TrajectoryLSTM(config)
 
     obs, info = env.reset()
     obs = AttrDict(obs)
@@ -171,12 +153,11 @@ def test__init___standard_env_with_instruction(env):
     env = DictObservationSpaceWrapper(env)
     obs, info = env.reset()
 
-    acmodel = TrajectoryLSTM(
-        obs_space=env.observation_space,
-        action_space=env.action_space,
-        use_memory=True,
-        use_instr=True
-    )
+    config = LSTMModelConfig(env,
+                             use_memory=True,
+                             use_instr=True
+                             )
+    acmodel = TrajectoryLSTM(config)
 
 
 @pytest.mark.parametrize("env", babyai_envs())
@@ -185,12 +166,81 @@ def test__init_forward_with_instruction(env):
     env = DictObservationSpaceWrapper(env)
     obs, info = env.reset()
 
-    acmodel = TrajectoryLSTM(
-        obs_space=env.observation_space,
-        action_space=env.action_space,
-        use_memory=False,
-        use_instr=True
-    )
+    config = LSTMModelConfig(env,
+                             use_memory=False,
+                             use_instr=True
+                             )
+    acmodel = TrajectoryLSTM(config)
+
+    obs, info = env.reset()
+    obs = AttrDict(obs)
+    obs['image'] = torch.tensor(obs['image']).unsqueeze(0)
+    obs['mission'] = torch.tensor(obs['mission']).unsqueeze(0)
+    result = acmodel.forward(obs, torch.zeros(1, 128*2))
+    result
+
+
+@pytest.mark.parametrize("env", babyai_envs())
+def test__init___standard_env_with_instruction_bigru(env):
+
+    env = DictObservationSpaceWrapper(env)
+    obs, info = env.reset()
+
+    config = LSTMModelConfig(env,
+                             use_memory=True,
+                             use_instr=True,
+                             lang_model="bigru"
+                             )
+    acmodel = TrajectoryLSTM(config)
+
+
+@pytest.mark.parametrize("env", babyai_envs())
+def test__init_forward_with_instruction_bigru(env):
+
+    env = DictObservationSpaceWrapper(env)
+    obs, info = env.reset()
+
+    config = LSTMModelConfig(env,
+                             use_memory=False,
+                             use_instr=True,
+                             lang_model="bigru"
+                             )
+    acmodel = TrajectoryLSTM(config)
+
+    obs, info = env.reset()
+    obs = AttrDict(obs)
+    obs['image'] = torch.tensor(obs['image']).unsqueeze(0)
+    obs['mission'] = torch.tensor(obs['mission']).unsqueeze(0)
+    result = acmodel.forward(obs, torch.zeros(1, 128*2))
+    result
+
+
+@pytest.mark.parametrize("env", babyai_envs())
+def test__init___standard_env_with_instruction_attgru(env):
+
+    env = DictObservationSpaceWrapper(env)
+    obs, info = env.reset()
+
+    config = LSTMModelConfig(env,
+                             use_memory=True,
+                             use_instr=True,
+                             lang_model="attgru"
+                             )
+    acmodel = TrajectoryLSTM(config)
+
+
+@pytest.mark.parametrize("env", babyai_envs())
+def test__init_forward_with_instruction_attgru(env):
+
+    env = DictObservationSpaceWrapper(env)
+    obs, info = env.reset()
+
+    config = LSTMModelConfig(env,
+                             use_memory=False,
+                             use_instr=True,
+                             lang_model="attgru"
+                             )
+    acmodel = TrajectoryLSTM(config)
 
     obs, info = env.reset()
     obs = AttrDict(obs)

@@ -94,7 +94,17 @@ class LSTMModelConfig():
             if part not in ['original', 'bow', 'pixels', 'endpool', 'res']:
                 raise ValueError(
                     "Incorrect architecture name: {}".format(self.arch))
-        assert self.lang_model in ['gru', 'lstm']
+
+        self.endpool = 'endpool' in self.arch
+        self.bow = 'bow' in self.arch
+        self.pixel = 'pixel' in self.arch
+        self.res = 'res' in self.arch
+
+        if self.res and self.image_dim != 128:
+            raise ValueError(
+                f"image_dim is {self.model_config.image_dim}, expected 128")
+
+        assert self.lang_model in ['gru', 'bigru', 'attgru']
         self.obs_space = self.environment_config.observation_space
         self.action_space = self.environment_config.action_space
 

@@ -89,10 +89,19 @@ class ImageBOWEmbedding(nn.Module):
 
 
 class TrajectoryLSTM(nn.Module):
-    def __init__(self, obs_space, action_space,
-                 image_dim=128, memory_dim=128, instr_dim=128,
-                 use_instr=False, lang_model="gru", use_memory=False,
-                 arch="bow_endpool_res", aux_info=None):
+    def __init__(self,
+                 model_config: LSTMModelConfig
+                 #  obs_space,
+                 #  action_space,
+                 #  image_dim=128,
+                 #  memory_dim=128,
+                 #  instr_dim=128,
+                 #  use_instr=False,
+                 #  lang_model="gru",
+                 #  use_memory=False,
+                 #  arch="bow_endpool_res",
+                 #  aux_info=None
+                 ):
         """
         A model for actor-critic with options for different architectures and auxiliary tasks.
 
@@ -114,24 +123,22 @@ class TrajectoryLSTM(nn.Module):
         """
         super().__init__()
 
-        endpool = 'endpool' in arch
-        use_bow = 'bow' in arch
-        pixel = 'pixel' in arch
-        self.res = 'res' in arch
+        self.endpool = model_config.endpool
+        self.bow = model_config.bow
+        self.pixel = model_config.pixel
+        self.res = model_config.res
 
         # Decide which components are enabled
-        self.use_instr = use_instr
-        self.use_memory = use_memory
-        self.arch = arch
-        self.lang_model = lang_model
-        self.aux_info = aux_info
-        if self.res and image_dim != 128:
-            raise ValueError(f"image_dim is {image_dim}, expected 128")
-        self.image_dim = image_dim
-        self.memory_dim = memory_dim
-        self.instr_dim = instr_dim
-
-        self.obs_space = obs_space
+        self.use_instr = model_config.use_instr
+        self.use_memory = model_config.use_memory
+        self.arch = model_config.arch
+        self.lang_model = model_config.lang_model
+        self.aux_info = model_config.aux_info
+        self.image_dim = model_config.image_dim
+        self.memory_dim = model_config.memory_dim
+        self.instr_dim = model_config.instr_dim
+        self.obs_space = model_config.obs_space
+        self.action_space = model_config.action_space
 
         for part in self.arch.split('_'):
             if part not in ['original', 'bow', 'pixels', 'endpool', 'res']:
@@ -141,30 +148,30 @@ class TrajectoryLSTM(nn.Module):
         # if not self.use_instr:
         #     raise ValueError("FiLM architecture can be used when instructions are enabled")
         self.image_conv = nn.Sequential(*[
-            *([ImageBOWEmbedding(obs_space['image'], 128)] if use_bow else []),
+            *([ImageBOWEmbedding(self.obs_space['image'], 128)] if self.bow else []),
             *([nn.Conv2d(
                 in_channels=3, out_channels=128, kernel_size=(8, 8),
-                stride=8, padding=0)] if pixel else []),
+                stride=8, padding=0)] if self.pixel else []),
             nn.Conv2d(
-                in_channels=128 if use_bow or pixel else 3, out_channels=128,
-                kernel_size=(3, 3) if endpool else (2, 2), stride=1, padding=1),
+                in_channels=128 if self.bow or self.pixel else 3, out_channels=128,
+                kernel_size=(3, 3) if self.endpool else (2, 2), stride=1, padding=1),
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            *([] if endpool else [nn.MaxPool2d(kernel_size=(2, 2), stride=2)]),
+            *([] if self.endpool else [nn.MaxPool2d(kernel_size=(2, 2), stride=2)]),
             nn.Conv2d(in_channels=128, out_channels=128,
                       kernel_size=(3, 3), padding=1),
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            *([] if endpool else [nn.MaxPool2d(kernel_size=(2, 2), stride=2)])
+            *([] if self.endpool else [nn.MaxPool2d(kernel_size=(2, 2), stride=2)])
         ])
         self.film_pool = nn.MaxPool2d(kernel_size=(
-            7, 7) if endpool else (2, 2), stride=2)
+            7, 7) if self.endpool else (2, 2), stride=2)
 
         # Define instruction embedding
         if self.use_instr:
             if self.lang_model in ['gru', 'bigru', 'attgru']:
                 self.word_embedding = nn.Embedding(
-                    obs_space['mission'][0].n, self.instr_dim)
+                    self.obs_space['mission'][0].n + 1, self.instr_dim)
                 if self.lang_model in ['gru', 'bigru', 'attgru']:
                     gru_dim = self.instr_dim
                     if self.lang_model in ['bigru', 'attgru']:
@@ -204,7 +211,7 @@ class TrajectoryLSTM(nn.Module):
         self.actor = nn.Sequential(
             nn.Linear(self.embedding_size, 64),
             nn.Tanh(),
-            nn.Linear(64, action_space.n)
+            nn.Linear(64, self.action_space.n)
         )
 
         # Define critic's model
