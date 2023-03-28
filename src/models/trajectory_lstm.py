@@ -164,7 +164,7 @@ class TrajectoryLSTM(nn.Module):
         if self.use_instr:
             if self.lang_model in ['gru', 'bigru', 'attgru']:
                 self.word_embedding = nn.Embedding(
-                    obs_space['mission'].shape[0], self.instr_dim)
+                    obs_space['mission'][0].n, self.instr_dim)
                 if self.lang_model in ['gru', 'bigru', 'attgru']:
                     gru_dim = self.instr_dim
                     if self.lang_model in ['bigru', 'attgru']:
