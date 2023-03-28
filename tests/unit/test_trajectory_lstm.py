@@ -3,7 +3,10 @@ import torch
 
 from minigrid.envs import MemoryEnv, DynamicObstaclesEnv, EmptyEnv, FourRoomsEnv
 from minigrid.envs.babyai import GoToDoor, GoToRedBlueBall, UnlockLocal, BossLevel
-from minigrid.wrappers import RGBImgPartialObsWrapper, DictObservationSpaceWrapper
+from minigrid.wrappers import RGBImgPartialObsWrapper
+
+# stuff I need to commit to MiniGrid
+from src.environments.wrappers import DictObservationSpaceWrapper
 
 from src.models.trajectory_lstm import TrajectoryLSTM
 
