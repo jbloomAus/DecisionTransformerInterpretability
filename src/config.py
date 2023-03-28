@@ -14,28 +14,6 @@ from src.environments.wrappers import ViewSizeWrapper
 
 
 @dataclass
-class TransformerModelConfig():
-    '''
-    Configuration class for the transformer model.
-    '''
-    d_model: int = 128
-    n_heads: int = 4
-    d_mlp: int = 256
-    n_layers: int = 2
-    n_ctx: int = 2
-    layer_norm: bool = False
-    state_embedding_type: str = 'grid'
-    time_embedding_type: str = 'embedding'
-    seed: int = 1
-    device: str = 'cpu'
-
-    def __post_init__(self):
-        assert self.d_model % self.n_heads == 0
-        self.d_head = self.d_model // self.n_heads
-        assert self.time_embedding_type in ['embedding', 'linear']
-
-
-@dataclass
 class EnvironmentConfig():
     '''
     Configuration class for the environment.
@@ -72,6 +50,53 @@ class EnvironmentConfig():
 
         self.action_space = self.action_space or env.action_space
         self.observation_space = self.observation_space or env.observation_space
+
+
+@dataclass
+class TransformerModelConfig():
+    '''
+    Configuration class for the transformer model.
+    '''
+    d_model: int = 128
+    n_heads: int = 4
+    d_mlp: int = 256
+    n_layers: int = 2
+    n_ctx: int = 2
+    layer_norm: bool = False
+    state_embedding_type: str = 'grid'
+    time_embedding_type: str = 'embedding'
+    seed: int = 1
+    device: str = 'cpu'
+
+    def __post_init__(self):
+        assert self.d_model % self.n_heads == 0
+        self.d_head = self.d_model // self.n_heads
+        assert self.time_embedding_type in ['embedding', 'linear']
+
+
+@dataclass
+class LSTMModelConfig():
+    '''
+    Configuration class for the LSTM model.
+    '''
+    environment_config: EnvironmentConfig
+    image_dim: int = 128
+    memory_dim: int = 128
+    instr_dim: int = 128
+    use_instr: bool = False
+    lang_model: str = 'gru'
+    use_memory: bool = False
+    arch: str = "bow_endpool_res"
+    aux_info: bool = False
+
+    def __post_init__(self):
+        for part in self.arch.split('_'):
+            if part not in ['original', 'bow', 'pixels', 'endpool', 'res']:
+                raise ValueError(
+                    "Incorrect architecture name: {}".format(self.arch))
+        assert self.lang_model in ['gru', 'lstm']
+        self.obs_space = self.environment_config.observation_space
+        self.action_space = self.environment_config.action_space
 
 
 @dataclass

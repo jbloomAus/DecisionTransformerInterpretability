@@ -1,6 +1,9 @@
 '''
 This model is a modified version of the original model from the BabyAI repository.
 https://github.com/kimiyoung/transformer-xl/blob/44781ed21dbaec88b280f74d9ae2877f52b492a5/pytorch/mem_transformer.py
+
+I'm not going to keep track of the changes since the original code is not easily runnable.
+Hopefully we can get the code working and work off that as a benchmark.
 '''
 
 import torch
@@ -8,11 +11,25 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions.categorical import Categorical
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-# import babyai.rl
-# from babyai.rl.utils.supervised_losses import required_heads
 
+from src.config import LSTMModelConfig, EnvironmentConfig
+
+
+# This is from BabyAI, not sure why we need it yet.
+# dictionary that defines what head is required for each extra info used for auxiliary supervision
+required_heads = {'seen_state': 'binary',
+                  'see_door': 'binary',
+                  'see_obj': 'binary',
+                  'obj_in_instr': 'binary',
+                  # multi class classifier with 9 possible classes
+                  'in_front_of_what': 'multiclass9',
+                  # continous regressor with outputs in [0, 1]
+                  'visit_proportion': 'continuous01',
+                  'bot_action': 'binary'}
 
 # From https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/model.py
+
+
 def initialize_parameters(m):
     classname = m.__class__.__name__
     if classname.find('Linear') != -1:
@@ -71,7 +88,7 @@ class ImageBOWEmbedding(nn.Module):
             return 9  # default value for BabyAI (compact encoding default)
 
 
-class ACModel(nn.Module, RecurrentACModel):
+class TrajectoryLSTM(nn.Module):
     def __init__(self, obs_space, action_space,
                  image_dim=128, memory_dim=128, instr_dim=128,
                  use_instr=False, lang_model="gru", use_memory=False,
@@ -147,7 +164,7 @@ class ACModel(nn.Module, RecurrentACModel):
         if self.use_instr:
             if self.lang_model in ['gru', 'bigru', 'attgru']:
                 self.word_embedding = nn.Embedding(
-                    obs_space["instr"], self.instr_dim)
+                    obs_space['mission'].shape[0], self.instr_dim)
                 if self.lang_model in ['gru', 'bigru', 'attgru']:
                     gru_dim = self.instr_dim
                     if self.lang_model in ['bigru', 'attgru']:
@@ -254,11 +271,11 @@ class ACModel(nn.Module, RecurrentACModel):
 
     def forward(self, obs, memory, instr_embedding=None):
         if self.use_instr and instr_embedding is None:
-            instr_embedding = self._get_instr_embedding(obs.instr)
+            instr_embedding = self._get_instr_embedding(obs.mission)
         if self.use_instr and self.lang_model == "attgru":
             # outputs: B x L x D
             # memory: B x M
-            mask = (obs.instr != 0).float()
+            mask = (obs.mission != 0).float()
             # The mask tensor has the same length as obs.instr, and
             # thus can be both shorter and longer than instr_embedding.
             # It can be longer if instr_embedding is computed

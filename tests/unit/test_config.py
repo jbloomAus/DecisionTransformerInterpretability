@@ -1,29 +1,8 @@
 import pytest
 import gymnasium as gym
 
-from src.config import TransformerModelConfig, EnvironmentConfig, OfflineTrainConfig, OnlineTrainConfig
+from src.config import TransformerModelConfig, LSTMModelConfig, EnvironmentConfig, OfflineTrainConfig, OnlineTrainConfig
 from src.config import RunConfig
-
-
-def test_transformer_model_config():
-    # test existence of properties
-    config = TransformerModelConfig()
-    assert hasattr(config, 'd_model')
-    assert hasattr(config, 'n_heads')
-    assert hasattr(config, 'd_mlp')
-    assert hasattr(config, 'n_layers')
-    assert hasattr(config, 'n_ctx')
-    assert hasattr(config, 'layer_norm')
-    assert hasattr(config, 'state_embedding_type')
-    assert hasattr(config, 'time_embedding_type')
-    assert hasattr(config, 'seed')
-    assert hasattr(config, 'device')
-    assert hasattr(config, 'd_head')
-
-    # test post __init__ method
-    with pytest.raises(AssertionError):
-        # d_model is not divisible by n_heads
-        TransformerModelConfig(d_model=100, n_heads=3)
 
 
 def test_environment_config():
@@ -48,6 +27,44 @@ def test_environment_config():
     env = gym.make(config.env_id)
     assert config.action_space == env.action_space
     assert config.observation_space == env.observation_space
+
+
+def test_transformer_model_config():
+    # test existence of properties
+    config = TransformerModelConfig()
+    assert hasattr(config, 'd_model')
+    assert hasattr(config, 'n_heads')
+    assert hasattr(config, 'd_mlp')
+    assert hasattr(config, 'n_layers')
+    assert hasattr(config, 'n_ctx')
+    assert hasattr(config, 'layer_norm')
+    assert hasattr(config, 'state_embedding_type')
+    assert hasattr(config, 'time_embedding_type')
+    assert hasattr(config, 'seed')
+    assert hasattr(config, 'device')
+    assert hasattr(config, 'd_head')
+
+    # test post __init__ method
+    with pytest.raises(AssertionError):
+        # d_model is not divisible by n_heads
+        TransformerModelConfig(d_model=100, n_heads=3)
+
+
+def test_lstm_model_config():
+
+    environment_config = EnvironmentConfig()
+    config = LSTMModelConfig(environment_config)
+
+    assert hasattr(config, 'environment_config')
+    assert hasattr(config, 'image_dim')
+    assert hasattr(config, 'memory_dim')
+    assert hasattr(config, 'instr_dim')
+    assert hasattr(config, 'lang_model')
+    assert hasattr(config, 'use_memory')
+    assert hasattr(config, 'arch')
+    assert hasattr(config, 'aux_info')
+    assert hasattr(config, 'obs_space')
+    assert hasattr(config, 'action_space')
 
 
 def test_online_train_config():

@@ -88,3 +88,5 @@ class RenderResizeWrapper(gym.Wrapper):
         image = np.array(image)
 
         return image
+
+# class NumericMissionVocabularyWrapper(ObservationWrapper):
