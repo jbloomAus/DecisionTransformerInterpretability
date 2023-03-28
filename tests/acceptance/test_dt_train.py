@@ -1,7 +1,7 @@
 import pytest
 import torch
 from src.config import TransformerModelConfig, EnvironmentConfig
-from src.models.trajectory_model import DecisionTransformer
+from src.models.trajectory_transformer import DecisionTransformer
 from src.environments.environments import make_env
 from src.decision_transformer.train import evaluate_dt_agent
 from src.decision_transformer.offline_dataset import TrajectoryDataset

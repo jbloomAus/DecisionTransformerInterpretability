@@ -9,7 +9,7 @@ import torch as t
 import wandb
 from src.config import (EnvironmentConfig, OfflineTrainConfig, RunConfig,
                         TransformerModelConfig, ConfigJsonEncoder)
-from src.models.trajectory_model import CloneTransformer, DecisionTransformer
+from src.models.trajectory_transformer import CloneTransformer, DecisionTransformer
 
 # from .model import DecisionTransformer
 from .offline_dataset import TrajectoryDataset, TrajectoryVisualizer

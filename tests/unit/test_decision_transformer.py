@@ -5,7 +5,7 @@ from einops import rearrange
 import gymnasium as gym
 from minigrid.wrappers import RGBImgPartialObsWrapper, ImgObsWrapper, OneHotPartialObsWrapper
 from src.environments.wrappers import ViewSizeWrapper, RenderResizeWrapper
-from src.models.trajectory_model import DecisionTransformer, CloneTransformer, StateEncoder, ActorTransformer
+from src.models.trajectory_transformer import DecisionTransformer, CloneTransformer, StateEncoder, ActorTransformer
 from src.config import EnvironmentConfig, TransformerModelConfig
 
 

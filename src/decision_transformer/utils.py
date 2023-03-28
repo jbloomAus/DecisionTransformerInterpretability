@@ -9,7 +9,7 @@ from minigrid.wrappers import OneHotPartialObsWrapper, RGBImgPartialObsWrapper
 from .model import DecisionTransformer as DecisionTransformerLegacy
 import torch as t
 
-from src.models.trajectory_model import DecisionTransformer
+from src.models.trajectory_transformer import DecisionTransformer
 from src.config import EnvironmentConfig, TransformerModelConfig, OfflineTrainConfig
 from .offline_dataset import TrajectoryDataset
 

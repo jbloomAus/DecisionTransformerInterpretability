@@ -7,7 +7,7 @@ from src.config import EnvironmentConfig, ConfigJsonEncoder, TransformerModelCon
 from src.config import RunConfig, OnlineTrainConfig
 from src.ppo.runner import ppo_runner
 from src.decision_transformer.offline_dataset import TrajectoryDataset
-from src.models.trajectory_model import DecisionTransformer
+from src.models.trajectory_transformer import DecisionTransformer
 from src.decision_transformer.utils import load_model_data
 
 

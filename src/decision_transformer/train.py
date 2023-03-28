@@ -7,7 +7,7 @@ from einops import rearrange
 from tqdm import tqdm
 import wandb
 from argparse import Namespace
-from src.models.trajectory_model import TrajectoryTransformer, DecisionTransformer, CloneTransformer
+from src.models.trajectory_transformer import TrajectoryTransformer, DecisionTransformer, CloneTransformer
 from src.config import EnvironmentConfig
 from .offline_dataset import TrajectoryDataset
 from torch.utils.data.sampler import WeightedRandomSampler

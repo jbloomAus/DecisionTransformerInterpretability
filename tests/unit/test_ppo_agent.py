@@ -6,7 +6,7 @@ import torch.optim as optim
 from dataclasses import dataclass
 
 from src.ppo.agent import PPOScheduler, PPOAgent, FCAgent, TrajPPOAgent
-from src.models.trajectory_model import TrajectoryTransformer
+from src.models.trajectory_transformer import TrajectoryTransformer
 from src.ppo.memory import Memory
 
 

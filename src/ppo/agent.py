@@ -12,7 +12,7 @@ from .memory import Memory
 from .utils import get_obs_shape
 from .loss_functions import calc_clipped_surrogate_objective, calc_value_function_loss, calc_entropy_bonus
 
-from src.models.trajectory_model import ActorTransformer, CriticTransfomer
+from src.models.trajectory_transformer import ActorTransformer, CriticTransfomer
 from src.config import TransformerModelConfig, EnvironmentConfig, OnlineTrainConfig
 
 
