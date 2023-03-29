@@ -123,6 +123,7 @@ class OnlineTrainConfig:
     trajectory_path: str = None
     fully_observed: bool = False
     prob_go_from_end: float = 0.0
+    num_checkpoints: int = 10
 
     def __post_init__(self):
         self.batch_size = int(self.num_envs * self.num_steps)

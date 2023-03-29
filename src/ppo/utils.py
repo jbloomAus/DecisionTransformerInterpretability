@@ -145,6 +145,8 @@ def parse_args():
                         help='if toggled, the environment will be fully observed')
     parser.add_argument('--one_hot_obs', action='store_true', default=False,
                         help='if toggled, the environment will be partially observed one hot encoded')
+    parser.add_argument('--num_checkpoints', type=int, default=10,
+                        help="how many checkpoints are stored and uploaded to wandb during training")
 
     args = parser.parse_args()
     return args

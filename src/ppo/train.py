@@ -51,7 +51,7 @@ def train_ppo(
         prepare_video_dir(video_path)
         videos = []
         checkpoint_artifact = wandb.Artifact(f"{run_config.exp_name}_checkpoints", type="model")
-        checkpoint_interval = num_updates // 10 + 1
+        checkpoint_interval = num_updates // online_config.num_checkpoints + 1
         checkpoint_num = 1
 
     def store_model_checkpoint():
