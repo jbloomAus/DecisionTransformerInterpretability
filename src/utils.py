@@ -150,3 +150,9 @@ def pad_tensor(tensor, length=100, ignore_first_dim=True, pad_token=0, pad_left=
                 tensor = t.cat([tensor, pad], dim=0)
 
         return tensor
+
+
+class AttrDict(dict):
+    def __init__(self, *args, **kwargs):
+        super(AttrDict, self).__init__(*args, **kwargs)
+        self.__dict__ = self

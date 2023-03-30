@@ -5,8 +5,12 @@ import torch.nn as nn
 import torch.optim as optim
 from dataclasses import dataclass
 
-from src.ppo.agent import PPOScheduler, PPOAgent, FCAgent, TransformerPPOAgent
+from minigrid.wrappers import FullyObsWrapper, RGBImgPartialObsWrapper, OneHotPartialObsWrapper
+from src.environments.wrappers import ViewSizeWrapper
+
+from src.ppo.agent import PPOScheduler, PPOAgent, FCAgent, TransformerPPOAgent, LSTMPPOAgent
 from src.models.trajectory_transformer import TrajectoryTransformer
+from src.models.trajectory_lstm import TrajectoryLSTM
 from src.ppo.memory import Memory
 
 
@@ -79,6 +83,9 @@ def big_transformer_model_config():
 
 @pytest.fixture
 def environment_config():
+    env_id = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
+    env = gym.make(env_id)
+
     @dataclass
     class DummyEnvironmentConfig:
         env_id: str = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
@@ -94,8 +101,35 @@ def environment_config():
         action_space: None = None
         observation_space: None = None
         device: str = 'cpu'
+        action_space = env.action_space
+        observation_space = env.observation_space
 
     return DummyEnvironmentConfig()
+
+
+@pytest.fixture
+def lstm_config(environment_config):
+    @dataclass
+    class DummyLSTMConfig:
+        environment_config = environment_config
+        image_dim: int = 128
+        memory_dim: int = 128
+        instr_dim: int = 128
+        use_instr: bool = False
+        lang_model: str = 'gru'
+        use_memory: bool = False
+        arch: str = "bow_endpool_res"
+        aux_info: bool = False
+        endpool: bool = True
+        bow: bool = True
+        pixel: bool = False
+        res: bool = True
+
+    config = DummyLSTMConfig()
+    config.action_space = environment_config.action_space
+    config.obs_space = environment_config.observation_space
+
+    return config
 
 
 @pytest.fixture
@@ -130,6 +164,14 @@ def big_transformer_agent(online_config, big_transformer_model_config, environme
     environment_config.action_space = envs.single_action_space
     environment_config.observation_space = envs.single_observation_space
     return TransformerPPOAgent(envs, environment_config, big_transformer_model_config, device)
+
+
+@pytest.fixture
+def lstm_agent(online_config, lstm_config, environment_config):
+    envs = gym.vector.SyncVectorEnv([lambda: gym.make(
+        environment_config.env_id) for _ in range(online_config.num_envs)])
+    device = torch.device("cpu")
+    return LSTMPPOAgent(envs, environment_config, lstm_config, device)
 
 
 def test_ppo_scheduler_step(optimizer):
@@ -236,7 +278,7 @@ def test_fc_agent_learn(fc_agent, online_config):
     assert len(memory.experiences[0]) == 6
 
 
-def test_traj_agent_init(transformer_agent):
+def test_transformer_agent_init(transformer_agent):
 
     agent = transformer_agent
 
@@ -249,7 +291,7 @@ def test_traj_agent_init(transformer_agent):
     # assert agent.hidden_dim == hidden_dim
 
 
-def test_traj_agent_rollout(transformer_agent, online_config):
+def test_transformer_agent_rollout(transformer_agent, online_config):
 
     num_steps = 10
     agent = transformer_agent
@@ -266,7 +308,7 @@ def test_traj_agent_rollout(transformer_agent, online_config):
     assert len(memory.experiences[0]) == 6
 
 
-def test_traj_agent_learn(transformer_agent, online_config):
+def test_transformer_agent_learn(transformer_agent, online_config):
 
     num_steps = 10
     agent = transformer_agent
@@ -292,7 +334,7 @@ def test_traj_agent_learn(transformer_agent, online_config):
     assert len(memory.experiences[0]) == 6
 
 
-def test_traj_agent_larger_context_init(big_transformer_agent):
+def test_transformer_agent_larger_context_init(big_transformer_agent):
 
     agent = big_transformer_agent
 
@@ -305,7 +347,7 @@ def test_traj_agent_larger_context_init(big_transformer_agent):
     # assert agent.hidden_dim == hidden_dim
 
 
-def test_traj_agent_larger_context_rollout(big_transformer_agent):
+def test_transformer_agent_larger_context_rollout(big_transformer_agent):
 
     num_steps = 10
     agent = big_transformer_agent
@@ -322,7 +364,7 @@ def test_traj_agent_larger_context_rollout(big_transformer_agent):
     assert len(memory.experiences[0]) == 6
 
 
-def test_traj_agent_larger_context_learn(big_transformer_agent, online_config):
+def test_transformer_agent_larger_context_learn(big_transformer_agent, online_config):
 
     num_steps = 10
     agent = big_transformer_agent
@@ -345,3 +387,15 @@ def test_traj_agent_larger_context_learn(big_transformer_agent, online_config):
     assert len(memory.next_value) == big_transformer_agent.envs.num_envs
     assert len(memory.experiences) == num_steps
     assert len(memory.experiences[0]) == 6
+
+
+def test_lstm_agent_init(lstm_agent):
+
+    agent = lstm_agent
+
+    assert isinstance(agent, PPOAgent)
+    assert isinstance(agent.model, TrajectoryLSTM)
+    assert agent.obs_shape == (7, 7, 3)
+    assert agent.num_obs == 147
+    assert agent.num_actions == 3
+    # assert agent.hidden_dim == hidden_dim

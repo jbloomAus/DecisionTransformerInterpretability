@@ -13,7 +13,9 @@ from .utils import get_obs_shape
 from .loss_functions import calc_clipped_surrogate_objective, calc_value_function_loss, calc_entropy_bonus
 
 from src.models.trajectory_transformer import ActorTransformer, CriticTransfomer
-from src.config import TransformerModelConfig, EnvironmentConfig, OnlineTrainConfig
+from src.models.trajectory_lstm import TrajectoryLSTM
+from src.config import TransformerModelConfig, EnvironmentConfig, OnlineTrainConfig, LSTMModelConfig
+from src.utils import AttrDict
 
 
 class PPOScheduler:
@@ -258,7 +260,12 @@ class TransformerPPOAgent(PPOAgent):
                  device: t.device = t.device("cpu")
                  ):
         '''
-        An agent for a Proximal Policy Optimization (PPO) algorithm.
+        An agent for a Proximal Policy Optimization (PPO) algorithm. This agent uses two different transformers
+        for the critic and agent networks.
+
+        It is not currently clear that this agent is working and is not currently used in the project.
+        If you are interested in debugging/improving on it feel free to do so. It is possible transformers
+        also just suck at online learning as is reported by at least one paper.
 
         Args:
         - envs (gym.vector.SyncVectorEnv): the environment(s) to interact with.
@@ -491,3 +498,90 @@ class TransformerPPOAgent(PPOAgent):
                 approx_kl=approx_kl,
                 clipfrac=np.mean(clipfracs)
             )
+
+
+class LSTMPPOAgent(PPOAgent):
+
+    def __init__(self,
+                 envs: gym.vector.SyncVectorEnv,
+                 environment_config: EnvironmentConfig,
+                 lstm_config: LSTMModelConfig,
+                 device: t.device):
+        '''
+        An agent for a Proximal Policy Optimization (PPO) algorithm. This agent uses a single LSTM Model
+        class derived from the BabyAI codebase.
+
+        This class is currently in deverlopment.
+
+        Args:
+        - envs (gym.vector.SyncVectorEnv): the environment(s) to interact with.
+        - device (t.device): the device on which to run the agent.
+        - environment_config (EnvironmentConfig): the configuration for the environment.
+        - lstm_config (LSTMModelConfig): the configuration for the LSTM model.
+        - device (t.device): the device on which to run the agent.
+        '''
+        super().__init__(envs=envs, device=device)
+        self.environment_config = environment_config
+        self.lstm_config = lstm_config
+        self.obs_shape = get_obs_shape(envs.single_observation_space)
+        self.num_obs = np.array(self.obs_shape).prod()
+        self.num_actions = envs.single_action_space.n
+
+        self.model = TrajectoryLSTM(lstm_config)
+        self.to(device)
+
+    def rollout(self, memory: Memory, num_steps: int, envs: gym.vector.SyncVectorEnv, trajectory_writer=None) -> None:
+        device = memory.device
+        obs = memory.next_obs
+        done = memory.next_done
+        self.recurrence_memory = t.zeros(
+            self.envs.num_envs, 1, self.lstm_config.image_dim*2)
+        self.mask = t.zeros(self.envs.num_envs)
+
+        for _ in range(num_steps):
+            with t.inference_mode():
+                obs = self.preprocess_obs(obs)
+                results = self.model(obs, self.recurrence_memory)
+                value = results['value']
+                recurrence_memory = results['memory']
+
+            probs = results['dist']
+            action = probs.sample()
+            logprob = probs.log_prob(action)
+            next_obs, reward, next_done, next_truncated, info = envs.step(
+                action.cpu().numpy())
+
+            next_obs = memory.obs_preprocessor(next_obs)
+            reward = t.from_numpy(reward).to(device)
+
+            # this is where the trajectory writer would usually go
+
+            # Store (s_t, d_t, a_t, logpi(a_t|s_t), v(s_t), r_t+1)
+            memory.add(info, obs, done, action, logprob,
+                       value, reward, recurrence_memory)
+            obs = t.from_numpy(next_obs).to(device)
+            done = t.from_numpy(next_done).to(device, dtype=t.float)
+            self.mask = 1 - t.tensor(done, device=self.device, dtype=t.float)
+            self.recurrence_memory = recurrence_memory
+
+        # Store last (obs, done, value) tuple, since we need it to compute advantages
+        memory.next_obs = obs
+        memory.next_done = done
+        with t.inference_mode():
+            obs = self.preprocess_obs(obs)
+            memory.next_value = self.model(
+                obs, self.recurrence_memory)['value']
+
+    def learn(self, memory: Memory, args: OnlineTrainConfig, optimizer: optim.Optimizer, scheduler: PPOScheduler, track: bool) -> None:
+        pass
+
+    def preprocess_obs(self, obs):
+        if isinstance(obs, np.ndarray):  # no instruction
+            obs = t.tensor(obs)
+        if isinstance(obs, dict):
+            obs = AttrDict(obs)
+            obs['image'] = t.tensor(obs['image'])
+        elif isinstance(obs, t.Tensor):  # no instruction
+            obs = AttrDict({'image': obs})
+
+        return obs
