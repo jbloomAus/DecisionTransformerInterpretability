@@ -399,3 +399,45 @@ def test_lstm_agent_init(lstm_agent):
     assert agent.num_obs == 147
     assert agent.num_actions == 3
     # assert agent.hidden_dim == hidden_dim
+
+
+def test_lstm_agent_rollout(lstm_agent, online_config):
+
+    num_steps = 10
+    agent = lstm_agent
+    memory = Memory(envs=lstm_agent.envs,
+                    args=online_config, device="cpu")
+
+    agent.rollout(memory, num_steps, lstm_agent.envs)
+
+    assert memory.next_obs.shape[0] == lstm_agent.envs.num_envs
+    assert memory.next_obs.shape[1] == lstm_agent.envs.single_observation_space['image'].shape[0]
+    assert len(memory.next_done) == lstm_agent.envs.num_envs
+    assert len(memory.next_value) == lstm_agent.envs.num_envs
+    assert len(memory.experiences) == num_steps
+    assert len(memory.experiences[0]) == 7
+
+
+def test_lstm_agent_rollout_learn(lstm_agent, online_config):
+
+    num_steps = 10
+    agent = lstm_agent
+    num_updates = online_config.total_timesteps // online_config.batch_size
+    optimizer, scheduler = agent.make_optimizer(
+        num_updates,
+        online_config.learning_rate,
+        online_config.learning_rate * 1e-4
+    )
+
+    memory = Memory(envs=lstm_agent.envs,
+                    args=online_config, device="cpu")
+
+    agent.rollout(memory, num_steps, lstm_agent.envs)
+    agent.learn(memory, online_config, optimizer, scheduler, track=False)
+
+    assert memory.next_obs.shape[0] == lstm_agent.envs.num_envs
+    assert memory.next_obs.shape[1] == lstm_agent.envs.single_observation_space['image'].shape[0]
+    assert len(memory.next_done) == lstm_agent.envs.num_envs
+    assert len(memory.next_value) == lstm_agent.envs.num_envs
+    assert len(memory.experiences) == num_steps
+    assert len(memory.experiences[0]) == 7
