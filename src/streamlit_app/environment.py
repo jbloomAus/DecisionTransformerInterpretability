@@ -5,6 +5,7 @@ import gymnasium as gym
 import minigrid
 import math
 
+from src.config import EnvironmentConfig
 from src.decision_transformer.utils import load_decision_transformer
 from src.environments.environments import make_env
 from src.utils import pad_tensor
@@ -37,17 +38,14 @@ def get_env_and_dt(model_path):
         view_size = int(
             math.sqrt(state_dict["state_encoder.weight"].shape[-1] // 3))
 
-    env = make_env(
-        env_id,
-        seed=4200,
-        idx=0,
-        capture_video=False,
-        run_name="dev",
-        fully_observed=False,
-        flat_one_hot=one_hot_encoded,
-        agent_view_size=view_size,
-        max_steps=30
-    )
+    env_config = EnvironmentConfig(env_id=env_id, 
+    capture_video=False, 
+    fully_observed=False, 
+    one_hot_obs=one_hot_encoded, 
+    view_size=view_size, 
+    max_steps=30)
+
+    env = make_env(env_config, seed=4200, idx=0, run_name="dev")
     env = env()
 
     dt = load_decision_transformer(

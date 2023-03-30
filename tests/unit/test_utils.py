@@ -7,6 +7,7 @@ import torch
 from src.utils import TrajectoryWriter
 from src.decision_transformer.utils import load_decision_transformer
 from src.environments.environments import make_env
+from src.config import EnvironmentConfig
 
 
 @pytest.fixture
@@ -192,7 +193,8 @@ def test_trajectory_writer_lzma(environment_config, run_config, online_config):
 def test_load_legacy_decision_transformer():
 
     model_path = "models/MiniGrid-Dynamic-Obstacles-8x8-v0/demo_model_overnight_training.pt"
-    env = make_env('MiniGrid-Dynamic-Obstacles-8x8-v0', 0, 0, False, "test")()
+    env_config = EnvironmentConfig(env_id="MiniGrid-Dynamic-Obstacles-8x8-v0", capture_video=False)
+    env = make_env(env_config, 0, 0, "test")()
     model = load_decision_transformer(model_path, env)
 
     assert model.env == env
@@ -207,7 +209,8 @@ def test_load_legacy_decision_transformer():
 def test_loa_legacy_decision_transformer_linear_time():
 
     model_path = "models/linear_model_not_performant.pt"
-    env = make_env('MiniGrid-Dynamic-Obstacles-8x8-v0', 0, 0, False, "test")()
+    env_config = EnvironmentConfig(env_id="MiniGrid-Dynamic-Obstacles-8x8-v0", capture_video=False)
+    env = make_env(env_config, 0, 0, "test")()
     model = load_decision_transformer(model_path, env)
 
     assert model.env == env
@@ -222,7 +225,8 @@ def test_loa_legacy_decision_transformer_linear_time():
 def test_load_legacy_decision_key_door():
 
     model_path = "models/MiniGrid-DoorKey-8x8-v0/first_pass.pt"
-    env = make_env('MiniGrid-DoorKey-8x8-v0', 0, 0, False, "test")()
+    env_config = EnvironmentConfig(env_id="MiniGrid-DoorKey-8x8-v0", capture_video=False)
+    env = make_env(env_config, 0, 0, "test")()
     model = load_decision_transformer(model_path, env)
 
     assert model.env == env

@@ -70,16 +70,10 @@ def ppo_runner(
 
     envs = gym.vector.SyncVectorEnv(
         [make_env(
-            env_id=environment_config.env_id,
+            config=environment_config,
             seed=environment_config.seed + i,
             idx=i,
-            capture_video=environment_config.capture_video,
-            run_name=run_name,
-            max_steps=environment_config.max_steps,
-            fully_observed=environment_config.fully_observed,
-            flat_one_hot=environment_config.one_hot_obs,
-            agent_view_size=environment_config.view_size,
-            render_mode="rgb_array",
+            run_name=run_name
         ) for i in range(online_config.num_envs)]
     )
 

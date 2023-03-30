@@ -49,6 +49,7 @@ class EnvironmentConfig():
     view_size: int = 7
     capture_video: bool = False
     video_dir: str = 'videos'
+    video_frequency: int = 50
     render_mode: str = 'rgb_array'
     action_space: None = None
     observation_space: None = None

@@ -5,6 +5,7 @@ import gymnasium as gym
 import pytest
 import torch as t
 
+from src.config import EnvironmentConfig
 from src.environments.environments import make_env
 from src.ppo.my_probe_envs import Probe1, Probe2, Probe3, Probe4, Probe5, Probe6
 from src.ppo.train import train_ppo
@@ -122,9 +123,9 @@ def test_probe_envs(env_name, run_config, environment_config, online_config):
         gym.envs.registration.register(
             id=f"Probe{i+1}-v0", entry_point=probes[i])
 
+    env_config = EnvironmentConfig(env_id=env_name, render_mode=None, max_steps=None, fully_observed=False)
     envs = gym.vector.SyncVectorEnv(
-        [make_env(env_name, i, i, False, "test",
-                  render_mode=None, max_steps=None, fully_observed=False) for i in range(4)]
+        [make_env(env_config, i, i, "test") for i in range(4)]
     )
 
     # currently, ppo has tests which run inside main if it
@@ -202,9 +203,9 @@ def test_probe_envs_traj_model_1_context(
         gym.envs.registration.register(
             id=f"Probe{i+1}-v0", entry_point=probes[i])
 
+    env_config=EnvironmentConfig(env_id=env_name, render_mode=None, max_steps=None, fully_observed=False)
     envs = gym.vector.SyncVectorEnv(
-        [make_env(env_name, i, i, False, "test",
-                  render_mode=None, max_steps=None, fully_observed=False) for i in range(4)]
+        [make_env(env_config, i, i, "test") for i in range(4)]
     )
 
     online_config.total_timesteps = 2000
@@ -308,9 +309,9 @@ def test_probe_envs_traj_model_2_context(
         gym.envs.registration.register(
             id=f"Probe{i+1}-v0", entry_point=probes[i])
 
+    env_config = EnvironmentConfig(env_id=env_name, render_mode=None, max_steps=None, fully_observed=False)
     envs = gym.vector.SyncVectorEnv(
-        [make_env(env_name, i, i, False, "test",
-                  render_mode=None, max_steps=None, fully_observed=False) for i in range(4)]
+        [make_env(env_config, i, i, "test") for i in range(4)]
     )
 
     # currently, ppo has tests which run inside main if it

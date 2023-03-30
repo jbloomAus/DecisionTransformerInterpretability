@@ -61,17 +61,7 @@ def run_decision_transformer(
         capture_video=False,
         render_mode='rgb_array')
 
-    env = make_env(
-        env_id,
-        seed=0,
-        idx=0,
-        capture_video=False,
-        run_name="dev",
-        fully_observed=False,
-        # detect if we are using flat one-hot observations.
-        flat_one_hot=(trajectory_data_set.observation_type == "one_hot"),
-        agent_view_size=trajectory_data_set.metadata['args']['view_size'],
-    )
+    env = make_env(environment_config, seed=0, idx=0, run_name="dev")
     env = env()
 
     wandb_args = run_config.__dict__ | transformer_config.__dict__ | offline_config.__dict__
