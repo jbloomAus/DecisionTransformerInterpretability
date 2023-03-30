@@ -15,7 +15,7 @@ from .loss_functions import calc_clipped_surrogate_objective, calc_value_functio
 from src.models.trajectory_transformer import ActorTransformer, CriticTransfomer
 from src.models.trajectory_lstm import TrajectoryLSTM
 from src.config import TransformerModelConfig, EnvironmentConfig, OnlineTrainConfig, LSTMModelConfig
-from src.utils import AttrDict
+from src.utils import DictList
 
 
 class PPOScheduler:
@@ -579,9 +579,9 @@ class LSTMPPOAgent(PPOAgent):
         if isinstance(obs, np.ndarray):  # no instruction
             obs = t.tensor(obs)
         if isinstance(obs, dict):
-            obs = AttrDict(obs)
+            obs = DictList(obs)
             obs['image'] = t.tensor(obs['image'])
         elif isinstance(obs, t.Tensor):  # no instruction
-            obs = AttrDict({'image': obs})
+            obs = DictList({'image': obs})
 
         return obs

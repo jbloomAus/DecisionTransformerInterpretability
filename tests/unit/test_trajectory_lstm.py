@@ -10,16 +10,12 @@ from src.environments.wrappers import DictObservationSpaceWrapper
 
 from src.config import LSTMModelConfig
 from src.models.trajectory_lstm import TrajectoryLSTM
-
-
-class AttrDict(dict):
-    def __init__(self, *args, **kwargs):
-        super(AttrDict, self).__init__(*args, **kwargs)
-        self.__dict__ = self
-
+from src.utils import DictList
 
 # create a fixture which can be used to parameterize different minigrid_envs
 # @pytest.fixture
+
+
 def minigrid_envs():
     return [
         MemoryEnv(size=7, random_length=False,
@@ -58,8 +54,8 @@ def test__init_forward_without_memory(env):
     acmodel = TrajectoryLSTM(config)
 
     obs, info = env.reset()
-    obs = AttrDict(obs)
-    obs['image'] = torch.tensor(obs['image']).unsqueeze(0)
+    obs = DictList(obs)
+    obs.image = torch.from_numpy(obs.image).to(dtype=torch.float).unsqueeze(0)
     result = acmodel.forward(obs, torch.zeros(1, 128*2))
     result
 
@@ -82,8 +78,8 @@ def test__init_forward_with_memory(env):
     acmodel = TrajectoryLSTM(config)
 
     obs, info = env.reset()
-    obs = AttrDict(obs)
-    obs['image'] = torch.tensor(obs['image']).unsqueeze(0)
+    obs = DictList(obs)
+    obs.image = torch.from_numpy(obs.image).to(dtype=torch.float).unsqueeze(0)
     result = acmodel.forward(obs, torch.zeros(1, 128*2))
     result
 
@@ -111,8 +107,8 @@ def test__init_forward_with_pixel(env):
     acmodel = TrajectoryLSTM(config)
 
     obs, info = env.reset()
-    obs = AttrDict(obs)
-    obs['image'] = torch.FloatTensor(obs['image']).unsqueeze(0)
+    obs = DictList(obs)
+    obs.image = torch.from_numpy(obs.image).to(dtype=torch.float).unsqueeze(0)
     result = acmodel.forward(obs, torch.zeros(1, 128*2))
     result
 
@@ -141,8 +137,8 @@ def test__init_forward_wwithout_endpool_res(env):
     acmodel = TrajectoryLSTM(config)
 
     obs, info = env.reset()
-    obs = AttrDict(obs)
-    obs['image'] = torch.FloatTensor(obs['image']).unsqueeze(0)
+    obs = DictList(obs)
+    obs.image = torch.from_numpy(obs.image).to(dtype=torch.float).unsqueeze(0)
     result = acmodel.forward(obs, torch.zeros(1, 128*2))
     result
 
@@ -173,9 +169,9 @@ def test__init_forward_with_instruction(env):
     acmodel = TrajectoryLSTM(config)
 
     obs, info = env.reset()
-    obs = AttrDict(obs)
-    obs['image'] = torch.tensor(obs['image']).unsqueeze(0)
-    obs['mission'] = torch.tensor(obs['mission']).unsqueeze(0)
+    obs = DictList(obs)
+    obs.image = torch.from_numpy(obs.image).to(dtype=torch.float).unsqueeze(0)
+    obs.mission = torch.tensor(obs.mission).unsqueeze(0)
     result = acmodel.forward(obs, torch.zeros(1, 128*2))
     result
 
@@ -208,9 +204,9 @@ def test__init_forward_with_instruction_bigru(env):
     acmodel = TrajectoryLSTM(config)
 
     obs, info = env.reset()
-    obs = AttrDict(obs)
-    obs['image'] = torch.tensor(obs['image']).unsqueeze(0)
-    obs['mission'] = torch.tensor(obs['mission']).unsqueeze(0)
+    obs = DictList(obs)
+    obs.image = torch.from_numpy(obs.image).to(dtype=torch.float).unsqueeze(0)
+    obs.mission = torch.tensor(obs.mission).unsqueeze(0)
     result = acmodel.forward(obs, torch.zeros(1, 128*2))
     result
 
@@ -243,8 +239,8 @@ def test__init_forward_with_instruction_attgru(env):
     acmodel = TrajectoryLSTM(config)
 
     obs, info = env.reset()
-    obs = AttrDict(obs)
-    obs['image'] = torch.tensor(obs['image']).unsqueeze(0)
-    obs['mission'] = torch.tensor(obs['mission']).unsqueeze(0)
+    obs = DictList(obs)
+    obs.image = torch.from_numpy(obs.image).to(dtype=torch.float).unsqueeze(0)
+    obs.mission = torch.tensor(obs.mission).unsqueeze(0)
     result = acmodel.forward(obs, torch.zeros(1, 128*2))
     result

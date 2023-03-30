@@ -1,7 +1,7 @@
 import random
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import List, Any
+from typing import List, Any, Optional, Dict
 
 import gymnasium as gym
 import numpy as np
@@ -43,6 +43,20 @@ class TrajectoryMinibatch:
     returns: TT["batch"]  # noqa: F821
     timesteps: TT["batch", "T"]  # noqa: F821
     rewards: TT["batch", "T"]  # noqa: F821
+
+# @dataclass
+# class Experience:
+#     '''
+#     A dataclass containing the tensors of a single experience.
+#     '''
+#     obs: TT["obs_shape"]
+#     done: TT["bool"]
+#     action: TT["action_shape"]
+#     logprob: TT["float"]
+#     value: TT["float"]
+#     reward: TT["float"]
+#     info: Dict
+#     mask: Optional[TT["bool"]] = None
 
 
 class Memory():
@@ -182,8 +196,8 @@ class Memory():
         Returns:
         - List[MiniBatch]: a list of minibatches.
         '''
-        obs, dones, actions, logprobs, values, rewards = [
-            t.stack(arr) for arr in zip(*self.experiences)]
+        obs, dones, actions, logprobs, values, rewards, *extra = [
+            t.stack(arr)if isinstance(arr[0], t.Tensor) else arr for arr in zip(*self.experiences)]
         advantages = self.compute_advantages(
             self.next_value,
             self.next_done,
@@ -202,7 +216,13 @@ class Memory():
         for ind in indexes:
             batch = []
             for arr in [obs, actions, logprobs, advantages, values, returns]:
-                flat_arr = arr.flatten(0, 1)
+                if isinstance(arr, t.Tensor):
+                    flat_arr = arr.flatten(0, 1)  # usually arr is a tensor
+                else:
+                    num_steps = len(arr)
+                    # in lstm, arr can be a list of attribute dictionaries with the mission statement as well.
+                    # this should flatten the obss correctly.
+                    flat_arr = [arr[i][j] for i in num_envs for j in num_steps]
                 batch.append(flat_arr[ind])
             minibatches.append(Minibatch(*batch))
 
