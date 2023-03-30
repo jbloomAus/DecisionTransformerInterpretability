@@ -1,16 +1,17 @@
 import json
 import os
-from typing import Optional
+from typing import Optional, Union
 
 import torch as t
 from gymnasium.vector import SyncVectorEnv
 from tqdm.autonotebook import tqdm
+from dataclasses import dataclass
 
 import wandb
 from src.config import (EnvironmentConfig, OnlineTrainConfig, RunConfig,
-                        TransformerModelConfig, ConfigJsonEncoder)
+                        TransformerModelConfig, ConfigJsonEncoder, LSTMModelConfig)
 
-from .agent import PPOAgent, FCAgent, TransformerPPOAgent
+from .agent import PPOAgent, FCAgent, TransformerPPOAgent, LSTMPPOAgent
 from .memory import Memory
 
 device = t.device("cuda" if t.cuda.is_available() else "cpu")
@@ -20,7 +21,7 @@ def train_ppo(
         run_config: RunConfig,
         online_config: OnlineTrainConfig,
         environment_config: EnvironmentConfig,
-        transformer_model_config: Optional[TransformerModelConfig],
+        model_config: Optional[Union[TransformerModelConfig, LSTMModelConfig]],
         envs: SyncVectorEnv,
         trajectory_writer=None):
     """
@@ -37,8 +38,7 @@ def train_ppo(
     """
 
     memory = Memory(envs, online_config, device)
-    agent = get_agent(transformer_model_config, envs,
-                      environment_config, online_config)
+    agent = get_agent(model_config, envs, environment_config, online_config)
     num_updates = online_config.total_timesteps // online_config.batch_size
 
     optimizer, scheduler = agent.make_optimizer(
@@ -135,7 +135,7 @@ def prepare_video_dir(video_path):
 
 
 def get_agent(
-        transformer_model_config: TransformerModelConfig,
+        model_config: dataclass,
         envs: SyncVectorEnv,
         environment_config: EnvironmentConfig,
         online_config) -> PPOAgent:
@@ -151,18 +151,25 @@ def get_agent(
     Returns:
     - An agent.
     """
-    if transformer_model_config is None:
+    if model_config is not None:
+        if isinstance(model_config, TransformerModelConfig):
+            agent = TransformerPPOAgent(
+                envs=envs,
+                transformer_model_config=model_config,
+                environment_config=environment_config,
+                device=device,
+            )
+        elif isinstance(model_config, LSTMModelConfig):
+            agent = LSTMPPOAgent(
+                envs=envs,
+                environment_config=environment_config,
+                lstm_config=model_config,
+                device=device,
+            )
+    else:
         agent = FCAgent(
             envs,
             device=device,
             hidden_dim=online_config.hidden_size
         )
-    else:
-        agent = TransformerPPOAgent(
-            envs=envs,
-            transformer_model_config=transformer_model_config,
-            environment_config=environment_config,
-            device=device,
-        )
-
     return agent

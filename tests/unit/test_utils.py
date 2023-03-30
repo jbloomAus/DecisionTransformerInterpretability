@@ -76,7 +76,7 @@ def test_trajectory_writer_numpy(environment_config, run_config, online_config):
         run_config=run_config,
         environment_config=environment_config,
         online_config=online_config,
-        transformer_model_config=None)
+        model_config=None)
 
     # test accumulate trajectory when all the objects are initialized as np arrays
 
@@ -147,7 +147,7 @@ def test_trajectory_writer_torch(environment_config, run_config, online_config):
         run_config=run_config,
         environment_config=environment_config,
         online_config=online_config,
-        transformer_model_config=None)
+        model_config=None)
 
     # test accumulate trajectory when all the objects are initialized as pytorch tensors
 
@@ -169,7 +169,7 @@ def test_trajectory_writer_lzma(environment_config, run_config, online_config):
         run_config=run_config,
         environment_config=environment_config,
         online_config=online_config,
-        transformer_model_config=None)
+        model_config=None)
 
     # test accumulate trajectory when all the objects are initialized as np arrays
 

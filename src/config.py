@@ -86,6 +86,7 @@ class LSTMModelConfig():
     use_instr: bool = False
     lang_model: str = 'gru'
     use_memory: bool = False
+    recurrence: int = 4
     arch: str = "bow_endpool_res"
     aux_info: bool = False
 

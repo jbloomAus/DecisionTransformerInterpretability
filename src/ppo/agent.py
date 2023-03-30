@@ -532,10 +532,11 @@ class LSTMPPOAgent(PPOAgent):
 
     def rollout(self, memory: Memory, num_steps: int, envs: gym.vector.SyncVectorEnv, trajectory_writer=None) -> None:
         device = memory.device
+        cuda = device.type == 'cuda'
         obs = memory.next_obs
         done = memory.next_done
         self.recurrence_memory = t.zeros(
-            self.envs.num_envs, 1, self.lstm_config.image_dim*2)
+            self.envs.num_envs, self.lstm_config.image_dim*2)
         self.mask = t.zeros(self.envs.num_envs)
 
         for _ in range(num_steps):
@@ -555,6 +556,19 @@ class LSTMPPOAgent(PPOAgent):
             reward = t.from_numpy(reward).to(device)
 
             # this is where the trajectory writer would usually go
+            if trajectory_writer is not None:
+                obs_np = obs.image.detach().cpu().numpy() if cuda else obs.image.detach(
+                ).numpy()  # what is usually the obs for other models
+                reward_np = reward.detach().cpu().numpy() if cuda else reward.detach().numpy()
+                action_np = action.detach().cpu().numpy() if cuda else action.detach().numpy()
+                trajectory_writer.accumulate_trajectory(
+                    next_obs=obs_np,
+                    reward=reward_np,
+                    action=action_np,
+                    done=next_done,
+                    truncated=next_truncated,
+                    info=info
+                )
 
             # Store (s_t, d_t, a_t, logpi(a_t|s_t), v(s_t), r_t+1)
             memory.add(info, obs, done, action, logprob,
@@ -573,11 +587,14 @@ class LSTMPPOAgent(PPOAgent):
                 obs, self.recurrence_memory)['value']
 
     def learn(self, memory: Memory, args: OnlineTrainConfig, optimizer: optim.Optimizer, scheduler: PPOScheduler, track: bool) -> None:
+        recurrence = self.model.lstm_config.recurrence
 
         for _ in range(args.update_epochs):
             minibatches = memory.get_minibatches()
             # Compute loss on each minibatch, and step the optimizer
             for mb in minibatches:
+                # for step in recurrence:
+                # do the stuff (rewrite this)
                 obs = self.preprocess_obs(DictList(mb.obs))
                 # shouldn't this be from the previous timestep?
                 results = self.model(obs, mb.recurrence_memory)

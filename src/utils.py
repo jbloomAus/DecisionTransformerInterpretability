@@ -27,7 +27,7 @@ class TrajectoryWriter():
     And store them in a set of lists, indexed by batch b and time t.
     '''
 
-    def __init__(self, path, run_config, environment_config, online_config, transformer_model_config=None):
+    def __init__(self, path, run_config, environment_config, online_config, model_config=None):
         self.observations = []
         self.actions = []
         self.rewards = []
@@ -37,8 +37,8 @@ class TrajectoryWriter():
         self.path = path
 
         args = run_config.__dict__ | environment_config.__dict__ | online_config.__dict__
-        if transformer_model_config is not None:
-            args = args | transformer_model_config.__dict__
+        if model_config is not None:
+            args = args | model_config.__dict__
 
         self.args = args
 

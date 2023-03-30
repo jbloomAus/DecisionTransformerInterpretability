@@ -5,9 +5,9 @@ import torch as t
 import wandb
 import time
 
-from typing import Optional
+from typing import Optional, Union
 
-from src.config import RunConfig, TransformerModelConfig, EnvironmentConfig, OnlineTrainConfig
+from src.config import RunConfig, TransformerModelConfig, EnvironmentConfig, OnlineTrainConfig, LSTMModelConfig
 from src.ppo.utils import set_global_seeds
 from src.ppo.train import train_ppo
 from src.utils import TrajectoryWriter
@@ -22,7 +22,7 @@ def ppo_runner(
     run_config: RunConfig,
     environment_config: EnvironmentConfig,
     online_config: OnlineTrainConfig,
-    transformer_model_config: Optional[TransformerModelConfig],
+    model_config: Optional[Union[TransformerModelConfig, LSTMModelConfig]],
 ):
     '''
     Trains a Proximal Policy Optimization (PPO) algorithm on a specified environment using the given hyperparameters.
@@ -39,7 +39,7 @@ def ppo_runner(
             run_config=run_config,
             environment_config=environment_config,
             online_config=online_config,
-            transformer_model_config=transformer_model_config,
+            model_config=model_config,
         )
     else:
         trajectory_writer = None
@@ -56,7 +56,7 @@ def ppo_runner(
             project=run_config.wandb_project_name,
             entity=run_config.wandb_entity,
             config=combine_args(
-                run_config, environment_config, online_config, transformer_model_config
+                run_config, environment_config, online_config, model_config
             ),  # vars is equivalent to args.__dict__
             name=run_name,
             save_code=True,
@@ -81,7 +81,7 @@ def ppo_runner(
         run_config=run_config,
         online_config=online_config,
         environment_config=environment_config,
-        transformer_model_config=transformer_model_config,
+        model_config=model_config,
         envs=envs,
         trajectory_writer=trajectory_writer
     )

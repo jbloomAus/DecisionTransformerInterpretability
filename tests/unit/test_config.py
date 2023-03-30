@@ -61,6 +61,7 @@ def test_lstm_model_config():
     assert hasattr(config, 'instr_dim')
     assert hasattr(config, 'lang_model')
     assert hasattr(config, 'use_memory')
+    assert hasattr(config, 'recurrence')
     assert hasattr(config, 'arch')
     assert hasattr(config, 'aux_info')
     assert hasattr(config, 'obs_space')
