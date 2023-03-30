@@ -27,6 +27,7 @@ class Minibatch:
     advantages: TT["batch"]  # noqa: F821
     values: TT["batch"]  # noqa: F821
     returns: TT["batch"]  # noqa: F821
+    recurrence_memory: Optional[TT["batch", "memory_size"]] = None  # noqa: F821
 
 
 @dataclass
@@ -196,7 +197,7 @@ class Memory():
         Returns:
         - List[MiniBatch]: a list of minibatches.
         '''
-        obs, dones, actions, logprobs, values, rewards, *extra = [
+        obs, dones, actions, logprobs, values, rewards, *extras = [
             t.stack(arr)if isinstance(arr[0], t.Tensor) else arr for arr in zip(*self.experiences)]
         advantages = self.compute_advantages(
             self.next_value,
@@ -215,15 +216,20 @@ class Memory():
         minibatches = []
         for ind in indexes:
             batch = []
-            for arr in [obs, actions, logprobs, advantages, values, returns]:
+            for arr in [obs, actions, logprobs, advantages, values, returns, *extras]:
                 if isinstance(arr, t.Tensor):
                     flat_arr = arr.flatten(0, 1)  # usually arr is a tensor
+                    batch.append(flat_arr[ind])
                 else:
                     num_steps = len(arr)
+                    num_envs = len(arr[0])
                     # in lstm, arr can be a list of attribute dictionaries with the mission statement as well.
                     # this should flatten the obss correctly.
-                    flat_arr = [arr[i][j] for i in num_envs for j in num_steps]
-                batch.append(flat_arr[ind])
+                    flat_arr = [arr[i][j]
+                                for j in range(num_envs)
+                                for i in range(num_steps)]
+                    batch.append([flat_arr[i] for i in ind])
+
             minibatches.append(Minibatch(*batch))
 
         return minibatches

@@ -1,3 +1,4 @@
+import torch
 import gzip
 import lzma
 import os
@@ -153,7 +154,7 @@ def pad_tensor(tensor, length=100, ignore_first_dim=True, pad_token=0, pad_left=
 
 
 class DictList(dict):
-    """A dictionnary of lists of same size. Dictionary items can be
+    """A dictionary of lists of same size. Dictionary items can be
     accessed using `.` notation and list items using `[]` notation.
 
     Example:
@@ -166,6 +167,18 @@ class DictList(dict):
 
     __getattr__ = dict.__getitem__
     __setattr__ = dict.__setitem__
+
+    def __init__(self, input_list):
+        if isinstance(input_list, dict):
+            super().__init__(input_list)
+        elif isinstance(input_list, list):
+            keys = input_list[0].keys()
+            stacked_dict = {key: torch.stack(
+                [getattr(dl, key) for dl in input_list]) for key in keys}
+            super().__init__(stacked_dict)
+        else:
+            raise ValueError(
+                "Input should be either a dictionary or a list of DictLists containing tensors.")
 
     def __len__(self):
         return len(next(iter(dict.values(self))))

@@ -558,7 +558,7 @@ class LSTMPPOAgent(PPOAgent):
 
             # Store (s_t, d_t, a_t, logpi(a_t|s_t), v(s_t), r_t+1)
             memory.add(info, obs, done, action, logprob,
-                       value, reward, recurrence_memory)
+                       value, reward, self.recurrence_memory)  # get's the memory from the previous timestep
             obs = t.from_numpy(next_obs).to(device)
             done = t.from_numpy(next_done).to(device, dtype=t.float)
             self.mask = 1 - t.tensor(done, device=self.device, dtype=t.float)
@@ -573,14 +573,59 @@ class LSTMPPOAgent(PPOAgent):
                 obs, self.recurrence_memory)['value']
 
     def learn(self, memory: Memory, args: OnlineTrainConfig, optimizer: optim.Optimizer, scheduler: PPOScheduler, track: bool) -> None:
-        pass
+
+        for _ in range(args.update_epochs):
+            minibatches = memory.get_minibatches()
+            # Compute loss on each minibatch, and step the optimizer
+            for mb in minibatches:
+                obs = self.preprocess_obs(DictList(mb.obs))
+                # shouldn't this be from the previous timestep?
+                results = self.model(obs, mb.recurrence_memory)
+                probs = results['dist']
+                values = results['value']
+                clipped_surrogate_objective = calc_clipped_surrogate_objective(
+                    probs, mb.actions, mb.advantages, mb.logprobs, args.clip_coef)
+                value_loss = calc_value_function_loss(
+                    values, mb.returns, args.vf_coef)
+                entropy_bonus = calc_entropy_bonus(probs, args.ent_coef)
+                total_objective_function = clipped_surrogate_objective - value_loss + entropy_bonus
+                optimizer.zero_grad()
+                total_objective_function.backward()
+                nn.utils.clip_grad_norm_(
+                    self.model.parameters(), args.max_grad_norm)
+                optimizer.step()
+
+        # Step the scheduler
+        scheduler.step()
+
+        # Get debug variables, for just the most recent minibatch (otherwise there's too much logging!)
+        if track:
+            with t.inference_mode():
+                newlogprob = probs.log_prob(mb.actions)
+                logratio = newlogprob - mb.logprobs
+                ratio = logratio.exp()
+                approx_kl = (ratio - 1 - logratio).mean().item()
+                clipfracs = [
+                    ((ratio - 1.0).abs() > args.clip_coef).float().mean().item()]
+            memory.add_vars_to_log(
+                learning_rate=optimizer.param_groups[0]["lr"],
+                avg_value=values.mean().item(),
+                value_loss=value_loss.item(),
+                clipped_surrogate_objective=clipped_surrogate_objective.item(),
+                entropy=entropy_bonus.item(),
+                approx_kl=approx_kl,
+                clipfrac=np.mean(clipfracs)
+            )
 
     def preprocess_obs(self, obs):
         if isinstance(obs, np.ndarray):  # no instruction
             obs = t.tensor(obs)
         if isinstance(obs, dict):
             obs = DictList(obs)
-            obs['image'] = t.tensor(obs['image'])
+            if not isinstance(obs.image, t.Tensor):
+                obs.image = t.tensor(obs.image)
+            # if not isinstance(obs.mission, t.Tensor):
+                # obs.instruction = t.tensor(obs.mission)
         elif isinstance(obs, t.Tensor):  # no instruction
             obs = DictList({'image': obs})
 
