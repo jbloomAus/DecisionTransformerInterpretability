@@ -112,6 +112,26 @@ def fc_agent():
     return FCAgent(envs, device, hidden_dim)
 
 
+@pytest.fixture
+def transformer_agent(online_config, transformer_model_config, environment_config):
+    envs = gym.vector.SyncVectorEnv(
+        [lambda: gym.make(environment_config.env_id) for _ in range(online_config.num_envs)])
+    device = torch.device("cpu")
+    environment_config.action_space = envs.single_action_space
+    environment_config.observation_space = envs.single_observation_space
+    return TransformerPPOAgent(envs, environment_config, transformer_model_config, device)
+
+
+@pytest.fixture
+def big_transformer_agent(online_config, big_transformer_model_config, environment_config):
+    envs = gym.vector.SyncVectorEnv(
+        [lambda: gym.make(environment_config.env_id) for _ in range(online_config.num_envs)])
+    device = torch.device("cpu")
+    environment_config.action_space = envs.single_action_space
+    environment_config.observation_space = envs.single_observation_space
+    return TransformerPPOAgent(envs, environment_config, big_transformer_model_config, device)
+
+
 def test_ppo_scheduler_step(optimizer):
     scheduler = PPOScheduler(
         optimizer=optimizer, initial_lr=1e-3, end_lr=1e-5, num_updates=1000)
@@ -216,19 +236,9 @@ def test_fc_agent_learn(fc_agent, online_config):
     assert len(memory.experiences[0]) == 6
 
 
-def test_traj_agent_init(transformer_model_config, environment_config):
+def test_traj_agent_init(transformer_agent):
 
-    envs = gym.vector.SyncVectorEnv(
-        [lambda: gym.make(environment_config.env_id) for _ in range(4)])
-    environment_config.action_space = envs.single_action_space
-    environment_config.observation_space = envs.single_observation_space
-
-    agent = TransformerPPOAgent(
-        envs=envs,
-        environment_config=environment_config,
-        transformer_model_config=transformer_model_config,
-        device="cpu"
-    )
+    agent = transformer_agent
 
     assert isinstance(agent, PPOAgent)
     assert isinstance(agent.critic, TrajectoryTransformer)
@@ -239,46 +249,27 @@ def test_traj_agent_init(transformer_model_config, environment_config):
     # assert agent.hidden_dim == hidden_dim
 
 
-def test_traj_agent_rollout(transformer_model_config, environment_config):
+def test_traj_agent_rollout(transformer_agent, online_config):
 
     num_steps = 10
-    envs = gym.vector.SyncVectorEnv(
-        [lambda: gym.make(environment_config.env_id) for _ in range(4)])
-    environment_config.action_space = envs.single_action_space
-    environment_config.observation_space = envs.single_observation_space
+    agent = transformer_agent
+    memory = Memory(envs=transformer_agent.envs,
+                    args=online_config, device="cpu")
 
-    agent = TransformerPPOAgent(
-        envs=envs,
-        environment_config=environment_config,
-        transformer_model_config=transformer_model_config,
-        device="cpu"
-    )
-    memory = Memory(envs=envs, args=online_config, device="cpu")
+    agent.rollout(memory, num_steps, transformer_agent.envs)
 
-    agent.rollout(memory, num_steps, envs)
-
-    assert memory.next_obs.shape[0] == envs.num_envs
-    assert memory.next_obs.shape[1] == envs.single_observation_space['image'].shape[0]
-    assert len(memory.next_done) == envs.num_envs
-    assert len(memory.next_value) == envs.num_envs
+    assert memory.next_obs.shape[0] == online_config.num_envs
+    assert memory.next_obs.shape[1] == transformer_agent.envs.single_observation_space['image'].shape[0]
+    assert len(memory.next_done) == transformer_agent.envs.num_envs
+    assert len(memory.next_value) == transformer_agent.envs.num_envs
     assert len(memory.experiences) == num_steps
     assert len(memory.experiences[0]) == 6
 
 
-def test_traj_agent_learn(transformer_model_config, environment_config, online_config):
+def test_traj_agent_learn(transformer_agent, online_config):
 
     num_steps = 10
-    envs = gym.vector.SyncVectorEnv(
-        [lambda: gym.make(environment_config.env_id) for _ in range(4)])
-    environment_config.action_space = envs.single_action_space
-    environment_config.observation_space = envs.single_observation_space
-
-    agent = TransformerPPOAgent(
-        envs=envs,
-        environment_config=environment_config,
-        transformer_model_config=transformer_model_config,
-        device="cpu"
-    )
+    agent = transformer_agent
 
     num_updates = online_config.total_timesteps // online_config.batch_size
     optimizer, scheduler = agent.make_optimizer(
@@ -287,32 +278,23 @@ def test_traj_agent_learn(transformer_model_config, environment_config, online_c
         online_config.learning_rate * 1e-4
     )
 
-    memory = Memory(envs=envs, args=online_config, device="cpu")
+    memory = Memory(envs=transformer_agent.envs,
+                    args=online_config, device="cpu")
 
-    agent.rollout(memory, num_steps, envs)
+    agent.rollout(memory, num_steps, transformer_agent.envs)
     agent.learn(memory, online_config, optimizer, scheduler, track=False)
 
-    assert memory.next_obs.shape[0] == envs.num_envs
-    assert memory.next_obs.shape[1] == envs.single_observation_space['image'].shape[0]
-    assert len(memory.next_done) == envs.num_envs
-    assert len(memory.next_value) == envs.num_envs
+    assert memory.next_obs.shape[0] == transformer_agent.envs.num_envs
+    assert memory.next_obs.shape[1] == transformer_agent.envs.single_observation_space['image'].shape[0]
+    assert len(memory.next_done) == transformer_agent.envs.num_envs
+    assert len(memory.next_value) == transformer_agent.envs.num_envs
     assert len(memory.experiences) == num_steps
     assert len(memory.experiences[0]) == 6
 
 
-def test_traj_agent_larger_context_init(big_transformer_model_config, environment_config):
+def test_traj_agent_larger_context_init(big_transformer_agent):
 
-    envs = gym.vector.SyncVectorEnv(
-        [lambda: gym.make(environment_config.env_id) for _ in range(4)])
-    environment_config.action_space = envs.single_action_space
-    environment_config.observation_space = envs.single_observation_space
-
-    agent = TransformerPPOAgent(
-        envs=envs,
-        environment_config=environment_config,
-        transformer_model_config=big_transformer_model_config,
-        device="cpu"
-    )
+    agent = big_transformer_agent
 
     assert isinstance(agent, PPOAgent)
     assert isinstance(agent.critic, TrajectoryTransformer)
@@ -323,47 +305,27 @@ def test_traj_agent_larger_context_init(big_transformer_model_config, environmen
     # assert agent.hidden_dim == hidden_dim
 
 
-def test_traj_agent_larger_context_rollout(big_transformer_model_config, environment_config):
+def test_traj_agent_larger_context_rollout(big_transformer_agent):
 
     num_steps = 10
-    envs = gym.vector.SyncVectorEnv(
-        [lambda: gym.make(environment_config.env_id) for _ in range(4)])
-    environment_config.action_space = envs.single_action_space
-    environment_config.observation_space = envs.single_observation_space
+    agent = big_transformer_agent
+    memory = Memory(envs=big_transformer_agent.envs,
+                    args=online_config, device="cpu")
 
-    agent = TransformerPPOAgent(
-        envs=envs,
-        environment_config=environment_config,
-        transformer_model_config=big_transformer_model_config,
-        device="cpu"
-    )
-    memory = Memory(envs=envs, args=online_config, device="cpu")
+    agent.rollout(memory, num_steps, big_transformer_agent.envs)
 
-    agent.rollout(memory, num_steps, envs)
-
-    assert memory.next_obs.shape[0] == envs.num_envs
-    assert memory.next_obs.shape[1] == envs.single_observation_space['image'].shape[0]
-    assert len(memory.next_done) == envs.num_envs
-    assert len(memory.next_value) == envs.num_envs
+    assert memory.next_obs.shape[0] == big_transformer_agent.envs.num_envs
+    assert memory.next_obs.shape[1] == big_transformer_agent.envs.single_observation_space['image'].shape[0]
+    assert len(memory.next_done) == big_transformer_agent.envs.num_envs
+    assert len(memory.next_value) == big_transformer_agent.envs.num_envs
     assert len(memory.experiences) == num_steps
     assert len(memory.experiences[0]) == 6
 
 
-def test_traj_agent_larger_context_learn(big_transformer_model_config, environment_config, online_config):
+def test_traj_agent_larger_context_learn(big_transformer_agent, online_config):
 
     num_steps = 10
-    envs = gym.vector.SyncVectorEnv(
-        [lambda: gym.make(environment_config.env_id) for _ in range(4)])
-    environment_config.action_space = envs.single_action_space
-    environment_config.observation_space = envs.single_observation_space
-
-    agent = TransformerPPOAgent(
-        envs=envs,
-        environment_config=environment_config,
-        transformer_model_config=big_transformer_model_config,
-        device="cpu"
-    )
-
+    agent = big_transformer_agent
     num_updates = online_config.total_timesteps // online_config.batch_size
     optimizer, scheduler = agent.make_optimizer(
         num_updates,
@@ -371,14 +333,15 @@ def test_traj_agent_larger_context_learn(big_transformer_model_config, environme
         online_config.learning_rate * 1e-4
     )
 
-    memory = Memory(envs=envs, args=online_config, device="cpu")
+    memory = Memory(envs=big_transformer_agent.envs,
+                    args=online_config, device="cpu")
 
-    agent.rollout(memory, num_steps, envs)
+    agent.rollout(memory, num_steps, big_transformer_agent.envs)
     agent.learn(memory, online_config, optimizer, scheduler, track=False)
 
-    assert memory.next_obs.shape[0] == envs.num_envs
-    assert memory.next_obs.shape[1] == envs.single_observation_space['image'].shape[0]
-    assert len(memory.next_done) == envs.num_envs
-    assert len(memory.next_value) == envs.num_envs
+    assert memory.next_obs.shape[0] == big_transformer_agent.envs.num_envs
+    assert memory.next_obs.shape[1] == big_transformer_agent.envs.single_observation_space['image'].shape[0]
+    assert len(memory.next_done) == big_transformer_agent.envs.num_envs
+    assert len(memory.next_value) == big_transformer_agent.envs.num_envs
     assert len(memory.experiences) == num_steps
     assert len(memory.experiences[0]) == 6
