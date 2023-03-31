@@ -131,16 +131,31 @@ class Memory():
         for i, n in enumerate(["obs", "done", "action", "logprob", "value", "reward"]):
             print(f"{n:8}: {self.experiences[idx][i].cpu().numpy().tolist()}")
 
-    def get_minibatch_indexes(self, batch_size: int, minibatch_size: int) -> List[np.ndarray]:
-        '''Return a list of length (batch_size // minibatch_size) where each element
+    def get_minibatch_indexes(self, batch_size: int, minibatch_size: int, recurrence: Optional[int] = None) -> List[np.ndarray]:
+        '''
+        Return a list of length (batch_size // minibatch_size) where each element
         is an array of indexes into the batch.
+
+        If recurrence is not none, the elements returned in each minibatch are a list of starting indices
+        seperated by the recurrence value.
 
         Each index should appear exactly once.
         '''
         assert batch_size % minibatch_size == 0
-        indices = np.random.permutation(batch_size)
-        indices = rearrange(
-            indices, "(mb_num mb_size) -> mb_num mb_size", mb_size=minibatch_size)
+        num_minibatches = batch_size // minibatch_size
+
+        if recurrence is None:
+            indices = np.random.permutation(batch_size)
+            indices = rearrange(
+                indices, "(mb_num mb_size) -> mb_num mb_size", mb_size=minibatch_size)
+        else:
+            assert batch_size % recurrence == 0
+            indices = np.arange(0, batch_size, recurrence)
+            indices = np.random.permutation(indices)
+            num_indices = batch_size // (recurrence*num_minibatches)
+            indices = [indices[i:i + num_indices]
+                       for i in range(0, len(indices), num_indices)]
+
         return list(indices)
 
     def compute_advantages(
@@ -186,7 +201,7 @@ class Memory():
                 gae_lambda * (1.0 - dones[t_]) * advantages[t_]
         return advantages
 
-    def get_minibatches(self) -> List[Minibatch]:
+    def get_minibatches(self, recurrence: Optional[int] = None) -> List[Minibatch]:
         '''Return a list of length (batch_size // minibatch_size)
           where each element is an array of indexes into the batch.
 
@@ -210,8 +225,13 @@ class Memory():
             self.args.gae_lambda
         )
         returns = advantages + values
-        indexes = self.get_minibatch_indexes(
-            self.args.batch_size, self.args.minibatch_size)
+
+        if not recurrence:
+            indexes = self.get_minibatch_indexes(
+                self.args.batch_size, self.args.minibatch_size)
+        else:
+            indexes = self.get_minibatch_indexes(
+                self.args.batch_size, self.args.minibatch_size, recurrence)
 
         minibatches = []
         for ind in indexes:
