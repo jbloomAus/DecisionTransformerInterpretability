@@ -124,7 +124,7 @@ def test_empty_env(run_config, environment_config, online_config):
         run_config=run_config,
         online_config=online_config,
         environment_config=environment_config,
-        transformer_model_config=None,
+        model_config=None,
         envs=envs
     )
 
@@ -142,7 +142,7 @@ def test_empty_env_flat_one_hot(run_config, environment_config, online_config):
         run_config=run_config,
         online_config=online_config,
         environment_config=environment_config,
-        transformer_model_config=None,
+        model_config=None,
         envs=envs
     )
 

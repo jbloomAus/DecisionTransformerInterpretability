@@ -191,7 +191,7 @@ def test_ppo_runner_traj_model_memory():
     )
 
 
-def test_ppo_runner_lstm_mode():
+def test_ppo_runner_lstm_model():
     run_config = RunConfig(
         exp_name="Test-PPO-LSTM",
         seed=1,

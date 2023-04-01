@@ -571,8 +571,9 @@ class LSTMPPOAgent(PPOAgent):
                 )
 
             # Store (s_t, d_t, a_t, logpi(a_t|s_t), v(s_t), r_t+1)
+            mask = 1 - done
             memory.add(info, obs, done, action, logprob,
-                       value, reward, self.recurrence_memory)  # get's the memory from the previous timestep
+                       value, reward, self.recurrence_memory, mask)  # get's the memory from the previous timestep
             obs = t.from_numpy(next_obs).to(device)
             done = t.from_numpy(next_done).to(device, dtype=t.float)
             self.mask = 1 - t.tensor(done, device=self.device, dtype=t.float)
@@ -587,25 +588,64 @@ class LSTMPPOAgent(PPOAgent):
                 obs, self.recurrence_memory)['value']
 
     def learn(self, memory: Memory, args: OnlineTrainConfig, optimizer: optim.Optimizer, scheduler: PPOScheduler, track: bool) -> None:
-        recurrence = self.model.lstm_config.recurrence
+        recurrence = self.lstm_config.recurrence
 
         for _ in range(args.update_epochs):
-            minibatches = memory.get_minibatches()
-            # Compute loss on each minibatch, and step the optimizer
-            for mb in minibatches:
-                # for step in recurrence:
-                # do the stuff (rewrite this)
-                obs = self.preprocess_obs(DictList(mb.obs))
-                # shouldn't this be from the previous timestep?
-                results = self.model(obs, mb.recurrence_memory)
-                probs = results['dist']
-                values = results['value']
-                clipped_surrogate_objective = calc_clipped_surrogate_objective(
-                    probs, mb.actions, mb.advantages, mb.logprobs, args.clip_coef)
-                value_loss = calc_value_function_loss(
-                    values, mb.returns, args.vf_coef)
-                entropy_bonus = calc_entropy_bonus(probs, args.ent_coef)
-                total_objective_function = clipped_surrogate_objective - value_loss + entropy_bonus
+            # minibatches = memory.get_minibatches(recurrence=recurrence)
+
+            starting_indexes = memory.get_minibatch_indexes(
+                memory.args.batch_size,
+                memory.args.minibatch_size,
+                recurrence)
+
+            for inds in starting_indexes:
+
+                batch_entropy = 0
+                batch_value = 0
+                batch_policy_loss = 0
+                batch_value_loss = 0
+                batch_loss = 0
+
+                # now here is where she would get the memory to start off with
+                # this would be from the inds step.
+                initial_mb = memory.get_minibatches(
+                    recurrence, indexes=[inds])[0]
+                recurrence_memory = initial_mb.recurrence_memory
+
+                for i in range(recurrence):
+                    mb = memory.get_minibatches(indexes=[inds + i])[0]
+
+                    # run the model
+                    obs = self.preprocess_obs(DictList(mb.obs))
+                    results = self.model(
+                        obs, recurrence_memory*mb.mask.unsqueeze(1))
+                    probs = results['dist']
+                    values = results['value']
+                    recurrence_memory = results['memory']
+
+                    # calculate losses
+                    clipped_surrogate_objective = calc_clipped_surrogate_objective(
+                        probs, mb.actions, mb.advantages, mb.logprobs, args.clip_coef)
+                    value_loss = calc_value_function_loss(
+                        values, mb.returns, args.vf_coef)
+                    entropy_bonus = calc_entropy_bonus(probs, args.ent_coef)
+                    total_objective_function = clipped_surrogate_objective - value_loss + entropy_bonus
+
+                    # update batch values
+                    batch_entropy += entropy_bonus.item()
+                    batch_value += values.mean().item()
+                    batch_policy_loss += clipped_surrogate_objective.item()
+                    batch_value_loss += value_loss.item()
+                    batch_loss += total_objective_function
+
+                # Update batch values
+                batch_entropy /= self.lstm_config.recurrence
+                batch_value /= self.lstm_config.recurrence
+                batch_policy_loss /= self.lstm_config.recurrence
+                batch_value_loss /= self.lstm_config.recurrence
+                batch_loss /= self.lstm_config.recurrence
+
+                # update actor-critic
                 optimizer.zero_grad()
                 total_objective_function.backward()
                 nn.utils.clip_grad_norm_(
@@ -615,7 +655,6 @@ class LSTMPPOAgent(PPOAgent):
         # Step the scheduler
         scheduler.step()
 
-        # Get debug variables, for just the most recent minibatch (otherwise there's too much logging!)
         if track:
             with t.inference_mode():
                 newlogprob = probs.log_prob(mb.actions)
@@ -626,10 +665,10 @@ class LSTMPPOAgent(PPOAgent):
                     ((ratio - 1.0).abs() > args.clip_coef).float().mean().item()]
             memory.add_vars_to_log(
                 learning_rate=optimizer.param_groups[0]["lr"],
-                avg_value=values.mean().item(),
+                avg_value=batch_value,
                 value_loss=value_loss.item(),
-                clipped_surrogate_objective=clipped_surrogate_objective.item(),
-                entropy=entropy_bonus.item(),
+                clipped_surrogate_objective=batch_policy_loss,
+                entropy=batch_entropy,
                 approx_kl=approx_kl,
                 clipfrac=np.mean(clipfracs)
             )

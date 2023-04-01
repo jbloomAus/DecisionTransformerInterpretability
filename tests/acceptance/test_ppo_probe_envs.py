@@ -138,7 +138,7 @@ def test_probe_envs(env_name, run_config, environment_config, online_config):
         run_config=run_config,
         online_config=online_config,
         environment_config=environment_config,
-        transformer_model_config=None,
+        model_config=None,
         envs=envs
     )
 
@@ -226,7 +226,7 @@ def test_probe_envs_traj_model_1_context(
         run_config=run_config,
         online_config=online_config,
         environment_config=environment_config,
-        transformer_model_config=transformer_model_config,
+        model_config=transformer_model_config,
         envs=envs
     )
 
@@ -329,7 +329,7 @@ def test_probe_envs_traj_model_2_context(
         run_config=run_config,
         online_config=online_config,
         environment_config=environment_config,
-        transformer_model_config=transformer_model_config,
+        model_config=transformer_model_config,
         envs=envs
     )
 

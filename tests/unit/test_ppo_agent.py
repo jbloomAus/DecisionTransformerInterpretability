@@ -118,6 +118,7 @@ def lstm_config(environment_config):
         use_instr: bool = False
         lang_model: str = 'gru'
         use_memory: bool = False
+        recurrence: int = 4
         arch: str = "bow_endpool_res"
         aux_info: bool = False
         endpool: bool = True
@@ -406,7 +407,7 @@ def test_lstm_agent_rollout(lstm_agent, online_config):
     num_steps = 10
     agent = lstm_agent
     memory = Memory(envs=lstm_agent.envs,
-                    args=online_config, device="cpu")
+                    args=online_config, device=torch.device("cpu"))
 
     agent.rollout(memory, num_steps, lstm_agent.envs)
 
@@ -415,12 +416,13 @@ def test_lstm_agent_rollout(lstm_agent, online_config):
     assert len(memory.next_done) == lstm_agent.envs.num_envs
     assert len(memory.next_value) == lstm_agent.envs.num_envs
     assert len(memory.experiences) == num_steps
-    assert len(memory.experiences[0]) == 7
+    assert len(memory.experiences[0]) == 8
 
 
 def test_lstm_agent_rollout_learn(lstm_agent, online_config):
 
-    num_steps = 10
+    online_config.batch_size = 128
+    num_steps = 128
     agent = lstm_agent
     num_updates = online_config.total_timesteps // online_config.batch_size
     optimizer, scheduler = agent.make_optimizer(
@@ -430,7 +432,7 @@ def test_lstm_agent_rollout_learn(lstm_agent, online_config):
     )
 
     memory = Memory(envs=lstm_agent.envs,
-                    args=online_config, device="cpu")
+                    args=online_config, device=torch.device("cpu"))
 
     agent.rollout(memory, num_steps, lstm_agent.envs)
     agent.learn(memory, online_config, optimizer, scheduler, track=False)
@@ -440,4 +442,4 @@ def test_lstm_agent_rollout_learn(lstm_agent, online_config):
     assert len(memory.next_done) == lstm_agent.envs.num_envs
     assert len(memory.next_value) == lstm_agent.envs.num_envs
     assert len(memory.experiences) == num_steps
-    assert len(memory.experiences[0]) == 7
+    assert len(memory.experiences[0]) == 8

@@ -28,6 +28,7 @@ class Minibatch:
     values: TT["batch"]  # noqa: F821
     returns: TT["batch"]  # noqa: F821
     recurrence_memory: Optional[TT["batch", "memory_size"]] = None  # noqa: F821
+    mask: Optional[TT["batch"]] = None  # noqa: F821
 
 
 @dataclass
@@ -142,21 +143,21 @@ class Memory():
         Each index should appear exactly once.
         '''
         assert batch_size % minibatch_size == 0
-        num_minibatches = batch_size // minibatch_size
 
         if recurrence is None:
             indices = np.random.permutation(batch_size)
             indices = rearrange(
                 indices, "(mb_num mb_size) -> mb_num mb_size", mb_size=minibatch_size)
+            indices = list(indices)
         else:
             assert batch_size % recurrence == 0
             indices = np.arange(0, batch_size, recurrence)
+            # has shape batch_size // recurrence, divide this into num minibatches
             indices = np.random.permutation(indices)
-            num_indices = batch_size // (recurrence*num_minibatches)
-            indices = [indices[i:i + num_indices]
-                       for i in range(0, len(indices), num_indices)]
+            indices = rearrange(
+                indices, "(mb_num mb_size) -> mb_num mb_size", mb_size=minibatch_size//recurrence)
 
-        return list(indices)
+        return indices
 
     def compute_advantages(
         self,
@@ -201,13 +202,13 @@ class Memory():
                 gae_lambda * (1.0 - dones[t_]) * advantages[t_]
         return advantages
 
-    def get_minibatches(self, recurrence: Optional[int] = None) -> List[Minibatch]:
+    def get_minibatches(self, recurrence: Optional[int] = None, indexes: Optional[List[np.array]] = None) -> List[Minibatch]:
         '''Return a list of length (batch_size // minibatch_size)
           where each element is an array of indexes into the batch.
 
         Args:
-        - batch_size (int): total size of the batch.
-        - minibatch_size (int): size of each minibatch.
+        - recurrence (int): the number of steps to take between each minibatch.
+        - indexes (List[np.array]): the indexes to use for the minibatches.
 
         Returns:
         - List[MiniBatch]: a list of minibatches.
@@ -226,10 +227,7 @@ class Memory():
         )
         returns = advantages + values
 
-        if not recurrence:
-            indexes = self.get_minibatch_indexes(
-                self.args.batch_size, self.args.minibatch_size)
-        else:
+        if indexes is None:
             indexes = self.get_minibatch_indexes(
                 self.args.batch_size, self.args.minibatch_size, recurrence)
 
@@ -238,7 +236,8 @@ class Memory():
             batch = []
             for arr in [obs, actions, logprobs, advantages, values, returns, *extras]:
                 if isinstance(arr, t.Tensor):
-                    flat_arr = arr.flatten(0, 1)  # usually arr is a tensor
+                    flat_arr = arr.transpose(0, 1).flatten(
+                        0, 1)  # usually arr is a tensor
                     batch.append(flat_arr[ind])
                 else:
                     num_steps = len(arr)

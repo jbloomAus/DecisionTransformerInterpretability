@@ -41,7 +41,7 @@ def test_minibatch_class():
     torch.testing.assert_allclose(minibatch.returns, returns)
 
 
-def test_memory_init(memory):
+def test_init(memory):
 
     torch.testing.assert_allclose(memory.next_done, torch.tensor([0, 0, 0, 0]))
     assert memory.next_value is None
@@ -54,7 +54,7 @@ def test_memory_init(memory):
     assert memory.vars_to_log == {}
 
 
-def test_memory_add_no_ending():
+def test_add_no_ending():
 
     num_steps = 10
     args = PPOArgs(num_steps=num_steps)
@@ -80,7 +80,7 @@ def test_memory_add_no_ending():
     assert memory.vars_to_log == {}
 
 
-def test_memory_add_end_of_episode(memory):
+def test_add_end_of_episode(memory):
 
     info = {"final_info": [{"episode": {"l": 1, "r": 1.0}}]}
     obs = torch.tensor([1.0, 2.0, 3.0])
@@ -101,7 +101,7 @@ def test_memory_add_end_of_episode(memory):
         0: {'episode_length': 1, 'episode_return': 1.0}}
 
 
-def test_memory_compute_advantages(memory):
+def test_compute_advantages(memory):
 
     info = {"final_info": [{"episode": {"l": 1, "r": 1.0}}]}
     obs = torch.tensor([1.0, 2.0, 3.0])
@@ -129,7 +129,7 @@ def test_memory_compute_advantages(memory):
     )
 
 
-def test_memory_get_minibatch_indexes(memory):
+def test_get_minibatch_indexes(memory):
 
     info_final = {"final_info": [{"episode": {"l": 1, "r": 1.0}}]}
     done_final = torch.tensor([0.0, 0.0, 0.0])
@@ -142,7 +142,7 @@ def test_memory_get_minibatch_indexes(memory):
     reward = torch.tensor([1.0, 2.0, 3.0])
 
     for i in range(8):
-        for i in range(3):
+        for j in range(3):
             memory.add(info, obs, done, action, logprob, value, reward)
         memory.add(info_final, obs, done_final, action, logprob, value, reward)
 
@@ -155,7 +155,7 @@ def test_memory_get_minibatch_indexes(memory):
     assert len(flat_indexes) == len(set(flat_indexes))
 
 
-def test_get_minibatches(memory):
+def test_get_minibatches_standard(memory):
 
     info_final = {"final_info": [{"episode": {"l": 1, "r": 1.0}}]}
     done_final = torch.tensor([0.0, 0.0, 0.0])
@@ -168,7 +168,7 @@ def test_get_minibatches(memory):
     reward = torch.tensor([1.0, 2.0, 3.0])
 
     for i in range(8):
-        for i in range(3):
+        for j in range(3):
             memory.add(info, obs, done, action, logprob, value, reward)
         memory.add(info_final, obs, done_final, action, logprob, value, reward)
 
@@ -180,9 +180,63 @@ def test_get_minibatches(memory):
     assert len(mbs) == 4
     assert isinstance(mbs[0], Minibatch)
     assert len(mbs[0].obs) == 8
+    assert hasattr(mbs[0], "obs")
+    assert hasattr(mbs[0], "actions")
+    assert hasattr(mbs[0], "logprobs")
+    assert hasattr(mbs[0], "values")
+    assert hasattr(mbs[0], "returns")
+    assert hasattr(mbs[0], "advantages")
+    assert hasattr(mbs[0], "recurrence_memory")
+    assert hasattr(mbs[0], "mask")
+    assert mbs[0].mask is None
+    assert mbs[0].recurrence_memory is None
 
 
-def test_memory_get_minibatch_indexes_recurrence(memory):
+def test_get_minibatches_recurrance_memory_and_mask(memory):
+
+    info_final = {"final_info": [{"episode": {"l": 1, "r": 1.0}}]}
+    done_final = torch.tensor([0.0, 0.0, 0.0])
+    info = {}
+    done = torch.tensor([0.0, 0.0, 0.0])
+    obs = torch.tensor([1.0, 2.0, 3.0])
+    action = torch.tensor([1.0, 2.0, 3.0])
+    logprob = torch.tensor([1.0, 2.0, 3.0])
+    value = torch.tensor([1.0, 2.0, 3.0])
+    reward = torch.tensor([1.0, 2.0, 3.0])
+    mask = 1 - torch.tensor([0.0, 0.0, 0.0])
+    recurrence_memory = torch.tensor([1.0, 2.0, 3.0])
+
+    for i in range(8):
+        for j in range(3):
+            memory.add(info, obs, done, action, logprob,
+                       value, reward, recurrence_memory, mask)
+        memory.add(info_final, obs, done_final, action, logprob,
+                   value, reward, recurrence_memory, mask)
+
+    memory.next_value = torch.tensor([1.0, 2.0, 3.0])
+    memory.next_done = torch.tensor([0, 1, 0])
+    memory.args.batch_size = 8*4
+    memory.args.minibatch_size = 8
+    mbs = memory.get_minibatches()
+    assert len(mbs) == 4
+    assert isinstance(mbs[0], Minibatch)
+    assert len(mbs[0].obs) == 8
+    assert len(mbs) == 4
+    assert isinstance(mbs[0], Minibatch)
+    assert len(mbs[0].obs) == 8
+    assert hasattr(mbs[0], "obs")
+    assert hasattr(mbs[0], "actions")
+    assert hasattr(mbs[0], "logprobs")
+    assert hasattr(mbs[0], "values")
+    assert hasattr(mbs[0], "returns")
+    assert hasattr(mbs[0], "advantages")
+    assert hasattr(mbs[0], "recurrence_memory")
+    assert hasattr(mbs[0], "mask")
+    assert mbs[0].mask is not None
+    assert mbs[0].recurrence_memory is not None
+
+
+def test_get_minibatch_indexes_recurrence(memory):
 
     info_final = {"final_info": [{"episode": {"l": 1, "r": 1.0}}]}
     done_final = torch.tensor([0.0, 0.0, 0.0])
@@ -195,14 +249,14 @@ def test_memory_get_minibatch_indexes_recurrence(memory):
     reward = torch.tensor([1.0, 2.0, 3.0])
 
     for i in range(8):
-        for i in range(3):
+        for j in range(3):
             memory.add(info, obs, done, action, logprob, value, reward)
         memory.add(info_final, obs, done_final, action, logprob, value, reward)
 
     minibatch_indexes = memory.get_minibatch_indexes(
         batch_size=8*4, minibatch_size=8, recurrence=2)
-    assert len(minibatch_indexes) == 4  # (8*4)/8
-    assert len(minibatch_indexes[0]) == 4  # minibatch_size // recurrence
+    assert len(minibatch_indexes) == 2  # num_minibatches = (8*4)/(8*2)
+    assert len(minibatch_indexes[0]) == 8  # minibatch_size
     # now assert no number appears twice
     flat_indexes = [item for sublist in minibatch_indexes for item in sublist]
     assert len(flat_indexes) == len(set(flat_indexes))
@@ -223,18 +277,130 @@ def test_get_minibatches_recurrence(memory):
     logprob = torch.tensor([1.0, 2.0, 3.0])
     value = torch.tensor([1.0, 2.0, 3.0])
     reward = torch.tensor([1.0, 2.0, 3.0])
+    recurrence_memory = torch.tensor([1.0, 2.0, 3.0])
+    mask = 1 - done
+    mask_final = 1 - done_final
 
+    n = 0
     for i in range(8):
-        for i in range(3):
-            memory.add(info, obs, done, action, logprob, value, reward)
-        memory.add(info_final, obs, done_final, action, logprob, value, reward)
+        for j in range(3):
+            memory.add(info, obs+n, done, action+n, logprob,
+                       value, reward, recurrence_memory, mask)
+            n += 1
+        memory.add(info_final, obs+n, done_final, action+n, logprob,
+                   value, reward, recurrence_memory, mask_final)
+        n += 1
 
     memory.next_value = torch.tensor([1.0, 2.0, 3.0])
     memory.next_done = torch.tensor([0, 1, 0])
     memory.args.batch_size = 8*4
     memory.args.minibatch_size = 8
     mbs = memory.get_minibatches(recurrence=2)
-    assert len(mbs) == 4
+    # minibatch_size // recurrence (there'll be an inner loop that runs recurrence times)
+    assert len(mbs) == 2  # hence why this isn't num_minibatches
     assert isinstance(mbs[0], Minibatch)
-    # returned values are seperated by recurrence
-    assert len(mbs[0].obs) == 8 // 2
+    assert len(mbs[0].obs) == 8  # minibatch_size
+
+    for i in range(len(mbs)):
+        # tensor assert actions match obs
+        assert torch.all(mbs[i].actions == mbs[i].obs)
+
+
+def test_get_minibatches_given_indices_contiguity_of_obs(memory):
+
+    info_final = {"final_info": [{"episode": {"l": 1, "r": 1.0}}]}
+    done_final = torch.tensor([1.0, 1.0, 1.0])
+    info = {}
+    done = torch.tensor([0.0, 0.0, 0.0])
+    obs = torch.tensor([0.0, 100.0, -100.0])
+    action = torch.tensor([1.0, 2.0, 3.0])
+    logprob = torch.tensor([1.0, 2.0, 3.0])
+    value = torch.tensor([1.0, 2.0, 3.0])
+    reward = torch.tensor([1.0, 2.0, 3.0])
+    recurrence_memory = torch.tensor([1.0, 2.0, 3.0])
+    mask = 1 - done
+    mask_final = 1 - done_final
+
+    n = 0
+    for i in range(32):
+        for j in range(3):
+            print(obs+n)
+            memory.add(info, obs+n, done, action+n, logprob,
+                       value, reward, recurrence_memory, mask)
+            n = 1 + n
+        print(obs+n)
+        memory.add(info_final, obs+n, done_final, action+n, logprob,
+                   value, reward, recurrence_memory, mask_final)
+        n = 1 + n
+
+    memory.next_value = torch.tensor([1.0, 2.0, 3.0])
+    memory.next_done = torch.tensor([0, 1, 0])
+    memory.args.batch_size = 8*4
+    memory.args.minibatch_size = 8
+
+    minibatch_indexes = memory.get_minibatch_indexes(
+        batch_size=8*4, minibatch_size=8, recurrence=2)
+    mbs = memory.get_minibatches(indexes=minibatch_indexes)
+    # minibatch_size // recurrence (there'll be an inner loop that runs recurrence times)
+    assert len(mbs) == 2  # hence why this isn't num_minibatches
+    assert isinstance(mbs[0], Minibatch)
+    assert len(mbs[0].obs) == 8  # minibatch_size
+
+    mbs_neg_1 = memory.get_minibatches(indexes=minibatch_indexes-1)
+    mbs2 = memory.get_minibatches(indexes=minibatch_indexes+1)
+
+    # assert (1 + mbs[0].obs) == mbs2[0].obs
+    for i in range(len(mbs)):
+        torch.testing.assert_allclose((1 + mbs[i].obs)*mbs2[i].mask, mbs2[i].obs*mbs2[i].mask,
+                                      msg="i:{}\n1+mbs[i].obs: {}\nmbs2[i].obs: {},\nmbs[i].mask: {},\nmbs2[i].mask: {}\n{}".format(
+            i,
+            1+mbs[i].obs,
+            mbs2[i].obs,
+            mbs[i].mask,
+            mbs2[i].mask,
+            minibatch_indexes[i]))
+
+
+def test_get_minibatches_given_indices_single_env_contiguity_of_obs(memory):
+
+    info_final = {"final_info": [{"episode": {"l": 1, "r": 1.0}}]}
+    done_final = torch.tensor([0.0])
+    info = {}
+    done = torch.tensor([0.0])
+    obs = torch.tensor([1.0])
+    action = torch.tensor([1.0])
+    logprob = torch.tensor([1.0])
+    value = torch.tensor([1.0])
+    reward = torch.tensor([1.0])
+    recurrence_memory = torch.tensor([1.0])
+    mask = 1 - done
+    mask_final = 1 - done_final
+
+    n = 0
+    for i in range(8*3):
+        for j in range(3):
+            memory.add(info, obs+n, done, action, logprob,
+                       value, reward, recurrence_memory, mask)
+            n += 1
+        memory.add(info_final, obs+n, done_final, action+n, logprob,
+                   value, reward, recurrence_memory, mask_final)
+        n = 1 + n
+
+    memory.next_value = torch.tensor([1.0])
+    memory.next_done = torch.tensor([0])
+    memory.args.batch_size = 8*4
+    memory.args.minibatch_size = 8
+
+    minibatch_indexes = memory.get_minibatch_indexes(
+        batch_size=8*4, minibatch_size=8, recurrence=2)
+    mbs = memory.get_minibatches(indexes=minibatch_indexes)
+    # minibatch_size // recurrence (there'll be an inner loop that runs recurrence times)
+    assert len(mbs) == 2  # hence why this isn't num_minibatches
+    assert isinstance(mbs[0], Minibatch)
+    assert len(mbs[0].obs) == 8  # minibatch_size
+
+    mbs2 = memory.get_minibatches(indexes=minibatch_indexes+1)
+
+    # assert (1 + mbs[0].obs) == mbs2[0].obs
+    for i in range(len(mbs)):
+        torch.testing.assert_allclose(1 + mbs[i].obs, mbs2[i].obs)
