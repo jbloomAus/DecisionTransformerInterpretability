@@ -4,6 +4,7 @@ import gymnasium as gym
 import pytest
 from gymnasium.spaces import Discrete
 
+from src.config import EnvironmentConfig
 from src.environments.environments import make_env
 from src.ppo.agent import FCAgent, TrajPPOAgent
 from src.ppo.memory import Memory, Minibatch, TrajectoryMinibatch
@@ -115,8 +116,7 @@ def test_empty_env(run_config, environment_config, online_config):
     env_name = "MiniGrid-Empty-5x5-v0"
 
     envs = gym.vector.SyncVectorEnv(
-        [make_env(env_name, i, i, False, "test",
-                  render_mode=None, max_steps=None, fully_observed=False, flat_one_hot=False) for i in range(4)]
+        [make_env(environment_config, i, i, "test") for i in range(4)]
     )
 
     environment_config.env_id = env_name
@@ -132,10 +132,8 @@ def test_empty_env(run_config, environment_config, online_config):
 def test_empty_env_flat_one_hot(run_config, environment_config, online_config):
 
     env_name = "MiniGrid-Empty-5x5-v0"
-
     envs = gym.vector.SyncVectorEnv(
-        [make_env(env_name, i, i, False, "test",
-                  render_mode=None, max_steps=None, fully_observed=False, flat_one_hot=True) for i in range(4)]
+        [make_env(environment_config, i, i, "test") for i in range(4)]
     )
 
     environment_config.env_id = env_name
@@ -151,9 +149,9 @@ def test_empty_env_flat_one_hot(run_config, environment_config, online_config):
 
 def test_ppo_agent_gym():
 
+    env_config = EnvironmentConfig(env_id='CartPole-v1', capture_video=False, max_steps=None)
     envs = gym.vector.SyncVectorEnv(
-        [make_env('CartPole-v1', 1, 1, False, "test", max_steps=None)
-         for i in range(2)]
+        [make_env(env_config, 1, 1, "test") for i in range(2)]
     )
     assert envs.single_action_space.shape is not None
     assert isinstance(envs.single_action_space,
@@ -168,9 +166,9 @@ def test_ppo_agent_gym():
 
 def test_ppo_agent_minigrid():
 
+    env_config = EnvironmentConfig(env_id='MiniGrid-Empty-8x8-v0', capture_video=False, max_steps=None)
     envs = gym.vector.SyncVectorEnv(
-        [make_env('MiniGrid-Empty-8x8-v0', 1, 1, False, "test")
-         for i in range(2)]
+        [make_env(env_config, 1, 1, "test") for i in range(2)]
     )
     assert envs.single_action_space.shape is not None
     assert isinstance(envs.single_action_space,
@@ -186,9 +184,9 @@ def test_ppo_agent_minigrid():
 
 def test_ppo_agent_rollout_minibatches_minigrid(online_config):
 
+    env_config = EnvironmentConfig(env_id='MiniGrid-Empty-8x8-v0', capture_video=False, max_steps=None)
     envs = gym.vector.SyncVectorEnv(
-        [make_env('MiniGrid-Empty-8x8-v0', 1, 1, False, "test")
-         for i in range(2)]
+        [make_env(env_config, 1, 1, "test") for i in range(2)]
     )
     assert envs.single_action_space.shape is not None
     assert isinstance(envs.single_action_space,
@@ -226,9 +224,7 @@ def test_ppo_traj_agent_rollout_minibatches(
 
     transformer_model_config.n_ctx = n_ctx
     envs = gym.vector.SyncVectorEnv(
-        [make_env('MiniGrid-Dynamic-Obstacles-8x8-v0', 1, 1, False, "test",
-                  max_steps=environment_config.max_steps)
-         for i in range(2)]
+        [make_env(environment_config, 1, 1, "test") for i in range(2)]
     )
     memory = Memory(envs, online_config)
     environment_config.action_space = envs.single_action_space
@@ -260,9 +256,7 @@ def test_ppo_traj_agent_rollout_and_learn_minibatches(
 
     transformer_model_config.n_ctx = n_ctx
     envs = gym.vector.SyncVectorEnv(
-        [make_env('MiniGrid-Dynamic-Obstacles-8x8-v0', 1, 1, False, "test",
-                  max_steps=environment_config.max_steps)
-         for i in range(2)]
+        [make_env(environment_config, 1, 1, "test") for i in range(2)]
     )
 
     memory = Memory(envs, online_config)

@@ -1,6 +1,7 @@
 from src.environments.environments import make_env
 from src.decision_transformer.utils import load_decision_transformer, model_stored_in_legacy_format, load_model_data
 from src.decision_transformer.calibration import calibration_statistics, plot_calibration_statistics
+from src.config import EnvironmentConfig
 import argparse
 import warnings
 import numpy as np
@@ -52,11 +53,10 @@ if __name__ == "__main__":
                 math.sqrt(state_dict["state_encoder.weight"].shape[-1] // 3))
 
         max_time_steps = state_dict["time_embedding.weight"].shape[0]
-        env_func = make_env(
-            args.env_id, seed=1, idx=0, capture_video=False,
-            run_name="dev", fully_observed=False, flat_one_hot=one_hot_encoded,
-            max_steps=max_time_steps, agent_view_size=args.view_size
-        )
+
+        legacy_env_config = EnvironmentConfig(env_id=args.env_id, fully_observed=False, one_hot_obs=one_hot_encoded, max_steps=max_time_steps, view_size=args.view_size)
+
+        env_func = make_env(config=legacy_env_config, seed=1, idx=0, run_name="dev")
 
         dt = load_decision_transformer(args.model_path, env_func())
 
@@ -69,12 +69,13 @@ if __name__ == "__main__":
     else:
         state_dict, trajectory_data_set, transformer_config, _ = load_model_data(args.model_path)
 
-        env_func = make_env(
-            args.env_id, seed=1, idx=0, capture_video=False,
-            run_name="dev", fully_observed=False, flat_one_hot=(trajectory_data_set.observation_type == "one_hot"),
-            max_steps=trajectory_data_set.metadata['args']['max_steps'],
-            agent_view_size=trajectory_data_set.metadata['args']['view_size']
-        )
+        env_config = EnvironmentConfig(env_id=args.env_id, 
+                                       fully_observed=False, 
+                                       one_hot_obs=(trajectory_data_set.observation_type == "one_hot"), 
+                                       max_steps=trajectory_data_set.metadata['args']['max_steps'], 
+                                       view_size=trajectory_data_set.metadata['args']['view_size'])
+
+        env_func = make_env(config=env_config, seed=1, idx=0, run_name="dev")
 
         dt = load_decision_transformer(args.model_path, env_func())
 

@@ -8,6 +8,7 @@ from tqdm import tqdm
 import wandb
 from argparse import Namespace
 from src.models.trajectory_model import TrajectoryTransformer, DecisionTransformer, CloneTransformer
+from src.config import EnvironmentConfig
 from .offline_dataset import TrajectoryDataset
 from torch.utils.data.sampler import WeightedRandomSampler
 from torch.utils.data import random_split, DataLoader
@@ -122,20 +123,18 @@ def train(
                 track=track,
                 batch_number=total_batches)
 
+        eval_env_config = EnvironmentConfig(env_id=env.spec.id, 
+        capture_video=True, 
+        max_steps=min(model.environment_config.max_steps, eval_max_time_steps), 
+        fully_observed=False, 
+        one_hot_obs=(trajectory_data_set.observation_type == "one_hot"), 
+        view_size=env.observation_space['image'].shape[0] if "image" in list(env.observation_space.keys()) else 7)
+
         eval_env_func = make_env(
-            env_id=env.spec.id,
+            config=eval_env_config,
             seed=batch,
             idx=0,
-            capture_video=True,
-            max_steps=min(model.environment_config.max_steps,
-                          eval_max_time_steps),
             run_name=f"dt_eval_videos_{batch}",
-            fully_observed=False,
-            flat_one_hot=(
-                trajectory_data_set.observation_type == "one_hot"),
-            # defensive coding, fix later.
-            agent_view_size=env.observation_space['image'].shape[0] if "image" in list(
-                env.observation_space.keys()) else 7,
         )
 
         if epoch % eval_frequency == 0:

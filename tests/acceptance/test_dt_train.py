@@ -24,8 +24,8 @@ def test_evaluate_dt_agent():
         pct_traj=1, device=device)
 
     env_id = trajectory_data_set.metadata['args']['env_id']
-    env = make_env(env_id, seed=1, idx=0, capture_video=False,
-                   run_name="dev", fully_observed=False, max_steps=30)
+    env_config = EnvironmentConfig(env_id=env_id, capture_video=False, fully_observed=False, max_steps=30)
+    env = make_env(env_config, seed=1, idx=0, run_name="dev")
     env = env()
 
     # dt = DecisionTransformer(
@@ -68,15 +68,16 @@ def test_evaluate_dt_agent():
         max_steps = min(dt.max_timestep, 10)
 
     batch = 0
+    eval_env_config = EnvironmentConfig(env_id=env.spec.id, 
+                                        capture_video=True, 
+                                        max_steps=max_steps, 
+                                        fully_observed=False, 
+                                        one_hot_obs=(trajectory_data_set.observation_type == "one_hot"))
     eval_env_func = make_env(
-        env_id=env.spec.id,
+        eval_env_config,
         seed=batch,
         idx=0,
-        capture_video=True,
-        max_steps=max_steps,
-        run_name=f"dt_eval_videos_{batch}",
-        fully_observed=False,
-        flat_one_hot=(trajectory_data_set.observation_type == "one_hot"),
+        run_name=f"dt_eval_videos_{batch}"
     )
 
     statistics = evaluate_dt_agent(

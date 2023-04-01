@@ -7,11 +7,13 @@
 This project is designed to facilitate mechanistic interpretability of decision transformers as well as RL agents using transformer architectures.
 
 This is achieved via:
+
 - Training scripts for online RL agents using the PPO algorithm. This training script can be used to generate trajectories for training a decision transformer.
 - A decision transformer implementation and training script. This implementation is based on the [transformer architecture](https://arxiv.org/abs/1706.03762) and the [decision transformer architecture](https://arxiv.org/abs/2106.01345).
 - A streamlit app. This app enables researchers to play minigrid games whilst observing the decision transformer's predictions/activations.
 
 Future work will include:
+
 - creating an interpretability portfolio, expanding various exploratory techniques already present in the streamlit app.
 - solving tasks which require memory or language instruction. Many MiniGrid tasks require agents have memory and currently our PPO agent only responds to the last timestep.
 - validating hypotheses about model circuits using [casual scrubbing](https://www.alignmentforum.org/posts/JvZhhzycHu2Yd57RN/causal-scrubbing-a-method-for-rigorously-testing).
@@ -23,6 +25,7 @@ You can find an initial technical report for this project [here](https://www.les
 ## Package Overview
 
 The package contains several important components:
+
 - The environments package which provides utilities for generating environments (mainly focussed on MiniGrid).
 - The decision_transformer package which provides utilities for training and evaluating decision transformers (via calibration curves).
 - The ppo package which provides utilities for training and evaluating PPO agents.
@@ -30,6 +33,7 @@ The package contains several important components:
 - The models package which provides the a common trajectory-transformer class so as to keep architectures homogeneous across the project.
 
 Other notable files/folders:
+
 - The scripts folder contains bash scripts which show how to use various interfaces in the project.
 - The test folder which contains extensive tests for the projcect.
 
@@ -37,12 +41,11 @@ Other notable files/folders:
 
 We've successfully trained a decision transformer on several games including [DoorKey](https://minigrid.farama.org/environments/minigrid/DoorKeyEnv/) and [Dynamic Obstacles](https://minigrid.farama.org/environments/minigrid/DynamicObstaclesEnv/).
 
-Calibration Plot            |  MiniGrid-Dynamic-Obstacles-8x8-v0, after 6000 batch, episode length 14, RTG 1.0, reward 0.955
-:-------------------------:|:-------------------------:
-![](assets/example_calibration_dynamic%20obstacles.png)  |  ![](assets/dynamic_obstacles_example.gif)
+|                    Calibration Plot                     | MiniGrid-Dynamic-Obstacles-8x8-v0, after 6000 batch, episode length 14, RTG 1.0, reward 0.955 |
+| :-----------------------------------------------------: | :-------------------------------------------------------------------------------------------: |
+| ![](assets/example_calibration_dynamic%20obstacles.png) |                           ![](assets/dynamic_obstacles_example.gif)                           |
 
 I highly recommend playing with the streamlit app if you are interested in this project. It relies heavily on an understanding of the [Mathematical Framework for Transformer Circuits](https://transformer-circuits.pub/2021/framework/index.html).
-
 
 ## Running the scripts
 
@@ -127,8 +130,8 @@ streamlit run app.py
 I haven't been too careful about this yet. Using python 3.9.15 with the requirements.txt file. We're using the V2 branch of transformer lens and Minigrid 2.1.0.
 
 ```
-conda env create --name decison_transformer_interpretability python=3.9.15
-conda activate decison_transformer_interpretability
+conda env create --name decision_transformer_interpretability python=3.9.15
+conda activate decision_transformer_interpretability
 pip install -r requirements.txt
 ```
 
@@ -146,11 +149,14 @@ Then you can ssh into the docker and a good ide will bring credentials etc.
 ### Tests:
 
 Ensure that the run_tests.sh script is executable:
+
 ```bash
 chmod a+x ./scripts/run_tests.sh
 ```
 
 Run the tests. Note: the end to end tests are excluded from the run_test.sh script since they take a while to run. They make wandb dashboards are are useful for debugging but they are not necessary for development.
+
+To run end-to-end tests, you can use the command 'pytest -v --cov=src/ --cov-report=term-missing'. If the trajectories file 'MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl' is not found in the tests, the 'gdown' command has failed to download it. In that case, download it manually or run 'conda install -c conda-forge gdown' and try again.
 
 ```bash
 ./scripts/run_tests.sh
