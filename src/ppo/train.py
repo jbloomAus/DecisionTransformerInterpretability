@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Optional
 
@@ -7,7 +8,7 @@ from tqdm.autonotebook import tqdm
 
 import wandb
 from src.config import (EnvironmentConfig, OnlineTrainConfig, RunConfig,
-                        TransformerModelConfig)
+                        TransformerModelConfig, ConfigJsonEncoder)
 
 from .agent import PPOAgent, FCAgent, TrajPPOAgent
 from .memory import Memory
@@ -49,9 +50,23 @@ def train_ppo(
         video_path = os.path.join("videos", run_config.run_name)
         prepare_video_dir(video_path)
         videos = []
+        checkpoint_artifact = wandb.Artifact(f"{run_config.exp_name}_checkpoints", type="model")
+        checkpoint_interval = num_updates // online_config.num_checkpoints + 1
+        checkpoint_num = 1
+
+    def store_model_checkpoint():
+        nonlocal checkpoint_num
+        checkpoint_name = f"{run_config.exp_name}_{checkpoint_num:0>2}"
+        checkpoint_path = f"models/{checkpoint_name}.pt"
+        t.save({
+            "model_state_dict": agent.state_dict(),
+            "online_config": json.dumps(online_config, cls=ConfigJsonEncoder),
+        }, checkpoint_path)
+        checkpoint_artifact.add_file(local_path=checkpoint_path, name=f"{checkpoint_name}.pt")
+        checkpoint_num += 1
 
     progress_bar = tqdm(range(num_updates), position=0, leave=True)
-    for _ in progress_bar:
+    for n in progress_bar:
 
         agent.rollout(memory, online_config.num_steps, envs, trajectory_writer)
         agent.learn(memory, online_config, optimizer,
@@ -61,11 +76,17 @@ def train_ppo(
             memory.log()
             videos = check_and_upload_new_video(
                 video_path=video_path, videos=videos, step=memory.global_step)
+            if (n+1) % checkpoint_interval == 0:
+                store_model_checkpoint()
 
         output = memory.get_printable_output()
         progress_bar.set_description(output)
 
         memory.reset()
+
+    if run_config.track:
+        store_model_checkpoint()
+        wandb.log_artifact(checkpoint_artifact)
 
     if trajectory_writer is not None:
         trajectory_writer.tag_terminated_trajectories()

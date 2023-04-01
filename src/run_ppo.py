@@ -41,6 +41,7 @@ if __name__ == "__main__":
         max_grad_norm=args.max_grad_norm,
         trajectory_path=args.trajectory_path,
         fully_observed=args.fully_observed,
+        num_checkpoints=args.num_checkpoints
     )
 
     transformer_config = None  # TransformerModelConfig()
