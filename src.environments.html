@@ -409,6 +409,55 @@ a certain timelimit was exceeded, or the physics simulation has entered an inval
 <section id="module-src.environments.wrappers">
 <span id="src-environments-wrappers-module"></span><h2>src.environments.wrappers module<a class="headerlink" href="#module-src.environments.wrappers" title="Permalink to this heading">#</a></h2>
 <dl class="py class">
+<dt class="sig sig-object py" id="src.environments.wrappers.DictObservationSpaceWrapper">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.environments.wrappers.</span></span><span class="sig-name descname"><span class="pre">DictObservationSpaceWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_words_in_mission</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">word_dict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.environments.wrappers.DictObservationSpaceWrapper" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ObservationWrapper</span></code></p>
+<p>Transforms the observation space (that has a textual component) to a fully numerical observation space,
+where the textual instructions are replaced by arrays representing the indices of each word in a fixed vocabulary.</p>
+<p>This wrapper is not applicable to BabyAI environments, given that these have their own language component.</p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">miniworld</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">gymnasium</span> <span class="k">as</span> <span class="nn">gym</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">minigrid.wrappers</span> <span class="kn">import</span> <span class="n">DictObservationSpaceWrapper</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">env</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="s2">&quot;MiniGrid-LavaCrossingS11N5-v0&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">obs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">obs</span><span class="p">[</span><span class="s1">&#39;mission&#39;</span><span class="p">]</span>
+<span class="go">&#39;avoid the lava and get to the green goal square&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">env_obs</span> <span class="o">=</span> <span class="n">DictObservationSpaceWrapper</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">obs</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">env_obs</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">obs</span><span class="p">[</span><span class="s1">&#39;mission&#39;</span><span class="p">][:</span><span class="mi">10</span><span class="p">]</span>
+<span class="go">[19, 31, 17, 36, 20, 38, 31, 2, 15, 35]</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="src.environments.wrappers.DictObservationSpaceWrapper.get_minigrid_words">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_minigrid_words</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.environments.wrappers.DictObservationSpaceWrapper.get_minigrid_words" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.environments.wrappers.DictObservationSpaceWrapper.observation">
+<span class="sig-name descname"><span class="pre">observation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.environments.wrappers.DictObservationSpaceWrapper.observation" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns a modified observation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>observation</strong> – The <code class="xref py py-attr docutils literal notranslate"><span class="pre">env</span></code> observation</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The modified observation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="src.environments.wrappers.DictObservationSpaceWrapper.string_to_indices">
+<span class="sig-name descname"><span class="pre">string_to_indices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.environments.wrappers.DictObservationSpaceWrapper.string_to_indices" title="Permalink to this definition">#</a></dt>
+<dd><p>Convert a string to a list of indices.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="src.environments.wrappers.RenderResizeWrapper">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.environments.wrappers.</span></span><span class="sig-name descname"><span class="pre">RenderResizeWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">MiniGridEnv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">render_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">render_height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">256</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.environments.wrappers.RenderResizeWrapper" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Wrapper</span></code></p>
@@ -546,6 +595,12 @@ This cannot be used with fully observable wrappers.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-src.environments.wrappers">src.environments.wrappers module</a><ul>
+<li><a class="reference internal" href="#src.environments.wrappers.DictObservationSpaceWrapper"><code class="docutils literal notranslate"><span class="pre">DictObservationSpaceWrapper</span></code></a><ul>
+<li><a class="reference internal" href="#src.environments.wrappers.DictObservationSpaceWrapper.get_minigrid_words"><code class="docutils literal notranslate"><span class="pre">DictObservationSpaceWrapper.get_minigrid_words()</span></code></a></li>
+<li><a class="reference internal" href="#src.environments.wrappers.DictObservationSpaceWrapper.observation"><code class="docutils literal notranslate"><span class="pre">DictObservationSpaceWrapper.observation()</span></code></a></li>
+<li><a class="reference internal" href="#src.environments.wrappers.DictObservationSpaceWrapper.string_to_indices"><code class="docutils literal notranslate"><span class="pre">DictObservationSpaceWrapper.string_to_indices()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#src.environments.wrappers.RenderResizeWrapper"><code class="docutils literal notranslate"><span class="pre">RenderResizeWrapper</span></code></a><ul>
 <li><a class="reference internal" href="#src.environments.wrappers.RenderResizeWrapper.render"><code class="docutils literal notranslate"><span class="pre">RenderResizeWrapper.render()</span></code></a></li>
 </ul>

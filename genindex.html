@@ -242,13 +242,13 @@
         <li><a href="src.ppo.html#src.ppo.agent.FCAgent.actor">actor (src.ppo.agent.FCAgent attribute)</a>
 
         <ul>
+          <li><a href="src.ppo.html#src.ppo.agent.LSTMPPOAgent.actor">(src.ppo.agent.LSTMPPOAgent attribute)</a>
+</li>
           <li><a href="src.ppo.html#src.ppo.agent.PPOAgent.actor">(src.ppo.agent.PPOAgent attribute)</a>
 </li>
-          <li><a href="src.ppo.html#src.ppo.agent.TrajPPOAgent.actor">(src.ppo.agent.TrajPPOAgent attribute)</a>
+          <li><a href="src.ppo.html#src.ppo.agent.TransformerPPOAgent.actor">(src.ppo.agent.TransformerPPOAgent attribute)</a>
 </li>
         </ul></li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.actor_transformer">actor_transformer() (in module tests.unit.test_trajectory_model)</a>
-</li>
         <li><a href="src.ppo.html#src.ppo.memory.Memory.add">add() (src.ppo.memory.Memory method)</a>
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryDataset.add_padding">add_padding() (src.decision_transformer.offline_dataset.TrajectoryDataset method)</a>
@@ -261,7 +261,11 @@
           <li><a href="src.ppo.html#src.ppo.memory.TrajectoryMinibatch.advantages">(src.ppo.memory.TrajectoryMinibatch attribute)</a>
 </li>
         </ul></li>
+        <li><a href="src.html#src.config.LSTMModelConfig.arch">arch (src.config.LSTMModelConfig attribute)</a>
+</li>
         <li><a href="src.ppo.html#src.ppo.utils.arg_help">arg_help() (in module src.ppo.utils)</a>
+</li>
+        <li><a href="src.html#src.config.LSTMModelConfig.aux_info">aux_info (src.config.LSTMModelConfig attribute)</a>
 </li>
     </ul></td>
   </tr></table>
@@ -279,6 +283,8 @@
         </ul></li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.big_transformer_agent">big_transformer_agent() (in module tests.unit.test_ppo_agent)</a>
+</li>
         <li><a href="tests.unit.html#tests.unit.test_ppo_agent.big_transformer_model_config">big_transformer_model_config() (in module tests.unit.test_ppo_agent)</a>
 </li>
     </ul></td>
@@ -307,8 +313,6 @@
           <li><a href="src.ppo.html#src.ppo.utils.PPOArgs.clip_coef">(src.ppo.utils.PPOArgs attribute)</a>
 </li>
         </ul></li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.clone_transformer">clone_transformer() (in module tests.unit.test_trajectory_model)</a>
-</li>
         <li><a href="src.environments.html#src.environments.multienvironments.MultiEnvSampler.close">close() (src.environments.multienvironments.MultiEnvSampler method)</a>
 </li>
         <li><a href="src.html#src.dummy_agent.RandomAgent.collect_trajectories">collect_trajectories() (src.dummy_agent.RandomAgent method)</a>
@@ -326,13 +330,13 @@
         <li><a href="src.ppo.html#src.ppo.agent.FCAgent.critic">critic (src.ppo.agent.FCAgent attribute)</a>
 
         <ul>
+          <li><a href="src.ppo.html#src.ppo.agent.LSTMPPOAgent.critic">(src.ppo.agent.LSTMPPOAgent attribute)</a>
+</li>
           <li><a href="src.ppo.html#src.ppo.agent.PPOAgent.critic">(src.ppo.agent.PPOAgent attribute)</a>
 </li>
-          <li><a href="src.ppo.html#src.ppo.agent.TrajPPOAgent.critic">(src.ppo.agent.TrajPPOAgent attribute)</a>
+          <li><a href="src.ppo.html#src.ppo.agent.TransformerPPOAgent.critic">(src.ppo.agent.TransformerPPOAgent attribute)</a>
 </li>
         </ul></li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.critic_transformer">critic_transformer() (in module tests.unit.test_trajectory_model)</a>
-</li>
         <li><a href="src.html#src.config.RunConfig.cuda">cuda (src.config.RunConfig attribute)</a>
 
         <ul>
@@ -369,14 +373,12 @@
           <li><a href="src.ppo.html#src.ppo.utils.PPOArgs.decay_lr">(src.ppo.utils.PPOArgs attribute)</a>
 </li>
         </ul></li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.decision_transformer">decision_transformer() (in module tests.unit.test_trajectory_model)</a>
-</li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer">DecisionTransformer (class in src.decision_transformer.model)</a>
 </li>
         <li><a href="src.html#src.config.ConfigJsonEncoder.default">default() (src.config.ConfigJsonEncoder method)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.html#src.config.EnvironmentConfig.device">device (src.config.EnvironmentConfig attribute)</a>
 
         <ul>
@@ -385,6 +387,10 @@
           <li><a href="src.html#src.config.TransformerModelConfig.device">(src.config.TransformerModelConfig attribute)</a>
 </li>
         </ul></li>
+        <li><a href="src.html#src.utils.DictList">DictList (class in src.utils)</a>
+</li>
+        <li><a href="src.environments.html#src.environments.wrappers.DictObservationSpaceWrapper">DictObservationSpaceWrapper (class in src.environments.wrappers)</a>
+</li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryDataset.discount_cumsum">discount_cumsum() (src.decision_transformer.offline_dataset.TrajectoryDataset method)</a>
 </li>
         <li><a href="tests.end_end.html#tests.end_end.test_decision_transformer.download_training_data">download_training_data() (in module tests.end_end.test_decision_transformer)</a>
@@ -411,6 +417,8 @@
           <li><a href="src.ppo.html#src.ppo.utils.PPOArgs.env_id">(src.ppo.utils.PPOArgs attribute)</a>
 </li>
         </ul></li>
+        <li><a href="src.html#src.config.LSTMModelConfig.environment_config">environment_config (src.config.LSTMModelConfig attribute)</a>
+</li>
         <li><a href="tests.acceptance.html#tests.acceptance.test_ppo.environment_config">environment_config() (in module tests.acceptance.test_ppo)</a>
 
         <ul>
@@ -537,6 +545,8 @@
 </li>
         <li><a href="src.ppo.html#src.ppo.memory.Memory.get_minibatches">get_minibatches() (src.ppo.memory.Memory method)</a>
 </li>
+        <li><a href="src.environments.html#src.environments.wrappers.DictObservationSpaceWrapper.get_minigrid_words">get_minigrid_words() (src.environments.wrappers.DictObservationSpaceWrapper static method)</a>
+</li>
         <li><a href="src.environments.html#src.environments.registration.get_multi_room_env">get_multi_room_env() (in module src.environments.registration)</a>
 </li>
         <li><a href="src.ppo.html#src.ppo.utils.get_obs_preprocessor">get_obs_preprocessor() (in module src.ppo.utils)</a>
@@ -583,6 +593,8 @@
   <h2>I</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="src.html#src.config.LSTMModelConfig.image_dim">image_dim (src.config.LSTMModelConfig attribute)</a>
+</li>
         <li><a href="src.html#src.config.EnvironmentConfig.img_obs">img_obs (src.config.EnvironmentConfig attribute)</a>
 </li>
     </ul></td>
@@ -593,6 +605,8 @@
           <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.initial_rtg">(src.decision_transformer.utils.DTArgs attribute)</a>
 </li>
         </ul></li>
+        <li><a href="src.html#src.config.LSTMModelConfig.instr_dim">instr_dim (src.config.LSTMModelConfig attribute)</a>
+</li>
     </ul></td>
   </tr></table>
 </section>
@@ -601,6 +615,8 @@
   <h2>L</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="src.html#src.config.LSTMModelConfig.lang_model">lang_model (src.config.LSTMModelConfig attribute)</a>
+</li>
         <li><a href="tests.acceptance.html#tests.acceptance.test_ppo.large_transformer_model_config">large_transformer_model_config() (in module tests.acceptance.test_ppo)</a>
 </li>
         <li><a href="src.ppo.html#src.ppo.agent.PPOAgent.layer_init">layer_init() (src.ppo.agent.PPOAgent method)</a>
@@ -614,9 +630,11 @@
         <li><a href="src.ppo.html#src.ppo.agent.FCAgent.learn">learn() (src.ppo.agent.FCAgent method)</a>
 
         <ul>
+          <li><a href="src.ppo.html#src.ppo.agent.LSTMPPOAgent.learn">(src.ppo.agent.LSTMPPOAgent method)</a>
+</li>
           <li><a href="src.ppo.html#src.ppo.agent.PPOAgent.learn">(src.ppo.agent.PPOAgent method)</a>
 </li>
-          <li><a href="src.ppo.html#src.ppo.agent.TrajPPOAgent.learn">(src.ppo.agent.TrajPPOAgent method)</a>
+          <li><a href="src.ppo.html#src.ppo.agent.TransformerPPOAgent.learn">(src.ppo.agent.TransformerPPOAgent method)</a>
 </li>
         </ul></li>
         <li><a href="src.html#src.config.OnlineTrainConfig.learning_rate">learning_rate (src.config.OnlineTrainConfig attribute)</a>
@@ -649,6 +667,14 @@
         </ul></li>
         <li><a href="src.html#src.config.OfflineTrainConfig.lr">lr (src.config.OfflineTrainConfig attribute)</a>
 </li>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.lstm_agent">lstm_agent() (in module tests.unit.test_ppo_agent)</a>
+</li>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.lstm_config">lstm_config() (in module tests.unit.test_ppo_agent)</a>
+</li>
+        <li><a href="src.html#src.config.LSTMModelConfig">LSTMModelConfig (class in src.config)</a>
+</li>
+        <li><a href="src.ppo.html#src.ppo.agent.LSTMPPOAgent">LSTMPPOAgent (class in src.ppo.agent)</a>
+</li>
     </ul></td>
   </tr></table>
 </section>
@@ -660,6 +686,8 @@
         <li><a href="src.environments.html#src.environments.environments.make_env">make_env() (in module src.environments.environments)</a>
 </li>
         <li><a href="src.ppo.html#src.ppo.agent.PPOAgent.make_optimizer">make_optimizer() (src.ppo.agent.PPOAgent method)</a>
+</li>
+        <li><a href="src.ppo.html#src.ppo.memory.Minibatch.mask">mask (src.ppo.memory.Minibatch attribute)</a>
 </li>
         <li><a href="src.html#src.config.OnlineTrainConfig.max_grad_norm">max_grad_norm (src.config.OnlineTrainConfig attribute)</a>
 
@@ -676,6 +704,8 @@
         <li><a href="src.ppo.html#src.ppo.memory.Memory">Memory (class in src.ppo.memory)</a>
 </li>
         <li><a href="tests.unit.html#tests.unit.test_ppo_memory.memory">memory() (in module tests.unit.test_ppo_memory)</a>
+</li>
+        <li><a href="src.html#src.config.LSTMModelConfig.memory_dim">memory_dim (src.config.LSTMModelConfig attribute)</a>
 </li>
         <li><a href="src.environments.html#src.environments.multienvironments.MultiEnvSampler.metadata">metadata (src.environments.multienvironments.MultiEnvSampler attribute)</a>
 </li>
@@ -789,8 +819,6 @@
 </li>
           <li><a href="tests.unit.html#module-tests.unit.test_streamlit_environment">tests.unit.test_streamlit_environment</a>
 </li>
-          <li><a href="tests.unit.html#module-tests.unit.test_trajectory_model">tests.unit.test_trajectory_model</a>
-</li>
           <li><a href="tests.unit.html#module-tests.unit.test_utils">tests.unit.test_utils</a>
 </li>
         </ul></li>
@@ -860,8 +888,12 @@
           <li><a href="src.ppo.html#src.ppo.memory.TrajectoryMinibatch.obs">(src.ppo.memory.TrajectoryMinibatch attribute)</a>
 </li>
         </ul></li>
-        <li><a href="src.environments.html#src.environments.wrappers.ViewSizeWrapper.observation">observation() (src.environments.wrappers.ViewSizeWrapper method)</a>
+        <li><a href="src.environments.html#src.environments.wrappers.DictObservationSpaceWrapper.observation">observation() (src.environments.wrappers.DictObservationSpaceWrapper method)</a>
+
+        <ul>
+          <li><a href="src.environments.html#src.environments.wrappers.ViewSizeWrapper.observation">(src.environments.wrappers.ViewSizeWrapper method)</a>
 </li>
+        </ul></li>
         <li><a href="src.html#src.config.EnvironmentConfig.observation_space">observation_space (src.config.EnvironmentConfig attribute)</a>
 
         <ul>
@@ -950,6 +982,8 @@
 </li>
         <li><a href="src.ppo.html#src.ppo.utils.preprocess_images">preprocess_images() (in module src.ppo.utils)</a>
 </li>
+        <li><a href="src.ppo.html#src.ppo.agent.LSTMPPOAgent.preprocess_obs">preprocess_obs() (src.ppo.agent.LSTMPPOAgent method)</a>
+</li>
         <li><a href="src.html#src.config.OfflineTrainConfig.prob_go_from_end">prob_go_from_end (src.config.OfflineTrainConfig attribute)</a>
 
         <ul>
@@ -983,6 +1017,10 @@
         <li><a href="src.html#src.dummy_agent.RandomAgentArgs">RandomAgentArgs (class in src.dummy_agent)</a>
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryReader.read">read() (src.decision_transformer.offline_dataset.TrajectoryReader method)</a>
+</li>
+        <li><a href="src.html#src.config.LSTMModelConfig.recurrence">recurrence (src.config.LSTMModelConfig attribute)</a>
+</li>
+        <li><a href="src.ppo.html#src.ppo.memory.Minibatch.recurrence_memory">recurrence_memory (src.ppo.memory.Minibatch attribute)</a>
 </li>
         <li><a href="src.environments.html#src.environments.registration.register_envs">register_envs() (in module src.environments.registration)</a>
 </li>
@@ -1035,9 +1073,11 @@
         <ul>
           <li><a href="src.ppo.html#src.ppo.agent.FCAgent.rollout">(src.ppo.agent.FCAgent method)</a>
 </li>
+          <li><a href="src.ppo.html#src.ppo.agent.LSTMPPOAgent.rollout">(src.ppo.agent.LSTMPPOAgent method)</a>
+</li>
           <li><a href="src.ppo.html#src.ppo.agent.PPOAgent.rollout">(src.ppo.agent.PPOAgent method)</a>
 </li>
-          <li><a href="src.ppo.html#src.ppo.agent.TrajPPOAgent.rollout">(src.ppo.agent.TrajPPOAgent method)</a>
+          <li><a href="src.ppo.html#src.ppo.agent.TransformerPPOAgent.rollout">(src.ppo.agent.TransformerPPOAgent method)</a>
 </li>
         </ul></li>
         <li><a href="tests.acceptance.html#tests.acceptance.test_ppo.run_config">run_config() (in module tests.acceptance.test_ppo)</a>
@@ -1307,6 +1347,8 @@
           <li><a href="src.ppo.html#src.ppo.my_probe_envs.Probe6.step">(src.ppo.my_probe_envs.Probe6 method)</a>
 </li>
         </ul></li>
+        <li><a href="src.environments.html#src.environments.wrappers.DictObservationSpaceWrapper.string_to_indices">string_to_indices() (src.environments.wrappers.DictObservationSpaceWrapper method)</a>
+</li>
         <li><a href="src.ppo.html#src.ppo.utils.sum_rewards">sum_rewards() (in module src.ppo.utils)</a>
 </li>
     </ul></td>
@@ -1321,11 +1363,9 @@
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.train.test">test() (in module src.decision_transformer.train)</a>
 </li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_actor_transformer_forward">test_actor_transformer_forward() (in module tests.unit.test_trajectory_model)</a>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_memory.test_add_end_of_episode">test_add_end_of_episode() (in module tests.unit.test_ppo_memory)</a>
 </li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_actor_transformer_forward_context_1_no_actions">test_actor_transformer_forward_context_1_no_actions() (in module tests.unit.test_trajectory_model)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_actor_transformer_forward_seq_too_long">test_actor_transformer_forward_seq_too_long() (in module tests.unit.test_trajectory_model)</a>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_memory.test_add_no_ending">test_add_no_ending() (in module tests.unit.test_ppo_memory)</a>
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.test_batches">test_batches (src.decision_transformer.utils.DTArgs attribute)</a>
 </li>
@@ -1335,33 +1375,9 @@
 </li>
         <li><a href="tests.end_end.html#tests.end_end.test_decision_transformer.test_clone_transformer">test_clone_transformer() (in module tests.end_end.test_decision_transformer)</a>
 </li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_clone_transformer_get_logits">test_clone_transformer_get_logits() (in module tests.unit.test_trajectory_model)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_clone_transformer_get_token_embeddings_with_actions">test_clone_transformer_get_token_embeddings_with_actions() (in module tests.unit.test_trajectory_model)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_clone_transformer_get_token_embeddings_without_actions">test_clone_transformer_get_token_embeddings_without_actions() (in module tests.unit.test_trajectory_model)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_clone_transformer_parameter_count">test_clone_transformer_parameter_count() (in module tests.unit.test_trajectory_model)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_clone_transformer_to_tokens">test_clone_transformer_to_tokens() (in module tests.unit.test_trajectory_model)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_critic_transformer_forward_seq_too_long">test_critic_transformer_forward_seq_too_long() (in module tests.unit.test_trajectory_model)</a>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_memory.test_compute_advantages">test_compute_advantages() (in module tests.unit.test_ppo_memory)</a>
 </li>
         <li><a href="tests.end_end.html#tests.end_end.test_decision_transformer.test_decision_transformer">test_decision_transformer() (in module tests.end_end.test_decision_transformer)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_decision_transformer_get_logits">test_decision_transformer_get_logits() (in module tests.unit.test_trajectory_model)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_decision_transformer_get_reward_embedding">test_decision_transformer_get_reward_embedding() (in module tests.unit.test_trajectory_model)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_decision_transformer_get_token_embeddings_with_actions">test_decision_transformer_get_token_embeddings_with_actions() (in module tests.unit.test_trajectory_model)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_decision_transformer_get_token_embeddings_without_actions">test_decision_transformer_get_token_embeddings_without_actions() (in module tests.unit.test_trajectory_model)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_decision_transformer_parameter_count">test_decision_transformer_parameter_count() (in module tests.unit.test_trajectory_model)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_decision_transformer_predict_rewards">test_decision_transformer_predict_rewards() (in module tests.unit.test_trajectory_model)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_decision_transformer_to_tokens">test_decision_transformer_to_tokens() (in module tests.unit.test_trajectory_model)</a>
 </li>
         <li><a href="tests.acceptance.html#tests.acceptance.test_ppo.test_empty_env">test_empty_env() (in module tests.acceptance.test_ppo)</a>
 </li>
@@ -1393,9 +1409,21 @@
           <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.test_frequency">(src.decision_transformer.utils.DTArgs attribute)</a>
 </li>
         </ul></li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_get_action_embedding">test_get_action_embedding() (in module tests.unit.test_trajectory_model)</a>
-</li>
         <li><a href="tests.unit.html#tests.unit.test_streamlit_environment.test_get_env_and_dt">test_get_env_and_dt() (in module tests.unit.test_streamlit_environment)</a>
+</li>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_memory.test_get_minibatch_indexes">test_get_minibatch_indexes() (in module tests.unit.test_ppo_memory)</a>
+</li>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_memory.test_get_minibatch_indexes_recurrence">test_get_minibatch_indexes_recurrence() (in module tests.unit.test_ppo_memory)</a>
+</li>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_memory.test_get_minibatches_given_indices_contiguity_of_obs">test_get_minibatches_given_indices_contiguity_of_obs() (in module tests.unit.test_ppo_memory)</a>
+</li>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_memory.test_get_minibatches_given_indices_single_env_contiguity_of_obs">test_get_minibatches_given_indices_single_env_contiguity_of_obs() (in module tests.unit.test_ppo_memory)</a>
+</li>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_memory.test_get_minibatches_recurrance_memory_and_mask">test_get_minibatches_recurrance_memory_and_mask() (in module tests.unit.test_ppo_memory)</a>
+</li>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_memory.test_get_minibatches_recurrence">test_get_minibatches_recurrence() (in module tests.unit.test_ppo_memory)</a>
+</li>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_memory.test_get_minibatches_standard">test_get_minibatches_standard() (in module tests.unit.test_ppo_memory)</a>
 </li>
         <li><a href="tests.unit.html#tests.unit.test_ppo_utils.test_get_obs_preprocessor_MiniGrid">test_get_obs_preprocessor_MiniGrid() (in module tests.unit.test_ppo_utils)</a>
 </li>
@@ -1409,23 +1437,21 @@
 </li>
         <li><a href="tests.unit.html#tests.unit.test_ppo_utils.test_get_obs_preprocessor_probe1">test_get_obs_preprocessor_probe1() (in module tests.unit.test_ppo_utils)</a>
 </li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_get_state_embedding">test_get_state_embedding() (in module tests.unit.test_trajectory_model)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_get_time_embedding">test_get_time_embedding() (in module tests.unit.test_trajectory_model)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_initialize_easy_transformer">test_initialize_easy_transformer() (in module tests.unit.test_trajectory_model)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_initialize_state_embedding">test_initialize_state_embedding() (in module tests.unit.test_trajectory_model)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_initialize_state_predictor">test_initialize_state_predictor() (in module tests.unit.test_trajectory_model)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_initialize_time_embedding">test_initialize_time_embedding() (in module tests.unit.test_trajectory_model)</a>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_memory.test_init">test_init() (in module tests.unit.test_ppo_memory)</a>
 </li>
         <li><a href="tests.unit.html#tests.unit.test_utils.test_loa_legacy_decision_transformer_linear_time">test_loa_legacy_decision_transformer_linear_time() (in module tests.unit.test_utils)</a>
 </li>
         <li><a href="tests.unit.html#tests.unit.test_utils.test_load_legacy_decision_key_door">test_load_legacy_decision_key_door() (in module tests.unit.test_utils)</a>
 </li>
         <li><a href="tests.unit.html#tests.unit.test_utils.test_load_legacy_decision_transformer">test_load_legacy_decision_transformer() (in module tests.unit.test_utils)</a>
+</li>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_lstm_agent_init">test_lstm_agent_init() (in module tests.unit.test_ppo_agent)</a>
+</li>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_lstm_agent_rollout">test_lstm_agent_rollout() (in module tests.unit.test_ppo_agent)</a>
+</li>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_lstm_agent_rollout_learn">test_lstm_agent_rollout_learn() (in module tests.unit.test_ppo_agent)</a>
+</li>
+        <li><a href="tests.unit.html#tests.unit.test_config.test_lstm_model_config">test_lstm_model_config() (in module tests.unit.test_config)</a>
 </li>
         <li><a href="tests.unit.html#tests.unit.test_environments.test_make_env">test_make_env() (in module tests.unit.test_environments)</a>
 </li>
@@ -1436,14 +1462,6 @@
         <li><a href="tests.unit.html#tests.unit.test_environments.test_make_env_flat_one_hot_view_size_change">test_make_env_flat_one_hot_view_size_change() (in module tests.unit.test_environments)</a>
 </li>
         <li><a href="tests.unit.html#tests.unit.test_environments.test_make_env_fully_observed">test_make_env_fully_observed() (in module tests.unit.test_environments)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_ppo_memory.test_memory_add_end_of_episode">test_memory_add_end_of_episode() (in module tests.unit.test_ppo_memory)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_ppo_memory.test_memory_add_no_ending">test_memory_add_no_ending() (in module tests.unit.test_ppo_memory)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_ppo_memory.test_memory_compute_advantages">test_memory_compute_advantages() (in module tests.unit.test_ppo_memory)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_ppo_memory.test_memory_init">test_memory_init() (in module tests.unit.test_ppo_memory)</a>
 </li>
         <li><a href="tests.unit.html#tests.unit.test_ppo_memory.test_minibatch_class">test_minibatch_class() (in module tests.unit.test_ppo_memory)</a>
 </li>
@@ -1465,6 +1483,8 @@
 </li>
         <li><a href="tests.end_end.html#tests.end_end.test_ppo.test_ppo_runner">test_ppo_runner() (in module tests.end_end.test_ppo)</a>
 </li>
+        <li><a href="tests.end_end.html#tests.end_end.test_ppo.test_ppo_runner_lstm_model">test_ppo_runner_lstm_model() (in module tests.end_end.test_ppo)</a>
+</li>
         <li><a href="tests.end_end.html#tests.end_end.test_ppo.test_ppo_runner_traj_model">test_ppo_runner_traj_model() (in module tests.end_end.test_ppo)</a>
 </li>
         <li><a href="tests.end_end.html#tests.end_end.test_ppo.test_ppo_runner_traj_model_memory">test_ppo_runner_traj_model_memory() (in module tests.end_end.test_ppo)</a>
@@ -1475,10 +1495,6 @@
 </li>
         <li><a href="tests.acceptance.html#tests.acceptance.test_ppo.test_ppo_traj_agent_rollout_minibatches">test_ppo_traj_agent_rollout_minibatches() (in module tests.acceptance.test_ppo)</a>
 </li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_predict_actions">test_predict_actions() (in module tests.unit.test_trajectory_model)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.test_predict_states">test_predict_states() (in module tests.unit.test_trajectory_model)</a>
-</li>
         <li><a href="tests.acceptance.html#tests.acceptance.test_environment_registration.test_register_envs">test_register_envs() (in module tests.acceptance.test_environment_registration)</a>
 </li>
         <li><a href="tests.unit.html#tests.unit.test_config.test_run_config">test_run_config() (in module tests.unit.test_config)</a>
@@ -1487,26 +1503,12 @@
 </li>
         <li><a href="tests.acceptance.html#tests.acceptance.test_offline_dataset.test_train_test_split_other_data">test_train_test_split_other_data() (in module tests.acceptance.test_offline_dataset)</a>
 </li>
-        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_traj_agent_init">test_traj_agent_init() (in module tests.unit.test_ppo_agent)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_traj_agent_larger_context_init">test_traj_agent_larger_context_init() (in module tests.unit.test_ppo_agent)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_traj_agent_larger_context_learn">test_traj_agent_larger_context_learn() (in module tests.unit.test_ppo_agent)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_traj_agent_larger_context_rollout">test_traj_agent_larger_context_rollout() (in module tests.unit.test_ppo_agent)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_traj_agent_learn">test_traj_agent_learn() (in module tests.unit.test_ppo_agent)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_traj_agent_rollout">test_traj_agent_rollout() (in module tests.unit.test_ppo_agent)</a>
-</li>
         <li><a href="tests.acceptance.html#tests.acceptance.test_offline_dataset.test_trajectory_dataset__getitem__">test_trajectory_dataset__getitem__() (in module tests.acceptance.test_offline_dataset)</a>
 </li>
         <li><a href="tests.acceptance.html#tests.acceptance.test_offline_dataset.test_trajectory_dataset_as_dataloader">test_trajectory_dataset_as_dataloader() (in module tests.acceptance.test_offline_dataset)</a>
 </li>
         <li><a href="tests.acceptance.html#tests.acceptance.test_offline_dataset.test_trajectory_dataset_discount_cumusum_10">test_trajectory_dataset_discount_cumusum_10() (in module tests.acceptance.test_offline_dataset)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="tests.acceptance.html#tests.acceptance.test_offline_dataset.test_trajectory_dataset_get_indices_of_top_p_trajectories_01">test_trajectory_dataset_get_indices_of_top_p_trajectories_01() (in module tests.acceptance.test_offline_dataset)</a>
 </li>
         <li><a href="tests.acceptance.html#tests.acceptance.test_offline_dataset.test_trajectory_dataset_get_indices_of_top_p_trajectories_1">test_trajectory_dataset_get_indices_of_top_p_trajectories_1() (in module tests.acceptance.test_offline_dataset)</a>
@@ -1526,6 +1528,20 @@
         <li><a href="tests.unit.html#tests.unit.test_utils.test_trajectory_writer_numpy">test_trajectory_writer_numpy() (in module tests.unit.test_utils)</a>
 </li>
         <li><a href="tests.unit.html#tests.unit.test_utils.test_trajectory_writer_torch">test_trajectory_writer_torch() (in module tests.unit.test_utils)</a>
+</li>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_transformer_agent_init">test_transformer_agent_init() (in module tests.unit.test_ppo_agent)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_transformer_agent_larger_context_init">test_transformer_agent_larger_context_init() (in module tests.unit.test_ppo_agent)</a>
+</li>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_transformer_agent_larger_context_learn">test_transformer_agent_larger_context_learn() (in module tests.unit.test_ppo_agent)</a>
+</li>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_transformer_agent_larger_context_rollout">test_transformer_agent_larger_context_rollout() (in module tests.unit.test_ppo_agent)</a>
+</li>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_transformer_agent_learn">test_transformer_agent_learn() (in module tests.unit.test_ppo_agent)</a>
+</li>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_transformer_agent_rollout">test_transformer_agent_rollout() (in module tests.unit.test_ppo_agent)</a>
 </li>
         <li><a href="tests.unit.html#tests.unit.test_config.test_transformer_model_config">test_transformer_model_config() (in module tests.unit.test_config)</a>
 </li>
@@ -1679,13 +1695,6 @@
 </li>
         </ul></li>
         <li>
-    tests.unit.test_trajectory_model
-
-        <ul>
-          <li><a href="tests.unit.html#module-tests.unit.test_trajectory_model">module</a>
-</li>
-        </ul></li>
-        <li>
     tests.unit.test_utils
 
         <ul>
@@ -1737,7 +1746,7 @@
 </li>
           <li><a href="src.html#src.dummy_agent.RandomAgent.training">(src.dummy_agent.RandomAgent attribute)</a>
 </li>
-          <li><a href="src.ppo.html#src.ppo.agent.TrajPPOAgent.training">(src.ppo.agent.TrajPPOAgent attribute)</a>
+          <li><a href="src.ppo.html#src.ppo.agent.TransformerPPOAgent.training">(src.ppo.agent.TransformerPPOAgent attribute)</a>
 </li>
         </ul></li>
         <li><a href="src.html#src.config.OfflineTrainConfig.trajectory_path">trajectory_path (src.config.OfflineTrainConfig attribute)</a>
@@ -1760,9 +1769,7 @@
 </li>
         <li><a href="src.html#src.utils.TrajectoryWriter">TrajectoryWriter (class in src.utils)</a>
 </li>
-        <li><a href="src.ppo.html#src.ppo.agent.TrajPPOAgent">TrajPPOAgent (class in src.ppo.agent)</a>
-</li>
-        <li><a href="tests.unit.html#tests.unit.test_trajectory_model.transformer">transformer() (in module tests.unit.test_trajectory_model)</a>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.transformer_agent">transformer_agent() (in module tests.unit.test_ppo_agent)</a>
 </li>
         <li><a href="tests.acceptance.html#tests.acceptance.test_ppo.transformer_model_config">transformer_model_config() (in module tests.acceptance.test_ppo)</a>
 
@@ -1771,6 +1778,8 @@
 </li>
         </ul></li>
         <li><a href="src.html#src.config.TransformerModelConfig">TransformerModelConfig (class in src.config)</a>
+</li>
+        <li><a href="src.ppo.html#src.ppo.agent.TransformerPPOAgent">TransformerPPOAgent (class in src.ppo.agent)</a>
 </li>
     </ul></td>
   </tr></table>
@@ -1788,6 +1797,10 @@
         </ul></li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="src.html#src.config.LSTMModelConfig.use_instr">use_instr (src.config.LSTMModelConfig attribute)</a>
+</li>
+        <li><a href="src.html#src.config.LSTMModelConfig.use_memory">use_memory (src.config.LSTMModelConfig attribute)</a>
+</li>
         <li><a href="src.html#src.config.OnlineTrainConfig.use_trajectory_model">use_trajectory_model (src.config.OnlineTrainConfig attribute)</a>
 </li>
     </ul></td>
