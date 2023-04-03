@@ -39,7 +39,7 @@ def environment_config():
         render_mode: str = 'rgb_array'
         action_space: None = None
         observation_space: None = None
-        device: str = 'cpu'
+        device: str = torch.device('cpu')
 
     return DummyEnvironmentConfig()
 
@@ -65,6 +65,7 @@ def online_config():
         max_grad_norm: float = 2
         trajectory_path: str = None
         fully_observed: bool = False
+        device: str = torch.device('cpu')
 
     return DummyOnlineConfig()
 

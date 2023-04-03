@@ -38,6 +38,7 @@ def online_config():
         batch_size: int = 2048
         minibatch_size = 512
         prob_go_from_end = 0.1
+        device: torch.device = torch.device("cpu")
 
     return DummyOnlineConfig()
 

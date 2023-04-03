@@ -45,7 +45,7 @@ def environment_config():
         render_mode: str = 'rgb_array'
         action_space: None = None
         observation_space: None = None
-        device: str = 'cpu'
+        device: t.device = t.device("cpu")
 
     return DummyEnvironmentConfig()
 
@@ -74,6 +74,7 @@ def online_config():
         batch_size: int = 64
         minibatch_size: int = 4
         prob_go_from_end: float = 0.0
+        device: t.device = t.device("cpu")
 
     return DummyOnlineConfig()
 

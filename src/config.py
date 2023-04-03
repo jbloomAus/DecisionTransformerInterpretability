@@ -167,6 +167,7 @@ class OnlineTrainConfig:
     fully_observed: bool = False
     prob_go_from_end: float = 0.0
     num_checkpoints: int = 10
+    device: str = 'cpu'
 
     def __post_init__(self):
         self.batch_size = int(self.num_envs * self.num_steps)
@@ -176,6 +177,8 @@ class OnlineTrainConfig:
             self.trajectory_path = os.path.join(
                 "trajectories", str(uuid.uuid4()) + ".gz")
 
+        if isinstance(self.device, str):
+            self.device = torch.device(self.device)
 
 @dataclass
 class RunConfig:

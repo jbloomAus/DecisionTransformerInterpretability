@@ -106,6 +106,7 @@ def test_ppo_runner_traj_model():
         max_grad_norm=2,
         trajectory_path=None,
         prob_go_from_end=0.1,
+        device=run_config.device
     )
 
     transformer_model_config = TransformerModelConfig(
@@ -117,7 +118,7 @@ def test_ppo_runner_traj_model():
         time_embedding_type="embedding",
         state_embedding_type="grid",
         seed=1,
-        device="cpu"
+        device=run_config.device
     )
 
     ppo_runner(
@@ -171,6 +172,7 @@ def test_ppo_runner_traj_model_memory():
         max_grad_norm=2,
         trajectory_path=None,
         prob_go_from_end=0.2,
+        device=run_config.device
     )
 
     transformer_model_config = TransformerModelConfig(
@@ -236,6 +238,7 @@ def test_ppo_runner_lstm_model():
         max_grad_norm=0.5,
         trajectory_path=None,
         prob_go_from_end=0.0,
+        device=run_config.device
     )
 
     lstm_model_config = LSTMModelConfig(
