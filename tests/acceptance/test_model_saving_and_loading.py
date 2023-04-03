@@ -27,7 +27,7 @@ def generate_trajectory_data() -> None:
         run_config = RunConfig(
             exp_name="Test-PPO-Basic",
             seed=1,
-            cuda=True,
+            device="cuda" if torch.cuda.is_available() else "cpu",
             track=False,
             wandb_project_name="PPO-MiniGrid",
             wandb_entity=None,

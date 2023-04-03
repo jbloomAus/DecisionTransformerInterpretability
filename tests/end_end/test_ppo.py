@@ -1,6 +1,7 @@
 import os
 import pytest
 
+import torch
 import gymnasium as gym
 
 from src.config import (EnvironmentConfig, OnlineTrainConfig, RunConfig,
@@ -70,7 +71,7 @@ def test_ppo_runner_traj_model():
     run_config = RunConfig(
         exp_name="Test-PPO-Transformer",
         seed=1,
-        cuda=True,
+        device="cuda" if torch.cuda.is_available() else "cpu",
         track=True,
         wandb_project_name="PPO-MiniGrid",
         wandb_entity=None,
@@ -132,7 +133,7 @@ def test_ppo_runner_traj_model_memory():
     run_config = RunConfig(
         exp_name="Test-PPO-Transformer-Memory",
         seed=1,
-        cuda=True,
+        device = "cuda" if torch.cuda.is_available() else "cpu",
         track=True,
         wandb_project_name="PPO-MiniGrid",
         wandb_entity=None,
@@ -196,7 +197,7 @@ def test_ppo_runner_lstm_model():
     run_config = RunConfig(
         exp_name="Test-PPO-LSTM",
         seed=1,
-        cuda=True,
+        device="cuda" if torch.cuda.is_available() else "cpu",
         track=True,
         wandb_project_name="PPO-MiniGrid",
         wandb_entity=None,
@@ -214,6 +215,7 @@ def test_ppo_runner_lstm_model():
         render_mode="rgb_array",
         capture_video=True,
         video_dir="videos",
+        device = run_config.device
     )
 
     online_config = OnlineTrainConfig(
@@ -245,7 +247,8 @@ def test_ppo_runner_lstm_model():
         lang_model="gru",
         use_memory=True,
         arch="bow_endpool_res",
-        aux_info=False
+        aux_info=False,
+        device=run_config.device
     )
 
     ppo_runner(

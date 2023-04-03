@@ -9,7 +9,7 @@ if __name__ == "__main__":
     run_config = RunConfig(
         exp_name=args.exp_name,
         seed=args.seed,
-        cuda=args.cuda,
+        device="cuda" if args.cuda else "cpu",
         track=args.track,
         wandb_project_name=args.wandb_project_name,
         wandb_entity=args.wandb_entity,

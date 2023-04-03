@@ -229,6 +229,8 @@ class TrajectoryLSTM(nn.Module):
             self.extra_heads = None
             self.add_heads()
 
+        self = self.to(model_config.device)
+
     def add_heads(self):
         '''
         When using auxiliary tasks, the environment yields at each step some binary, continous, or multiclass

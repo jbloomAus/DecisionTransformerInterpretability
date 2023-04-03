@@ -192,7 +192,7 @@ class DecisionTransformer(nn.Module):
             self.predict_states = nn.Linear(
                 self.d_model, np.prod(env.observation_space['image'].shape))
 
-        self.to(self.device)
+        self = self.to(self.device)
 
     # state, action, and return
     def forward(self,

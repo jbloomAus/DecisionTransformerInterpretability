@@ -125,6 +125,7 @@ def lstm_config(environment_config):
         bow: bool = True
         pixel: bool = False
         res: bool = True
+        device = torch.device("cpu")
 
     config = DummyLSTMConfig()
     config.action_space = environment_config.action_space

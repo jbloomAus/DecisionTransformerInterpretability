@@ -142,7 +142,7 @@ class FCAgent(PPOAgent):
                                       self.num_actions), std=0.01)
         )
         self.device = device
-        self.to(device)
+        self = self.to(device)
 
     def rollout(self, memory: Memory, num_steps: int, envs: gym.vector.SyncVectorEnv, trajectory_writer=None) -> None:
         """Performs the rollout phase of the PPO algorithm, collecting experience by interacting with the environment.
@@ -292,7 +292,7 @@ class TransformerPPOAgent(PPOAgent):
         )
         self.layer_init(self.actor.action_predictor, std=0.01)
         self.device = device
-        self.to(device)
+        self = self.to(device)
 
     def rollout(self,
                 memory: Memory,
@@ -527,8 +527,7 @@ class LSTMPPOAgent(PPOAgent):
         self.num_obs = np.array(self.obs_shape).prod()
         self.num_actions = envs.single_action_space.n
 
-        self.model = TrajectoryLSTM(lstm_config)
-        self.to(device)
+        self.model = TrajectoryLSTM(lstm_config).to(device)
 
     def rollout(self, memory: Memory, num_steps: int, envs: gym.vector.SyncVectorEnv, trajectory_writer=None) -> None:
         device = memory.device
@@ -536,7 +535,7 @@ class LSTMPPOAgent(PPOAgent):
         obs = memory.next_obs
         done = memory.next_done
         self.recurrence_memory = t.zeros(
-            self.envs.num_envs, self.lstm_config.image_dim*2)
+            self.envs.num_envs, self.lstm_config.image_dim*2, device=device)
         self.mask = t.zeros(self.envs.num_envs)
 
         for _ in range(num_steps):
