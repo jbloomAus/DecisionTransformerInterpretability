@@ -209,8 +209,10 @@ def load_model_data(model_path):
     state_dict = model_info["model_state_dict"]
     transformer_config = TransformerModelConfig(
         **json.loads(model_info["transformer_config"]))
+    transformer_config.device = t.device(transformer_config.device)
     offline_config = OfflineTrainConfig(
         **json.loads(model_info["offline_config"]))
+    offline_config.device = t.device(offline_config.device)
 
     trajectory_data_set = TrajectoryDataset(
         trajectory_path=offline_config.trajectory_path,

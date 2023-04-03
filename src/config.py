@@ -6,6 +6,8 @@ import json
 import os
 import uuid
 from dataclasses import dataclass
+import torch
+import copy
 
 import gymnasium as gym
 
@@ -50,7 +52,8 @@ class EnvironmentConfig():
 
         self.action_space = self.action_space or env.action_space
         self.observation_space = self.observation_space or env.observation_space
-
+        if isinstance(self.device, str):
+            self.device = torch.device(self.device)
 
 @dataclass
 class TransformerModelConfig():
@@ -72,7 +75,8 @@ class TransformerModelConfig():
         assert self.d_model % self.n_heads == 0
         self.d_head = self.d_model // self.n_heads
         assert self.time_embedding_type in ['embedding', 'linear']
-
+        if isinstance(self.device, str):
+            self.device = torch.device(self.device)
 
 @dataclass
 class LSTMModelConfig():
@@ -89,6 +93,7 @@ class LSTMModelConfig():
     recurrence: int = 4
     arch: str = "bow_endpool_res"
     aux_info: bool = False
+    device: str = 'cpu'
 
     def __post_init__(self):
         for part in self.arch.split('_'):
@@ -108,7 +113,8 @@ class LSTMModelConfig():
         assert self.lang_model in ['gru', 'bigru', 'attgru']
         self.obs_space = self.environment_config.observation_space
         self.action_space = self.environment_config.action_space
-
+        if isinstance(self.device, str):
+            self.device = torch.device(self.device)
 
 @dataclass
 class OfflineTrainConfig:
@@ -132,10 +138,10 @@ class OfflineTrainConfig:
     initial_rtg: list[float] = (0.0, 1.0)
     eval_max_time_steps: int = 100
 
-    def __post__init__(self):
-
+    def __post_init__(self):
         assert self.model_type in ['decision_transformer', 'clone_transformer']
-
+        if isinstance(self.device, str):
+            self.device = torch.device(self.device)
 
 @dataclass
 class OnlineTrainConfig:
@@ -178,15 +184,20 @@ class RunConfig:
     '''
     exp_name: str = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
     seed: int = 1
-    cuda: bool = True
+    device: str = "cpu"
     track: bool = True
     wandb_project_name: str = "PPO-MiniGrid"
     wandb_entity: str = None
 
+    def __post_init__(self):
+        if isinstance(self.device, str):
+            self.device = torch.device(self.device)
 
 class ConfigJsonEncoder(json.JSONEncoder):
-    def default(self, config):
-        return dataclasses.asdict(config)
+    def default(self, config: dataclasses.dataclass):
+        new_config = copy.deepcopy(config)
+        new_config.device = str(new_config.device)
+        return dataclasses.asdict(new_config)
 
 
 def parse_metadata_to_environment_config(metadata: dict):

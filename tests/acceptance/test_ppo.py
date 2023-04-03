@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import gymnasium as gym
 import pytest
 from gymnasium.spaces import Discrete
-
+import torch
 from src.config import EnvironmentConfig
 from src.environments.environments import make_env
 from src.ppo.agent import FCAgent, TransformerPPOAgent
@@ -20,6 +20,7 @@ def run_config():
         track: bool = False
         wandb_project_name: str = 'test'
         wandb_entity: str = 'test'
+        device = torch.device('cpu')
 
     return DummyRunConfig()
 

@@ -18,7 +18,7 @@ def test_ppo_runner():
     run_config = RunConfig(
         exp_name="Test-PPO-Basic",
         seed=1,
-        cuda=True,
+        device="cpu",
         track=True,
         wandb_project_name="PPO-MiniGrid",
         wandb_entity=None,
@@ -33,6 +33,7 @@ def test_ppo_runner():
         render_mode="rgb_array",
         capture_video=True,
         video_dir="videos",
+        device=run_config.device
     )
 
     online_config = OnlineTrainConfig(
@@ -57,7 +58,7 @@ def test_ppo_runner():
         run_config=run_config,
         environment_config=environment_config,
         online_config=online_config,
-        transformer_model_config=None
+        model_config=None
     )
 
     assert os.path.exists(

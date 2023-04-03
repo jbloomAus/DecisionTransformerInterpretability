@@ -10,6 +10,7 @@ from src.environments.environments import make_env
 def download_training_data() -> None:
     ''' uses gdown to get data'''
     if not os.path.exists("trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl"):
+        os.system("pip show gdown || pip install gdown")
         os.system("gdown 1UBMuhRrM3aYDdHeJBFdTn1RzXDrCL_sr -O trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl")
 
 
@@ -69,7 +70,7 @@ def test_clone_transformer(download_training_data, n_ctx):
         wandb_project_name="DecisionTransformerInterpretability",
         seed=1,
         track=True,
-
+        device = "cpu"
     )
 
     transformer_model_config = TransformerModelConfig(

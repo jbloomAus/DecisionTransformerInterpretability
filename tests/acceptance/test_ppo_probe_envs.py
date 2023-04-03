@@ -24,6 +24,7 @@ def run_config():
         track: bool = False
         wandb_project_name: str = 'test'
         wandb_entity: str = 'test'
+        device: t.device = t.device("cpu")
 
     return DummyRunConfig()
 

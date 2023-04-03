@@ -137,6 +137,7 @@ def test_load_model_data(generate_trajectory_data, cleanup_test_results):
         load_model_data("models/model_data.pt")
 
     assert_state_dicts_are_equal(state_dict, model.state_dict())
+    
     assert loaded_transformer_config == transformer_config
     assert loaded_offline_config == offline_config
 

@@ -126,7 +126,7 @@ def test_run_config():
     config = RunConfig()
     assert hasattr(config, 'exp_name')
     assert hasattr(config, 'seed')
-    assert hasattr(config, 'cuda')
+    assert hasattr(config, 'device')
     assert hasattr(config, 'track')
     assert hasattr(config, 'wandb_project_name')
     assert hasattr(config, 'wandb_entity')

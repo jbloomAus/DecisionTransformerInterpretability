@@ -15,7 +15,6 @@ from src.environments.environments import make_env
 from src.environments.registration import register_envs
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-device = t.device("cuda" if t.cuda.is_available() else "cpu")
 
 
 def ppo_runner(

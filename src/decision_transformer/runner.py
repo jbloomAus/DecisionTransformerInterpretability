@@ -24,9 +24,22 @@ def run_decision_transformer(
         make_env: Callable):
     warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-    if run_config.cuda:
-        device = t.device("cuda" if t.cuda.is_available() else "cpu")
+    if run_config.device == "cuda":
+        if t.cuda.is_available():
+            device = t.device("cuda")
+        else:
+            print("CUDA not available, using CPU instead.")
+            device = t.device("cpu")
+    elif run_config.device == "cpu":
+        device = t.device("cpu")
+    elif run_config.device == "mps":
+        if t.mps.is_available():
+            device = t.device("mps")
+        else:
+            print("MPS not available, using CPU instead.")
+            device = t.device("cpu")
     else:
+        print("Invalid device, using CPU instead.")
         device = t.device("cpu")
 
     if offline_config.trajectory_path is None:

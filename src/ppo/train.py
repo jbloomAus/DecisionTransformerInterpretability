@@ -14,8 +14,6 @@ from src.config import (EnvironmentConfig, OnlineTrainConfig, RunConfig,
 from .agent import PPOAgent, FCAgent, TransformerPPOAgent, LSTMPPOAgent
 from .memory import Memory
 
-device = t.device("cuda" if t.cuda.is_available() else "cpu")
-
 
 def train_ppo(
         run_config: RunConfig,
@@ -37,7 +35,7 @@ def train_ppo(
     None
     """
 
-    memory = Memory(envs, online_config, device)
+    memory = Memory(envs, online_config, run_config.device)
     agent = get_agent(model_config, envs, environment_config, online_config)
     num_updates = online_config.total_timesteps // online_config.batch_size
 
@@ -157,19 +155,19 @@ def get_agent(
                 envs=envs,
                 transformer_model_config=model_config,
                 environment_config=environment_config,
-                device=device,
+                device=environment_config.device,
             )
         elif isinstance(model_config, LSTMModelConfig):
             agent = LSTMPPOAgent(
                 envs=envs,
                 environment_config=environment_config,
                 lstm_config=model_config,
-                device=device,
+                device=environment_config.device,
             )
     else:
         agent = FCAgent(
             envs,
-            device=device,
+            device=environment_config.device,
             hidden_dim=online_config.hidden_size
         )
     return agent
