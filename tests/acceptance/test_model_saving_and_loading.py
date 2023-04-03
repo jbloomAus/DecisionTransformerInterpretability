@@ -66,7 +66,7 @@ def generate_trajectory_data() -> None:
             run_config=run_config,
             environment_config=environment_config,
             online_config=online_config,
-            transformer_model_config=None
+            model_config=None
         )
 
         assert os.path.exists(
