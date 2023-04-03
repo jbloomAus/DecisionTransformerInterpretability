@@ -592,7 +592,6 @@ class LSTMPPOAgent(PPOAgent):
 
         for _ in range(args.update_epochs):
             # minibatches = memory.get_minibatches(recurrence=recurrence)
-
             starting_indexes = memory.get_minibatch_indexes(
                 memory.args.batch_size,
                 memory.args.minibatch_size,

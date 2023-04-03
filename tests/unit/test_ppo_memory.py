@@ -255,8 +255,8 @@ def test_get_minibatch_indexes_recurrence(memory):
 
     minibatch_indexes = memory.get_minibatch_indexes(
         batch_size=8*4, minibatch_size=8, recurrence=2)
-    assert len(minibatch_indexes) == 2  # num_minibatches = (8*4)/(8*2)
-    assert len(minibatch_indexes[0]) == 8  # minibatch_size
+    assert len(minibatch_indexes) == 4  # num_minibatches = (8*4)/(8*2)
+    assert len(minibatch_indexes[0]) == 4  # minibatch_size
     # now assert no number appears twice
     flat_indexes = [item for sublist in minibatch_indexes for item in sublist]
     assert len(flat_indexes) == len(set(flat_indexes))
@@ -297,9 +297,9 @@ def test_get_minibatches_recurrence(memory):
     memory.args.minibatch_size = 8
     mbs = memory.get_minibatches(recurrence=2)
     # minibatch_size // recurrence (there'll be an inner loop that runs recurrence times)
-    assert len(mbs) == 2  # hence why this isn't num_minibatches
+    assert len(mbs) == 4  # hence why this isn't num_minibatches
     assert isinstance(mbs[0], Minibatch)
-    assert len(mbs[0].obs) == 8  # minibatch_size
+    assert len(mbs[0].obs) == 4  # minibatch_size
 
     for i in range(len(mbs)):
         # tensor assert actions match obs
@@ -342,9 +342,9 @@ def test_get_minibatches_given_indices_contiguity_of_obs(memory):
         batch_size=8*4, minibatch_size=8, recurrence=2)
     mbs = memory.get_minibatches(indexes=minibatch_indexes)
     # minibatch_size // recurrence (there'll be an inner loop that runs recurrence times)
-    assert len(mbs) == 2  # hence why this isn't num_minibatches
+    assert len(mbs) == 4  # hence why this isn't num_minibatches
     assert isinstance(mbs[0], Minibatch)
-    assert len(mbs[0].obs) == 8  # minibatch_size
+    assert len(mbs[0].obs) == 4  # minibatch_size
 
     mbs_neg_1 = memory.get_minibatches(indexes=minibatch_indexes-1)
     mbs2 = memory.get_minibatches(indexes=minibatch_indexes+1)
@@ -395,9 +395,9 @@ def test_get_minibatches_given_indices_single_env_contiguity_of_obs(memory):
         batch_size=8*4, minibatch_size=8, recurrence=2)
     mbs = memory.get_minibatches(indexes=minibatch_indexes)
     # minibatch_size // recurrence (there'll be an inner loop that runs recurrence times)
-    assert len(mbs) == 2  # hence why this isn't num_minibatches
+    assert len(mbs) == 4  # hence why this isn't num_minibatches
     assert isinstance(mbs[0], Minibatch)
-    assert len(mbs[0].obs) == 8  # minibatch_size
+    assert len(mbs[0].obs) == 4  # minibatch_size
 
     mbs2 = memory.get_minibatches(indexes=minibatch_indexes+1)
 

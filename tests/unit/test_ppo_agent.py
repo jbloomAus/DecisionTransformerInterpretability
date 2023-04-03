@@ -21,9 +21,9 @@ def online_config():
         use_trajectory_model: bool = False
         hidden_size: int = 64
         total_timesteps: int = 180000
-        learning_rate: float = 0.00025
+        learning_rate: float = 0.0001
         decay_lr: bool = False,
-        num_envs: int = 4
+        num_envs: int = 16
         num_steps: int = 128
         gamma: float = 0.99
         gae_lambda: float = 0.95
@@ -35,8 +35,8 @@ def online_config():
         max_grad_norm: float = 2
         trajectory_path: str = None
         fully_observed: bool = False
-        batch_size: int = 16
-        minibatch_size = 4
+        batch_size: int = 2048
+        minibatch_size = 512
         prob_go_from_end = 0.1
 
     return DummyOnlineConfig()
@@ -257,7 +257,7 @@ def test_fc_agent_rollout(fc_agent, online_config):
 def test_fc_agent_learn(fc_agent, online_config):
 
     envs = gym.vector.SyncVectorEnv(
-        [lambda: gym.make('CartPole-v0') for _ in range(4)])
+        [lambda: gym.make('CartPole-v0') for _ in range(online_config.num_envs)])
 
     memory = Memory(envs=envs, args=online_config, device=fc_agent.device)
 
@@ -421,7 +421,7 @@ def test_lstm_agent_rollout(lstm_agent, online_config):
 
 def test_lstm_agent_rollout_learn(lstm_agent, online_config):
 
-    online_config.batch_size = 128
+    online_config.batch_size = 128*16
     num_steps = 128
     agent = lstm_agent
     num_updates = online_config.total_timesteps // online_config.batch_size
@@ -432,7 +432,8 @@ def test_lstm_agent_rollout_learn(lstm_agent, online_config):
     )
 
     memory = Memory(envs=lstm_agent.envs,
-                    args=online_config, device=torch.device("cpu"))
+                    args=online_config,
+                    device=torch.device("cpu"))
 
     agent.rollout(memory, num_steps, lstm_agent.envs)
     agent.learn(memory, online_config, optimizer, scheduler, track=False)
@@ -443,3 +444,5 @@ def test_lstm_agent_rollout_learn(lstm_agent, online_config):
     assert len(memory.next_value) == lstm_agent.envs.num_envs
     assert len(memory.experiences) == num_steps
     assert len(memory.experiences[0]) == 8
+
+    assert scheduler.num_updates == num_updates

@@ -143,6 +143,7 @@ class Memory():
         Each index should appear exactly once.
         '''
         assert batch_size % minibatch_size == 0
+        mb_num = batch_size // minibatch_size
 
         if recurrence is None:
             indices = np.random.permutation(batch_size)
@@ -155,7 +156,7 @@ class Memory():
             # has shape batch_size // recurrence, divide this into num minibatches
             indices = np.random.permutation(indices)
             indices = rearrange(
-                indices, "(mb_num mb_size) -> mb_num mb_size", mb_size=minibatch_size//recurrence)
+                indices, "(mb_num mb_size) -> mb_num mb_size", mb_num=mb_num)
 
         return indices
 

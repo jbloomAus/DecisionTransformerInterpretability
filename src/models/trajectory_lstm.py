@@ -330,6 +330,9 @@ class TrajectoryLSTM(nn.Module):
             extra_predictions = dict()
 
         x = self.actor(embedding)
+        # check if x is made of nans
+        if torch.isnan(x).any():
+            raise ValueError('x is made of nans')
         dist = Categorical(logits=F.log_softmax(x, dim=1))
 
         x = self.critic(embedding)
