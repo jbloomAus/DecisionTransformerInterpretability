@@ -189,3 +189,43 @@ class Probe6(gym.Env):
         if return_info:
             return np.array([0], dtype=np.float32), {}
         return np.array([0], dtype=np.float32)
+
+
+class Probe7(gym.Env):
+    """
+    5 timesteps. Observation at time 0 is samples from a discrete uniform distribution between 0 and 5 inclusive.
+    Reward is 0 at all timesteps except the 5th, when it is 1 if the action is equal to the observation given
+    at the first timestep, otherwise 0.
+    """
+
+    action_space: Discrete
+    observation_space: Box
+
+    def __init__(self):
+        super().__init__()
+        self.observation_space = Box(
+            low=0, high=5, shape=(1,), dtype=np.int32)
+        self.action_space = Discrete(6)
+        self.reset()
+
+    def step(self, action: ActType) -> Tuple[ObsType, float, bool, dict]:
+        self.time_step += 1
+
+        if self.time_step == 5:
+            reward = 1.0 if action == self.initial_obs else 0.0
+            return np.array([self.initial_obs]), reward, True, False, {}
+        elif self.time_step == 0:
+            return np.array([self.initial_obs]), 0.0, False, False, {}
+        else:
+            return np.array([0.0]), 0.0, False, False, {}
+
+    def reset(
+        self, seed: Optional[int] = None, return_info=True, options=None
+    ) -> Union[ObsType, Tuple[ObsType, dict]]:
+        self.time_step = 0
+        if seed is not None:
+            np.random.seed(seed)
+        self.initial_obs = np.random.randint(0, 6, size=(1,))
+        if return_info:
+            return self.initial_obs, {}
+        return self.initial_obs
