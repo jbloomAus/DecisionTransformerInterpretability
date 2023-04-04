@@ -1368,7 +1368,7 @@ a certain timelimit was exceeded, or the physics simulation has entered an inval
 <dt class="sig sig-object py" id="src.ppo.my_probe_envs.Probe7">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.my_probe_envs.</span></span><span class="sig-name descname"><span class="pre">Probe7</span></span><a class="headerlink" href="#src.ppo.my_probe_envs.Probe7" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Env</span></code></p>
-<p>5 timesteps. Observation at time 0 is samples from a discrete uniform distribution between 0 and 5 inclusive.
+<p>4 timesteps. Observation at time 0 is samples from 0 or 1 uniformly.
 Reward is 0 at all timesteps except the 5th, when it is 1 if the action is equal to the observation given
 at the first timestep, otherwise 0.</p>
 <dl class="py attribute">
