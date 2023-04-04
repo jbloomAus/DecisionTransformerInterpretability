@@ -55,6 +55,7 @@ class EnvironmentConfig():
         if isinstance(self.device, str):
             self.device = torch.device(self.device)
 
+
 @dataclass
 class TransformerModelConfig():
     '''
@@ -78,6 +79,7 @@ class TransformerModelConfig():
         if isinstance(self.device, str):
             self.device = torch.device(self.device)
 
+
 @dataclass
 class LSTMModelConfig():
     '''
@@ -97,7 +99,7 @@ class LSTMModelConfig():
 
     def __post_init__(self):
         for part in self.arch.split('_'):
-            if part not in ['original', 'bow', 'pixels', 'endpool', 'res']:
+            if part not in ['original', 'bow', 'pixels', 'endpool', 'res', 'simple']:
                 raise ValueError(
                     "Incorrect architecture name: {}".format(self.arch))
 
@@ -115,6 +117,7 @@ class LSTMModelConfig():
         self.action_space = self.environment_config.action_space
         if isinstance(self.device, str):
             self.device = torch.device(self.device)
+
 
 @dataclass
 class OfflineTrainConfig:
@@ -142,6 +145,7 @@ class OfflineTrainConfig:
         assert self.model_type in ['decision_transformer', 'clone_transformer']
         if isinstance(self.device, str):
             self.device = torch.device(self.device)
+
 
 @dataclass
 class OnlineTrainConfig:
@@ -180,6 +184,7 @@ class OnlineTrainConfig:
         if isinstance(self.device, str):
             self.device = torch.device(self.device)
 
+
 @dataclass
 class RunConfig:
     '''
@@ -195,6 +200,7 @@ class RunConfig:
     def __post_init__(self):
         if isinstance(self.device, str):
             self.device = torch.device(self.device)
+
 
 class ConfigJsonEncoder(json.JSONEncoder):
     def default(self, config: dataclasses.dataclass):

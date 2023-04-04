@@ -310,6 +310,13 @@ def get_obs_preprocessor(obs_space):
         if 'image' in obs_space:
             return lambda x: preprocess_images(x['image'])
 
+    elif (isinstance(obs_space, gym.spaces.Discrete) or isinstance(obs_space, gym.spaces.MultiDiscrete)):
+        return lambda x: np.array(x).astype(np.float32)
+
+    else:
+        raise NotImplementedError(
+            "Observation space not supported: {}".format(obs_space))
+
 
 def preprocess_images(images, device=None):
     # Bug of Pytorch: very slow if not first converted to numpy array

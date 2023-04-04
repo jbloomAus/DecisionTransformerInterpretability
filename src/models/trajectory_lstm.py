@@ -6,14 +6,14 @@ I'm not going to keep track of the changes since the original code is not easily
 Hopefully we can get the code working and work off that as a benchmark.
 '''
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions.categorical import Categorical
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
-from src.config import LSTMModelConfig, EnvironmentConfig
-
+from src.config import EnvironmentConfig, LSTMModelConfig
 
 # This is from BabyAI, not sure why we need it yet.
 # dictionary that defines what head is required for each extra info used for auxiliary supervision
@@ -141,7 +141,7 @@ class TrajectoryLSTM(nn.Module):
         self.action_space = model_config.action_space
 
         for part in self.arch.split('_'):
-            if part not in ['original', 'bow', 'pixels', 'endpool', 'res']:
+            if part not in ['original', 'bow', 'pixels', 'endpool', 'res', 'simple']:
                 raise ValueError(
                     "Incorrect architecture name: {}".format(self.arch))
 
@@ -229,6 +229,11 @@ class TrajectoryLSTM(nn.Module):
             self.extra_heads = None
             self.add_heads()
 
+        # if simple in arch, we just want to embedding using a simple embedding (no CNN)
+        if 'simple' in self.arch:
+            # if it's a continuous embeding just flatten and project.
+            self.simple_embedding = nn.Linear(
+                np.prod(self.obs_space.shape).astype(int), self.image_dim)
         self = self.to(model_config.device)
 
     def add_heads(self):
@@ -302,19 +307,23 @@ class TrajectoryLSTM(nn.Module):
             attention = F.softmax(pre_softmax, dim=1)
             instr_embedding = (instr_embedding * attention[:, :, None]).sum(1)
 
-        x = torch.transpose(torch.transpose(obs.image, 1, 3), 2, 3)
+        if "simple" not in self.arch:  # batch of 2D images
+            x = torch.transpose(torch.transpose(obs.image, 1, 3), 2, 3)
 
-        if 'pixel' in self.arch:
-            x /= 256.0
-        x = self.image_conv(x)
-        if self.use_instr:
-            for controller in self.controllers:
-                out = controller(x, instr_embedding)
-                if self.res:
-                    out += x
-                x = out
-        x = F.relu(self.film_pool(x))
-        x = x.reshape(x.shape[0], -1)
+            if 'pixel' in self.arch:
+                x /= 256.0
+            x = self.image_conv(x)
+            if self.use_instr:
+                for controller in self.controllers:
+                    out = controller(x, instr_embedding)
+                    if self.res:
+                        out += x
+                    x = out
+
+            x = F.relu(self.film_pool(x))
+            x = x.reshape(x.shape[0], -1)
+        else:
+            x = self.simple_embedding(obs.image)
 
         if self.use_memory:
             hidden = (memory[:, :self.semi_memory_size],

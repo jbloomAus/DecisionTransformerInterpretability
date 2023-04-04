@@ -5,13 +5,13 @@ import gymnasium as gym
 import pytest
 import torch as t
 
-from src.config import EnvironmentConfig
+from src.config import EnvironmentConfig, LSTMModelConfig
 from src.environments.environments import make_env
-from src.ppo.my_probe_envs import Probe1, Probe2, Probe3, Probe4, Probe5, Probe6
+from src.ppo.my_probe_envs import Probe1, Probe2, Probe3, Probe4, Probe5, Probe6, Probe7
 from src.ppo.train import train_ppo
 
-for i in range(6):
-    probes = [Probe1, Probe2, Probe3, Probe4, Probe5, Probe6]
+for i in range(7):
+    probes = [Probe1, Probe2, Probe3, Probe4, Probe5, Probe6, Probe7]
     gym.envs.registration.register(id=f"Probe{i+1}-v0", entry_point=probes[i])
 
 
@@ -125,7 +125,8 @@ def test_probe_envs(env_name, run_config, environment_config, online_config):
         gym.envs.registration.register(
             id=f"Probe{i+1}-v0", entry_point=probes[i])
 
-    env_config = EnvironmentConfig(env_id=env_name, render_mode=None, max_steps=None, fully_observed=False)
+    env_config = EnvironmentConfig(
+        env_id=env_name, render_mode=None, max_steps=None, fully_observed=False)
     envs = gym.vector.SyncVectorEnv(
         [make_env(env_config, i, i, "test") for i in range(4)]
     )
@@ -205,7 +206,8 @@ def test_probe_envs_traj_model_1_context(
         gym.envs.registration.register(
             id=f"Probe{i+1}-v0", entry_point=probes[i])
 
-    env_config=EnvironmentConfig(env_id=env_name, render_mode=None, max_steps=None, fully_observed=False)
+    env_config = EnvironmentConfig(
+        env_id=env_name, render_mode=None, max_steps=None, fully_observed=False)
     envs = gym.vector.SyncVectorEnv(
         [make_env(env_config, i, i, "test") for i in range(4)]
     )
@@ -311,7 +313,8 @@ def test_probe_envs_traj_model_2_context(
         gym.envs.registration.register(
             id=f"Probe{i+1}-v0", entry_point=probes[i])
 
-    env_config = EnvironmentConfig(env_id=env_name, render_mode=None, max_steps=None, fully_observed=False)
+    env_config = EnvironmentConfig(
+        env_id=env_name, render_mode=None, max_steps=None, fully_observed=False)
     envs = gym.vector.SyncVectorEnv(
         [make_env(env_config, i, i, "test") for i in range(4)]
     )
@@ -395,3 +398,82 @@ def test_probe_envs_traj_model_2_context(
     expected_value = t.tensor(expected_value_for_probes[probe_idx])
     t.testing.assert_close(value, expected_value,
                            atol=tolerances_for_value[probe_idx], rtol=0.1)
+
+
+@pytest.mark.parametrize("env_name", ["Probe1-v0", "Probe2-v0", "Probe3-v0", "Probe4-v0", "Probe5-v0", "Probe6-v0", "Probe7-v0"])
+@pytest.mark.skip(reason="LSTM Model suffers from underflow with the prob environments so can't do forward passes. Fix later")
+def test_probe_envs_lstm_model(env_name, run_config, environment_config, online_config):
+
+    for i in range(5):
+        probes = [Probe1, Probe2, Probe3, Probe4, Probe5]
+        gym.envs.registration.register(
+            id=f"Probe{i+1}-v0", entry_point=probes[i])
+
+    env_config = EnvironmentConfig(
+        env_id=env_name, render_mode=None, max_steps=None, fully_observed=False)
+    envs = gym.vector.SyncVectorEnv(
+        [make_env(env_config, i, i, "test") for i in range(4)]
+    )
+
+    # currently, ppo has tests which run inside main if it
+    # detects "Probe" in the env name. We will fix this
+    # eventually.
+    environment_config.env_id = env_name
+    environment_config.action_space = envs.single_action_space
+    environment_config.observation_space = envs.single_observation_space
+    online_config.total_timesteps = 2000
+    model_config = LSTMModelConfig(
+        environment_config, recurrence=4, arch="simple_endpool_res", use_memory=True)
+    agent = train_ppo(
+        run_config=run_config,
+        online_config=online_config,
+        environment_config=environment_config,
+        model_config=model_config,
+        envs=envs
+    )
+
+    obs_for_probes = [
+        [[0.0]],
+        [[-1.0], [+1.0]],
+        [[0.0], [1.0]],
+        [[0.0], [0.0]],
+        [[0.0], [1.0]]]
+
+    expected_value_for_probes = [
+        [[1.0]],
+        [[-1.0], [+1.0]],
+        [[online_config.gamma], [1.0]],
+        [[+1.0], [+1.0]],  # can achieve high reward independently of obs
+        [[+1.0], [+1.0]]
+    ]
+
+    tolerances_for_value = [5e-4, 5e-4, 5e-4, 5e-2, 2e-1]
+
+    match = re.match(r"Probe(\d)-v0", env_name)
+    probe_idx = int(match.group(1)) - 1
+    obs = t.tensor(obs_for_probes[probe_idx])
+    value = agent.critic(obs)
+    print("Value: ", value)
+    expected_value = t.tensor(expected_value_for_probes[probe_idx])
+    t.testing.assert_close(value, expected_value,
+                           atol=tolerances_for_value[probe_idx], rtol=0)
+
+    if probe_idx == 3:  # probe env 4, action should be +1.0
+        action = agent.actor(obs)
+        prob = t.nn.functional.softmax(action, dim=-1)
+        t.testing.assert_close(
+            prob,
+            t.tensor([[0.0, 1.0], [0.0, 1.0]]),
+            atol=1e-2,
+            rtol=1
+        )
+
+    if probe_idx == 4:  # probe env 4, action should be +1.0
+        action = agent.actor(obs)
+        prob = t.nn.functional.softmax(action, dim=-1)
+        t.testing.assert_close(
+            prob,
+            t.tensor([[1.0, 0.0], [0.0, 1.0]]),
+            atol=1e-2,
+            rtol=1
+        )
