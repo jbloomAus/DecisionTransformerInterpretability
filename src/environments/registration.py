@@ -1,4 +1,5 @@
 from gymnasium import register
+from .memory import MemoryEnv
 from .multienvironments import MultiEnvSampler
 from src.ppo.my_probe_envs import Probe1, Probe2, Probe3, Probe4, Probe5, Probe6
 from minigrid.envs import DynamicObstaclesEnv, CrossingEnv, MultiRoomEnv
@@ -76,6 +77,22 @@ def get_multi_room_env(render_mode='rgb_array', max_steps=1000):
     return MultiEnvSampler(envs)
 
 
+def get_memory_env_random_direction(render_mode='rgb_array', max_steps=1000):
+
+    env = MemoryEnv(size=7, random_length=False, random_direction=True,
+                    max_steps=max_steps, render_mode=render_mode)
+
+    return env
+
+
+def get_memory_env_fixed_start(render_mode='rgb_array', max_steps=1000):
+
+    env = MemoryEnv(size=7, random_length=False, random_direction=False,
+                    max_steps=max_steps, render_mode=render_mode)
+
+    return env
+
+
 print("Registering DynamicObstaclesMultiEnv-v0")
 print("Registering CrossingMultiEnv-v0")
 print("Registering Probe Envs")
@@ -101,3 +118,13 @@ def register_envs():
     probes = [Probe1, Probe2, Probe3, Probe4, Probe5, Probe6]
     for i in range(6):
         register(id=f"Probe{i+1}-v0", entry_point=probes[i])
+
+    register(
+        id="MiniGrid-MemoryS7RandomDirection-v0",
+        entry_point='src.environments.registration:get_memory_env_random_direction',
+    )
+
+    register(
+        id="MiniGrid-MemoryS7FixedStart-v0",
+        entry_point='src.environments.registration:get_memory_env_fixed_start',
+    )
