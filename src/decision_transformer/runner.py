@@ -15,6 +15,7 @@ from src.models.trajectory_transformer import CloneTransformer, DecisionTransfor
 from .offline_dataset import TrajectoryDataset, TrajectoryVisualizer
 from .train import train
 from .utils import get_max_len_from_model_type
+from src.environments.registration import register_envs
 
 
 def run_decision_transformer(
@@ -57,6 +58,9 @@ def run_decision_transformer(
         prob_go_from_end=offline_config.prob_go_from_end,
         device=device,
     )
+
+    # ensure all the environments we need are registered
+    register_envs()
 
     # make an environment
     env_id = trajectory_data_set.metadata['args']['env_id']
