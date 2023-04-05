@@ -522,7 +522,7 @@ class LSTMPPOAgent(PPOAgent):
         '''
         super().__init__(envs=envs, device=device)
         self.environment_config = environment_config
-        self.lstm_config = lstm_config
+        self.model_config = lstm_config
         self.obs_shape = get_obs_shape(envs.single_observation_space)
         self.num_obs = np.array(self.obs_shape).prod()
         self.num_actions = envs.single_action_space.n
@@ -535,7 +535,7 @@ class LSTMPPOAgent(PPOAgent):
         obs = memory.next_obs
         done = memory.next_done
         self.recurrence_memory = t.zeros(
-            self.envs.num_envs, self.lstm_config.image_dim*2, device=device)
+            self.envs.num_envs, self.model_config.image_dim*2, device=device)
         self.mask = t.zeros(self.envs.num_envs)
 
         for _ in range(num_steps):
@@ -587,7 +587,7 @@ class LSTMPPOAgent(PPOAgent):
                 obs, self.recurrence_memory)['value']
 
     def learn(self, memory: Memory, args: OnlineTrainConfig, optimizer: optim.Optimizer, scheduler: PPOScheduler, track: bool) -> None:
-        recurrence = self.lstm_config.recurrence
+        recurrence = self.model_config.recurrence
 
         for _ in range(args.update_epochs):
             # minibatches = memory.get_minibatches(recurrence=recurrence)
@@ -637,11 +637,11 @@ class LSTMPPOAgent(PPOAgent):
                     batch_loss += total_objective_function
 
                 # Update batch values
-                batch_entropy /= self.lstm_config.recurrence
-                batch_value /= self.lstm_config.recurrence
-                batch_policy_loss /= self.lstm_config.recurrence
-                batch_value_loss /= self.lstm_config.recurrence
-                batch_loss /= self.lstm_config.recurrence
+                batch_entropy /= self.model_config.recurrence
+                batch_value /= self.model_config.recurrence
+                batch_policy_loss /= self.model_config.recurrence
+                batch_value_loss /= self.model_config.recurrence
+                batch_loss /= self.model_config.recurrence
 
                 # update actor-critic
                 optimizer.zero_grad()

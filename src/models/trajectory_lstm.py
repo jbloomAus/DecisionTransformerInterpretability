@@ -91,7 +91,7 @@ class ImageBOWEmbedding(nn.Module):
 class TrajectoryLSTM(nn.Module):
     def __init__(self,
                  model_config: LSTMModelConfig
-                 #  obs_space,
+                 #  observation_space,
                  #  action_space,
                  #  image_dim=128,
                  #  memory_dim=128,
@@ -110,7 +110,7 @@ class TrajectoryLSTM(nn.Module):
             RecurrentACModel: Custom class for recurrent actor-critic models.
 
         Args:
-            obs_space: A dictionary containing the observation space of the environment.
+            observation_space: A dictionary containing the observation space of the environment.
             action_space: The action space of the environment.
             image_dim: The dimension of the image embedding. Default is 128.
             memory_dim: The dimension of the memory embedding. Default is 128.
@@ -137,8 +137,8 @@ class TrajectoryLSTM(nn.Module):
         self.image_dim = model_config.image_dim
         self.memory_dim = model_config.memory_dim
         self.instr_dim = model_config.instr_dim
-        self.obs_space = model_config.obs_space
-        self.action_space = model_config.action_space
+        self.observation_space = model_config.environment_config.observation_space
+        self.action_space = model_config.environment_config.action_space
 
         for part in self.arch.split('_'):
             if part not in ['original', 'bow', 'pixels', 'endpool', 'res', 'simple']:
@@ -148,7 +148,8 @@ class TrajectoryLSTM(nn.Module):
         # if not self.use_instr:
         #     raise ValueError("FiLM architecture can be used when instructions are enabled")
         self.image_conv = nn.Sequential(*[
-            *([ImageBOWEmbedding(self.obs_space['image'], 128)] if self.bow else []),
+            *([ImageBOWEmbedding(self.observation_space['image'], 128)]
+              if self.bow else []),
             *([nn.Conv2d(
                 in_channels=3, out_channels=128, kernel_size=(8, 8),
                 stride=8, padding=0)] if self.pixel else []),
@@ -171,7 +172,7 @@ class TrajectoryLSTM(nn.Module):
         if self.use_instr:
             if self.lang_model in ['gru', 'bigru', 'attgru']:
                 self.word_embedding = nn.Embedding(
-                    self.obs_space['mission'][0].n + 1, self.instr_dim)
+                    self.observation_space['mission'][0].n + 1, self.instr_dim)
                 if self.lang_model in ['gru', 'bigru', 'attgru']:
                     gru_dim = self.instr_dim
                     if self.lang_model in ['bigru', 'attgru']:
@@ -233,7 +234,7 @@ class TrajectoryLSTM(nn.Module):
         if 'simple' in self.arch:
             # if it's a continuous embeding just flatten and project.
             self.simple_embedding = nn.Linear(
-                np.prod(self.obs_space.shape).astype(int), self.image_dim)
+                np.prod(self.observation_space.shape).astype(int), self.image_dim)
         self = self.to(model_config.device)
 
     def add_heads(self):

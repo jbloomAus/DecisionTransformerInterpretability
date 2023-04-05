@@ -64,8 +64,6 @@ def test_lstm_model_config():
     assert hasattr(config, 'recurrence')
     assert hasattr(config, 'arch')
     assert hasattr(config, 'aux_info')
-    assert hasattr(config, 'obs_space')
-    assert hasattr(config, 'action_space')
     assert hasattr(config, 'endpool')
     assert hasattr(config, 'bow')
     assert hasattr(config, 'pixel')

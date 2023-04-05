@@ -129,6 +129,7 @@ def lstm_config(environment_config):
         device = torch.device("cpu")
 
     config = DummyLSTMConfig()
+    config.environment_config = environment_config
     config.action_space = environment_config.action_space
     config.obs_space = environment_config.observation_space
 

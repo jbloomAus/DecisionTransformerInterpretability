@@ -113,8 +113,8 @@ class LSTMModelConfig():
                 f"image_dim is {self.model_config.image_dim}, expected 128")
 
         assert self.lang_model in ['gru', 'bigru', 'attgru']
-        self.obs_space = self.environment_config.observation_space
-        self.action_space = self.environment_config.action_space
+        # self.observation_space = self.environment_config.observation_space
+        # self.action_space = self.environment_config.action_space
         if isinstance(self.device, str):
             self.device = torch.device(self.device)
 
@@ -205,8 +205,25 @@ class RunConfig:
 class ConfigJsonEncoder(json.JSONEncoder):
     def default(self, config: dataclasses.dataclass):
         new_config = copy.deepcopy(config)
-        new_config.device = str(new_config.device)
-        return dataclasses.asdict(new_config)
+
+        if hasattr(new_config, "device") and new_config.device is not None:
+            new_config.device = str(new_config.device)
+
+        # remove observation space and action space
+        if hasattr(new_config, "observation_space") and new_config.observation_space is not None:
+            # will be instantiated from env_id
+            delattr(new_config, 'observation_space')
+        if hasattr(new_config, "action_space") and new_config.action_space is not None:
+            # will be instantiated from env_id
+            delattr(new_config, 'action_space')
+
+        # check if new config is a dataclass
+        if dataclasses.is_dataclass(new_config):
+            return dataclasses.asdict(new_config)
+        elif isinstance(new_config, torch.device):
+            return str(new_config)
+        else:
+            return super().default(config)
 
 
 def parse_metadata_to_environment_config(metadata: dict):
