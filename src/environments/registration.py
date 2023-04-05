@@ -88,7 +88,7 @@ def get_memory_env_random_direction(render_mode='rgb_array', max_steps=1000):
 def get_memory_env_fixed_start(render_mode='rgb_array', max_steps=1000):
 
     env = MemoryEnv(size=7, random_length=False, random_direction=False,
-                    max_steps=max_steps, render_mode=render_mode)
+                    random_start_pos=False, max_steps=max_steps, render_mode=render_mode)
 
     return env
 
