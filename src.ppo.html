@@ -215,7 +215,7 @@
 <span id="src-ppo-agent-module"></span><h2>src.ppo.agent module<a class="headerlink" href="#module-src.ppo.agent" title="Permalink to this heading">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="src.ppo.agent.FCAgent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.agent.</span></span><span class="sig-name descname"><span class="pre">FCAgent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">envs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SyncVectorEnv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">device(type='cpu')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">64</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.agent.FCAgent" title="Permalink to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.agent.</span></span><span class="sig-name descname"><span class="pre">FCAgent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">envs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SyncVectorEnv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">environment_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.config.EnvironmentConfig" title="src.config.EnvironmentConfig"><span class="pre">EnvironmentConfig</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fc_model_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">device</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">device(type='cpu')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_dim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">64</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.agent.FCAgent" title="Permalink to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#src.ppo.agent.PPOAgent" title="src.ppo.agent.PPOAgent"><code class="xref py py-class docutils literal notranslate"><span class="pre">PPOAgent</span></code></a></p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="src.ppo.agent.FCAgent.actor">
@@ -432,6 +432,24 @@ log the collected trajectories. Defaults to None.</p></li>
 <dd></dd></dl>
 
 </dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.agent.get_agent">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.agent.</span></span><span class="sig-name descname"><span class="pre">get_agent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dataclass</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">envs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SyncVectorEnv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">environment_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.config.EnvironmentConfig" title="src.config.EnvironmentConfig"><span class="pre">EnvironmentConfig</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">online_config</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#src.ppo.agent.PPOAgent" title="src.ppo.agent.PPOAgent"><span class="pre">PPOAgent</span></a></span></span><a class="headerlink" href="#src.ppo.agent.get_agent" title="Permalink to this definition">#</a></dt>
+<dd><p>Returns an agent based on the given configuration.</p>
+<p>Args:
+- transformer_model_config: The configuration for the transformer model.
+- envs: The environment to train on.
+- environment_config: The configuration for the environment.
+- online_config: The configuration for online training.</p>
+<p>Returns:
+- An agent.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.agent.load_saved_checkpoint">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.agent.</span></span><span class="sig-name descname"><span class="pre">load_saved_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_envs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#src.ppo.agent.PPOAgent" title="src.ppo.agent.PPOAgent"><span class="pre">PPOAgent</span></a></span></span><a class="headerlink" href="#src.ppo.agent.load_saved_checkpoint" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
 
 </section>
 <section id="module-src.ppo.compute_adv_vectorized">
@@ -1509,19 +1527,6 @@ uploads them to the current WandB run.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="src.ppo.train.get_agent">
-<span class="sig-prename descclassname"><span class="pre">src.ppo.train.</span></span><span class="sig-name descname"><span class="pre">get_agent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dataclass</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">envs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SyncVectorEnv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">environment_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.config.EnvironmentConfig" title="src.config.EnvironmentConfig"><span class="pre">EnvironmentConfig</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">online_config</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#src.ppo.agent.PPOAgent" title="src.ppo.agent.PPOAgent"><span class="pre">PPOAgent</span></a></span></span><a class="headerlink" href="#src.ppo.train.get_agent" title="Permalink to this definition">#</a></dt>
-<dd><p>Returns an agent based on the given configuration.</p>
-<p>Args:
-- transformer_model_config: The configuration for the transformer model.
-- envs: The environment to train on.
-- environment_config: The configuration for the environment.
-- online_config: The configuration for online training.</p>
-<p>Returns:
-- An agent.</p>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="src.ppo.train.prepare_video_dir">
 <span class="sig-prename descclassname"><span class="pre">src.ppo.train.</span></span><span class="sig-name descname"><span class="pre">prepare_video_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">video_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.train.prepare_video_dir" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
@@ -1690,28 +1695,6 @@ None</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="src.ppo.utils.cummean">
-<span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">cummean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.cummean" title="Permalink to this definition">#</a></dt>
-<dd><p>Computes the cumulative mean</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.ppo.utils.ewma">
-<span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">ewma</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.ewma" title="Permalink to this definition">#</a></dt>
-<dd><p>Returns the exponentially weighted moving average of x.
-Parameters:
-———–
-x : array-like
-alpha : float {0 &lt;= alpha &lt;= 1}
-Returns:
-——–
-ewma: numpy array</p>
-<blockquote>
-<div><p>the exponentially weighted moving average</p>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="src.ppo.utils.get_obs_preprocessor">
 <span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">get_obs_preprocessor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs_space</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.get_obs_preprocessor" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
@@ -1739,14 +1722,6 @@ ewma: numpy array</p>
 <dd></dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="src.ppo.utils.plot_cartpole_obs_and_dones">
-<span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">plot_cartpole_obs_and_dones</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">done</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.plot_cartpole_obs_and_dones" title="Permalink to this definition">#</a></dt>
-<dd><p>obs: shape (n_steps, n_envs, n_obs)
-dones: shape (n_steps, n_envs)</p>
-<p>Plots the observations and the dones.</p>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="src.ppo.utils.preprocess_images">
 <span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">preprocess_images</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">images</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.preprocess_images" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
@@ -1758,32 +1733,9 @@ dones: shape (n_steps, n_envs)</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="src.ppo.utils.set_seed">
-<span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">set_seed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.set_seed" title="Permalink to this definition">#</a></dt>
+<dt class="sig sig-object py" id="src.ppo.utils.store_model_checkpoint">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">store_model_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">agent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">online_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">checkpoint_num</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">checkpoint_artifact</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#src.ppo.utils.store_model_checkpoint" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.ppo.utils.sum_rewards">
-<span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">sum_rewards</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rewards</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.sum_rewards" title="Permalink to this definition">#</a></dt>
-<dd><p>Computes the total discounted sum of rewards for an episode.
-By default, assume no discount
-Input:</p>
-<blockquote>
-<div><p>rewards [r1, r2, r3, …] The rewards obtained during an episode
-gamma: Discount factor</p>
-</div></blockquote>
-<dl class="simple">
-<dt>Output:</dt><dd><p>The sum of discounted rewards
-r1 + gamma*r2 + gamma^2 r3 + …</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.ppo.utils.window_avg">
-<span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">window_avg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.window_avg" title="Permalink to this definition">#</a></dt>
-<dd><p>Computes sliding window average</p>
-</dd></dl>
 
 </section>
 <section id="module-src.ppo">
@@ -1913,6 +1865,8 @@ r1 + gamma*r2 + gamma^2 r3 + …</p>
 <li><a class="reference internal" href="#src.ppo.agent.TransformerPPOAgent.training"><code class="docutils literal notranslate"><span class="pre">TransformerPPOAgent.training</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#src.ppo.agent.get_agent"><code class="docutils literal notranslate"><span class="pre">get_agent()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.agent.load_saved_checkpoint"><code class="docutils literal notranslate"><span class="pre">load_saved_checkpoint()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-src.ppo.compute_adv_vectorized">src.ppo.compute_adv_vectorized module</a><ul>
@@ -2017,7 +1971,6 @@ r1 + gamma*r2 + gamma^2 r3 + …</p>
 </li>
 <li><a class="reference internal" href="#module-src.ppo.train">src.ppo.train module</a><ul>
 <li><a class="reference internal" href="#src.ppo.train.check_and_upload_new_video"><code class="docutils literal notranslate"><span class="pre">check_and_upload_new_video()</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.train.get_agent"><code class="docutils literal notranslate"><span class="pre">get_agent()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.train.prepare_video_dir"><code class="docutils literal notranslate"><span class="pre">prepare_video_dir()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.train.train_ppo"><code class="docutils literal notranslate"><span class="pre">train_ppo()</span></code></a></li>
 </ul>
@@ -2054,17 +2007,12 @@ r1 + gamma*r2 + gamma^2 r3 + …</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#src.ppo.utils.arg_help"><code class="docutils literal notranslate"><span class="pre">arg_help()</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.cummean"><code class="docutils literal notranslate"><span class="pre">cummean()</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.ewma"><code class="docutils literal notranslate"><span class="pre">ewma()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.utils.get_obs_preprocessor"><code class="docutils literal notranslate"><span class="pre">get_obs_preprocessor()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.utils.get_obs_shape"><code class="docutils literal notranslate"><span class="pre">get_obs_shape()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.utils.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.plot_cartpole_obs_and_dones"><code class="docutils literal notranslate"><span class="pre">plot_cartpole_obs_and_dones()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.utils.preprocess_images"><code class="docutils literal notranslate"><span class="pre">preprocess_images()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.utils.set_global_seeds"><code class="docutils literal notranslate"><span class="pre">set_global_seeds()</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.set_seed"><code class="docutils literal notranslate"><span class="pre">set_seed()</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.sum_rewards"><code class="docutils literal notranslate"><span class="pre">sum_rewards()</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.window_avg"><code class="docutils literal notranslate"><span class="pre">window_avg()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.utils.store_model_checkpoint"><code class="docutils literal notranslate"><span class="pre">store_model_checkpoint()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-src.ppo">Module contents</a></li>

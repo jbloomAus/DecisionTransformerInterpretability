@@ -325,13 +325,33 @@
 <section id="module-tests.acceptance.test_ppo">
 <span id="tests-acceptance-test-ppo-module"></span><h2>tests.acceptance.test_ppo module<a class="headerlink" href="#module-tests.acceptance.test_ppo" title="Permalink to this heading">#</a></h2>
 <dl class="py function">
+<dt class="sig sig-object py" id="tests.acceptance.test_ppo.compare_state_dicts">
+<span class="sig-prename descclassname"><span class="pre">tests.acceptance.test_ppo.</span></span><span class="sig-name descname"><span class="pre">compare_state_dicts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_dict1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_dict2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tests.acceptance.test_ppo.compare_state_dicts" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="tests.acceptance.test_ppo.environment_config">
 <span class="sig-prename descclassname"><span class="pre">tests.acceptance.test_ppo.</span></span><span class="sig-name descname"><span class="pre">environment_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tests.acceptance.test_ppo.environment_config" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="tests.acceptance.test_ppo.fc_agent">
+<span class="sig-prename descclassname"><span class="pre">tests.acceptance.test_ppo.</span></span><span class="sig-name descname"><span class="pre">fc_agent</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tests.acceptance.test_ppo.fc_agent" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="tests.acceptance.test_ppo.large_transformer_model_config">
 <span class="sig-prename descclassname"><span class="pre">tests.acceptance.test_ppo.</span></span><span class="sig-name descname"><span class="pre">large_transformer_model_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tests.acceptance.test_ppo.large_transformer_model_config" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tests.acceptance.test_ppo.lstm_agent">
+<span class="sig-prename descclassname"><span class="pre">tests.acceptance.test_ppo.</span></span><span class="sig-name descname"><span class="pre">lstm_agent</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tests.acceptance.test_ppo.lstm_agent" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tests.acceptance.test_ppo.lstm_config">
+<span class="sig-prename descclassname"><span class="pre">tests.acceptance.test_ppo.</span></span><span class="sig-name descname"><span class="pre">lstm_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">environment_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tests.acceptance.test_ppo.lstm_config" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -352,6 +372,16 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="tests.acceptance.test_ppo.test_empty_env_flat_one_hot">
 <span class="sig-prename descclassname"><span class="pre">tests.acceptance.test_ppo.</span></span><span class="sig-name descname"><span class="pre">test_empty_env_flat_one_hot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">environment_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">online_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tests.acceptance.test_ppo.test_empty_env_flat_one_hot" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tests.acceptance.test_ppo.test_fc_agent_model_checkpoint_saving_and_loading">
+<span class="sig-prename descclassname"><span class="pre">tests.acceptance.test_ppo.</span></span><span class="sig-name descname"><span class="pre">test_fc_agent_model_checkpoint_saving_and_loading</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fc_agent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">online_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tests.acceptance.test_ppo.test_fc_agent_model_checkpoint_saving_and_loading" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tests.acceptance.test_ppo.test_lstm_ppo_model_checkpoint_saving_and_loading">
+<span class="sig-prename descclassname"><span class="pre">tests.acceptance.test_ppo.</span></span><span class="sig-name descname"><span class="pre">test_lstm_ppo_model_checkpoint_saving_and_loading</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lstm_agent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">online_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tests.acceptance.test_ppo.test_lstm_ppo_model_checkpoint_saving_and_loading" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -377,6 +407,16 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="tests.acceptance.test_ppo.test_ppo_traj_agent_rollout_minibatches">
 <span class="sig-prename descclassname"><span class="pre">tests.acceptance.test_ppo.</span></span><span class="sig-name descname"><span class="pre">test_ppo_traj_agent_rollout_minibatches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">online_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">environment_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformer_model_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_ctx</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tests.acceptance.test_ppo.test_ppo_traj_agent_rollout_minibatches" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tests.acceptance.test_ppo.test_traj_ppo_model_checkpoint_saving_and_loading">
+<span class="sig-prename descclassname"><span class="pre">tests.acceptance.test_ppo.</span></span><span class="sig-name descname"><span class="pre">test_traj_ppo_model_checkpoint_saving_and_loading</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transformer_agent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">online_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tests.acceptance.test_ppo.test_traj_ppo_model_checkpoint_saving_and_loading" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tests.acceptance.test_ppo.transformer_agent">
+<span class="sig-prename descclassname"><span class="pre">tests.acceptance.test_ppo.</span></span><span class="sig-name descname"><span class="pre">transformer_agent</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tests.acceptance.test_ppo.transformer_agent" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -465,17 +505,25 @@
 </ul>
 </li>
 <li><a class="reference internal" href="#module-tests.acceptance.test_ppo">tests.acceptance.test_ppo module</a><ul>
+<li><a class="reference internal" href="#tests.acceptance.test_ppo.compare_state_dicts"><code class="docutils literal notranslate"><span class="pre">compare_state_dicts()</span></code></a></li>
 <li><a class="reference internal" href="#tests.acceptance.test_ppo.environment_config"><code class="docutils literal notranslate"><span class="pre">environment_config()</span></code></a></li>
+<li><a class="reference internal" href="#tests.acceptance.test_ppo.fc_agent"><code class="docutils literal notranslate"><span class="pre">fc_agent()</span></code></a></li>
 <li><a class="reference internal" href="#tests.acceptance.test_ppo.large_transformer_model_config"><code class="docutils literal notranslate"><span class="pre">large_transformer_model_config()</span></code></a></li>
+<li><a class="reference internal" href="#tests.acceptance.test_ppo.lstm_agent"><code class="docutils literal notranslate"><span class="pre">lstm_agent()</span></code></a></li>
+<li><a class="reference internal" href="#tests.acceptance.test_ppo.lstm_config"><code class="docutils literal notranslate"><span class="pre">lstm_config()</span></code></a></li>
 <li><a class="reference internal" href="#tests.acceptance.test_ppo.online_config"><code class="docutils literal notranslate"><span class="pre">online_config()</span></code></a></li>
 <li><a class="reference internal" href="#tests.acceptance.test_ppo.run_config"><code class="docutils literal notranslate"><span class="pre">run_config()</span></code></a></li>
 <li><a class="reference internal" href="#tests.acceptance.test_ppo.test_empty_env"><code class="docutils literal notranslate"><span class="pre">test_empty_env()</span></code></a></li>
 <li><a class="reference internal" href="#tests.acceptance.test_ppo.test_empty_env_flat_one_hot"><code class="docutils literal notranslate"><span class="pre">test_empty_env_flat_one_hot()</span></code></a></li>
+<li><a class="reference internal" href="#tests.acceptance.test_ppo.test_fc_agent_model_checkpoint_saving_and_loading"><code class="docutils literal notranslate"><span class="pre">test_fc_agent_model_checkpoint_saving_and_loading()</span></code></a></li>
+<li><a class="reference internal" href="#tests.acceptance.test_ppo.test_lstm_ppo_model_checkpoint_saving_and_loading"><code class="docutils literal notranslate"><span class="pre">test_lstm_ppo_model_checkpoint_saving_and_loading()</span></code></a></li>
 <li><a class="reference internal" href="#tests.acceptance.test_ppo.test_ppo_agent_gym"><code class="docutils literal notranslate"><span class="pre">test_ppo_agent_gym()</span></code></a></li>
 <li><a class="reference internal" href="#tests.acceptance.test_ppo.test_ppo_agent_minigrid"><code class="docutils literal notranslate"><span class="pre">test_ppo_agent_minigrid()</span></code></a></li>
 <li><a class="reference internal" href="#tests.acceptance.test_ppo.test_ppo_agent_rollout_minibatches_minigrid"><code class="docutils literal notranslate"><span class="pre">test_ppo_agent_rollout_minibatches_minigrid()</span></code></a></li>
 <li><a class="reference internal" href="#tests.acceptance.test_ppo.test_ppo_traj_agent_rollout_and_learn_minibatches"><code class="docutils literal notranslate"><span class="pre">test_ppo_traj_agent_rollout_and_learn_minibatches()</span></code></a></li>
 <li><a class="reference internal" href="#tests.acceptance.test_ppo.test_ppo_traj_agent_rollout_minibatches"><code class="docutils literal notranslate"><span class="pre">test_ppo_traj_agent_rollout_minibatches()</span></code></a></li>
+<li><a class="reference internal" href="#tests.acceptance.test_ppo.test_traj_ppo_model_checkpoint_saving_and_loading"><code class="docutils literal notranslate"><span class="pre">test_traj_ppo_model_checkpoint_saving_and_loading()</span></code></a></li>
+<li><a class="reference internal" href="#tests.acceptance.test_ppo.transformer_agent"><code class="docutils literal notranslate"><span class="pre">transformer_agent()</span></code></a></li>
 <li><a class="reference internal" href="#tests.acceptance.test_ppo.transformer_model_config"><code class="docutils literal notranslate"><span class="pre">transformer_model_config()</span></code></a></li>
 </ul>
 </li>

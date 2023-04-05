@@ -323,6 +323,8 @@
 </li>
     </ul></td>
     <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="tests.acceptance.html#tests.acceptance.test_ppo.compare_state_dicts">compare_state_dicts() (in module tests.acceptance.test_ppo)</a>
+</li>
         <li><a href="src.ppo.html#src.ppo.memory.Memory.compute_advantages">compute_advantages() (src.ppo.memory.Memory method)</a>
 </li>
         <li><a href="src.ppo.html#src.ppo.compute_adv_vectorized.compute_advantages_vectorized">compute_advantages_vectorized() (in module src.ppo.compute_adv_vectorized)</a>
@@ -345,8 +347,6 @@
           <li><a href="src.ppo.html#src.ppo.utils.PPOArgs.cuda">(src.ppo.utils.PPOArgs attribute)</a>
 </li>
         </ul></li>
-        <li><a href="src.ppo.html#src.ppo.utils.cummean">cummean() (in module src.ppo.utils)</a>
-</li>
     </ul></td>
   </tr></table>
 </section>
@@ -435,14 +435,14 @@
         </ul></li>
         <li><a href="src.html#src.config.EnvironmentConfig">EnvironmentConfig (class in src.config)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.html#src.config.OfflineTrainConfig.eval_episodes">eval_episodes (src.config.OfflineTrainConfig attribute)</a>
 
         <ul>
           <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.eval_episodes">(src.decision_transformer.utils.DTArgs attribute)</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.html#src.config.OfflineTrainConfig.eval_frequency">eval_frequency (src.config.OfflineTrainConfig attribute)</a>
 
         <ul>
@@ -456,8 +456,6 @@
 </li>
         </ul></li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.train.evaluate_dt_agent">evaluate_dt_agent() (in module src.decision_transformer.train)</a>
-</li>
-        <li><a href="src.ppo.html#src.ppo.utils.ewma">ewma() (in module src.ppo.utils)</a>
 </li>
         <li><a href="src.html#src.config.RunConfig.exp_name">exp_name (src.config.RunConfig attribute)</a>
 
@@ -475,8 +473,12 @@
   <h2>F</h2>
   <table style="width: 100%" class="indextable genindextable"><tr>
     <td style="width: 33%; vertical-align: top;"><ul>
-        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.fc_agent">fc_agent() (in module tests.unit.test_ppo_agent)</a>
+        <li><a href="tests.acceptance.html#tests.acceptance.test_ppo.fc_agent">fc_agent() (in module tests.acceptance.test_ppo)</a>
+
+        <ul>
+          <li><a href="tests.unit.html#tests.unit.test_ppo_agent.fc_agent">(in module tests.unit.test_ppo_agent)</a>
 </li>
+        </ul></li>
         <li><a href="src.ppo.html#src.ppo.agent.FCAgent">FCAgent (class in src.ppo.agent)</a>
 </li>
         <li><a href="src.html#src.visualization.find_agent">find_agent() (in module src.visualization)</a>
@@ -527,7 +529,7 @@
         </ul></li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.model.DecisionTransformer.get_action_embeddings">get_action_embeddings() (src.decision_transformer.model.DecisionTransformer method)</a>
 </li>
-        <li><a href="src.ppo.html#src.ppo.train.get_agent">get_agent() (in module src.ppo.train)</a>
+        <li><a href="src.ppo.html#src.ppo.agent.get_agent">get_agent() (in module src.ppo.agent)</a>
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryDataset.get_batch">get_batch() (src.decision_transformer.offline_dataset.TrajectoryDataset method)</a>
 </li>
@@ -655,15 +657,17 @@
           <li><a href="src.ppo.html#src.ppo.utils.PPOArgs.learning_rate">(src.ppo.utils.PPOArgs attribute)</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.linear_time_embedding">linear_time_embedding (src.decision_transformer.utils.DTArgs attribute)</a>
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.load_decision_transformer">load_decision_transformer() (in module src.decision_transformer.utils)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.load_legacy_decision_transformer">load_legacy_decision_transformer() (in module src.decision_transformer.utils)</a>
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.utils.load_model_data">load_model_data() (in module src.decision_transformer.utils)</a>
+</li>
+        <li><a href="src.ppo.html#src.ppo.agent.load_saved_checkpoint">load_saved_checkpoint() (in module src.ppo.agent)</a>
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryDataset.load_trajectories">load_trajectories() (src.decision_transformer.offline_dataset.TrajectoryDataset method)</a>
 </li>
@@ -677,10 +681,18 @@
         </ul></li>
         <li><a href="src.html#src.config.OfflineTrainConfig.lr">lr (src.config.OfflineTrainConfig attribute)</a>
 </li>
-        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.lstm_agent">lstm_agent() (in module tests.unit.test_ppo_agent)</a>
+        <li><a href="tests.acceptance.html#tests.acceptance.test_ppo.lstm_agent">lstm_agent() (in module tests.acceptance.test_ppo)</a>
+
+        <ul>
+          <li><a href="tests.unit.html#tests.unit.test_ppo_agent.lstm_agent">(in module tests.unit.test_ppo_agent)</a>
 </li>
-        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.lstm_config">lstm_config() (in module tests.unit.test_ppo_agent)</a>
+        </ul></li>
+        <li><a href="tests.acceptance.html#tests.acceptance.test_ppo.lstm_config">lstm_config() (in module tests.acceptance.test_ppo)</a>
+
+        <ul>
+          <li><a href="tests.unit.html#tests.unit.test_ppo_agent.lstm_config">(in module tests.unit.test_ppo_agent)</a>
 </li>
+        </ul></li>
         <li><a href="src.html#src.config.LSTMModelConfig">LSTMModelConfig (class in src.config)</a>
 </li>
         <li><a href="src.ppo.html#src.ppo.agent.LSTMPPOAgent">LSTMPPOAgent (class in src.ppo.agent)</a>
@@ -974,8 +986,6 @@
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.calibration.plot_calibration_statistics">plot_calibration_statistics() (in module src.decision_transformer.calibration)</a>
 </li>
-        <li><a href="src.ppo.html#src.ppo.utils.plot_cartpole_obs_and_dones">plot_cartpole_obs_and_dones() (in module src.ppo.utils)</a>
-</li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.offline_dataset.TrajectoryVisualizer.plot_reward_over_time">plot_reward_over_time() (src.decision_transformer.offline_dataset.TrajectoryVisualizer method)</a>
 </li>
         <li><a href="src.decision_transformer.html#src.decision_transformer.model.PosEmbedTokens">PosEmbedTokens (class in src.decision_transformer.model)</a>
@@ -1132,8 +1142,6 @@
 </li>
         <li><a href="src.ppo.html#src.ppo.utils.set_global_seeds">set_global_seeds() (in module src.ppo.utils)</a>
 </li>
-        <li><a href="src.ppo.html#src.ppo.utils.set_seed">set_seed() (in module src.ppo.utils)</a>
-</li>
         <li><a href="src.ppo.html#src.ppo.compute_adv_vectorized.shift_rows">shift_rows() (in module src.ppo.compute_adv_vectorized)</a>
 </li>
         <li>
@@ -1241,8 +1249,6 @@
           <li><a href="src.environments.html#module-src.environments.registration">module</a>
 </li>
         </ul></li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li>
     src.environments.wrappers
 
@@ -1250,6 +1256,8 @@
           <li><a href="src.environments.html#module-src.environments.wrappers">module</a>
 </li>
         </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li>
     src.ppo
 
@@ -1365,9 +1373,9 @@
           <li><a href="src.ppo.html#src.ppo.my_probe_envs.Probe7.step">(src.ppo.my_probe_envs.Probe7 method)</a>
 </li>
         </ul></li>
-        <li><a href="src.environments.html#src.environments.wrappers.DictObservationSpaceWrapper.string_to_indices">string_to_indices() (src.environments.wrappers.DictObservationSpaceWrapper method)</a>
+        <li><a href="src.ppo.html#src.ppo.utils.store_model_checkpoint">store_model_checkpoint() (in module src.ppo.utils)</a>
 </li>
-        <li><a href="src.ppo.html#src.ppo.utils.sum_rewards">sum_rewards() (in module src.ppo.utils)</a>
+        <li><a href="src.environments.html#src.environments.wrappers.DictObservationSpaceWrapper.string_to_indices">string_to_indices() (src.environments.wrappers.DictObservationSpaceWrapper method)</a>
 </li>
     </ul></td>
   </tr></table>
@@ -1419,6 +1427,8 @@
 </li>
         <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_fc_agent_make_optimizer">test_fc_agent_make_optimizer() (in module tests.unit.test_ppo_agent)</a>
 </li>
+        <li><a href="tests.acceptance.html#tests.acceptance.test_ppo.test_fc_agent_model_checkpoint_saving_and_loading">test_fc_agent_model_checkpoint_saving_and_loading() (in module tests.acceptance.test_ppo)</a>
+</li>
         <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_fc_agent_rollout">test_fc_agent_rollout() (in module tests.unit.test_ppo_agent)</a>
 </li>
         <li><a href="src.html#src.config.OfflineTrainConfig.test_frequency">test_frequency (src.config.OfflineTrainConfig attribute)</a>
@@ -1427,6 +1437,12 @@
           <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.test_frequency">(src.decision_transformer.utils.DTArgs attribute)</a>
 </li>
         </ul></li>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_get_agent_fc_agent">test_get_agent_fc_agent() (in module tests.unit.test_ppo_agent)</a>
+</li>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_get_agent_lstm_agent">test_get_agent_lstm_agent() (in module tests.unit.test_ppo_agent)</a>
+</li>
+        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_get_agent_transformer_agent">test_get_agent_transformer_agent() (in module tests.unit.test_ppo_agent)</a>
+</li>
         <li><a href="tests.unit.html#tests.unit.test_streamlit_environment.test_get_env_and_dt">test_get_env_and_dt() (in module tests.unit.test_streamlit_environment)</a>
 </li>
         <li><a href="tests.unit.html#tests.unit.test_ppo_memory.test_get_minibatch_indexes">test_get_minibatch_indexes() (in module tests.unit.test_ppo_memory)</a>
@@ -1470,6 +1486,8 @@
         <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_lstm_agent_rollout_learn">test_lstm_agent_rollout_learn() (in module tests.unit.test_ppo_agent)</a>
 </li>
         <li><a href="tests.unit.html#tests.unit.test_config.test_lstm_model_config">test_lstm_model_config() (in module tests.unit.test_config)</a>
+</li>
+        <li><a href="tests.acceptance.html#tests.acceptance.test_ppo.test_lstm_ppo_model_checkpoint_saving_and_loading">test_lstm_ppo_model_checkpoint_saving_and_loading() (in module tests.acceptance.test_ppo)</a>
 </li>
         <li><a href="tests.unit.html#tests.unit.test_environments.test_make_env">test_make_env() (in module tests.unit.test_environments)</a>
 </li>
@@ -1521,6 +1539,8 @@
 </li>
         <li><a href="tests.acceptance.html#tests.acceptance.test_offline_dataset.test_train_test_split_other_data">test_train_test_split_other_data() (in module tests.acceptance.test_offline_dataset)</a>
 </li>
+        <li><a href="tests.acceptance.html#tests.acceptance.test_ppo.test_traj_ppo_model_checkpoint_saving_and_loading">test_traj_ppo_model_checkpoint_saving_and_loading() (in module tests.acceptance.test_ppo)</a>
+</li>
         <li><a href="tests.acceptance.html#tests.acceptance.test_offline_dataset.test_trajectory_dataset__getitem__">test_trajectory_dataset__getitem__() (in module tests.acceptance.test_offline_dataset)</a>
 </li>
         <li><a href="tests.acceptance.html#tests.acceptance.test_offline_dataset.test_trajectory_dataset_as_dataloader">test_trajectory_dataset_as_dataloader() (in module tests.acceptance.test_offline_dataset)</a>
@@ -1545,12 +1565,12 @@
 </li>
         <li><a href="tests.unit.html#tests.unit.test_utils.test_trajectory_writer_numpy">test_trajectory_writer_numpy() (in module tests.unit.test_utils)</a>
 </li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="tests.unit.html#tests.unit.test_utils.test_trajectory_writer_torch">test_trajectory_writer_torch() (in module tests.unit.test_utils)</a>
 </li>
         <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_transformer_agent_init">test_transformer_agent_init() (in module tests.unit.test_ppo_agent)</a>
 </li>
-    </ul></td>
-    <td style="width: 33%; vertical-align: top;"><ul>
         <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_transformer_agent_larger_context_init">test_transformer_agent_larger_context_init() (in module tests.unit.test_ppo_agent)</a>
 </li>
         <li><a href="tests.unit.html#tests.unit.test_ppo_agent.test_transformer_agent_larger_context_learn">test_transformer_agent_larger_context_learn() (in module tests.unit.test_ppo_agent)</a>
@@ -1787,8 +1807,12 @@
 </li>
         <li><a href="src.html#src.utils.TrajectoryWriter">TrajectoryWriter (class in src.utils)</a>
 </li>
-        <li><a href="tests.unit.html#tests.unit.test_ppo_agent.transformer_agent">transformer_agent() (in module tests.unit.test_ppo_agent)</a>
+        <li><a href="tests.acceptance.html#tests.acceptance.test_ppo.transformer_agent">transformer_agent() (in module tests.acceptance.test_ppo)</a>
+
+        <ul>
+          <li><a href="tests.unit.html#tests.unit.test_ppo_agent.transformer_agent">(in module tests.unit.test_ppo_agent)</a>
 </li>
+        </ul></li>
         <li><a href="tests.acceptance.html#tests.acceptance.test_ppo.transformer_model_config">transformer_model_config() (in module tests.acceptance.test_ppo)</a>
 
         <ul>
@@ -1887,8 +1911,6 @@
           <li><a href="src.decision_transformer.html#src.decision_transformer.utils.DTArgs.weight_decay">(src.decision_transformer.utils.DTArgs attribute)</a>
 </li>
         </ul></li>
-        <li><a href="src.ppo.html#src.ppo.utils.window_avg">window_avg() (in module src.ppo.utils)</a>
-</li>
         <li><a href="src.html#src.utils.TrajectoryWriter.write">write() (src.utils.TrajectoryWriter method)</a>
 </li>
     </ul></td>
