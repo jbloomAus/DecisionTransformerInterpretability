@@ -1,18 +1,16 @@
-import json
 import os
 from typing import Optional, Union
 
-import torch as t
 from gymnasium.vector import SyncVectorEnv
 from tqdm.autonotebook import tqdm
-from dataclasses import dataclass
 
 import wandb
 from src.config import (EnvironmentConfig, OnlineTrainConfig, RunConfig,
-                        TransformerModelConfig, ConfigJsonEncoder, LSTMModelConfig)
+                        TransformerModelConfig, LSTMModelConfig)
 
-from .agent import PPOAgent, FCAgent, TransformerPPOAgent, LSTMPPOAgent
 from .memory import Memory
+from .utils import store_model_checkpoint
+from .agent import get_agent
 
 
 def train_ppo(
@@ -44,24 +42,16 @@ def train_ppo(
         initial_lr=online_config.learning_rate,
         end_lr=online_config.learning_rate if not online_config.decay_lr else 0.0)
 
+    checkpoint_num = 1
     if run_config.track:
         video_path = os.path.join("videos", run_config.run_name)
         prepare_video_dir(video_path)
         videos = []
-        checkpoint_artifact = wandb.Artifact(f"{run_config.exp_name}_checkpoints", type="model")
+        checkpoint_artifact = wandb.Artifact(
+            f"{run_config.exp_name}_checkpoints", type="model")
         checkpoint_interval = num_updates // online_config.num_checkpoints + 1
-        checkpoint_num = 1
-
-    def store_model_checkpoint():
-        nonlocal checkpoint_num
-        checkpoint_name = f"{run_config.exp_name}_{checkpoint_num:0>2}"
-        checkpoint_path = f"models/{checkpoint_name}.pt"
-        t.save({
-            "model_state_dict": agent.state_dict(),
-            "online_config": json.dumps(online_config, cls=ConfigJsonEncoder),
-        }, checkpoint_path)
-        checkpoint_artifact.add_file(local_path=checkpoint_path, name=f"{checkpoint_name}.pt")
-        checkpoint_num += 1
+        checkpoint_num = store_model_checkpoint(
+            agent, online_config, run_config, checkpoint_num, checkpoint_artifact)
 
     progress_bar = tqdm(range(num_updates), position=0, leave=True)
     for n in progress_bar:
@@ -75,7 +65,8 @@ def train_ppo(
             videos = check_and_upload_new_video(
                 video_path=video_path, videos=videos, step=memory.global_step)
             if (n+1) % checkpoint_interval == 0:
-                store_model_checkpoint()
+                checkpoint_num = store_model_checkpoint(
+                    agent, online_config, run_config, checkpoint_num, checkpoint_artifact)
 
         output = memory.get_printable_output()
         progress_bar.set_description(output)
@@ -83,8 +74,9 @@ def train_ppo(
         memory.reset()
 
     if run_config.track:
-        store_model_checkpoint()
-        wandb.log_artifact(checkpoint_artifact)
+        checkpoint_num = store_model_checkpoint(
+            agent, online_config, run_config, checkpoint_num, checkpoint_artifact)
+        wandb.log_artifact(checkpoint_artifact)  # Upload checkpoints to wandb
 
     if trajectory_writer is not None:
         trajectory_writer.tag_terminated_trajectories()
@@ -130,44 +122,3 @@ def prepare_video_dir(video_path):
     for video in videos:
         os.remove(os.path.join(video_path, video))
     videos = []
-
-
-def get_agent(
-        model_config: dataclass,
-        envs: SyncVectorEnv,
-        environment_config: EnvironmentConfig,
-        online_config) -> PPOAgent:
-    """
-    Returns an agent based on the given configuration.
-
-    Args:
-    - transformer_model_config: The configuration for the transformer model.
-    - envs: The environment to train on.
-    - environment_config: The configuration for the environment.
-    - online_config: The configuration for online training.
-
-    Returns:
-    - An agent.
-    """
-    if model_config is not None:
-        if isinstance(model_config, TransformerModelConfig):
-            agent = TransformerPPOAgent(
-                envs=envs,
-                transformer_model_config=model_config,
-                environment_config=environment_config,
-                device=environment_config.device,
-            )
-        elif isinstance(model_config, LSTMModelConfig):
-            agent = LSTMPPOAgent(
-                envs=envs,
-                environment_config=environment_config,
-                lstm_config=model_config,
-                device=environment_config.device,
-            )
-    else:
-        agent = FCAgent(
-            envs,
-            device=environment_config.device,
-            hidden_dim=online_config.hidden_size
-        )
-    return agent

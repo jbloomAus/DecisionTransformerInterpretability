@@ -1,21 +1,25 @@
 import abc
+from dataclasses import dataclass
 from typing import Tuple
-
+import json
 import gymnasium as gym
 import numpy as np
 import torch as t
 from torch import nn, optim
 from torch.distributions.categorical import Categorical
 
+from src.config import (EnvironmentConfig, LSTMModelConfig, OnlineTrainConfig,
+                        TransformerModelConfig)
+from src.models.trajectory_lstm import TrajectoryLSTM
+from src.models.trajectory_transformer import (ActorTransformer,
+                                               CriticTransfomer)
+from src.utils import DictList
 
+from .loss_functions import (calc_clipped_surrogate_objective,
+                             calc_entropy_bonus, calc_value_function_loss)
 from .memory import Memory
 from .utils import get_obs_shape
-from .loss_functions import calc_clipped_surrogate_objective, calc_value_function_loss, calc_entropy_bonus
-
-from src.models.trajectory_transformer import ActorTransformer, CriticTransfomer
-from src.models.trajectory_lstm import TrajectoryLSTM
-from src.config import TransformerModelConfig, EnvironmentConfig, OnlineTrainConfig, LSTMModelConfig
-from src.utils import DictList
+from src.environments.environments import make_env
 
 
 class PPOScheduler:
@@ -109,7 +113,12 @@ class FCAgent(PPOAgent):
     critic: nn.Sequential
     actor: nn.Sequential
 
-    def __init__(self, envs: gym.vector.SyncVectorEnv, device: t.device = t.device('cpu'), hidden_dim: int = 64):
+    def __init__(self,
+                 envs: gym.vector.SyncVectorEnv,
+                 environment_config: EnvironmentConfig,
+                 fc_model_config=None,  # not necessary yet but keeps type signatures the same
+                 device: t.device = t.device('cpu'),
+                 hidden_dim: int = 64):
         '''
         An agent for a Proximal Policy Optimization (PPO) algorithm.
 
@@ -120,10 +129,13 @@ class FCAgent(PPOAgent):
         '''
         super().__init__(envs=envs, device=device)
 
+        self.environment_config = environment_config
+        self.model_config = fc_model_config if fc_model_config is not None else {
+            "hidden_dim": hidden_dim}
         self.obs_shape = get_obs_shape(envs.single_observation_space)
         self.num_obs = np.array(self.obs_shape).prod()
         self.num_actions = envs.single_action_space.n
-        self.hidden_dim = hidden_dim
+        self.hidden_dim = hidden_dim if hidden_dim else fc_model_config["hidden_dim"]
         self.critic = nn.Sequential(
             nn.Flatten(),
             self.layer_init(nn.Linear(self.num_obs, self.hidden_dim)),
@@ -271,23 +283,23 @@ class TransformerPPOAgent(PPOAgent):
         - envs (gym.vector.SyncVectorEnv): the environment(s) to interact with.
         - device (t.device): the device on which to run the agent.
         - environment_config (EnvironmentConfig): the configuration for the environment.
-        - transformer_model_config (TransformerModelConfig): the configuration for the transformer model.
+        - model_config (TransformerModelConfig): the configuration for the transformer model.
         - device (t.device): the device on which to run the agent.
         '''
         super().__init__(envs=envs, device=device)
         self.environment_config = environment_config
-        self.transformer_model_config = transformer_model_config
+        self.model_config = transformer_model_config
         self.obs_shape = get_obs_shape(envs.single_observation_space)
         self.num_obs = np.array(self.obs_shape).prod()
         self.num_actions = envs.single_action_space.n
-        self.hidden_dim = transformer_model_config.d_model
+        self.hidden_dim = self.model_config.d_model
         self.critic = CriticTransfomer(
-            transformer_config=transformer_model_config,
+            transformer_config=self.model_config,
             environment_config=environment_config,
         )
         self.layer_init(self.critic.value_predictor, std=0.01)
         self.actor = ActorTransformer(
-            transformer_config=transformer_model_config,
+            transformer_config=self.model_config,
             environment_config=environment_config,
         )
         self.layer_init(self.actor.action_predictor, std=0.01)
@@ -684,3 +696,99 @@ class LSTMPPOAgent(PPOAgent):
             obs = DictList({'image': obs})
 
         return obs
+
+
+def get_agent(
+        model_config: dataclass,
+        envs: gym.vector.SyncVectorEnv,
+        environment_config: EnvironmentConfig,
+        online_config) -> PPOAgent:
+    """
+    Returns an agent based on the given configuration.
+
+    Args:
+    - transformer_model_config: The configuration for the transformer model.
+    - envs: The environment to train on.
+    - environment_config: The configuration for the environment.
+    - online_config: The configuration for online training.
+
+    Returns:
+    - An agent.
+    """
+    if model_config is not None:
+        if isinstance(model_config, TransformerModelConfig):
+            agent = TransformerPPOAgent(
+                envs=envs,
+                transformer_model_config=model_config,
+                environment_config=environment_config,
+                device=environment_config.device,
+            )
+        elif isinstance(model_config, LSTMModelConfig):
+            agent = LSTMPPOAgent(
+                envs=envs,
+                lstm_config=model_config,
+                environment_config=environment_config,
+                device=environment_config.device,
+            )
+        else:
+            raise ValueError(
+                f"Model config {type(model_config)} is not supported.")
+    else:
+        agent = FCAgent(
+            envs,
+            environment_config=environment_config,
+            device=environment_config.device,
+            hidden_dim=online_config.hidden_size
+        )
+    return agent
+
+
+def load_saved_checkpoint(path, num_envs=10) -> PPOAgent:
+
+    # load the config from the checkpoint
+    saved_state = t.load(path, map_location=t.device('cpu'))
+    # assert all the fields we need are present
+    assert "environment_config" in saved_state, "environment_config not found in checkpoint"
+    assert "model_config" in saved_state, "model_config not found in checkpoint"
+    assert "model_state_dict" in saved_state, "model_state_dict not found in checkpoint"
+    assert "online_config" in saved_state, "online_config not found in checkpoint"
+
+    # create the environment
+    environment_config = EnvironmentConfig(
+        **json.loads(saved_state["environment_config"]))
+    envs = gym.vector.SyncVectorEnv(
+        [make_env(environment_config, 0, 0, "test") for _ in range(num_envs)])
+
+    # create the model config
+    other_args = json.loads(saved_state["model_config"])
+    # remove environment config from the model config
+    if "environment_config" in other_args:
+        del other_args["environment_config"]
+
+    # get the online config
+    online_config_args = json.loads(saved_state["online_config"])
+    # remove batch_size and minibatch_size from the online config
+    if "batch_size" in online_config_args:
+        del online_config_args["batch_size"]
+    if "minibatch_size" in online_config_args:
+        del online_config_args["minibatch_size"]
+    online_config = OnlineTrainConfig(**online_config_args)
+
+    # TODO: this is a hack, fix it
+    if "n_ctx" in other_args:
+        model_config = TransformerModelConfig(**other_args)
+    elif "use_memory" in other_args:
+        model_config = LSTMModelConfig(environment_config, **other_args)
+
+    # create the model
+    agent = get_agent(
+        model_config=model_config,
+        envs=envs,
+        environment_config=environment_config,
+        online_config=online_config)
+
+    # load the model state from the checkpoint
+    agent.load_state_dict(saved_state["model_state_dict"])
+
+    # return the model
+    return agent

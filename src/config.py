@@ -222,6 +222,8 @@ class ConfigJsonEncoder(json.JSONEncoder):
             return dataclasses.asdict(new_config)
         elif isinstance(new_config, torch.device):
             return str(new_config)
+        elif isinstance(new_config, gym.spaces.Space):
+            return None  # don't save observation space and action space if they are named other stuff
         else:
             return super().default(config)
 

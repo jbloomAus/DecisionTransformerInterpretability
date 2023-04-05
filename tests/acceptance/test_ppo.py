@@ -6,9 +6,28 @@ from gymnasium.spaces import Discrete
 import torch
 from src.config import EnvironmentConfig
 from src.environments.environments import make_env
-from src.ppo.agent import FCAgent, TransformerPPOAgent
+from src.ppo.agent import FCAgent, TransformerPPOAgent, LSTMPPOAgent, load_saved_checkpoint
 from src.ppo.memory import Memory, Minibatch, TrajectoryMinibatch
 from src.ppo.train import train_ppo
+from src.ppo.utils import store_model_checkpoint
+from src.config import LSTMModelConfig, TransformerModelConfig
+import wandb
+
+
+def compare_state_dicts(state_dict1, state_dict2):
+    for key in state_dict1:
+        if key not in state_dict2:
+            print(f"Key {key} not found in state_dict2.")
+            return False
+        if not torch.allclose(state_dict1[key], state_dict2[key]):
+            print(
+                f"Value of key {key} is different in state_dict1 and state_dict2.")
+            return False
+    for key in state_dict2:
+        if key not in state_dict1:
+            print(f"Key {key} not found in state_dict1.")
+            return False
+    return True
 
 
 @pytest.fixture
@@ -113,6 +132,66 @@ def large_transformer_model_config():
     return DummyTransformerModelConfig()
 
 
+@pytest.fixture
+def lstm_config(environment_config):
+    @dataclass
+    class DummyLSTMConfig:
+        environment_config = environment_config
+        image_dim: int = 128
+        memory_dim: int = 128
+        instr_dim: int = 128
+        use_instr: bool = False
+        lang_model: str = 'gru'
+        use_memory: bool = False
+        recurrence: int = 4
+        arch: str = "bow_endpool_res"
+        aux_info: bool = False
+        endpool: bool = True
+        bow: bool = True
+        pixel: bool = False
+        res: bool = True
+        device = torch.device("cpu")
+
+    config = DummyLSTMConfig()
+    config.environment_config = environment_config
+    config.action_space = environment_config.action_space
+    config.observation_space = environment_config.observation_space
+
+    return config
+
+
+@pytest.fixture()
+def fc_agent():
+    environment_config = EnvironmentConfig()
+    envs = gym.vector.SyncVectorEnv(
+        [make_env(environment_config, 1, 1, "test") for i in range(2)]
+    )
+    return FCAgent(envs, environment_config, device="cpu")
+
+
+@pytest.fixture()
+def transformer_agent():
+    envs = gym.vector.SyncVectorEnv(
+        [make_env(EnvironmentConfig(), 1, 1, "test") for i in range(2)]
+    )
+    transformer_agent = TransformerPPOAgent(envs, environment_config=EnvironmentConfig(),
+                                            transformer_model_config=TransformerModelConfig(
+                                                n_ctx=3),
+                                            device=torch.device("cpu"))
+    return transformer_agent
+
+
+@pytest.fixture()
+def lstm_agent():
+    envs = gym.vector.SyncVectorEnv(
+        [make_env(EnvironmentConfig(), 1, 1, "test") for i in range(2)]
+    )
+    lstm_agent = LSTMPPOAgent(envs, environment_config=EnvironmentConfig(),
+                              lstm_config=LSTMModelConfig(EnvironmentConfig()),
+                              device=torch.device("cpu"))
+    return lstm_agent
+
+
 def test_empty_env(run_config, environment_config, online_config):
 
     env_name = "MiniGrid-Empty-5x5-v0"
@@ -151,7 +230,8 @@ def test_empty_env_flat_one_hot(run_config, environment_config, online_config):
 
 def test_ppo_agent_gym():
 
-    env_config = EnvironmentConfig(env_id='CartPole-v1', capture_video=False, max_steps=None)
+    env_config = EnvironmentConfig(
+        env_id='CartPole-v1', capture_video=False, max_steps=None)
     envs = gym.vector.SyncVectorEnv(
         [make_env(env_config, 1, 1, "test") for i in range(2)]
     )
@@ -160,7 +240,7 @@ def test_ppo_agent_gym():
                       Discrete), "only discrete action space is supported"
 
     # memory = Memory(envs, args, "cpu")
-    agent = FCAgent(envs, "cpu")
+    agent = FCAgent(envs, env_config, device="cpu")
 
     assert agent.num_obs == 4
     assert agent.num_actions == 2
@@ -168,7 +248,8 @@ def test_ppo_agent_gym():
 
 def test_ppo_agent_minigrid():
 
-    env_config = EnvironmentConfig(env_id='MiniGrid-Empty-8x8-v0', capture_video=False, max_steps=None)
+    env_config = EnvironmentConfig(
+        env_id='MiniGrid-Empty-8x8-v0', capture_video=False, max_steps=None)
     envs = gym.vector.SyncVectorEnv(
         [make_env(env_config, 1, 1, "test") for i in range(2)]
     )
@@ -177,7 +258,7 @@ def test_ppo_agent_minigrid():
                       Discrete), "only discrete action space is supported"
 
     # memory = Memory(envs, args, "cpu")
-    agent = FCAgent(envs, "cpu")
+    agent = FCAgent(envs, environment_config, device="cpu")
 
     # depends on whether you wrapped in Fully observed or not
     assert agent.num_obs == 7 * 7 * 3
@@ -186,7 +267,8 @@ def test_ppo_agent_minigrid():
 
 def test_ppo_agent_rollout_minibatches_minigrid(online_config):
 
-    env_config = EnvironmentConfig(env_id='MiniGrid-Empty-8x8-v0', capture_video=False, max_steps=None)
+    env_config = EnvironmentConfig(
+        env_id='MiniGrid-Empty-8x8-v0', capture_video=False, max_steps=None)
     envs = gym.vector.SyncVectorEnv(
         [make_env(env_config, 1, 1, "test") for i in range(2)]
     )
@@ -196,7 +278,7 @@ def test_ppo_agent_rollout_minibatches_minigrid(online_config):
 
     memory = Memory(envs, online_config)
 
-    agent = FCAgent(envs)
+    agent = FCAgent(envs, env_config, "cpu")
     agent.rollout(memory, online_config.num_steps, envs, None)
 
     minibatches = memory.get_minibatches()
@@ -276,3 +358,66 @@ def test_ppo_traj_agent_rollout_and_learn_minibatches(
 
     agent.rollout(memory, online_config.num_steps, envs, None)
     agent.learn(memory, online_config, optimizer, scheduler, track=False)
+
+
+# skip this test for now
+@pytest.mark.skip(reason="not implemented yet -> need to add environment config to bring it in line with other two agent_classes")
+def test_fc_agent_model_checkpoint_saving_and_loading(fc_agent, run_config, online_config):
+
+    wandb.init(mode="offline")
+    run_config.track = True
+    checkpoint_artifact = wandb.Artifact(
+        f"{run_config.exp_name}_checkpoints", type="model")
+    checkpoint_num = 1
+
+    # save checkpoint
+    checkpoint_num = store_model_checkpoint(
+        fc_agent, online_config, run_config, checkpoint_num, checkpoint_artifact)
+
+    assert checkpoint_num == 2
+
+
+def test_traj_ppo_model_checkpoint_saving_and_loading(transformer_agent, run_config, online_config):
+
+    wandb.init(mode="offline")
+    run_config.track = True
+    run_config.exp_name = "TRANSFORMERTEST"
+    checkpoint_artifact = wandb.Artifact(
+        f"{run_config.exp_name}_checkpoints", type="model")
+    checkpoint_num = 1
+
+    # save checkpoint
+    checkpoint_num = store_model_checkpoint(
+        transformer_agent, online_config, run_config, checkpoint_num, checkpoint_artifact)
+
+    assert checkpoint_num == 2
+
+    agent = load_saved_checkpoint(
+        "./models/TRANSFORMERTEST_01.pt", online_config.num_envs)
+
+    assert transformer_agent.environment_config == agent.environment_config
+    assert compare_state_dicts(
+        transformer_agent.state_dict(), agent.state_dict())
+
+
+def test_lstm_ppo_model_checkpoint_saving_and_loading(lstm_agent, run_config, online_config):
+
+    wandb.init(mode="offline")
+    run_config.track = True
+    run_config.exp_name = "LSTMTEST"
+    checkpoint_artifact = wandb.Artifact(
+        f"{run_config.exp_name}_checkpoints", type="model")
+    checkpoint_num = 1
+
+    # save checkpoint
+    checkpoint_num = store_model_checkpoint(
+        lstm_agent, online_config, run_config, checkpoint_num, checkpoint_artifact)
+
+    assert checkpoint_num == 2
+
+    agent = load_saved_checkpoint(
+        "./models/LSTMTEST_01.pt", online_config.num_envs)
+
+    assert lstm_agent.environment_config == agent.environment_config
+    assert compare_state_dicts(
+        lstm_agent.model.state_dict(), agent.model.state_dict())

@@ -5,10 +5,9 @@ import torch.nn as nn
 import torch.optim as optim
 from dataclasses import dataclass
 
-from minigrid.wrappers import FullyObsWrapper, RGBImgPartialObsWrapper, OneHotPartialObsWrapper
-from src.environments.wrappers import ViewSizeWrapper
-
-from src.ppo.agent import PPOScheduler, PPOAgent, FCAgent, TransformerPPOAgent, LSTMPPOAgent
+from src.ppo.agent import PPOScheduler, PPOAgent, FCAgent, TransformerPPOAgent, LSTMPPOAgent, get_agent
+# only use get_agent class test
+from src.config import LSTMModelConfig, TransformerModelConfig
 from src.models.trajectory_transformer import TrajectoryTransformer
 from src.models.trajectory_lstm import TrajectoryLSTM
 from src.ppo.memory import Memory
@@ -142,12 +141,13 @@ def optimizer():
 
 
 @pytest.fixture
-def fc_agent():
+def fc_agent(environment_config):
     envs = gym.vector.SyncVectorEnv(
         [lambda: gym.make('CartPole-v0') for _ in range(4)])
     device = torch.device("cpu")
     hidden_dim = 32
-    return FCAgent(envs, device, hidden_dim)
+    environment_config.env_id = 'CartPole-v0'
+    return FCAgent(envs, environment_config, device=device, hidden_dim=hidden_dim)
 
 
 @pytest.fixture
@@ -197,12 +197,13 @@ def test_ppo_agent_init():
     assert isinstance(agent.actor, nn.Module)
 
 
-def test_fc_agent_init():
+def test_fc_agent_init(environment_config):
     envs = gym.vector.SyncVectorEnv(
         [lambda: gym.make('CartPole-v0') for _ in range(4)])
     device = torch.device("cpu")
     hidden_dim = 32
-    agent = FCAgent(envs, device, hidden_dim)
+    agent = FCAgent(envs, environment_config,
+                    device=device, hidden_dim=hidden_dim)
 
     assert isinstance(agent, PPOAgent)
     assert isinstance(agent.critic, nn.Sequential)
@@ -449,3 +450,39 @@ def test_lstm_agent_rollout_learn(lstm_agent, online_config):
     assert len(memory.experiences[0]) == 8
 
     assert scheduler.num_updates == num_updates
+
+
+def test_get_agent_fc_agent(fc_agent, environment_config, online_config):
+
+    agent = get_agent(
+        model_config=None,
+        envs=fc_agent.envs,
+        environment_config=environment_config,
+        online_config=online_config)
+
+    assert isinstance(agent, PPOAgent)
+    assert isinstance(agent, FCAgent)
+
+
+def test_get_agent_transformer_agent(transformer_agent, transformer_model_config, environment_config, online_config):
+
+    agent = get_agent(
+        model_config=TransformerModelConfig(n_ctx=3),
+        envs=transformer_agent.envs,
+        environment_config=environment_config,
+        online_config=online_config)
+
+    assert isinstance(agent, PPOAgent)
+    assert isinstance(agent, TransformerPPOAgent)
+
+
+def test_get_agent_lstm_agent(lstm_agent, environment_config):
+
+    agent = get_agent(
+        model_config=LSTMModelConfig(environment_config),
+        envs=lstm_agent.envs,
+        environment_config=environment_config,
+        online_config=online_config)
+
+    assert isinstance(agent, PPOAgent)
+    assert isinstance(agent, LSTMPPOAgent)
