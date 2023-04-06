@@ -459,6 +459,11 @@ log the collected trajectories. Defaults to None.</p></li>
 <span class="sig-prename descclassname"><span class="pre">src.ppo.agent.</span></span><span class="sig-name descname"><span class="pre">load_saved_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_envs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#src.ppo.agent.PPOAgent" title="src.ppo.agent.PPOAgent"><span class="pre">PPOAgent</span></a></span></span><a class="headerlink" href="#src.ppo.agent.load_saved_checkpoint" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.agent.sample_from_agents">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.agent.</span></span><span class="sig-name descname"><span class="pre">sample_from_agents</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">agents</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rollout_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectory_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_envs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.agent.sample_from_agents" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
 </section>
 <section id="module-src.ppo.compute_adv_vectorized">
 <span id="src-ppo-compute-adv-vectorized-module"></span><h2>src.ppo.compute_adv_vectorized module<a class="headerlink" href="#module-src.ppo.compute_adv_vectorized" title="Permalink to this heading">#</a></h2>
@@ -725,6 +730,11 @@ including trajectory information leading up to each step.</p>
 <dd></dd></dl>
 
 </dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.ppo.memory.process_memory_vars_to_log">
+<span class="sig-prename descclassname"><span class="pre">src.ppo.memory.</span></span><span class="sig-name descname"><span class="pre">process_memory_vars_to_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">memory_vars_to_log</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.memory.process_memory_vars_to_log" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
 
 </section>
 <section id="module-src.ppo.my_probe_envs">
@@ -1706,6 +1716,7 @@ uploads them to the current WandB run.</p>
 <li><a class="reference internal" href="#src.ppo.agent.get_agent"><code class="docutils literal notranslate"><span class="pre">get_agent()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.agent.load_all_agents_from_checkpoints"><code class="docutils literal notranslate"><span class="pre">load_all_agents_from_checkpoints()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.agent.load_saved_checkpoint"><code class="docutils literal notranslate"><span class="pre">load_saved_checkpoint()</span></code></a></li>
+<li><a class="reference internal" href="#src.ppo.agent.sample_from_agents"><code class="docutils literal notranslate"><span class="pre">sample_from_agents()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-src.ppo.compute_adv_vectorized">src.ppo.compute_adv_vectorized module</a><ul>
@@ -1749,6 +1760,7 @@ uploads them to the current WandB run.</p>
 <li><a class="reference internal" href="#src.ppo.memory.TrajectoryMinibatch.values"><code class="docutils literal notranslate"><span class="pre">TrajectoryMinibatch.values</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#src.ppo.memory.process_memory_vars_to_log"><code class="docutils literal notranslate"><span class="pre">process_memory_vars_to_log()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-src.ppo.my_probe_envs">src.ppo.my_probe_envs module</a><ul>
