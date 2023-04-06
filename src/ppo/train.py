@@ -10,7 +10,7 @@ from src.config import (EnvironmentConfig, OnlineTrainConfig, RunConfig,
 
 from .memory import Memory
 from .utils import store_model_checkpoint
-from .agent import get_agent
+from .agent import get_agent, PPOAgent
 
 
 def train_ppo(
@@ -19,18 +19,20 @@ def train_ppo(
         environment_config: EnvironmentConfig,
         model_config: Optional[Union[TransformerModelConfig, LSTMModelConfig]],
         envs: SyncVectorEnv,
-        trajectory_writer=None):
+        trajectory_writer=None) -> PPOAgent:
     """
     Trains a PPO agent on a given environment.
 
     Args:
-    - args: an instance of PPOArgs containing the hyperparameters for training
-    - envs: the environment to train on
-    - trajectory_writer: an optional object to write trajectories to a file
-    - probe_idx: index of probe environment, if training on probe environment
+    - run_config (RunConfig): An object containing general run configuration details.
+    - online_config (OnlineTrainConfig): An object containing online training configuration details.
+    - environment_config (EnvironmentConfig): An object containing environment-specific configuration details.
+    - model_config (Optional[Union[TransformerModelConfig, LSTMModelConfig]]): An optional object containing either Transformer or LSTM model configuration details.
+    - envs (SyncVectorEnv): The environment in which to perform training.
+    - trajectory_writer (optional): An optional object for writing trajectories to a file.
 
     Returns:
-    None
+    - agent (PPOAgent): The trained PPO agent.
     """
 
     memory = Memory(envs, online_config, run_config.device)

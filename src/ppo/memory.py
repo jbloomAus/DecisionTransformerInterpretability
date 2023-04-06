@@ -13,7 +13,7 @@ import wandb
 from src.config import OnlineTrainConfig
 from src.utils import pad_tensor
 
-from .utils import PPOArgs, get_obs_preprocessor
+from .utils import get_obs_preprocessor
 
 
 @dataclass
@@ -67,12 +67,15 @@ class Memory():
     '''
 
     def __init__(self, envs: gym.vector.SyncVectorEnv, args: OnlineTrainConfig, device: t.device = t.device("cpu")):
-        """Initializes the memory buffer.
-
-        envs: A SyncVectorEnv object.
-        args: A PPOArgs object containing the PPO training hyperparameters.
-        device: The device to store the tensors on, either "cpu" or "cuda".
         """
+        Initializes the memory buffer.
+
+        Args:
+        - envs (gym.vector.SyncVectorEnv): A SyncVectorEnv object representing the environment.
+        - args (OnlineTrainConfig): An object containing the PPO training hyperparameters.
+        - device (t.device, optional): The device for storing tensors, either "cpu" or "cuda". Defaults to "cpu".
+        """
+
         self.envs = envs
         self.args = args
         self.next_obs = None

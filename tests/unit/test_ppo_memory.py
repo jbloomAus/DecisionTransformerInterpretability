@@ -1,18 +1,46 @@
 import pytest
-import gymnasium as gym
-import minigrid
 import torch
-from src.ppo.utils import PPOArgs
+import gymnasium as gym
+from dataclasses import dataclass
+import torch
 from src.ppo.memory import Memory, Minibatch
 
 
 @pytest.fixture
-def memory():
+def online_config():
+    @dataclass
+    class DummyOnlineConfig:
+        use_trajectory_model: bool = False
+        hidden_size: int = 64
+        total_timesteps: int = 1000
+        learning_rate: float = 0.00025
+        decay_lr: bool = False,
+        num_envs: int = 10
+        num_steps: int = 128
+        gamma: float = 0.99
+        gae_lambda: float = 0.95
+        num_minibatches: int = 10
+        update_epochs: int = 4
+        clip_coef: float = 0.2
+        ent_coef: float = 0.01
+        vf_coef: float = 0.5
+        max_grad_norm: float = 2
+        trajectory_path: str = None
+        fully_observed: bool = False
+        batch_size: int = 64
+        minibatch_size: int = 4
+        prob_go_from_end: float = 0.0
+        device: torch.device = torch.device("cpu")
+
+    return DummyOnlineConfig()
+
+
+@pytest.fixture
+def memory(online_config):
     envs = gym.vector.SyncVectorEnv(
         [lambda: gym.make('MiniGrid-Dynamic-Obstacles-5x5-v0') for _ in range(4)])
-    args = PPOArgs()
     device = torch.device("cpu")
-    return Memory(envs, args, device)
+    return Memory(envs, online_config, device)
 
 
 def test_minibatch_class():
@@ -54,10 +82,11 @@ def test_init(memory):
     assert memory.vars_to_log == {}
 
 
-def test_add_no_ending():
+def test_add_no_ending(online_config):
 
     num_steps = 10
-    args = PPOArgs(num_steps=num_steps)
+    args = online_config
+    online_config.num_steps = num_steps
     envs = gym.vector.SyncVectorEnv(
         [lambda: gym.make('CartPole-v0') for _ in range(args.num_envs)])
     memory = Memory(envs=envs, args=args, device="cpu")

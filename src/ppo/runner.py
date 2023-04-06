@@ -24,10 +24,13 @@ def ppo_runner(
     model_config: Optional[Union[TransformerModelConfig, LSTMModelConfig]],
 ):
     '''
-    Trains a Proximal Policy Optimization (PPO) algorithm on a specified environment using the given hyperparameters.
+    Executes Proximal Policy Optimization (PPO) training on a specified environment with provided hyperparameters.
 
     Args:
-    - args (PPOArgs): an object that contains hyperparameters and other arguments for PPO training.
+    - run_config (RunConfig): An object containing general run configuration details.
+    - environment_config (EnvironmentConfig): An object containing environment-specific configuration details.
+    - online_config (OnlineTrainConfig): An object containing online training configuration details.
+    - model_config (Optional[Union[TransformerModelConfig, LSTMModelConfig]]): An optional object containing either Transformer or LSTM model configuration details.
 
     Returns: None.
     '''
