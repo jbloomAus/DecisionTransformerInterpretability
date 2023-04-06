@@ -587,7 +587,7 @@ class LSTMPPOAgent(PPOAgent):
                        value, reward, self.recurrence_memory, mask)  # get's the memory from the previous timestep
             obs = t.from_numpy(next_obs).to(device)
             done = t.from_numpy(next_done).to(device, dtype=t.float)
-            self.mask = 1 - t.tensor(done, device=self.device, dtype=t.float)
+            self.mask = 1 - done
             self.recurrence_memory = recurrence_memory
 
         # Store last (obs, done, value) tuple, since we need it to compute advantages
