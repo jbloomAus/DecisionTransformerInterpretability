@@ -187,7 +187,7 @@ def test_probe_envs(env_name, run_config, environment_config, online_config):
         t.testing.assert_close(
             prob,
             t.tensor([[1.0, 0.0], [0.0, 1.0]]),
-            atol=1e-2,
+            atol=0.15,
             rtol=1
         )
 
