@@ -123,12 +123,14 @@ def train(
                 track=track,
                 batch_number=total_batches)
 
-        eval_env_config = EnvironmentConfig(env_id=env.spec.id, 
-        capture_video=True, 
-        max_steps=min(model.environment_config.max_steps, eval_max_time_steps), 
-        fully_observed=False, 
-        one_hot_obs=(trajectory_data_set.observation_type == "one_hot"), 
-        view_size=env.observation_space['image'].shape[0] if "image" in list(env.observation_space.keys()) else 7)
+        eval_env_config = EnvironmentConfig(env_id=env.spec.id,
+                                            capture_video=True,
+                                            max_steps=min(
+                                                model.environment_config.max_steps, eval_max_time_steps),
+                                            fully_observed=False,
+                                            one_hot_obs=(
+                                                trajectory_data_set.observation_type == "one_hot"),
+                                            view_size=env.observation_space['image'].shape[0] if "image" in list(env.observation_space.keys()) else 7)
 
         eval_env_func = make_env(
             config=eval_env_config,
@@ -326,6 +328,7 @@ def evaluate_dt_agent(
                                                  > 1 and max_len > 1) else None
         timesteps = timesteps[:, -
                               max_len:] if timesteps.shape[1] > max_len else timesteps
+        rtg = rtg[:, -max_len:] if rtg.shape[1] > max_len else rtg
 
         if isinstance(model, DecisionTransformer):
             state_preds, action_preds, reward_preds = model.forward(
@@ -338,8 +341,11 @@ def evaluate_dt_agent(
             state_preds, action_preds, reward_preds = model.forward(
                 states=obs[:, -steps:], actions=a[:, -steps:], rtgs=rtg[:, -steps:], timesteps=timesteps[:, -steps:])
 
-        action = t.argmax(action_preds, dim=-1).squeeze(-1)
-        new_obs, new_reward, terminated, truncated, info = env.step(action)
+        new_action = t.argmax(action_preds, dim=-1).squeeze(-1)
+        if new_action.dim() > 1:
+            new_action = new_action[:, -1]
+        # convert to numpy
+        new_obs, new_reward, terminated, truncated, info = env.step(new_action)
         # print(f"took action  {action} at timestep {i} for reward {new_reward}")
 
         n_positive = n_positive + sum(new_reward > 0)

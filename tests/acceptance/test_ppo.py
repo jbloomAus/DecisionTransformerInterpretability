@@ -451,11 +451,15 @@ def test_lstm_ppo_model_load_saved_checkpoints():
 
 def test_sample_from_agents(lstm_agents):
 
+    rollout_length = 200
+    max_steps = lstm_agents[0].environment_config.max_steps
+    num_envs = 4
+
     all_episode_lengths, all_episode_returns = sample_from_agents(
         lstm_agents,
-        rollout_length=200,
+        rollout_length=rollout_length,
         trajectory_path="tmp/test_sample_from_agents",
-        num_envs=4,
+        num_envs=num_envs,
     )
 
     # list all of the files in that folder
@@ -472,3 +476,10 @@ def test_sample_from_agents(lstm_agents):
     # do the same for all_episode_returns
     assert isinstance(all_episode_returns, list)
     assert isinstance(all_episode_returns[0], pd.Series)
+
+    for agent_index in range(len(lstm_agents)):
+        assert len(all_episode_lengths[agent_index]) == len(
+            all_episode_returns[agent_index])
+        # we expect to finish enough episodes to have almost the rollout_length * num_envs steps
+        assert pytest.approx(all_episode_lengths[agent_index].sum(
+        ), abs=100) == rollout_length*num_envs - max_steps*num_envs//2

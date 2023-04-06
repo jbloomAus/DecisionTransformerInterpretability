@@ -6,82 +6,61 @@ from src.environments.environments import make_env
 from src.decision_transformer.train import evaluate_dt_agent
 from src.decision_transformer.offline_dataset import TrajectoryDataset
 
-# need an agent.
 
-# def test_train():
-#     pass
-
-# def test_test():
-#     pass
-
-
-def test_evaluate_dt_agent():
-
+@pytest.fixture
+def trajectory_data_set():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     trajectory_path = "tests/fixtures/test_trajectories.pkl"
     trajectory_data_set = TrajectoryDataset(
         trajectory_path,
         pct_traj=1, device=device)
+    return trajectory_data_set
+
+
+@pytest.fixture
+def environment_config(trajectory_data_set):
 
     env_id = trajectory_data_set.metadata['args']['env_id']
-    env_config = EnvironmentConfig(env_id=env_id, capture_video=False, fully_observed=False, max_steps=30)
-    env = make_env(env_config, seed=1, idx=0, run_name="dev")
-    env = env()
+    environment_config = EnvironmentConfig(
+        env_id=env_id,
+        one_hot_obs=trajectory_data_set.observation_type == "one_hot",
+        view_size=7,
+        fully_observed=False,
+        capture_video=False,
+        render_mode='rgb_array',
+        max_steps=10)
 
-    # dt = DecisionTransformer(
-    #     env=env,
-    #     d_model=128,
-    #     n_heads=4,
-    #     d_mlp=256,
-    #     n_layers=2,
-    #     state_embedding_type="grid",  # hard-coded for now to minigrid.
-    #     max_timestep=1000,
-    #     n_ctx=3,  # one timestep of context
-    #     device="cuda" if torch.cuda.is_available() else "cpu",
-    # )  # Our DT must have a context window large enough
+    return environment_config
+
+
+@pytest.fixture
+def transformer_model_config():
+    transformer_model_config = TransformerModelConfig(
+        d_model=128,
+        n_heads=4,
+        d_mlp=256,
+        n_layers=2,
+        state_embedding_type="grid",  # hard-coded for now to minigrid.
+        n_ctx=2,  # one timestep of context
+        device="cuda" if torch.cuda.is_available() else "cpu",
+    )
+    return transformer_model_config
+
+
+def test_evaluate_dt_agent(trajectory_data_set, environment_config, transformer_model_config):
 
     dt = DecisionTransformer(
-        environment_config=EnvironmentConfig(
-            env_id=env_id,
-            one_hot_obs=trajectory_data_set.observation_type == "one_hot",
-            view_size=7,  # trajectory_data_set.metadata['args']['view_size'],
-            fully_observed=False,
-            capture_video=False,
-            render_mode='rgb_array',
-            max_steps=1000),
-        transformer_config=TransformerModelConfig(
-            d_model=128,
-            n_heads=4,
-            d_mlp=256,
-            n_layers=2,
-            state_embedding_type="grid",  # hard-coded for now to minigrid.
-            # max_timestep=1000,
-            n_ctx=2,  # one timestep of context
-            device="cuda" if torch.cuda.is_available() else "cpu",
-        ))
-
-    dt = dt.to(device)
-
-    if hasattr(dt, "environment_config"):
-        max_steps = min(dt.environment_config.max_steps, 10)
-    else:
-        max_steps = min(dt.max_timestep, 10)
+        environment_config=environment_config,
+        transformer_config=transformer_model_config)
 
     batch = 0
-    eval_env_config = EnvironmentConfig(env_id=env.spec.id, 
-                                        capture_video=True, 
-                                        max_steps=max_steps, 
-                                        fully_observed=False, 
-                                        one_hot_obs=(trajectory_data_set.observation_type == "one_hot"))
     eval_env_func = make_env(
-        eval_env_config,
-        seed=batch,
-        idx=0,
+        environment_config, seed=batch, idx=0,
         run_name=f"dt_eval_videos_{batch}"
     )
 
     statistics = evaluate_dt_agent(
-        env_id=env_id,
+        env_id=environment_config.env_id,
         model=dt,
         env_func=eval_env_func,
         track=False,
