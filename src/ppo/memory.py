@@ -1,10 +1,11 @@
 import random
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import List, Any, Optional, Dict
+from typing import List, Optional
 
 import gymnasium as gym
 import numpy as np
+import pandas as pd
 import torch as t
 from einops import rearrange
 from torchtyping import TensorType as TT
@@ -491,3 +492,20 @@ class Memory():
         '''
         for step, vars_to_log in self.vars_to_log.items():
             wandb.log(vars_to_log, step=step)
+
+
+def process_memory_vars_to_log(memory_vars_to_log):
+    # Convert defaultdict to dictionary
+    memory_dict = dict(memory_vars_to_log)
+
+    # Flatten the nested dictionary and prepare data for DataFrame
+    data = []
+    for key, value in memory_dict.items():
+        episode_length = value['episode_length'][0]
+        episode_return = value['episode_return'][0]
+        data.append([key, episode_length, episode_return])
+
+    # Create a DataFrame with columns 'id', 'episode_length', and 'episode_return'
+    df = pd.DataFrame(data, columns=['id', 'episode_length', 'episode_return'])
+
+    return df

@@ -1,18 +1,23 @@
+import os
 from dataclasses import dataclass
 
 import gymnasium as gym
+import pandas as pd
 import pytest
-from gymnasium.spaces import Discrete
 import torch
-from src.config import EnvironmentConfig
+from gymnasium.spaces import Discrete
+
+import wandb
+from src.config import (EnvironmentConfig, LSTMModelConfig,
+                        TransformerModelConfig)
 from src.environments.environments import make_env
-from src.ppo.agent import FCAgent, TransformerPPOAgent, LSTMPPOAgent, load_saved_checkpoint, load_all_agents_from_checkpoints
+from src.environments.registration import register_envs
+from src.ppo.agent import (FCAgent, LSTMPPOAgent, TransformerPPOAgent,
+                           load_all_agents_from_checkpoints,
+                           load_saved_checkpoint, sample_from_agents)
 from src.ppo.memory import Memory, Minibatch, TrajectoryMinibatch
 from src.ppo.train import train_ppo
 from src.ppo.utils import store_model_checkpoint
-from src.config import LSTMModelConfig, TransformerModelConfig
-from src.environments.registration import register_envs
-import wandb
 
 register_envs()
 
@@ -193,6 +198,13 @@ def lstm_agent():
                               lstm_config=LSTMModelConfig(EnvironmentConfig()),
                               device=torch.device("cpu"))
     return lstm_agent
+
+
+@pytest.fixture()
+def lstm_agents():
+    path = "models/ppo/memory_lstm_demos"
+    agents = load_all_agents_from_checkpoints(path, 4)
+    return agents
 
 
 def test_empty_env(run_config, environment_config, online_config):
@@ -435,3 +447,28 @@ def test_lstm_ppo_model_load_saved_checkpoints():
     assert len(agents) == 2
     assert isinstance(agent, LSTMPPOAgent)
     assert len(agent.envs.envs) == 4
+
+
+def test_sample_from_agents(lstm_agents):
+
+    all_episode_lengths, all_episode_returns = sample_from_agents(
+        lstm_agents,
+        rollout_length=200,
+        trajectory_path="tmp/test_sample_from_agents",
+        num_envs=4,
+    )
+
+    # list all of the files in that folder
+    files = os.listdir("tmp/test_sample_from_agents")
+    assert len(files) == 2
+    # assert they end in gz
+    assert files[0].endswith(".gz")
+    assert files[1].endswith(".gz")
+
+    # assert all_episode_lengths is a list of pandas dataframes
+    assert isinstance(all_episode_lengths, list)
+    assert isinstance(all_episode_lengths[0], pd.Series)
+
+    # do the same for all_episode_returns
+    assert isinstance(all_episode_returns, list)
+    assert isinstance(all_episode_returns[0], pd.Series)

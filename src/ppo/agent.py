@@ -10,8 +10,8 @@ import torch as t
 from torch import nn, optim
 from torch.distributions.categorical import Categorical
 
-from src.config import (EnvironmentConfig, LSTMModelConfig, OnlineTrainConfig,
-                        TransformerModelConfig)
+from src.utils import TrajectoryWriter
+from src.config import RunConfig, EnvironmentConfig, LSTMModelConfig, OnlineTrainConfig, TransformerModelConfig
 from src.environments.environments import make_env
 from src.models.trajectory_lstm import TrajectoryLSTM
 from src.models.trajectory_transformer import (ActorTransformer,
@@ -20,7 +20,7 @@ from src.utils import DictList
 
 from .loss_functions import (calc_clipped_surrogate_objective,
                              calc_entropy_bonus, calc_value_function_loss)
-from .memory import Memory
+from .memory import Memory, process_memory_vars_to_log
 from .utils import get_obs_shape
 
 
@@ -824,3 +824,34 @@ def load_all_agents_from_checkpoints(checkpoint_folder_path, num_envs=10):
         agents.append(agent)
 
     return agents
+
+
+def sample_from_agents(agents, rollout_length=2000, trajectory_path=None, num_envs=1):
+    all_episode_lengths = []
+    all_episode_returns = []
+
+    # Sample rollouts from each agent
+    for i, agent in enumerate(agents):
+        memory = Memory(agent.envs, OnlineTrainConfig(
+            num_envs=num_envs), device=agent.device)
+        if trajectory_path:
+            trajectory_writer = TrajectoryWriter(
+                path=os.path.join(trajectory_path, f"rollouts_agent_{i}.gz"),
+                run_config=RunConfig(track=False),
+                environment_config=agent.environment_config,
+                online_config=OnlineTrainConfig(num_envs=num_envs),
+                model_config=agent.model_config
+            )
+        else:
+            trajectory_writer = None
+        agent.rollout(memory, rollout_length, agent.envs, trajectory_writer)
+        if trajectory_writer:
+            trajectory_writer.tag_terminated_trajectories()
+            trajectory_writer.write(upload_to_wandb=False)
+
+        # Process the episode lengths and returns
+        df = process_memory_vars_to_log(memory.vars_to_log)
+        all_episode_lengths.append(df['episode_length'])
+        all_episode_returns.append(df['episode_return'])
+
+    return all_episode_lengths, all_episode_returns
