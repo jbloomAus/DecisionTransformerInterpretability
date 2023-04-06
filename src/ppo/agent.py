@@ -1,7 +1,9 @@
 import abc
+import json
+import os
 from dataclasses import dataclass
 from typing import Tuple
-import json
+
 import gymnasium as gym
 import numpy as np
 import torch as t
@@ -10,6 +12,7 @@ from torch.distributions.categorical import Categorical
 
 from src.config import (EnvironmentConfig, LSTMModelConfig, OnlineTrainConfig,
                         TransformerModelConfig)
+from src.environments.environments import make_env
 from src.models.trajectory_lstm import TrajectoryLSTM
 from src.models.trajectory_transformer import (ActorTransformer,
                                                CriticTransfomer)
@@ -19,7 +22,6 @@ from .loss_functions import (calc_clipped_surrogate_objective,
                              calc_entropy_bonus, calc_value_function_loss)
 from .memory import Memory
 from .utils import get_obs_shape
-from src.environments.environments import make_env
 
 
 class PPOScheduler:
@@ -792,3 +794,33 @@ def load_saved_checkpoint(path, num_envs=10) -> PPOAgent:
 
     # return the model
     return agent
+
+
+def load_all_agents_from_checkpoints(checkpoint_folder_path, num_envs=10):
+    """
+        Example:
+    --------
+    .. code-block:: python
+        >>>  import wandb
+        >>>  run = wandb.init()
+        >>>  artifact = run.use_artifact('arena-ldn/PPO-MiniGrid/Test-PPO-LSTM_checkpoints:v16', type='model')
+        >>>  artifact_dir = artifact.download()
+
+        >>>  checkpoint_folder_path = "artifacts/Test-PPO-LSTM_checkpoints:v16"
+        >>>  agents = load_all_agents_from_checkpoints(checkpoint_folder_path)
+
+    """
+    # Get all files in the checkpoint folder
+    checkpoint_files = os.listdir(checkpoint_folder_path)
+
+    # Filter out non-checkpoint files
+    checkpoint_files = [f for f in checkpoint_files if f.endswith('.pt')]
+
+    # Load each checkpoint into an agent
+    agents = []
+    for checkpoint_file in checkpoint_files:
+        path = os.path.join(checkpoint_folder_path, checkpoint_file)
+        agent = load_saved_checkpoint(path, num_envs=num_envs)
+        agents.append(agent)
+
+    return agents

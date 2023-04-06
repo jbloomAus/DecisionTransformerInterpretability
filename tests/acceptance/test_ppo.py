@@ -6,12 +6,15 @@ from gymnasium.spaces import Discrete
 import torch
 from src.config import EnvironmentConfig
 from src.environments.environments import make_env
-from src.ppo.agent import FCAgent, TransformerPPOAgent, LSTMPPOAgent, load_saved_checkpoint
+from src.ppo.agent import FCAgent, TransformerPPOAgent, LSTMPPOAgent, load_saved_checkpoint, load_all_agents_from_checkpoints
 from src.ppo.memory import Memory, Minibatch, TrajectoryMinibatch
 from src.ppo.train import train_ppo
 from src.ppo.utils import store_model_checkpoint
 from src.config import LSTMModelConfig, TransformerModelConfig
+from src.environments.registration import register_envs
 import wandb
+
+register_envs()
 
 
 def compare_state_dicts(state_dict1, state_dict2):
@@ -421,3 +424,14 @@ def test_lstm_ppo_model_checkpoint_saving_and_loading(lstm_agent, run_config, on
     assert lstm_agent.environment_config == agent.environment_config
     assert compare_state_dicts(
         lstm_agent.model.state_dict(), agent.model.state_dict())
+
+
+def test_lstm_ppo_model_load_saved_checkpoints():
+
+    path = "models/ppo/memory_lstm_demos"
+    agents = load_all_agents_from_checkpoints(path, 4)
+    agent = agents[0]
+
+    assert len(agents) == 2
+    assert isinstance(agent, LSTMPPOAgent)
+    assert len(agent.envs.envs) == 4
