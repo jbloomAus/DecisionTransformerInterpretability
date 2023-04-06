@@ -1504,9 +1504,12 @@ a certain timelimit was exceeded, or the physics simulation has entered an inval
 <dl class="py function">
 <dt class="sig sig-object py" id="src.ppo.runner.ppo_runner">
 <span class="sig-prename descclassname"><span class="pre">src.ppo.runner.</span></span><span class="sig-name descname"><span class="pre">ppo_runner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.config.RunConfig" title="src.config.RunConfig"><span class="pre">RunConfig</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">environment_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.config.EnvironmentConfig" title="src.config.EnvironmentConfig"><span class="pre">EnvironmentConfig</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">online_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig" title="src.config.OnlineTrainConfig"><span class="pre">OnlineTrainConfig</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="src.html#src.config.TransformerModelConfig" title="src.config.TransformerModelConfig"><span class="pre">TransformerModelConfig</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="src.html#src.config.LSTMModelConfig" title="src.config.LSTMModelConfig"><span class="pre">LSTMModelConfig</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.runner.ppo_runner" title="Permalink to this definition">#</a></dt>
-<dd><p>Trains a Proximal Policy Optimization (PPO) algorithm on a specified environment using the given hyperparameters.</p>
+<dd><p>Executes Proximal Policy Optimization (PPO) training on a specified environment with provided hyperparameters.</p>
 <p>Args:
-- args (PPOArgs): an object that contains hyperparameters and other arguments for PPO training.</p>
+- run_config (RunConfig): An object containing general run configuration details.
+- environment_config (EnvironmentConfig): An object containing environment-specific configuration details.
+- online_config (OnlineTrainConfig): An object containing online training configuration details.
+- model_config (Optional[Union[TransformerModelConfig, LSTMModelConfig]]): An optional object containing either Transformer or LSTM model configuration details.</p>
 <p>Returns: None.</p>
 </dd></dl>
 
@@ -1533,167 +1536,22 @@ uploads them to the current WandB run.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="src.ppo.train.train_ppo">
-<span class="sig-prename descclassname"><span class="pre">src.ppo.train.</span></span><span class="sig-name descname"><span class="pre">train_ppo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.config.RunConfig" title="src.config.RunConfig"><span class="pre">RunConfig</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">online_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig" title="src.config.OnlineTrainConfig"><span class="pre">OnlineTrainConfig</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">environment_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.config.EnvironmentConfig" title="src.config.EnvironmentConfig"><span class="pre">EnvironmentConfig</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="src.html#src.config.TransformerModelConfig" title="src.config.TransformerModelConfig"><span class="pre">TransformerModelConfig</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="src.html#src.config.LSTMModelConfig" title="src.config.LSTMModelConfig"><span class="pre">LSTMModelConfig</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">envs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SyncVectorEnv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectory_writer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.train.train_ppo" title="Permalink to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">src.ppo.train.</span></span><span class="sig-name descname"><span class="pre">train_ppo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.config.RunConfig" title="src.config.RunConfig"><span class="pre">RunConfig</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">online_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.config.OnlineTrainConfig" title="src.config.OnlineTrainConfig"><span class="pre">OnlineTrainConfig</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">environment_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="src.html#src.config.EnvironmentConfig" title="src.config.EnvironmentConfig"><span class="pre">EnvironmentConfig</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="src.html#src.config.TransformerModelConfig" title="src.config.TransformerModelConfig"><span class="pre">TransformerModelConfig</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="src.html#src.config.LSTMModelConfig" title="src.config.LSTMModelConfig"><span class="pre">LSTMModelConfig</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">envs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SyncVectorEnv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectory_writer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#src.ppo.agent.PPOAgent" title="src.ppo.agent.PPOAgent"><span class="pre">PPOAgent</span></a></span></span><a class="headerlink" href="#src.ppo.train.train_ppo" title="Permalink to this definition">#</a></dt>
 <dd><p>Trains a PPO agent on a given environment.</p>
 <p>Args:
-- args: an instance of PPOArgs containing the hyperparameters for training
-- envs: the environment to train on
-- trajectory_writer: an optional object to write trajectories to a file
-- probe_idx: index of probe environment, if training on probe environment</p>
+- run_config (RunConfig): An object containing general run configuration details.
+- online_config (OnlineTrainConfig): An object containing online training configuration details.
+- environment_config (EnvironmentConfig): An object containing environment-specific configuration details.
+- model_config (Optional[Union[TransformerModelConfig, LSTMModelConfig]]): An optional object containing either Transformer or LSTM model configuration details.
+- envs (SyncVectorEnv): The environment in which to perform training.
+- trajectory_writer (optional): An optional object for writing trajectories to a file.</p>
 <p>Returns:
-None</p>
+- agent (PPOAgent): The trained PPO agent.</p>
 </dd></dl>
 
 </section>
 <section id="module-src.ppo.utils">
 <span id="src-ppo-utils-module"></span><h2>src.ppo.utils module<a class="headerlink" href="#module-src.ppo.utils" title="Permalink to this heading">#</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">PPOArgs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exp_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'MiniGrid-Dynamic-Obstacles-8x8-v0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cuda</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wandb_project_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'PPO-MiniGrid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wandb_entity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">capture_video</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'MiniGrid-Dynamic-Obstacles-8x8-v0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">view_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hidden_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1800000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.00025</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decay_lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(False,)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_envs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.99</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gae_lambda</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.95</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_minibatches</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip_coef</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ent_coef</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vf_coef</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_grad_norm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">one_hot_obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectory_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fully_observed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.PPOArgs" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.capture_video">
-<span class="sig-name descname"><span class="pre">capture_video</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.capture_video" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.clip_coef">
-<span class="sig-name descname"><span class="pre">clip_coef</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.4</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.clip_coef" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.cuda">
-<span class="sig-name descname"><span class="pre">cuda</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.cuda" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.decay_lr">
-<span class="sig-name descname"><span class="pre">decay_lr</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(False,)</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.decay_lr" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.ent_coef">
-<span class="sig-name descname"><span class="pre">ent_coef</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.2</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.ent_coef" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.env_id">
-<span class="sig-name descname"><span class="pre">env_id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'MiniGrid-Dynamic-Obstacles-8x8-v0'</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.env_id" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.exp_name">
-<span class="sig-name descname"><span class="pre">exp_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'MiniGrid-Dynamic-Obstacles-8x8-v0'</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.exp_name" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.fully_observed">
-<span class="sig-name descname"><span class="pre">fully_observed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.fully_observed" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.gae_lambda">
-<span class="sig-name descname"><span class="pre">gae_lambda</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.95</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.gae_lambda" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.gamma">
-<span class="sig-name descname"><span class="pre">gamma</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.99</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.gamma" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.hidden_size">
-<span class="sig-name descname"><span class="pre">hidden_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">64</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.hidden_size" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.learning_rate">
-<span class="sig-name descname"><span class="pre">learning_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.00025</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.learning_rate" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.max_grad_norm">
-<span class="sig-name descname"><span class="pre">max_grad_norm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.max_grad_norm" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.max_steps">
-<span class="sig-name descname"><span class="pre">max_steps</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1000</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.max_steps" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.num_envs">
-<span class="sig-name descname"><span class="pre">num_envs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.num_envs" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.num_minibatches">
-<span class="sig-name descname"><span class="pre">num_minibatches</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.num_minibatches" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.num_steps">
-<span class="sig-name descname"><span class="pre">num_steps</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">128</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.num_steps" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.one_hot_obs">
-<span class="sig-name descname"><span class="pre">one_hot_obs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.one_hot_obs" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.seed">
-<span class="sig-name descname"><span class="pre">seed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.seed" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.total_timesteps">
-<span class="sig-name descname"><span class="pre">total_timesteps</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1800000</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.total_timesteps" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.track">
-<span class="sig-name descname"><span class="pre">track</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.track" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.trajectory_path">
-<span class="sig-name descname"><span class="pre">trajectory_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.trajectory_path" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.update_epochs">
-<span class="sig-name descname"><span class="pre">update_epochs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.update_epochs" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.vf_coef">
-<span class="sig-name descname"><span class="pre">vf_coef</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.5</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.vf_coef" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.view_size">
-<span class="sig-name descname"><span class="pre">view_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">7</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.view_size" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.wandb_entity">
-<span class="sig-name descname"><span class="pre">wandb_entity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.wandb_entity" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.ppo.utils.PPOArgs.wandb_project_name">
-<span class="sig-name descname"><span class="pre">wandb_project_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'PPO-MiniGrid'</span></em><a class="headerlink" href="#src.ppo.utils.PPOArgs.wandb_project_name" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.ppo.utils.arg_help">
-<span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">arg_help</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#src.ppo.utils.PPOArgs" title="src.ppo.utils.PPOArgs"><span class="pre">PPOArgs</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_df</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.arg_help" title="Permalink to this definition">#</a></dt>
-<dd><p>Prints out a nicely displayed list of arguments, their default values, and what they mean.</p>
-</dd></dl>
-
 <dl class="py function">
 <dt class="sig sig-object py" id="src.ppo.utils.get_obs_preprocessor">
 <span class="sig-prename descclassname"><span class="pre">src.ppo.utils.</span></span><span class="sig-name descname"><span class="pre">get_obs_preprocessor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obs_space</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.ppo.utils.get_obs_preprocessor" title="Permalink to this definition">#</a></dt>
@@ -1740,34 +1598,6 @@ None</p>
 </section>
 <section id="module-src.ppo">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-src.ppo" title="Permalink to this heading">#</a></h2>
-<p>The PPO (Proximal Policy Optimization) subpackage contains modules and classes for training an agent using the PPO algorithm on an OpenAI gym (now gymnasium) environment.</p>
-<dl class="simple">
-<dt>Modules:</dt><dd><ul class="simple">
-<li><p>agent: Contains the Agent class, which encapsulates the neural networks used to represent the policy and value function, as well as the methods used for interacting with the environment and updating the network weights.</p></li>
-<li><p>memory: Contains the Memory class, which stores experiences collected during the rollout phase and provides methods for computing advantages and generating minibatches for training.</p></li>
-<li><p>utils: Contains utility functions used throughout the PPO subpackage.</p></li>
-</ul>
-</dd>
-<dt>Classes:</dt><dd><ul class="simple">
-<li><p>PPOArgs: A dataclass that stores hyperparameters and other configuration options for PPO training.</p></li>
-<li><p>Minibatch: A dataclass that represents a minibatch of experiences, containing observations, actions, log probabilities, advantages, values, and returns.</p></li>
-</ul>
-</dd>
-<dt>Functions:</dt><dd><ul class="simple">
-<li><p>get_obs_preprocessor: A function that takes an OpenAI gym observation space and returns a function that preprocesses observations for use in neural networks.</p></li>
-<li><p>check_and_upload_new_video: A function that checks for new video files in a specified directory and logs them to a WandB run if they are found.</p></li>
-<li><p>train_ppo: The main function for training an agent using the PPO algorithm. Calls the Agent and Memory classes, and uses an optimizer and learning rate scheduler to update the network weights.</p></li>
-</ul>
-</dd>
-<dt>Dependencies:</dt><dd><ul class="simple">
-<li><p>gym (gymnasium): For interacting with OpenAI gym environments.</p></li>
-<li><p>numpy: For numerical operations and array manipulation.</p></li>
-<li><p>torch: For building and training neural networks.</p></li>
-<li><p>einops: For efficient manipulation of tensor dimensions.</p></li>
-<li><p>wandb: For logging and visualizing training metrics and video.</p></li>
-</ul>
-</dd>
-</dl>
 </section>
 </section>
 
@@ -1976,37 +1806,6 @@ None</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-src.ppo.utils">src.ppo.utils module</a><ul>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs"><code class="docutils literal notranslate"><span class="pre">PPOArgs</span></code></a><ul>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.capture_video"><code class="docutils literal notranslate"><span class="pre">PPOArgs.capture_video</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.clip_coef"><code class="docutils literal notranslate"><span class="pre">PPOArgs.clip_coef</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.cuda"><code class="docutils literal notranslate"><span class="pre">PPOArgs.cuda</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.decay_lr"><code class="docutils literal notranslate"><span class="pre">PPOArgs.decay_lr</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.ent_coef"><code class="docutils literal notranslate"><span class="pre">PPOArgs.ent_coef</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.env_id"><code class="docutils literal notranslate"><span class="pre">PPOArgs.env_id</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.exp_name"><code class="docutils literal notranslate"><span class="pre">PPOArgs.exp_name</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.fully_observed"><code class="docutils literal notranslate"><span class="pre">PPOArgs.fully_observed</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.gae_lambda"><code class="docutils literal notranslate"><span class="pre">PPOArgs.gae_lambda</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.gamma"><code class="docutils literal notranslate"><span class="pre">PPOArgs.gamma</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.hidden_size"><code class="docutils literal notranslate"><span class="pre">PPOArgs.hidden_size</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.learning_rate"><code class="docutils literal notranslate"><span class="pre">PPOArgs.learning_rate</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.max_grad_norm"><code class="docutils literal notranslate"><span class="pre">PPOArgs.max_grad_norm</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.max_steps"><code class="docutils literal notranslate"><span class="pre">PPOArgs.max_steps</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.num_envs"><code class="docutils literal notranslate"><span class="pre">PPOArgs.num_envs</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.num_minibatches"><code class="docutils literal notranslate"><span class="pre">PPOArgs.num_minibatches</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.num_steps"><code class="docutils literal notranslate"><span class="pre">PPOArgs.num_steps</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.one_hot_obs"><code class="docutils literal notranslate"><span class="pre">PPOArgs.one_hot_obs</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.seed"><code class="docutils literal notranslate"><span class="pre">PPOArgs.seed</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.total_timesteps"><code class="docutils literal notranslate"><span class="pre">PPOArgs.total_timesteps</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.track"><code class="docutils literal notranslate"><span class="pre">PPOArgs.track</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.trajectory_path"><code class="docutils literal notranslate"><span class="pre">PPOArgs.trajectory_path</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.update_epochs"><code class="docutils literal notranslate"><span class="pre">PPOArgs.update_epochs</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.vf_coef"><code class="docutils literal notranslate"><span class="pre">PPOArgs.vf_coef</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.view_size"><code class="docutils literal notranslate"><span class="pre">PPOArgs.view_size</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.wandb_entity"><code class="docutils literal notranslate"><span class="pre">PPOArgs.wandb_entity</span></code></a></li>
-<li><a class="reference internal" href="#src.ppo.utils.PPOArgs.wandb_project_name"><code class="docutils literal notranslate"><span class="pre">PPOArgs.wandb_project_name</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#src.ppo.utils.arg_help"><code class="docutils literal notranslate"><span class="pre">arg_help()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.utils.get_obs_preprocessor"><code class="docutils literal notranslate"><span class="pre">get_obs_preprocessor()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.utils.get_obs_shape"><code class="docutils literal notranslate"><span class="pre">get_obs_shape()</span></code></a></li>
 <li><a class="reference internal" href="#src.ppo.utils.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
