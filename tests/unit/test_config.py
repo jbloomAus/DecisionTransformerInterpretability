@@ -111,6 +111,8 @@ def test_offline_train_config():
     assert hasattr(config, 'initial_rtg')
     assert hasattr(config, 'eval_max_time_steps')
     assert hasattr(config, 'trajectory_path')
+    assert hasattr(config, 'convert_to_one_hot')
+    assert hasattr(config, 'eval_num_envs')
 
 
 def test_offline_train_config_raise_error_no_traj_path():

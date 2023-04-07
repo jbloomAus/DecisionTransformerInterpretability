@@ -47,10 +47,12 @@ if __name__ == "__main__":
         test_frequency=args.test_frequency,
         eval_frequency=args.eval_frequency,
         eval_episodes=args.eval_episodes,
+        eval_num_envs=args.eval_num_envs,
         initial_rtg=args.initial_rtg,
         prob_go_from_end=args.prob_go_from_end,
         eval_max_time_steps=args.eval_max_time_steps,
         track=args.track,
+        convert_to_one_hot=args.convert_to_one_hot,
     )
 
     run_decision_transformer(

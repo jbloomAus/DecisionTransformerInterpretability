@@ -138,8 +138,10 @@ class OfflineTrainConfig:
     eval_frequency: int = 10
     eval_episodes: int = 10
     model_type: str = 'decision_transformer'
+    convert_to_one_hot: bool = False
     initial_rtg: list[float] = (0.0, 1.0)
     eval_max_time_steps: int = 100
+    eval_num_envs: int = 8,
 
     def __post_init__(self):
         assert self.model_type in ['decision_transformer', 'clone_transformer']

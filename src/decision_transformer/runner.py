@@ -12,7 +12,7 @@ from src.config import (EnvironmentConfig, OfflineTrainConfig, RunConfig,
 from src.models.trajectory_transformer import CloneTransformer, DecisionTransformer
 
 # from .model import DecisionTransformer
-from .offline_dataset import TrajectoryDataset, TrajectoryVisualizer
+from .offline_dataset import TrajectoryDataset, TrajectoryVisualizer, one_hot_encode_observation
 from .train import train
 from .utils import get_max_len_from_model_type
 from src.environments.registration import register_envs
@@ -51,12 +51,14 @@ def run_decision_transformer(
         transformer_config.n_ctx
     )
 
+    preprocess_observations = None if not offline_config.convert_to_one_hot else one_hot_encode_observation
     trajectory_data_set = TrajectoryDataset(
         trajectory_path=offline_config.trajectory_path,
         max_len=max_len,
         pct_traj=offline_config.pct_traj,
         prob_go_from_end=offline_config.prob_go_from_end,
         device=device,
+        preprocess_observations=preprocess_observations,
     )
 
     # ensure all the environments we need are registered
@@ -128,7 +130,8 @@ def run_decision_transformer(
         eval_frequency=offline_config.eval_frequency,
         eval_episodes=offline_config.eval_episodes,
         initial_rtg=offline_config.initial_rtg,
-        eval_max_time_steps=offline_config.eval_max_time_steps
+        eval_max_time_steps=offline_config.eval_max_time_steps,
+        eval_num_envs=offline_config.eval_num_envs,
     )
 
     if run_config.track:

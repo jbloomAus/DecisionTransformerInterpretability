@@ -141,6 +141,10 @@ class TrajectoryDataset(Dataset):
             self.state_mean = 0
             self.state_std = 1
 
+        # TODO Make this way less hacky
+        if self.preprocess_observations == one_hot_encode_observation:
+            self.observation_type = "one_hot"
+
     def get_indices_of_top_p_trajectories(self, pct_traj):
         num_timesteps = max(int(pct_traj * self.num_timesteps), 1)
         sorted_inds = np.argsort(self.returns)

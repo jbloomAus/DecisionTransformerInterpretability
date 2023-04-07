@@ -67,13 +67,15 @@ def parse_args():
     parser.add_argument("--pct_traj", type=float, default=1)
     parser.add_argument("--weight_decay", type=float, default=0.001)
     parser.add_argument("--seed", type=int, default=1)
-    parser.add_argument("--track", type=bool, default=False)
+    parser.add_argument("--track", type=bool, default=False,
+                        action=argparse.BooleanOptionalAction)
     parser.add_argument("--wandb_project_name", type=str,
                         default="DecisionTransformerInterpretability")
     parser.add_argument("--wandb_entity", type=str, default=None)
     parser.add_argument("--test_frequency", type=int, default=100)
     parser.add_argument("--eval_frequency", type=int, default=100)
     parser.add_argument("--eval_episodes", type=int, default=10)
+    parser.add_argument("--eval_num_envs", type=int, default=8)
     parser.add_argument("--initial_rtg", action='append',
                         help='<Required> Set flag', required=False, default=[0, 1])
     parser.add_argument("--prob_go_from_end", type=float, default=0.1)
@@ -81,6 +83,8 @@ def parse_args():
     parser.add_argument("--cuda", action=argparse.BooleanOptionalAction)
     parser.add_argument("--model_type", type=str,
                         default="decision_transformer")
+    parser.add_argument("--convert_to_one_hot", type=bool, default=False,
+                        action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
     return args
 

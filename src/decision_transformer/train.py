@@ -32,7 +32,8 @@ def train(
         eval_frequency=10,
         eval_episodes=10,
         initial_rtg=[0.0, 1.0],
-        eval_max_time_steps=100):
+        eval_max_time_steps=100,
+        eval_num_envs=8,):
     loss_fn = nn.CrossEntropyLoss()
     model = model.to(device)
     optimizer = t.optim.Adam(model.parameters(), lr=lr,
@@ -149,7 +150,8 @@ def train(
                     track=track,
                     batch_number=total_batches,
                     initial_rtg=float(rtg),
-                    device=device)
+                    device=device,
+                    num_envs=eval_num_envs)
 
     return model
 
