@@ -49,7 +49,8 @@ if __name__ == "__main__":
         eval_episodes=args.eval_episodes,
         initial_rtg=args.initial_rtg,
         prob_go_from_end=args.prob_go_from_end,
-        eval_max_time_steps=args.eval_max_time_steps
+        eval_max_time_steps=args.eval_max_time_steps,
+        track=args.track,
     )
 
     run_decision_transformer(
