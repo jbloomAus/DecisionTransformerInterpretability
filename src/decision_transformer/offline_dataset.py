@@ -3,9 +3,10 @@ import lzma
 import pickle
 import random
 
+from typing import Callable
 import numpy as np
 import plotly.express as px
-import torch as t
+import torch
 from einops import rearrange
 
 from torch.utils.data import Dataset
@@ -47,6 +48,7 @@ class TrajectoryDataset(Dataset):
                  pct_traj=1.0,
                  rtg_scale=1,
                  normalize_state=False,
+                 preprocess_observations: Callable = None,
                  device='cpu'):
         self.trajectory_path = trajectory_path
         self.max_len = max_len
@@ -55,6 +57,7 @@ class TrajectoryDataset(Dataset):
         self.device = device
         self.normalize_state = normalize_state
         self.rtg_scale = rtg_scale
+        self.preprocess_observations = preprocess_observations
         self.load_trajectories()
 
     def load_trajectories(self) -> None:
@@ -86,26 +89,26 @@ class TrajectoryDataset(Dataset):
 
         if self.observation_type != 'flat':
             t_observations = rearrange(
-                t.tensor(observations), "t b h w c -> (b t) h w c")
+                torch.tensor(observations), "t b h w c -> (b t) h w c")
         else:
             t_observations = rearrange(
-                t.tensor(observations), "t b f -> (b t) f")
+                torch.tensor(observations), "t b f -> (b t) f")
 
-        t_actions = rearrange(t.tensor(actions), "t b -> (b t)")
-        t_rewards = rearrange(t.tensor(rewards), "t b -> (b t)")
-        t_dones = rearrange(t.tensor(dones), "t b -> (b t)")
-        t_truncated = rearrange(t.tensor(truncated), "t b -> (b t)")
+        t_actions = rearrange(torch.tensor(actions), "t b -> (b t)")
+        t_rewards = rearrange(torch.tensor(rewards), "t b -> (b t)")
+        t_dones = rearrange(torch.tensor(dones), "t b -> (b t)")
+        t_truncated = rearrange(torch.tensor(truncated), "t b -> (b t)")
 
-        t_done_or_truncated = t.logical_or(t_dones, t_truncated)
-        done_indices = t.where(t_done_or_truncated)[0]
+        t_done_or_truncated = torch.logical_or(t_dones, t_truncated)
+        done_indices = torch.where(t_done_or_truncated)[0]
 
-        self.actions = t.tensor_split(t_actions, done_indices + 1)
-        self.rewards = t.tensor_split(t_rewards, done_indices + 1)
-        self.dones = t.tensor_split(t_dones, done_indices + 1)
-        self.truncated = t.tensor_split(t_truncated, done_indices + 1)
-        self.states = t.tensor_split(t_observations, done_indices + 1)
+        self.actions = torch.tensor_split(t_actions, done_indices + 1)
+        self.rewards = torch.tensor_split(t_rewards, done_indices + 1)
+        self.dones = torch.tensor_split(t_dones, done_indices + 1)
+        self.truncated = torch.tensor_split(t_truncated, done_indices + 1)
+        self.states = torch.tensor_split(t_observations, done_indices + 1)
         self.returns = [r.sum() for r in self.rewards]
-        self.timesteps = [t.arange(len(i)) for i in self.states]
+        self.timesteps = [torch.arange(len(i)) for i in self.states]
         self.traj_lens = np.array([len(i) for i in self.states])
 
         # remove trajs with length 0
@@ -260,33 +263,34 @@ class TrajectoryDataset(Dataset):
 
     def return_tensors(self, s, a, r, rtg, d, timesteps, mask):
 
-        if isinstance(s, t.Tensor):
-            s = s.to(dtype=t.float32, device=self.device)
+        if isinstance(s, torch.Tensor):
+            s = s.to(dtype=torch.float32, device=self.device)
         else:
-            s = t.from_numpy(s).to(dtype=t.float32, device=self.device)
+            s = torch.from_numpy(s).to(dtype=torch.float32, device=self.device)
 
-        if isinstance(a, t.Tensor):
-            a = a.to(dtype=t.long, device=self.device)
+        if isinstance(a, torch.Tensor):
+            a = a.to(dtype=torch.long, device=self.device)
         else:
-            a = t.from_numpy(a).to(dtype=t.long, device=self.device)
+            a = torch.from_numpy(a).to(dtype=torch.long, device=self.device)
 
-        if isinstance(r, t.Tensor):
-            r = r.to(dtype=t.float32, device=self.device)
+        if isinstance(r, torch.Tensor):
+            r = r.to(dtype=torch.float32, device=self.device)
         else:
-            r = t.from_numpy(r).to(dtype=t.float32, device=self.device)
+            r = torch.from_numpy(r).to(dtype=torch.float32, device=self.device)
 
-        if isinstance(rtg, t.Tensor):
-            rtg = rtg.to(dtype=t.float32, device=self.device)
+        if isinstance(rtg, torch.Tensor):
+            rtg = rtg.to(dtype=torch.float32, device=self.device)
         else:
-            rtg = t.from_numpy(rtg).to(dtype=t.float32, device=self.device)
+            rtg = torch.from_numpy(rtg).to(
+                dtype=torch.float32, device=self.device)
 
-        if isinstance(d, t.Tensor):
-            d = d.to(dtype=t.bool, device=self.device)
+        if isinstance(d, torch.Tensor):
+            d = d.to(dtype=torch.bool, device=self.device)
         else:
-            d = t.from_numpy(d).to(dtype=t.bool, device=self.device)
-        timesteps = t.from_numpy(timesteps).to(
-            dtype=t.long, device=self.device)
-        mask = t.from_numpy(mask).to(dtype=t.bool, device=self.device)
+            d = torch.from_numpy(d).to(dtype=torch.bool, device=self.device)
+        timesteps = torch.from_numpy(timesteps).to(
+            dtype=torch.long, device=self.device)
+        mask = torch.from_numpy(mask).to(dtype=torch.bool, device=self.device)
 
         # squeeze out the batch dimension
         s = s.squeeze(0)
@@ -309,6 +313,9 @@ class TrajectoryDataset(Dataset):
             max_len=self.max_len,
             prob_go_from_end=self.prob_go_from_end
         )
+        if self.preprocess_observations is not None:
+            s = self.preprocess_observations(s)
+
         return s, a, r, d, rtg, ti, m
 
 
@@ -350,7 +357,7 @@ class TrajectoryVisualizer:
     def plot_base_action_frequencies(self):
 
         fig = px.bar(
-            y=t.concat(self.trajectory_loader.actions).bincount()
+            y=torch.concat(self.trajectory_loader.actions).bincount()
             # x=[IDX_TO_ACTION[i] for i in range(7)],
             # color=[IDX_TO_ACTION[i] for i in range(7)],
         )
