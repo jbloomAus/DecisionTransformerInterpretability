@@ -1,9 +1,12 @@
 import pytest
-
 import torch
-from src.decision_transformer.offline_dataset import TrajectoryDataset, TrajectoryReader
+import copy
+from minigrid.core.constants import COLOR_TO_IDX, OBJECT_TO_IDX, STATE_TO_IDX
 from torch.utils.data import DataLoader, random_split
 from torch.utils.data.sampler import WeightedRandomSampler
+
+from src.decision_transformer.offline_dataset import (
+    TrajectoryDataset, TrajectoryReader, one_hot_encode_observation)
 
 
 def get_len_i_for_i_in_list(l):
@@ -307,3 +310,58 @@ def test_train_test_split_other_data(trajectory_dataset_xz):
     )
     test_dataloader = DataLoader(
         test_dataset, batch_size=8, sampler=test_sampler)
+
+
+def test_one_hot_encode_observation():
+    # Create a random input tensor with shape (batch_size, height, width, num_channels)
+    input_tensor = torch.randint(low=0, high=3, size=(4, 32, 32, 3)).float()
+
+    # Call the function
+    output_tensor = one_hot_encode_observation(input_tensor)
+
+    # Check the shape of the output tensor
+    assert output_tensor.shape == (4, 32, 32, len(
+        OBJECT_TO_IDX) + len(COLOR_TO_IDX) + len(STATE_TO_IDX))
+
+    # Check that the output tensor has the correct data type
+    assert output_tensor.dtype == torch.float32
+
+    # Check that the output tensor is binary (i.e., contains only 0s and 1s)
+    assert (output_tensor == 0).logical_or(output_tensor == 1).all()
+
+    # Check that the output tensor has the correct values
+    for b in range(4):
+        for i in range(32):
+            for j in range(32):
+                value = input_tensor[b, i, j, 0].long().item()
+                color = input_tensor[b, i, j, 1].long().item()
+                state = input_tensor[b, i, j, 2].long().item()
+
+                assert output_tensor[b, i, j, value] == 1
+                assert output_tensor[b, i, j, len(OBJECT_TO_IDX) + color] == 1
+                assert output_tensor[b, i, j, len(
+                    OBJECT_TO_IDX) + len(COLOR_TO_IDX) + state] == 1
+
+
+def test_trajectory_dataset__getitem__(trajectory_dataset):
+
+    trajectory_dataset = copy.deepcopy(trajectory_dataset)
+    trajectory_dataset.preprocess_observations = one_hot_encode_observation
+
+    s, a, r, d, rtg, timesteps, mask = trajectory_dataset[0]
+
+    assert isinstance(s, torch.Tensor)
+    assert isinstance(a, torch.Tensor)
+    assert isinstance(r, torch.Tensor)
+    assert isinstance(d, torch.Tensor)
+    assert isinstance(rtg, torch.Tensor)
+    assert isinstance(timesteps, torch.Tensor)
+    assert isinstance(mask, torch.Tensor)
+
+    assert s.shape == (100, 7, 7, 20)
+    assert a.shape == (100,)
+    assert r.shape == (100, 1)  # flatten this later?
+    assert d.shape == (100,)
+    assert rtg.shape == (101, 1)  # how did we get the extra timestep?
+    assert timesteps.shape == (100,)
+    assert mask.shape == (100,)

@@ -2,13 +2,13 @@ import gzip
 import lzma
 import pickle
 import random
-
 from typing import Callable
+
 import numpy as np
 import plotly.express as px
 import torch
 from einops import rearrange
-
+from minigrid.core.constants import COLOR_TO_IDX, OBJECT_TO_IDX, STATE_TO_IDX
 from torch.utils.data import Dataset
 
 
@@ -369,3 +369,28 @@ class TrajectoryVisualizer:
         )
 
         return fig
+
+
+def one_hot_encode_observation(img: torch.Tensor) -> torch.Tensor:
+    """Converts a batch of observations into one-hot encoded numpy arrays."""
+
+    img = img.to(int).numpy()
+    batch_size, height, width, num_channels = img.shape
+    num_bits = 20
+    new_observation_space = (batch_size, height, width, num_bits)
+
+    out = np.zeros(new_observation_space, dtype="uint8")
+
+    for b in range(batch_size):
+        for i in range(height):
+            for j in range(width):
+                value = img[b, i, j, 0]
+                color = img[b, i, j, 1]
+                state = img[b, i, j, 2]
+
+                out[b, i, j, value] = 1
+                out[b, i, j, len(OBJECT_TO_IDX) + color] = 1
+                out[b, i, j, len(OBJECT_TO_IDX) +
+                    len(COLOR_TO_IDX) + state] = 1
+
+    return torch.from_numpy(out).float()
