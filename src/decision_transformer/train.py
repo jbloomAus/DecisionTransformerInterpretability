@@ -1,5 +1,5 @@
 import os
-
+import pytest
 import gymnasium.vector
 import torch as t
 import torch.nn as nn
@@ -154,6 +154,7 @@ def train(
     return model
 
 
+@pytest.mark.skip(reason="This is not a test")
 def test(
         model: TrajectoryTransformer,
         dataloader: DataLoader,
