@@ -1,9 +1,13 @@
-from src.config import RunConfig, TransformerModelConfig, EnvironmentConfig, OnlineTrainConfig
+from src.config import (
+    RunConfig,
+    TransformerModelConfig,
+    EnvironmentConfig,
+    OnlineTrainConfig,
+)
 from src.ppo.utils import parse_args
 from src.ppo.runner import ppo_runner
 
 if __name__ == "__main__":
-
     args = parse_args()
 
     run_config = RunConfig(
@@ -42,7 +46,7 @@ if __name__ == "__main__":
         trajectory_path=args.trajectory_path,
         fully_observed=args.fully_observed,
         num_checkpoints=args.num_checkpoints,
-        device=run_config.device
+        device=run_config.device,
     )
 
     transformer_config = None  # TransformerModelConfig()

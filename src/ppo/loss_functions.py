@@ -8,9 +8,13 @@ patch_typeguard()
 
 
 def calc_clipped_surrogate_objective(
-    probs: Categorical, mb_action: t.Tensor, mb_advantages: t.Tensor, mb_logprobs: t.Tensor, clip_coef: float
+    probs: Categorical,
+    mb_action: t.Tensor,
+    mb_advantages: t.Tensor,
+    mb_logprobs: t.Tensor,
+    clip_coef: float,
 ) -> t.Tensor:
-    '''
+    """
     Return the clipped surrogate objective, suitable for maximisation with gradient ascent.
 
     Args:
@@ -26,13 +30,14 @@ def calc_clipped_surrogate_objective(
     Returns:
         Tensor: The clipped surrogate objective computed over the minibatch, with shape ().
 
-    '''
+    """
     logits_diff = probs.log_prob(mb_action) - mb_logprobs
 
     r_theta = t.exp(logits_diff)
 
-    mb_advantages = (mb_advantages - mb_advantages.mean()) / \
-        (mb_advantages.std() + 10e-8)
+    mb_advantages = (mb_advantages - mb_advantages.mean()) / (
+        mb_advantages.std() + 10e-8
+    )
 
     non_clipped = r_theta * mb_advantages
     clipped = t.clip(r_theta, 1 - clip_coef, 1 + clip_coef) * mb_advantages
@@ -41,8 +46,10 @@ def calc_clipped_surrogate_objective(
 
 
 @typechecked
-def calc_value_function_loss(values: TT["batch"], mb_returns: TT["batch"], vf_coef: float) -> t.Tensor:  # noqa: F821
-    '''
+def calc_value_function_loss(
+    values: TT["batch"], mb_returns: TT["batch"], vf_coef: float
+) -> t.Tensor:  # noqa: F821
+    """
     Compute the value function portion of the loss function.
 
     Args:
@@ -56,12 +63,12 @@ def calc_value_function_loss(values: TT["batch"], mb_returns: TT["batch"], vf_co
     Returns:
         Tensor: The value function loss computed over the minibatch, with shape ().
 
-    '''
+    """
     return 0.5 * vf_coef * (values - mb_returns).pow(2).mean()
 
 
 def calc_entropy_bonus(probs: Categorical, ent_coef: float):
-    '''
+    """
     Return the entropy bonus term, suitable for gradient ascent.
 
     Args:
@@ -72,5 +79,5 @@ def calc_entropy_bonus(probs: Categorical, ent_coef: float):
 
     Returns:
         Tensor: The entropy bonus computed over the minibatch, with shape ().
-    '''
+    """
     return ent_coef * probs.entropy().mean()

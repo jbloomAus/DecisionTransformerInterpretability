@@ -8,13 +8,21 @@ import torch
 from gymnasium.spaces import Discrete
 
 import wandb
-from src.config import (EnvironmentConfig, LSTMModelConfig,
-                        TransformerModelConfig)
+from src.config import (
+    EnvironmentConfig,
+    LSTMModelConfig,
+    TransformerModelConfig,
+)
 from src.environments.environments import make_env
 from src.environments.registration import register_envs
-from src.ppo.agent import (FCAgent, LSTMPPOAgent, TransformerPPOAgent,
-                           load_all_agents_from_checkpoints,
-                           load_saved_checkpoint, sample_from_agents)
+from src.ppo.agent import (
+    FCAgent,
+    LSTMPPOAgent,
+    TransformerPPOAgent,
+    load_all_agents_from_checkpoints,
+    load_saved_checkpoint,
+    sample_from_agents,
+)
 from src.ppo.memory import Memory, Minibatch, TrajectoryMinibatch
 from src.ppo.train import train_ppo
 from src.ppo.utils import store_model_checkpoint
@@ -29,7 +37,8 @@ def compare_state_dicts(state_dict1, state_dict2):
             return False
         if not torch.allclose(state_dict1[key], state_dict2[key]):
             print(
-                f"Value of key {key} is different in state_dict1 and state_dict2.")
+                f"Value of key {key} is different in state_dict1 and state_dict2."
+            )
             return False
     for key in state_dict2:
         if key not in state_dict1:
@@ -42,12 +51,12 @@ def compare_state_dicts(state_dict1, state_dict2):
 def run_config():
     @dataclass
     class DummyRunConfig:
-        exp_name: str = 'test'
+        exp_name: str = "test"
         seed: int = 1
         track: bool = False
-        wandb_project_name: str = 'test'
-        wandb_entity: str = 'test'
-        device = torch.device('cpu')
+        wandb_project_name: str = "test"
+        wandb_entity: str = "test"
+        device = torch.device("cpu")
 
     return DummyRunConfig()
 
@@ -56,7 +65,7 @@ def run_config():
 def environment_config():
     @dataclass
     class DummyEnvironmentConfig:
-        env_id: str = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
+        env_id: str = "MiniGrid-Dynamic-Obstacles-8x8-v0"
         one_hot_obs: bool = False
         img_obs: bool = False
         fully_observed: bool = False
@@ -64,8 +73,8 @@ def environment_config():
         seed: int = 1
         view_size: int = 7
         capture_video: bool = False
-        video_dir: str = 'videos'
-        render_mode: str = 'rgb_array'
+        video_dir: str = "videos"
+        render_mode: str = "rgb_array"
         action_space: None = None
         observation_space: None = None
         device: torch.device = torch.device("cpu")
@@ -81,7 +90,7 @@ def online_config():
         hidden_size: int = 64
         total_timesteps: int = 1000
         learning_rate: float = 0.00025
-        decay_lr: bool = False,
+        decay_lr: bool = (False,)
         num_envs: int = 10
         num_steps: int = 128
         gamma: float = 0.99
@@ -149,7 +158,7 @@ def lstm_config(environment_config):
         memory_dim: int = 128
         instr_dim: int = 128
         use_instr: bool = False
-        lang_model: str = 'gru'
+        lang_model: str = "gru"
         use_memory: bool = False
         recurrence: int = 4
         arch: str = "bow_endpool_res"
@@ -182,10 +191,12 @@ def transformer_agent():
     envs = gym.vector.SyncVectorEnv(
         [make_env(EnvironmentConfig(), 1, 1, "test") for i in range(2)]
     )
-    transformer_agent = TransformerPPOAgent(envs, environment_config=EnvironmentConfig(),
-                                            transformer_model_config=TransformerModelConfig(
-                                                n_ctx=3),
-                                            device=torch.device("cpu"))
+    transformer_agent = TransformerPPOAgent(
+        envs,
+        environment_config=EnvironmentConfig(),
+        transformer_model_config=TransformerModelConfig(n_ctx=3),
+        device=torch.device("cpu"),
+    )
     return transformer_agent
 
 
@@ -194,9 +205,12 @@ def lstm_agent():
     envs = gym.vector.SyncVectorEnv(
         [make_env(EnvironmentConfig(), 1, 1, "test") for i in range(2)]
     )
-    lstm_agent = LSTMPPOAgent(envs, environment_config=EnvironmentConfig(),
-                              lstm_config=LSTMModelConfig(EnvironmentConfig()),
-                              device=torch.device("cpu"))
+    lstm_agent = LSTMPPOAgent(
+        envs,
+        environment_config=EnvironmentConfig(),
+        lstm_config=LSTMModelConfig(EnvironmentConfig()),
+        device=torch.device("cpu"),
+    )
     return lstm_agent
 
 
@@ -208,7 +222,6 @@ def lstm_agents():
 
 
 def test_empty_env(run_config, environment_config, online_config):
-
     env_name = "MiniGrid-Empty-5x5-v0"
 
     envs = gym.vector.SyncVectorEnv(
@@ -221,12 +234,11 @@ def test_empty_env(run_config, environment_config, online_config):
         online_config=online_config,
         environment_config=environment_config,
         model_config=None,
-        envs=envs
+        envs=envs,
     )
 
 
 def test_empty_env_flat_one_hot(run_config, environment_config, online_config):
-
     env_name = "MiniGrid-Empty-5x5-v0"
     envs = gym.vector.SyncVectorEnv(
         [make_env(environment_config, i, i, "test") for i in range(4)]
@@ -239,20 +251,21 @@ def test_empty_env_flat_one_hot(run_config, environment_config, online_config):
         online_config=online_config,
         environment_config=environment_config,
         model_config=None,
-        envs=envs
+        envs=envs,
     )
 
 
 def test_ppo_agent_gym():
-
     env_config = EnvironmentConfig(
-        env_id='CartPole-v1', capture_video=False, max_steps=None)
+        env_id="CartPole-v1", capture_video=False, max_steps=None
+    )
     envs = gym.vector.SyncVectorEnv(
         [make_env(env_config, 1, 1, "test") for i in range(2)]
     )
     assert envs.single_action_space.shape is not None
-    assert isinstance(envs.single_action_space,
-                      Discrete), "only discrete action space is supported"
+    assert isinstance(
+        envs.single_action_space, Discrete
+    ), "only discrete action space is supported"
 
     # memory = Memory(envs, args, "cpu")
     agent = FCAgent(envs, env_config, device="cpu")
@@ -262,15 +275,16 @@ def test_ppo_agent_gym():
 
 
 def test_ppo_agent_minigrid():
-
     env_config = EnvironmentConfig(
-        env_id='MiniGrid-Empty-8x8-v0', capture_video=False, max_steps=None)
+        env_id="MiniGrid-Empty-8x8-v0", capture_video=False, max_steps=None
+    )
     envs = gym.vector.SyncVectorEnv(
         [make_env(env_config, 1, 1, "test") for i in range(2)]
     )
     assert envs.single_action_space.shape is not None
-    assert isinstance(envs.single_action_space,
-                      Discrete), "only discrete action space is supported"
+    assert isinstance(
+        envs.single_action_space, Discrete
+    ), "only discrete action space is supported"
 
     # memory = Memory(envs, args, "cpu")
     agent = FCAgent(envs, environment_config, device="cpu")
@@ -281,15 +295,16 @@ def test_ppo_agent_minigrid():
 
 
 def test_ppo_agent_rollout_minibatches_minigrid(online_config):
-
     env_config = EnvironmentConfig(
-        env_id='MiniGrid-Empty-8x8-v0', capture_video=False, max_steps=None)
+        env_id="MiniGrid-Empty-8x8-v0", capture_video=False, max_steps=None
+    )
     envs = gym.vector.SyncVectorEnv(
         [make_env(env_config, 1, 1, "test") for i in range(2)]
     )
     assert envs.single_action_space.shape is not None
-    assert isinstance(envs.single_action_space,
-                      Discrete), "only discrete action space is supported"
+    assert isinstance(
+        envs.single_action_space, Discrete
+    ), "only discrete action space is supported"
 
     memory = Memory(envs, online_config)
 
@@ -297,30 +312,39 @@ def test_ppo_agent_rollout_minibatches_minigrid(online_config):
     agent.rollout(memory, online_config.num_steps, envs, None)
 
     minibatches = memory.get_minibatches()
-    assert len(
-        minibatches) == online_config.batch_size // online_config.minibatch_size
+    assert (
+        len(minibatches)
+        == online_config.batch_size // online_config.minibatch_size
+    )
 
-    observation_shape = envs.single_observation_space['image'].shape
+    observation_shape = envs.single_observation_space["image"].shape
     minibatch = minibatches[0]
     assert isinstance(minibatch, Minibatch)
     assert minibatch.obs.shape == (
-        online_config.minibatch_size, *observation_shape), "obs shape is wrong"
+        online_config.minibatch_size,
+        *observation_shape,
+    ), "obs shape is wrong"
     assert minibatch.actions.shape == (
-        online_config.minibatch_size, ), "actions shape is wrong"
+        online_config.minibatch_size,
+    ), "actions shape is wrong"
     assert minibatch.values.shape == (
-        online_config.minibatch_size, ), "values shape is wrong"
+        online_config.minibatch_size,
+    ), "values shape is wrong"
     assert minibatch.logprobs.shape == (
-        online_config.minibatch_size, ), "log_probs shape is wrong"
+        online_config.minibatch_size,
+    ), "log_probs shape is wrong"
     assert minibatch.returns.shape == (
-        online_config.minibatch_size, ), "returns shape is wrong"
+        online_config.minibatch_size,
+    ), "returns shape is wrong"
     assert minibatch.advantages.shape == (
-        online_config.minibatch_size, ), "advantages shape is wrong"
+        online_config.minibatch_size,
+    ), "advantages shape is wrong"
 
 
 @pytest.mark.parametrize("n_ctx", [1, 3, 9])
 def test_ppo_traj_agent_rollout_minibatches(
-        online_config, environment_config, transformer_model_config, n_ctx):
-
+    online_config, environment_config, transformer_model_config, n_ctx
+):
     transformer_model_config.n_ctx = n_ctx
     envs = gym.vector.SyncVectorEnv(
         [make_env(environment_config, 1, 1, "test") for i in range(2)]
@@ -329,7 +353,8 @@ def test_ppo_traj_agent_rollout_minibatches(
     environment_config.action_space = envs.single_action_space
     environment_config.observation_space = envs.single_observation_space
     agent = TransformerPPOAgent(
-        envs, environment_config, transformer_model_config)
+        envs, environment_config, transformer_model_config
+    )
     agent.rollout(memory, online_config.num_steps, envs, None)
 
     timesteps = (transformer_model_config.n_ctx - 1) // 2 + 1
@@ -340,20 +365,33 @@ def test_ppo_traj_agent_rollout_minibatches(
 
     assert isinstance(minibatch, TrajectoryMinibatch)
     assert minibatch.obs.shape[1] == timesteps
-    assert minibatch.obs.shape[0] == minibatch.actions.shape[0] == minibatch.logprobs.shape[0] == \
-        minibatch.advantages.shape[0] == minibatch.values.shape[0] == minibatch.returns.shape[0]
-    assert minibatch.obs.ndim == 2 + \
-        len(envs.single_observation_space['image'].shape)
+    assert (
+        minibatch.obs.shape[0]
+        == minibatch.actions.shape[0]
+        == minibatch.logprobs.shape[0]
+        == minibatch.advantages.shape[0]
+        == minibatch.values.shape[0]
+        == minibatch.returns.shape[0]
+    )
+    assert minibatch.obs.ndim == 2 + len(
+        envs.single_observation_space["image"].shape
+    )
     assert minibatch.actions.ndim == 2
-    assert minibatch.logprobs.ndim == minibatch.advantages.ndim == minibatch.values.ndim == minibatch.returns.ndim == 1
+    assert (
+        minibatch.logprobs.ndim
+        == minibatch.advantages.ndim
+        == minibatch.values.ndim
+        == minibatch.returns.ndim
+        == 1
+    )
     assert minibatch.timesteps.shape == minibatch.obs.shape[:2]
     assert minibatch.timesteps.max() <= environment_config.max_steps
 
 
 @pytest.mark.parametrize("n_ctx", [1, 3, 9])
 def test_ppo_traj_agent_rollout_and_learn_minibatches(
-        online_config, environment_config, transformer_model_config, n_ctx):
-
+    online_config, environment_config, transformer_model_config, n_ctx
+):
     transformer_model_config.n_ctx = n_ctx
     envs = gym.vector.SyncVectorEnv(
         [make_env(environment_config, 1, 1, "test") for i in range(2)]
@@ -363,83 +401,113 @@ def test_ppo_traj_agent_rollout_and_learn_minibatches(
     environment_config.action_space = envs.single_action_space
     environment_config.observation_space = envs.single_observation_space
     agent = TransformerPPOAgent(
-        envs, environment_config, transformer_model_config)
+        envs, environment_config, transformer_model_config
+    )
 
     num_updates = online_config.total_timesteps // online_config.batch_size
     optimizer, scheduler = agent.make_optimizer(
         num_updates=num_updates,
         initial_lr=online_config.learning_rate,
-        end_lr=online_config.learning_rate if not online_config.decay_lr else 0.0)
+        end_lr=online_config.learning_rate
+        if not online_config.decay_lr
+        else 0.0,
+    )
 
     agent.rollout(memory, online_config.num_steps, envs, None)
     agent.learn(memory, online_config, optimizer, scheduler, track=False)
 
 
 # skip this test for now
-@pytest.mark.skip(reason="not implemented yet -> need to add environment config to bring it in line with other two agent_classes")
-def test_fc_agent_model_checkpoint_saving_and_loading(fc_agent, run_config, online_config):
-
+@pytest.mark.skip(
+    reason="not implemented yet -> need to add environment config to bring it in line with other two agent_classes"
+)
+def test_fc_agent_model_checkpoint_saving_and_loading(
+    fc_agent, run_config, online_config
+):
     wandb.init(mode="offline")
     run_config.track = True
     checkpoint_artifact = wandb.Artifact(
-        f"{run_config.exp_name}_checkpoints", type="model")
+        f"{run_config.exp_name}_checkpoints", type="model"
+    )
     checkpoint_num = 1
 
     # save checkpoint
     checkpoint_num = store_model_checkpoint(
-        fc_agent, online_config, run_config, checkpoint_num, checkpoint_artifact)
+        fc_agent,
+        online_config,
+        run_config,
+        checkpoint_num,
+        checkpoint_artifact,
+    )
 
     assert checkpoint_num == 2
 
 
-def test_traj_ppo_model_checkpoint_saving_and_loading(transformer_agent, run_config, online_config):
-
+def test_traj_ppo_model_checkpoint_saving_and_loading(
+    transformer_agent, run_config, online_config
+):
     wandb.init(mode="offline")
     run_config.track = True
     run_config.exp_name = "TRANSFORMERTEST"
     checkpoint_artifact = wandb.Artifact(
-        f"{run_config.exp_name}_checkpoints", type="model")
+        f"{run_config.exp_name}_checkpoints", type="model"
+    )
     checkpoint_num = 1
 
     # save checkpoint
     checkpoint_num = store_model_checkpoint(
-        transformer_agent, online_config, run_config, checkpoint_num, checkpoint_artifact)
+        transformer_agent,
+        online_config,
+        run_config,
+        checkpoint_num,
+        checkpoint_artifact,
+    )
 
     assert checkpoint_num == 2
 
     agent = load_saved_checkpoint(
-        "./models/TRANSFORMERTEST_01.pt", online_config.num_envs)
+        "./models/TRANSFORMERTEST_01.pt", online_config.num_envs
+    )
 
     assert transformer_agent.environment_config == agent.environment_config
     assert compare_state_dicts(
-        transformer_agent.state_dict(), agent.state_dict())
+        transformer_agent.state_dict(), agent.state_dict()
+    )
 
 
-def test_lstm_ppo_model_checkpoint_saving_and_loading(lstm_agent, run_config, online_config):
-
+def test_lstm_ppo_model_checkpoint_saving_and_loading(
+    lstm_agent, run_config, online_config
+):
     wandb.init(mode="offline")
     run_config.track = True
     run_config.exp_name = "LSTMTEST"
     checkpoint_artifact = wandb.Artifact(
-        f"{run_config.exp_name}_checkpoints", type="model")
+        f"{run_config.exp_name}_checkpoints", type="model"
+    )
     checkpoint_num = 1
 
     # save checkpoint
     checkpoint_num = store_model_checkpoint(
-        lstm_agent, online_config, run_config, checkpoint_num, checkpoint_artifact)
+        lstm_agent,
+        online_config,
+        run_config,
+        checkpoint_num,
+        checkpoint_artifact,
+    )
 
     assert checkpoint_num == 2
 
     agent = load_saved_checkpoint(
-        "./models/LSTMTEST_01.pt", online_config.num_envs)
+        "./models/LSTMTEST_01.pt", online_config.num_envs
+    )
 
     assert lstm_agent.environment_config == agent.environment_config
     assert compare_state_dicts(
-        lstm_agent.model.state_dict(), agent.model.state_dict())
+        lstm_agent.model.state_dict(), agent.model.state_dict()
+    )
 
 
 def test_lstm_ppo_model_load_saved_checkpoints():
-
     path = "models/ppo/memory_lstm_demos"
     agents = load_all_agents_from_checkpoints(path, 4)
     agent = agents[0]
@@ -450,7 +518,6 @@ def test_lstm_ppo_model_load_saved_checkpoints():
 
 
 def test_sample_from_agents(lstm_agents):
-
     rollout_length = 200
     max_steps = lstm_agents[0].environment_config.max_steps
     num_envs = 4
@@ -479,7 +546,10 @@ def test_sample_from_agents(lstm_agents):
 
     for agent_index in range(len(lstm_agents)):
         assert len(all_episode_lengths[agent_index]) == len(
-            all_episode_returns[agent_index])
+            all_episode_returns[agent_index]
+        )
         # we expect to finish enough episodes to have almost the rollout_length * num_envs steps
-        assert pytest.approx(all_episode_lengths[agent_index].sum(
-        ), abs=100) == rollout_length*num_envs - max_steps*num_envs//2
+        assert (
+            pytest.approx(all_episode_lengths[agent_index].sum(), abs=100)
+            == rollout_length * num_envs - max_steps * num_envs // 2
+        )

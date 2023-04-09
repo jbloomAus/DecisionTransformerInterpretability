@@ -1,6 +1,6 @@
-'''
+"""
 This file is the entry point for running the decision transformer.
-'''
+"""
 from .decision_transformer.runner import run_decision_transformer
 from .decision_transformer.utils import parse_args
 from .config import RunConfig, TransformerModelConfig, OfflineTrainConfig
@@ -9,7 +9,6 @@ from .environments.environments import make_env
 import torch as t
 
 if __name__ == "__main__":
-
     args = parse_args()
 
     run_config = RunConfig(
@@ -21,8 +20,9 @@ if __name__ == "__main__":
         wandb_entity=args.wandb_entity,
     )
 
-    TIME_EMBEDDING_TYPE = "linear" if args.linear_time_embedding \
-        else "embedding"
+    TIME_EMBEDDING_TYPE = (
+        "linear" if args.linear_time_embedding else "embedding"
+    )
 
     transformer_model_config = TransformerModelConfig(
         d_model=args.d_model,
@@ -32,7 +32,7 @@ if __name__ == "__main__":
         layer_norm=args.layer_norm,
         time_embedding_type=TIME_EMBEDDING_TYPE,
         n_ctx=args.n_ctx,
-        device='cuda' if args.cuda and t.cuda.is_available() else 'cpu'
+        device="cuda" if args.cuda and t.cuda.is_available() else "cpu",
     )
 
     offline_config = OfflineTrainConfig(

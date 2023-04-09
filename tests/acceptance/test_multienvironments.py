@@ -7,16 +7,15 @@ from src.environments.multienvironments import MultiEnvSampler
 
 
 def test_multienv_sampler():
-
     max_steps = 1000
-    render_mode = 'rgb_array'
+    render_mode = "rgb_array"
     envs = []
     env = DynamicObstaclesEnv(
         size=6,
         n_obstacles=0,
         agent_start_pos=None,
         render_mode="rgb_array",
-        max_steps=max_steps
+        max_steps=max_steps,
     )
     envs.append(env)
     for size in range(6, 10):
@@ -26,7 +25,7 @@ def test_multienv_sampler():
                 n_obstacles=num_obstacles,
                 agent_start_pos=None,
                 render_mode=render_mode,
-                max_steps=max_steps
+                max_steps=max_steps,
             )
             envs.append(env)
 
@@ -38,5 +37,5 @@ def test_multienv_sampler():
     assert multi_env.action_space == envs[0].action_space
     # assert reward range is the same
     # assert equal probs
-    assert min(multi_env.p) == 1/len(envs)
-    assert max(multi_env.p) == 1/len(envs)
+    assert min(multi_env.p) == 1 / len(envs)
+    assert max(multi_env.p) == 1 / len(envs)

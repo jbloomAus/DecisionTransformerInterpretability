@@ -5,7 +5,15 @@ import torch.nn as nn
 import torch.optim as optim
 from dataclasses import dataclass
 
-from src.ppo.agent import PPOScheduler, PPOAgent, FCAgent, TransformerPPOAgent, LSTMPPOAgent, get_agent
+from src.ppo.agent import (
+    PPOScheduler,
+    PPOAgent,
+    FCAgent,
+    TransformerPPOAgent,
+    LSTMPPOAgent,
+    get_agent,
+)
+
 # only use get_agent class test
 from src.config import LSTMModelConfig, TransformerModelConfig
 from src.models.trajectory_transformer import TrajectoryTransformer
@@ -21,7 +29,7 @@ def online_config():
         hidden_size: int = 64
         total_timesteps: int = 180000
         learning_rate: float = 0.0001
-        decay_lr: bool = False,
+        decay_lr: bool = (False,)
         num_envs: int = 16
         num_steps: int = 128
         gamma: float = 0.99
@@ -83,12 +91,12 @@ def big_transformer_model_config():
 
 @pytest.fixture
 def environment_config():
-    env_id = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
+    env_id = "MiniGrid-Dynamic-Obstacles-8x8-v0"
     env = gym.make(env_id)
 
     @dataclass
     class DummyEnvironmentConfig:
-        env_id: str = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
+        env_id: str = "MiniGrid-Dynamic-Obstacles-8x8-v0"
         one_hot_obs: bool = False
         img_obs: bool = False
         fully_observed: bool = False
@@ -96,11 +104,11 @@ def environment_config():
         seed: int = 1
         view_size: int = 7  # 7 ensure view size wrapper isn't added
         capture_video: bool = False
-        video_dir: str = 'videos'
-        render_mode: str = 'rgb_array'
+        video_dir: str = "videos"
+        render_mode: str = "rgb_array"
         action_space: None = None
         observation_space: None = None
-        device: str = 'cpu'
+        device: str = "cpu"
         action_space = env.action_space
         observation_space = env.observation_space
 
@@ -116,7 +124,7 @@ def lstm_config(environment_config):
         memory_dim: int = 128
         instr_dim: int = 128
         use_instr: bool = False
-        lang_model: str = 'gru'
+        lang_model: str = "gru"
         use_memory: bool = False
         recurrence: int = 4
         arch: str = "bow_endpool_res"
@@ -143,44 +151,68 @@ def optimizer():
 @pytest.fixture
 def fc_agent(environment_config):
     envs = gym.vector.SyncVectorEnv(
-        [lambda: gym.make('CartPole-v0') for _ in range(4)])
+        [lambda: gym.make("CartPole-v0") for _ in range(4)]
+    )
     device = torch.device("cpu")
     hidden_dim = 32
-    environment_config.env_id = 'CartPole-v0'
-    return FCAgent(envs, environment_config, device=device, hidden_dim=hidden_dim)
+    environment_config.env_id = "CartPole-v0"
+    return FCAgent(
+        envs, environment_config, device=device, hidden_dim=hidden_dim
+    )
 
 
 @pytest.fixture
-def transformer_agent(online_config, transformer_model_config, environment_config):
+def transformer_agent(
+    online_config, transformer_model_config, environment_config
+):
     envs = gym.vector.SyncVectorEnv(
-        [lambda: gym.make(environment_config.env_id) for _ in range(online_config.num_envs)])
+        [
+            lambda: gym.make(environment_config.env_id)
+            for _ in range(online_config.num_envs)
+        ]
+    )
     device = torch.device("cpu")
     environment_config.action_space = envs.single_action_space
     environment_config.observation_space = envs.single_observation_space
-    return TransformerPPOAgent(envs, environment_config, transformer_model_config, device)
+    return TransformerPPOAgent(
+        envs, environment_config, transformer_model_config, device
+    )
 
 
 @pytest.fixture
-def big_transformer_agent(online_config, big_transformer_model_config, environment_config):
+def big_transformer_agent(
+    online_config, big_transformer_model_config, environment_config
+):
     envs = gym.vector.SyncVectorEnv(
-        [lambda: gym.make(environment_config.env_id) for _ in range(online_config.num_envs)])
+        [
+            lambda: gym.make(environment_config.env_id)
+            for _ in range(online_config.num_envs)
+        ]
+    )
     device = torch.device("cpu")
     environment_config.action_space = envs.single_action_space
     environment_config.observation_space = envs.single_observation_space
-    return TransformerPPOAgent(envs, environment_config, big_transformer_model_config, device)
+    return TransformerPPOAgent(
+        envs, environment_config, big_transformer_model_config, device
+    )
 
 
 @pytest.fixture
 def lstm_agent(online_config, lstm_config, environment_config):
-    envs = gym.vector.SyncVectorEnv([lambda: gym.make(
-        environment_config.env_id) for _ in range(online_config.num_envs)])
+    envs = gym.vector.SyncVectorEnv(
+        [
+            lambda: gym.make(environment_config.env_id)
+            for _ in range(online_config.num_envs)
+        ]
+    )
     device = torch.device("cpu")
     return LSTMPPOAgent(envs, environment_config, lstm_config, device)
 
 
 def test_ppo_scheduler_step(optimizer):
     scheduler = PPOScheduler(
-        optimizer=optimizer, initial_lr=1e-3, end_lr=1e-5, num_updates=1000)
+        optimizer=optimizer, initial_lr=1e-3, end_lr=1e-5, num_updates=1000
+    )
     for i in range(1000):
         scheduler.step()
     assert optimizer.param_groups[0]["lr"] == pytest.approx(1e-5)
@@ -188,7 +220,8 @@ def test_ppo_scheduler_step(optimizer):
 
 def test_ppo_agent_init():
     envs = gym.vector.SyncVectorEnv(
-        [lambda: gym.make('CartPole-v0') for _ in range(4)])
+        [lambda: gym.make("CartPole-v0") for _ in range(4)]
+    )
     device = torch.device("cpu")
     agent = PPOAgent(envs, device)
 
@@ -199,11 +232,13 @@ def test_ppo_agent_init():
 
 def test_fc_agent_init(environment_config):
     envs = gym.vector.SyncVectorEnv(
-        [lambda: gym.make('CartPole-v0') for _ in range(4)])
+        [lambda: gym.make("CartPole-v0") for _ in range(4)]
+    )
     device = torch.device("cpu")
     hidden_dim = 32
-    agent = FCAgent(envs, environment_config,
-                    device=device, hidden_dim=hidden_dim)
+    agent = FCAgent(
+        envs, environment_config, device=device, hidden_dim=hidden_dim
+    )
 
     assert isinstance(agent, PPOAgent)
     assert isinstance(agent.critic, nn.Sequential)
@@ -215,7 +250,6 @@ def test_fc_agent_init(environment_config):
 
 
 def test_fc_agent_layer_init(fc_agent):
-
     layer = nn.Linear(4, 2)
     std = 0.5
     bias_const = 0.1
@@ -227,12 +261,12 @@ def test_fc_agent_layer_init(fc_agent):
 
 
 def test_fc_agent_make_optimizer(fc_agent):
-
     num_updates = 10
     initial_lr = 0.001
     end_lr = 0.0001
     optimizer, scheduler = fc_agent.make_optimizer(
-        num_updates, initial_lr, end_lr)
+        num_updates, initial_lr, end_lr
+    )
 
     assert isinstance(optimizer, optim.Adam)
     assert isinstance(scheduler, PPOScheduler)
@@ -242,10 +276,13 @@ def test_fc_agent_make_optimizer(fc_agent):
 
 
 def test_fc_agent_rollout(fc_agent, online_config):
-
     num_steps = 10
     envs = gym.vector.SyncVectorEnv(
-        [lambda: gym.make('CartPole-v0') for _ in range(online_config.num_envs)])
+        [
+            lambda: gym.make("CartPole-v0")
+            for _ in range(online_config.num_envs)
+        ]
+    )
     memory = Memory(envs=envs, args=online_config, device=fc_agent.device)
 
     fc_agent.rollout(memory, num_steps, envs)
@@ -259,9 +296,12 @@ def test_fc_agent_rollout(fc_agent, online_config):
 
 
 def test_fc_agent_learn(fc_agent, online_config):
-
     envs = gym.vector.SyncVectorEnv(
-        [lambda: gym.make('CartPole-v0') for _ in range(online_config.num_envs)])
+        [
+            lambda: gym.make("CartPole-v0")
+            for _ in range(online_config.num_envs)
+        ]
+    )
 
     memory = Memory(envs=envs, args=online_config, device=fc_agent.device)
 
@@ -269,7 +309,7 @@ def test_fc_agent_learn(fc_agent, online_config):
     optimizer, scheduler = fc_agent.make_optimizer(
         num_updates,
         online_config.learning_rate,
-        online_config.learning_rate * 1e-4
+        online_config.learning_rate * 1e-4,
     )
 
     fc_agent.rollout(memory, online_config.num_steps, envs)
@@ -284,7 +324,6 @@ def test_fc_agent_learn(fc_agent, online_config):
 
 
 def test_transformer_agent_init(transformer_agent):
-
     agent = transformer_agent
 
     assert isinstance(agent, PPOAgent)
@@ -297,16 +336,19 @@ def test_transformer_agent_init(transformer_agent):
 
 
 def test_transformer_agent_rollout(transformer_agent, online_config):
-
     num_steps = 10
     agent = transformer_agent
-    memory = Memory(envs=transformer_agent.envs,
-                    args=online_config, device="cpu")
+    memory = Memory(
+        envs=transformer_agent.envs, args=online_config, device="cpu"
+    )
 
     agent.rollout(memory, num_steps, transformer_agent.envs)
 
     assert memory.next_obs.shape[0] == online_config.num_envs
-    assert memory.next_obs.shape[1] == transformer_agent.envs.single_observation_space['image'].shape[0]
+    assert (
+        memory.next_obs.shape[1]
+        == transformer_agent.envs.single_observation_space["image"].shape[0]
+    )
     assert len(memory.next_done) == transformer_agent.envs.num_envs
     assert len(memory.next_value) == transformer_agent.envs.num_envs
     assert len(memory.experiences) == num_steps
@@ -314,7 +356,6 @@ def test_transformer_agent_rollout(transformer_agent, online_config):
 
 
 def test_transformer_agent_learn(transformer_agent, online_config):
-
     num_steps = 10
     agent = transformer_agent
 
@@ -322,17 +363,21 @@ def test_transformer_agent_learn(transformer_agent, online_config):
     optimizer, scheduler = agent.make_optimizer(
         num_updates,
         online_config.learning_rate,
-        online_config.learning_rate * 1e-4
+        online_config.learning_rate * 1e-4,
     )
 
-    memory = Memory(envs=transformer_agent.envs,
-                    args=online_config, device="cpu")
+    memory = Memory(
+        envs=transformer_agent.envs, args=online_config, device="cpu"
+    )
 
     agent.rollout(memory, num_steps, transformer_agent.envs)
     agent.learn(memory, online_config, optimizer, scheduler, track=False)
 
     assert memory.next_obs.shape[0] == transformer_agent.envs.num_envs
-    assert memory.next_obs.shape[1] == transformer_agent.envs.single_observation_space['image'].shape[0]
+    assert (
+        memory.next_obs.shape[1]
+        == transformer_agent.envs.single_observation_space["image"].shape[0]
+    )
     assert len(memory.next_done) == transformer_agent.envs.num_envs
     assert len(memory.next_value) == transformer_agent.envs.num_envs
     assert len(memory.experiences) == num_steps
@@ -340,7 +385,6 @@ def test_transformer_agent_learn(transformer_agent, online_config):
 
 
 def test_transformer_agent_larger_context_init(big_transformer_agent):
-
     agent = big_transformer_agent
 
     assert isinstance(agent, PPOAgent)
@@ -353,41 +397,53 @@ def test_transformer_agent_larger_context_init(big_transformer_agent):
 
 
 def test_transformer_agent_larger_context_rollout(big_transformer_agent):
-
     num_steps = 10
     agent = big_transformer_agent
-    memory = Memory(envs=big_transformer_agent.envs,
-                    args=online_config, device="cpu")
+    memory = Memory(
+        envs=big_transformer_agent.envs, args=online_config, device="cpu"
+    )
 
     agent.rollout(memory, num_steps, big_transformer_agent.envs)
 
     assert memory.next_obs.shape[0] == big_transformer_agent.envs.num_envs
-    assert memory.next_obs.shape[1] == big_transformer_agent.envs.single_observation_space['image'].shape[0]
+    assert (
+        memory.next_obs.shape[1]
+        == big_transformer_agent.envs.single_observation_space["image"].shape[
+            0
+        ]
+    )
     assert len(memory.next_done) == big_transformer_agent.envs.num_envs
     assert len(memory.next_value) == big_transformer_agent.envs.num_envs
     assert len(memory.experiences) == num_steps
     assert len(memory.experiences[0]) == 6
 
 
-def test_transformer_agent_larger_context_learn(big_transformer_agent, online_config):
-
+def test_transformer_agent_larger_context_learn(
+    big_transformer_agent, online_config
+):
     num_steps = 10
     agent = big_transformer_agent
     num_updates = online_config.total_timesteps // online_config.batch_size
     optimizer, scheduler = agent.make_optimizer(
         num_updates,
         online_config.learning_rate,
-        online_config.learning_rate * 1e-4
+        online_config.learning_rate * 1e-4,
     )
 
-    memory = Memory(envs=big_transformer_agent.envs,
-                    args=online_config, device="cpu")
+    memory = Memory(
+        envs=big_transformer_agent.envs, args=online_config, device="cpu"
+    )
 
     agent.rollout(memory, num_steps, big_transformer_agent.envs)
     agent.learn(memory, online_config, optimizer, scheduler, track=False)
 
     assert memory.next_obs.shape[0] == big_transformer_agent.envs.num_envs
-    assert memory.next_obs.shape[1] == big_transformer_agent.envs.single_observation_space['image'].shape[0]
+    assert (
+        memory.next_obs.shape[1]
+        == big_transformer_agent.envs.single_observation_space["image"].shape[
+            0
+        ]
+    )
     assert len(memory.next_done) == big_transformer_agent.envs.num_envs
     assert len(memory.next_value) == big_transformer_agent.envs.num_envs
     assert len(memory.experiences) == num_steps
@@ -395,7 +451,6 @@ def test_transformer_agent_larger_context_learn(big_transformer_agent, online_co
 
 
 def test_lstm_agent_init(lstm_agent):
-
     agent = lstm_agent
 
     assert isinstance(agent, PPOAgent)
@@ -407,16 +462,19 @@ def test_lstm_agent_init(lstm_agent):
 
 
 def test_lstm_agent_rollout(lstm_agent, online_config):
-
     num_steps = 10
     agent = lstm_agent
-    memory = Memory(envs=lstm_agent.envs,
-                    args=online_config, device=torch.device("cpu"))
+    memory = Memory(
+        envs=lstm_agent.envs, args=online_config, device=torch.device("cpu")
+    )
 
     agent.rollout(memory, num_steps, lstm_agent.envs)
 
     assert memory.next_obs.shape[0] == lstm_agent.envs.num_envs
-    assert memory.next_obs.shape[1] == lstm_agent.envs.single_observation_space['image'].shape[0]
+    assert (
+        memory.next_obs.shape[1]
+        == lstm_agent.envs.single_observation_space["image"].shape[0]
+    )
     assert len(memory.next_done) == lstm_agent.envs.num_envs
     assert len(memory.next_value) == lstm_agent.envs.num_envs
     assert len(memory.experiences) == num_steps
@@ -424,26 +482,28 @@ def test_lstm_agent_rollout(lstm_agent, online_config):
 
 
 def test_lstm_agent_rollout_learn(lstm_agent, online_config):
-
-    online_config.batch_size = 128*16
+    online_config.batch_size = 128 * 16
     num_steps = 128
     agent = lstm_agent
     num_updates = online_config.total_timesteps // online_config.batch_size
     optimizer, scheduler = agent.make_optimizer(
         num_updates,
         online_config.learning_rate,
-        online_config.learning_rate * 1e-4
+        online_config.learning_rate * 1e-4,
     )
 
-    memory = Memory(envs=lstm_agent.envs,
-                    args=online_config,
-                    device=torch.device("cpu"))
+    memory = Memory(
+        envs=lstm_agent.envs, args=online_config, device=torch.device("cpu")
+    )
 
     agent.rollout(memory, num_steps, lstm_agent.envs)
     agent.learn(memory, online_config, optimizer, scheduler, track=False)
 
     assert memory.next_obs.shape[0] == lstm_agent.envs.num_envs
-    assert memory.next_obs.shape[1] == lstm_agent.envs.single_observation_space['image'].shape[0]
+    assert (
+        memory.next_obs.shape[1]
+        == lstm_agent.envs.single_observation_space["image"].shape[0]
+    )
     assert len(memory.next_done) == lstm_agent.envs.num_envs
     assert len(memory.next_value) == lstm_agent.envs.num_envs
     assert len(memory.experiences) == num_steps
@@ -453,36 +513,41 @@ def test_lstm_agent_rollout_learn(lstm_agent, online_config):
 
 
 def test_get_agent_fc_agent(fc_agent, environment_config, online_config):
-
     agent = get_agent(
         model_config=None,
         envs=fc_agent.envs,
         environment_config=environment_config,
-        online_config=online_config)
+        online_config=online_config,
+    )
 
     assert isinstance(agent, PPOAgent)
     assert isinstance(agent, FCAgent)
 
 
-def test_get_agent_transformer_agent(transformer_agent, transformer_model_config, environment_config, online_config):
-
+def test_get_agent_transformer_agent(
+    transformer_agent,
+    transformer_model_config,
+    environment_config,
+    online_config,
+):
     agent = get_agent(
         model_config=TransformerModelConfig(n_ctx=3),
         envs=transformer_agent.envs,
         environment_config=environment_config,
-        online_config=online_config)
+        online_config=online_config,
+    )
 
     assert isinstance(agent, PPOAgent)
     assert isinstance(agent, TransformerPPOAgent)
 
 
 def test_get_agent_lstm_agent(lstm_agent, environment_config):
-
     agent = get_agent(
         model_config=LSTMModelConfig(environment_config),
         envs=lstm_agent.envs,
         environment_config=environment_config,
-        online_config=online_config)
+        online_config=online_config,
+    )
 
     assert isinstance(agent, PPOAgent)
     assert isinstance(agent, LSTMPPOAgent)

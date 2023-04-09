@@ -5,18 +5,25 @@ import torch as t
 import numpy as np
 from src.environments.environments import make_env
 from src.decision_transformer.utils import load_decision_transformer
-from src.decision_transformer.calibration import calibration_statistics, plot_calibration_statistics
+from src.decision_transformer.calibration import (
+    calibration_statistics,
+    plot_calibration_statistics,
+)
 from src.config import EnvironmentConfig
 
 
 def test_calibration_end_to_end():
-
     env_id = "MiniGrid-Dynamic-Obstacles-8x8-v0"
     model_path = "models/MiniGrid-Dynamic-Obstacles-8x8-v0/demo_model_overnight_training.pt"
     state_dict = t.load(model_path)
     one_hot_encoded = state_dict["state_encoder.weight"].shape[-1] == 980
     max_time_steps = state_dict["time_embedding.weight"].shape[0]
-    env_config = EnvironmentConfig(env_id=env_id, fully_observed=False, one_hot_obs=one_hot_encoded, max_steps=max_time_steps)
+    env_config = EnvironmentConfig(
+        env_id=env_id,
+        fully_observed=False,
+        one_hot_obs=one_hot_encoded,
+        max_steps=max_time_steps,
+    )
     env_func = make_env(env_config, seed=1, idx=0, run_name="dev")
     env = env_func()
 
@@ -42,13 +49,17 @@ def test_calibration_end_to_end():
 
 
 def test_calibration_end_to_end_one_hot_model():
-
     env_id = "MiniGrid-Dynamic-Obstacles-8x8-v0"
     model_path = "models/MiniGrid-Dynamic-Obstacles-8x8-v0/demo_model_one_hot_overnight.pt"
     state_dict = t.load(model_path)
     one_hot_encoded = state_dict["state_encoder.weight"].shape[-1] == 980
     max_time_steps = state_dict["time_embedding.weight"].shape[0]
-    env_config = EnvironmentConfig(env_id=env_id, fully_observed=False, one_hot_obs=one_hot_encoded, max_steps=max_time_steps)
+    env_config = EnvironmentConfig(
+        env_id=env_id,
+        fully_observed=False,
+        one_hot_obs=one_hot_encoded,
+        max_steps=max_time_steps,
+    )
     env_func = make_env(env_config, seed=1, idx=0, run_name="dev")
     env = env_func()
 

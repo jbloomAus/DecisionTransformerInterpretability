@@ -14,11 +14,11 @@ from src.config import EnvironmentConfig
 def run_config():
     @dataclass
     class DummyRunConfig:
-        exp_name: str = 'test'
+        exp_name: str = "test"
         seed: int = 1
         track: bool = False
-        wandb_project_name: str = 'test'
-        wandb_entity: str = 'test'
+        wandb_project_name: str = "test"
+        wandb_entity: str = "test"
 
     return DummyRunConfig()
 
@@ -27,7 +27,7 @@ def run_config():
 def environment_config():
     @dataclass
     class DummyEnvironmentConfig:
-        env_id: str = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
+        env_id: str = "MiniGrid-Dynamic-Obstacles-8x8-v0"
         one_hot_obs: bool = False
         img_obs: bool = False
         fully_observed: bool = False
@@ -35,11 +35,11 @@ def environment_config():
         seed: int = 1
         view_size: int = 7
         capture_video: bool = False
-        video_dir: str = 'videos'
-        render_mode: str = 'rgb_array'
+        video_dir: str = "videos"
+        render_mode: str = "rgb_array"
         action_space: None = None
         observation_space: None = None
-        device: str = torch.device('cpu')
+        device: str = torch.device("cpu")
 
     return DummyEnvironmentConfig()
 
@@ -52,7 +52,7 @@ def online_config():
         hidden_size: int = 64
         total_timesteps: int = 180000
         learning_rate: float = 0.00025
-        decay_lr: bool = False,
+        decay_lr: bool = (False,)
         num_envs: int = 4
         num_steps: int = 128
         gamma: float = 0.99
@@ -65,19 +65,21 @@ def online_config():
         max_grad_norm: float = 2
         trajectory_path: str = None
         fully_observed: bool = False
-        device: str = torch.device('cpu')
+        device: str = torch.device("cpu")
 
     return DummyOnlineConfig()
 
 
-def test_trajectory_writer_numpy(environment_config, run_config, online_config):
-
+def test_trajectory_writer_numpy(
+    environment_config, run_config, online_config
+):
     trajectory_writer = TrajectoryWriter(
         path="tmp/test_trajectory_writer_writer.pkl",
         run_config=run_config,
         environment_config=environment_config,
         online_config=online_config,
-        model_config=None)
+        model_config=None,
+    )
 
     # test accumulate trajectory when all the objects are initialized as np arrays
 
@@ -121,8 +123,8 @@ def test_trajectory_writer_numpy(environment_config, run_config, online_config):
         assert dones.dtype == bool
 
         assert dones[0][0]
-        assert ~ dones[0][1]
-        assert ~ dones[0][2]
+        assert ~dones[0][1]
+        assert ~dones[0][2]
 
         actions = data["data"]["actions"]
         assert type(actions) == np.ndarray
@@ -141,14 +143,16 @@ def test_trajectory_writer_numpy(environment_config, run_config, online_config):
         assert infos[0]["c"] == 3
 
 
-def test_trajectory_writer_torch(environment_config, run_config, online_config):
-
+def test_trajectory_writer_torch(
+    environment_config, run_config, online_config
+):
     trajectory_writer = TrajectoryWriter(
         path="tmp/test_trajectory_writer_writer.pkl",
         run_config=run_config,
         environment_config=environment_config,
         online_config=online_config,
-        model_config=None)
+        model_config=None,
+    )
 
     # test accumulate trajectory when all the objects are initialized as pytorch tensors
 
@@ -164,13 +168,13 @@ def test_trajectory_writer_torch(environment_config, run_config, online_config):
 
 
 def test_trajectory_writer_lzma(environment_config, run_config, online_config):
-
     trajectory_writer = TrajectoryWriter(
         path="tmp/test_trajectory_writer_writer.xz",
         run_config=run_config,
         environment_config=environment_config,
         online_config=online_config,
-        model_config=None)
+        model_config=None,
+    )
 
     # test accumulate trajectory when all the objects are initialized as np arrays
 
@@ -192,9 +196,10 @@ def test_trajectory_writer_lzma(environment_config, run_config, online_config):
 
 
 def test_load_legacy_decision_transformer():
-
     model_path = "models/MiniGrid-Dynamic-Obstacles-8x8-v0/demo_model_overnight_training.pt"
-    env_config = EnvironmentConfig(env_id="MiniGrid-Dynamic-Obstacles-8x8-v0", capture_video=False)
+    env_config = EnvironmentConfig(
+        env_id="MiniGrid-Dynamic-Obstacles-8x8-v0", capture_video=False
+    )
     env = make_env(env_config, 0, 0, "test")()
     model = load_decision_transformer(model_path, env)
 
@@ -208,9 +213,10 @@ def test_load_legacy_decision_transformer():
 
 
 def test_loa_legacy_decision_transformer_linear_time():
-
     model_path = "models/linear_model_not_performant.pt"
-    env_config = EnvironmentConfig(env_id="MiniGrid-Dynamic-Obstacles-8x8-v0", capture_video=False)
+    env_config = EnvironmentConfig(
+        env_id="MiniGrid-Dynamic-Obstacles-8x8-v0", capture_video=False
+    )
     env = make_env(env_config, 0, 0, "test")()
     model = load_decision_transformer(model_path, env)
 
@@ -224,9 +230,10 @@ def test_loa_legacy_decision_transformer_linear_time():
 
 
 def test_load_legacy_decision_key_door():
-
     model_path = "models/MiniGrid-DoorKey-8x8-v0/first_pass.pt"
-    env_config = EnvironmentConfig(env_id="MiniGrid-DoorKey-8x8-v0", capture_video=False)
+    env_config = EnvironmentConfig(
+        env_id="MiniGrid-DoorKey-8x8-v0", capture_video=False
+    )
     env = make_env(env_config, 0, 0, "test")()
     model = load_decision_transformer(model_path, env)
 
@@ -237,5 +244,6 @@ def test_load_legacy_decision_key_door():
     assert model.n_heads == 2
     assert model.n_layers == 1
     assert model.normalization_type is None
+
 
 # TODO when we have non-legacy models, we should test them here

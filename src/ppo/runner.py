@@ -1,4 +1,3 @@
-
 import warnings
 import gymnasium as gym
 import torch as t
@@ -7,7 +6,13 @@ import time
 
 from typing import Optional, Union
 
-from src.config import RunConfig, TransformerModelConfig, EnvironmentConfig, OnlineTrainConfig, LSTMModelConfig
+from src.config import (
+    RunConfig,
+    TransformerModelConfig,
+    EnvironmentConfig,
+    OnlineTrainConfig,
+    LSTMModelConfig,
+)
 from src.ppo.utils import set_global_seeds
 from src.ppo.train import train_ppo
 from src.utils import TrajectoryWriter
@@ -23,7 +28,7 @@ def ppo_runner(
     online_config: OnlineTrainConfig,
     model_config: Optional[Union[TransformerModelConfig, LSTMModelConfig]],
 ):
-    '''
+    """
     Executes Proximal Policy Optimization (PPO) training on a specified environment with provided hyperparameters.
 
     Args:
@@ -33,7 +38,7 @@ def ppo_runner(
     - model_config (Optional[Union[TransformerModelConfig, LSTMModelConfig]]): An optional object containing either Transformer or LSTM model configuration details.
 
     Returns: None.
-    '''
+    """
 
     if online_config.trajectory_path:
         trajectory_writer = TrajectoryWriter(
@@ -49,7 +54,9 @@ def ppo_runner(
     # Verify environment is registered
     register_envs()
     all_envs = [env_spec for env_spec in gym.envs.registry]
-    assert environment_config.env_id in all_envs, f"Environment {environment_config.env_id} not registered."
+    assert (
+        environment_config.env_id in all_envs
+    ), f"Environment {environment_config.env_id} not registered."
 
     # wandb initialisation,
     run_name = f"{environment_config.env_id}__{run_config.exp_name}__{run_config.seed}__{int(time.time())}"
@@ -71,12 +78,15 @@ def ppo_runner(
     set_global_seeds(run_config.seed)
 
     envs = gym.vector.SyncVectorEnv(
-        [make_env(
-            config=environment_config,
-            seed=environment_config.seed + i,
-            idx=i,
-            run_name=run_name
-        ) for i in range(online_config.num_envs)]
+        [
+            make_env(
+                config=environment_config,
+                seed=environment_config.seed + i,
+                idx=i,
+                run_name=run_name,
+            )
+            for i in range(online_config.num_envs)
+        ]
     )
 
     agent = train_ppo(
@@ -85,13 +95,18 @@ def ppo_runner(
         environment_config=environment_config,
         model_config=model_config,
         envs=envs,
-        trajectory_writer=trajectory_writer
+        trajectory_writer=trajectory_writer,
     )
     if run_config.track:
         run.finish()
 
 
-def combine_args(run_config, environment_config, online_config, transformer_model_config=None):
+def combine_args(
+    run_config,
+    environment_config,
+    online_config,
+    transformer_model_config=None,
+):
     args = {}
     args.update(run_config.__dict__)
     args.update(environment_config.__dict__)

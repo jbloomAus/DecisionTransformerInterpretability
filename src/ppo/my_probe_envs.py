@@ -164,7 +164,8 @@ class Probe6(gym.Env):
     def __init__(self):
         super().__init__()
         self.observation_space = Box(
-            low=0, high=np.inf, shape=(1,), dtype=np.float32)
+            low=0, high=np.inf, shape=(1,), dtype=np.float32
+        )
         self.action_space = Discrete(2)
         self.reset()
 
@@ -204,7 +205,8 @@ class Probe7(gym.Env):
     def __init__(self):
         super().__init__()
         self.observation_space = Box(
-            low=0, high=1, shape=(1,), dtype=np.float32)
+            low=0, high=1, shape=(1,), dtype=np.float32
+        )
         self.action_space = Discrete(5)
         self.reset()
 
@@ -213,9 +215,21 @@ class Probe7(gym.Env):
 
         if self.time_step == 4:
             reward = 1.0 if action == self.initial_obs else 0.0
-            return np.array([self.initial_obs], dtype=np.float32), reward, True, False, {}
+            return (
+                np.array([self.initial_obs], dtype=np.float32),
+                reward,
+                True,
+                False,
+                {},
+            )
         elif self.time_step == 0:
-            return np.array([self.initial_obs], dtype=np.float32), 0.0, False, False, {}
+            return (
+                np.array([self.initial_obs], dtype=np.float32),
+                0.0,
+                False,
+                False,
+                {},
+            )
         else:
             return np.array([0.0], np.float32), 0.0, False, False, {}
 
@@ -226,7 +240,8 @@ class Probe7(gym.Env):
         if seed is not None:
             np.random.seed(seed)
         self.initial_obs = np.array(
-            [0 if self.np_random.random() < 0.5 else 1], dtype=np.float32)
+            [0 if self.np_random.random() < 0.5 else 1], dtype=np.float32
+        )
         if return_info:
             return self.initial_obs, {}
         return self.initial_obs

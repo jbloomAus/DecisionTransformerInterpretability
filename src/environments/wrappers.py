@@ -35,7 +35,10 @@ class ViewSizeWrapper(ObservationWrapper):
         current_dim = self.observation_space["image"].shape[2:]
         # Compute observation space with specified view size
         new_image_space = gym.spaces.Box(
-            low=0, high=255, shape=(agent_view_size, agent_view_size, *current_dim), dtype="uint8"
+            low=0,
+            high=255,
+            shape=(agent_view_size, agent_view_size, *current_dim),
+            dtype="uint8",
         )
 
         # Override the environment's observation spaceexit
@@ -61,14 +64,14 @@ class RenderResizeWrapper(gym.Wrapper):
         self.render_height = render_height
 
     def render(self):
-
         if self.env.render_mode == "rgb_array":
             img = self.env.render()
             img = np.array(img)
 
             # Resize image
             img = self._resize_image(
-                img, self.render_width, self.render_height)
+                img, self.render_width, self.render_height
+            )
 
             return img
 
@@ -222,7 +225,8 @@ class DictObservationSpaceWrapper(ObservationWrapper):
     def observation(self, obs):
         obs["mission"] = self.string_to_indices(obs["mission"])
         assert len(obs["mission"]) < self.max_words_in_mission
-        obs["mission"] += [0] * \
-            (self.max_words_in_mission - len(obs["mission"]))
+        obs["mission"] += [0] * (
+            self.max_words_in_mission - len(obs["mission"])
+        )
 
         return obs

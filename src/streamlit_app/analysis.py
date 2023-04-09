@@ -3,12 +3,12 @@ import torch as t
 
 
 def name_residual_components(dt, cache):
-    '''
+    """
     Returns a list of keys for the residual components of the decision transformer which contribute to the final residual decomp
-    '''
+    """
     result = [
         "input_tokens",  # this will be block.0.resid_pre - hook_pos_embed
-        "hook_pos_embed"
+        "hook_pos_embed",
     ]
 
     n_layers = dt.n_layers
@@ -25,9 +25,9 @@ def name_residual_components(dt, cache):
 
 
 def get_residual_decomp(dt, cache, logit_dir, nice_names=True, seq_pos=-2):
-    '''
+    """
     Returns the residual decomposition for the decision transformer
-    '''
+    """
     decomp = {}
     n_heads = dt.n_heads
     state_dict = dt.state_dict()
@@ -39,13 +39,17 @@ def get_residual_decomp(dt, cache, logit_dir, nice_names=True, seq_pos=-2):
             decomp[component] = cache[component][:, seq_pos] @ logit_dir
         elif component == "input_tokens":
             decomp[component] = (
-                (cache['blocks.0.hook_resid_pre'] - cache["hook_pos_embed"]) @ logit_dir)[:, seq_pos]
+                (cache["blocks.0.hook_resid_pre"] - cache["hook_pos_embed"])
+                @ logit_dir
+            )[:, seq_pos]
         elif component.endswith(".hook_z"):
             for head in range(n_heads):
                 layer = int(component.split(".")[1])
-                output = cache[component][:, seq_pos, head,
-                                          :] @ dt.transformer.blocks[layer].attn.W_O[head]
-                decomp[component+f".{head}"] = output @ logit_dir
+                output = (
+                    cache[component][:, seq_pos, head, :]
+                    @ dt.transformer.blocks[layer].attn.W_O[head]
+                )
+                decomp[component + f".{head}"] = output @ logit_dir
 
         elif component.endswith(".hook_mlp_out"):
             decomp[component] = cache[component][:, seq_pos, :] @ logit_dir
@@ -62,9 +66,9 @@ def get_residual_decomp(dt, cache, logit_dir, nice_names=True, seq_pos=-2):
 
 
 def get_nice_names(decomp):
-    '''
+    """
     Will update each dictionary key with a nicer string and remove the old key
-    '''
+    """
     new_decomp = {}
     for k in decomp.keys():
         if k == "hook_pos_embed":

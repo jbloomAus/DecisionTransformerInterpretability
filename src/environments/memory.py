@@ -68,7 +68,13 @@ class MemoryEnv(MiniGridEnv):
     """
 
     def __init__(
-        self, size=8, random_length=False, random_direction: bool = False, random_start_pos: bool = True, max_steps: int | None = None, **kwargs
+        self,
+        size=8,
+        random_length=False,
+        random_direction: bool = False,
+        random_start_pos: bool = True,
+        max_steps: int | None = None,
+        **kwargs,
     ):
         self.size = size
         self.random_length = random_length
@@ -134,9 +140,7 @@ class MemoryEnv(MiniGridEnv):
         else:  # Start in the left room
             start_pos_horiz = 1
         start_pos_vert = height // 2
-        self.agent_pos = np.array(
-            (start_pos_horiz, start_pos_vert)
-        )
+        self.agent_pos = np.array((start_pos_horiz, start_pos_vert))
 
         if self.random_direction:
             self.agent_dir = self._rand_int(0, 4)

@@ -6,32 +6,45 @@ from .train import evaluate_dt_agent
 import plotly.graph_objects as go
 
 
-def calibration_statistics(dt, env_id, env_func, initial_rtg_range=np.linspace(-1, 1, 21), trajectories=100,
-                           num_envs=8):
+def calibration_statistics(
+    dt,
+    env_id,
+    env_func,
+    initial_rtg_range=np.linspace(-1, 1, 21),
+    trajectories=100,
+    num_envs=8,
+):
     statistics = []
     pbar = tqdm(initial_rtg_range, desc="initial_rtg")
     for initial_rtg in pbar:
-        statistics.append(evaluate_dt_agent(
-            env_id=env_id,
-            model=dt,
-            env_func=env_func,
-            track=False,
-            batch_number=0,
-            initial_rtg=initial_rtg,
-            trajectories=trajectories,
-            use_tqdm=False,
-            num_envs=num_envs))
+        statistics.append(
+            evaluate_dt_agent(
+                env_id=env_id,
+                model=dt,
+                env_func=env_func,
+                track=False,
+                batch_number=0,
+                initial_rtg=initial_rtg,
+                trajectories=trajectories,
+                use_tqdm=False,
+                num_envs=num_envs,
+            )
+        )
         pbar.set_description(f"initial_rtg: {initial_rtg}")
     return statistics
 
 
 def plot_calibration_statistics(statistics, show_spread=False, CI=0.95):
-
     df = pd.DataFrame(statistics)
 
     # add line to legend
-    fig = px.line(df, x="initial_rtg", y="mean_reward",
-                  title="Calibration Plot", template="plotly_white")
+    fig = px.line(
+        df,
+        x="initial_rtg",
+        y="mean_reward",
+        title="Calibration Plot",
+        template="plotly_white",
+    )
     fig.update_layout(
         xaxis_title="Initial RTG",
         yaxis_title="Reward",
@@ -47,7 +60,7 @@ def plot_calibration_statistics(statistics, show_spread=False, CI=0.95):
             color="LightSeaGreen",
             width=4,
             dash="dashdot",
-        )
+        ),
     )
 
     if show_spread:
@@ -56,9 +69,11 @@ def plot_calibration_statistics(statistics, show_spread=False, CI=0.95):
         # add 95% CI
         # also show 97.5 percentile and 2.5 percentile
         df["percentile_975"] = df.rewards.apply(
-            lambda x: np.percentile(x, 100 * upper))
+            lambda x: np.percentile(x, 100 * upper)
+        )
         df["percentile_025"] = df.rewards.apply(
-            lambda x: np.percentile(x, 100 * lower))
+            lambda x: np.percentile(x, 100 * lower)
+        )
         # shade between 97.5 and 2.5 percentile
         fig.add_trace(
             go.Scatter(
@@ -68,7 +83,7 @@ def plot_calibration_statistics(statistics, show_spread=False, CI=0.95):
                 name=f"{(int(CI*100))}% CI",
                 showlegend=False,
                 # then use light blue fill color
-                line=dict(color='rgba(0,0,0,0)', width=0.5),
+                line=dict(color="rgba(0,0,0,0)", width=0.5),
                 fillcolor="rgba(0,100,80,0.2)",
             )
         )
@@ -80,9 +95,9 @@ def plot_calibration_statistics(statistics, show_spread=False, CI=0.95):
                 mode="lines",
                 name=f"{(int(CI*100))}% CI",
                 # then use light blue fill color
-                line=dict(color='rgba(0,0,0,0)', width=0.5),
+                line=dict(color="rgba(0,0,0,0)", width=0.5),
                 fillcolor="rgba(0,100,80,0.2)",
-                fill="tonexty"
+                fill="tonexty",
             )
         )
 

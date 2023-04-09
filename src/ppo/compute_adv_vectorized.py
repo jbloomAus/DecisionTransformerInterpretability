@@ -25,10 +25,10 @@ def shift_rows(arr):
         If the array has >1D, it treats the later dimensions as batch dims
     """
     L = arr.shape[0]
-    output = t.zeros(L, 2*L, *arr.shape[1:]).to(dtype=arr.dtype)
+    output = t.zeros(L, 2 * L, *arr.shape[1:]).to(dtype=arr.dtype)
     output[:, :L] = arr[None, :]
     output = rearrange(output, "t1 t2 ... -> (t1 t2) ...")
-    output = output[:L*(2*L-1)]
+    output = output[: L * (2 * L - 1)]
     output = rearrange(output, "(t1 t2) ... -> t1 t2 ...", t1=L)
     output = output[:, :L]
 
@@ -43,7 +43,7 @@ def compute_advantages_vectorized(
     dones: TT["T", "env"],  # noqa: F821
     device: t.device,
     gamma: float,
-    gae_lambda: float
+    gae_lambda: float,
 ) -> TT["T", "env"]:  # noqa: F821
     """
     The compute_advantages_vectorized function computes the Generalized Advantage Estimation (GAE) advantages for a batch of environments in a vectorized manner.
@@ -69,8 +69,9 @@ def compute_advantages_vectorized(
 
     deltas_repeated = repeat(deltas, "t2 env -> t1 t2 env", t1=T)
     mask = repeat(next_dones, "t2 env -> t1 t2 env", t1=T).to(device)
-    mask_uppertri = repeat(t.triu(t.ones(T, T)),
-                           "t1 t2 -> t1 t2 env", env=num_envs).to(device)
+    mask_uppertri = repeat(
+        t.triu(t.ones(T, T)), "t1 t2 -> t1 t2 env", env=num_envs
+    ).to(device)
     mask = mask * mask_uppertri
     mask = 1 - (mask.cumsum(dim=1) > 0).float()
     mask = t.concat([t.ones(T, 1, num_envs).to(device), mask[:, :-1]], dim=1)
@@ -79,7 +80,8 @@ def compute_advantages_vectorized(
 
     discount_factors = (gamma * gae_lambda) ** t.arange(T).to(device)
     discount_factors_repeated = repeat(
-        discount_factors, "t -> t env", env=num_envs)
+        discount_factors, "t -> t env", env=num_envs
+    )
     discount_factors_shifted = shift_rows(discount_factors_repeated).to(device)
 
     advantages = (discount_factors_shifted * deltas_masked).sum(dim=1)

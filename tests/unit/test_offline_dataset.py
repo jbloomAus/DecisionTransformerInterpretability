@@ -6,7 +6,10 @@ from torch.utils.data import DataLoader, random_split
 from torch.utils.data.sampler import WeightedRandomSampler
 
 from src.decision_transformer.offline_dataset import (
-    TrajectoryDataset, TrajectoryReader, one_hot_encode_observation)
+    TrajectoryDataset,
+    TrajectoryReader,
+    one_hot_encode_observation,
+)
 
 
 def get_len_i_for_i_in_list(l):
@@ -31,7 +34,8 @@ def trajectory_reader_xz():
 def trajectory_dataset():
     PATH = "tests/fixtures/test_trajectories.pkl"
     trajectory_dataset = TrajectoryDataset(
-        PATH, max_len=100, pct_traj=1.0, device="cpu")
+        PATH, max_len=100, pct_traj=1.0, device="cpu"
+    )
     return trajectory_dataset
 
 
@@ -39,7 +43,8 @@ def trajectory_dataset():
 def trajectory_dataset_xz():
     PATH = "tests/fixtures/test_trajectories.xz"
     trajectory_dataset = TrajectoryDataset(
-        PATH, max_len=100, pct_traj=1.0, device="cpu")
+        PATH, max_len=100, pct_traj=1.0, device="cpu"
+    )
     return trajectory_dataset
 
 
@@ -54,7 +59,6 @@ def test_trajectory_reader_xz(trajectory_reader_xz):
 
 
 def test_trajectory_dataset_init(trajectory_dataset):
-
     assert trajectory_dataset.num_trajectories == 54
     assert trajectory_dataset.num_timesteps == 49920
     assert trajectory_dataset.actions is not None
@@ -72,16 +76,21 @@ def test_trajectory_dataset_init(trajectory_dataset):
 
     # lengths match
     assert get_len_i_for_i_in_list(
-        trajectory_dataset.actions) == get_len_i_for_i_in_list(trajectory_dataset.states)
+        trajectory_dataset.actions
+    ) == get_len_i_for_i_in_list(trajectory_dataset.states)
 
     # max traj length is 1000
-    assert max(get_len_i_for_i_in_list(trajectory_dataset.actions)
-               ) == trajectory_dataset.max_ep_len
-    assert trajectory_dataset.max_ep_len == trajectory_dataset.metadata["args"]["max_steps"]
+    assert (
+        max(get_len_i_for_i_in_list(trajectory_dataset.actions))
+        == trajectory_dataset.max_ep_len
+    )
+    assert (
+        trajectory_dataset.max_ep_len
+        == trajectory_dataset.metadata["args"]["max_steps"]
+    )
 
 
 def test_trajectory_dataset_init_xz(trajectory_dataset_xz):
-
     trajectory_dataset = trajectory_dataset_xz
 
     assert trajectory_dataset.num_trajectories == 238
@@ -100,37 +109,43 @@ def test_trajectory_dataset_init_xz(trajectory_dataset_xz):
 
     # lengths match
     assert get_len_i_for_i_in_list(
-        trajectory_dataset.actions) == get_len_i_for_i_in_list(trajectory_dataset.states)
+        trajectory_dataset.actions
+    ) == get_len_i_for_i_in_list(trajectory_dataset.states)
 
 
-def test_trajectory_dataset_get_indices_of_top_p_trajectories_1(trajectory_dataset):
-
+def test_trajectory_dataset_get_indices_of_top_p_trajectories_1(
+    trajectory_dataset,
+):
     indices = trajectory_dataset.get_indices_of_top_p_trajectories(1.0)
 
     # 1. the length of the indices is correct
     assert len(indices) == 54
 
     # 2. The rewards go in ascending order.
-    for i in range(len(indices)-1):
-        assert trajectory_dataset.returns[indices[i]
-                                          ] <= trajectory_dataset.returns[indices[i+1]]
+    for i in range(len(indices) - 1):
+        assert (
+            trajectory_dataset.returns[indices[i]]
+            <= trajectory_dataset.returns[indices[i + 1]]
+        )
 
 
-def test_trajectory_dataset_get_indices_of_top_p_trajectories_01(trajectory_dataset):
-
+def test_trajectory_dataset_get_indices_of_top_p_trajectories_01(
+    trajectory_dataset,
+):
     indices = trajectory_dataset.get_indices_of_top_p_trajectories(0.1)
 
     # 1. the length of the indices is correct
     assert len(indices) == 7
 
     # 2. The rewards go in ascending order.
-    for i in range(len(indices)-1):
-        assert trajectory_dataset.returns[indices[i]
-                                          ] <= trajectory_dataset.returns[indices[i+1]]
+    for i in range(len(indices) - 1):
+        assert (
+            trajectory_dataset.returns[indices[i]]
+            <= trajectory_dataset.returns[indices[i + 1]]
+        )
 
 
 def test_trajectory_dataset__getitem__(trajectory_dataset):
-
     s, a, r, d, rtg, timesteps, mask = trajectory_dataset[0]
 
     assert isinstance(s, torch.Tensor)
@@ -151,21 +166,27 @@ def test_trajectory_dataset__getitem__(trajectory_dataset):
 
 
 def test_trajectory_dataset_sampling_probabilities(trajectory_dataset):
-
-    assert len(
-        trajectory_dataset.sampling_probabilities) == trajectory_dataset.num_trajectories
-    prob = trajectory_dataset.traj_lens[trajectory_dataset.indices[0]
-                                        ]/trajectory_dataset.num_timesteps
+    assert (
+        len(trajectory_dataset.sampling_probabilities)
+        == trajectory_dataset.num_trajectories
+    )
+    prob = (
+        trajectory_dataset.traj_lens[trajectory_dataset.indices[0]]
+        / trajectory_dataset.num_timesteps
+    )
     assert trajectory_dataset.sampling_probabilities[0] == pytest.approx(
-        0.02, rel=1e-1)
+        0.02, rel=1e-1
+    )
     assert trajectory_dataset.sampling_probabilities[0] == prob
     assert trajectory_dataset.sampling_probabilities[-1] == pytest.approx(
-        0.0055, rel=1e-1)
-    assert trajectory_dataset.sampling_probabilities.sum() == pytest.approx(1.0, rel=1e-1)
+        0.0055, rel=1e-1
+    )
+    assert trajectory_dataset.sampling_probabilities.sum() == pytest.approx(
+        1.0, rel=1e-1
+    )
 
 
 def test_trajectory_dataset_discount_cumusum_10(trajectory_dataset):
-
     vector = torch.tensor([1, 2, 3], dtype=torch.float32)
     discount = 1.0
     expected = torch.tensor([1, 2, 3], dtype=torch.float32)
@@ -179,14 +200,14 @@ def test_trajectory_dataset_discount_cumusum_10(trajectory_dataset):
 
 
 def test_trajectory_dataset_as_dataloader(trajectory_dataset):
-
     sampler = WeightedRandomSampler(
         weights=trajectory_dataset.sampling_probabilities,
         num_samples=trajectory_dataset.num_trajectories,
         replacement=True,
     )
     dataloader = torch.utils.data.DataLoader(
-        trajectory_dataset, batch_size=8, sampler=sampler)
+        trajectory_dataset, batch_size=8, sampler=sampler
+    )
 
     for i, (s, a, r, d, rtg, timesteps, mask) in enumerate(dataloader):
         assert s.shape == (8, 100, 7, 7, 3), f"i={i}, s.shape={s.shape}"
@@ -217,15 +238,17 @@ def test_trajectory_dataset_as_dataloader(trajectory_dataset):
 
 
 def test_train_test_split(trajectory_dataset):
-
     # Split the dataset into training and testing sets
     train_dataset, test_dataset = random_split(
-        trajectory_dataset, [0.80, 0.20])
+        trajectory_dataset, [0.80, 0.20]
+    )
 
     assert len(train_dataset) == pytest.approx(
-        0.80 * len(trajectory_dataset), abs=1)
+        0.80 * len(trajectory_dataset), abs=1
+    )
     assert len(test_dataset) == pytest.approx(
-        0.20 * len(trajectory_dataset), abs=1)
+        0.20 * len(trajectory_dataset), abs=1
+    )
 
     s, a, r, d, rtg, timesteps, mask = train_dataset[0]
     assert s.shape == (100, 7, 7, 3)
@@ -247,33 +270,41 @@ def test_train_test_split(trajectory_dataset):
 
     # Create the train DataLoader
     train_sampler = torch.utils.data.sampler.WeightedRandomSampler(
-        weights=trajectory_dataset.sampling_probabilities[train_dataset.indices],
+        weights=trajectory_dataset.sampling_probabilities[
+            train_dataset.indices
+        ],
         num_samples=len(train_dataset),
         replacement=True,
     )
     train_dataloader = DataLoader(
-        train_dataset, batch_size=8, sampler=train_sampler)
+        train_dataset, batch_size=8, sampler=train_sampler
+    )
 
     # Create the test DataLoader
     test_sampler = torch.utils.data.sampler.WeightedRandomSampler(
-        weights=trajectory_dataset.sampling_probabilities[test_dataset.indices],
+        weights=trajectory_dataset.sampling_probabilities[
+            test_dataset.indices
+        ],
         num_samples=len(test_dataset),
         replacement=True,
     )
     test_dataloader = DataLoader(
-        test_dataset, batch_size=8, sampler=test_sampler)
+        test_dataset, batch_size=8, sampler=test_sampler
+    )
 
 
 def test_train_test_split_other_data(trajectory_dataset_xz):
-
     # Split the dataset into training and testing sets
     train_dataset, test_dataset = random_split(
-        trajectory_dataset_xz, [0.80, 0.20])
+        trajectory_dataset_xz, [0.80, 0.20]
+    )
 
     assert len(train_dataset) == pytest.approx(
-        0.80 * len(trajectory_dataset_xz), abs=1)
+        0.80 * len(trajectory_dataset_xz), abs=1
+    )
     assert len(test_dataset) == pytest.approx(
-        0.20 * len(trajectory_dataset_xz), abs=1)
+        0.20 * len(trajectory_dataset_xz), abs=1
+    )
 
     s, a, r, d, rtg, timesteps, mask = train_dataset[0]
     assert s.shape == (100, 7, 7, 20)
@@ -295,21 +326,27 @@ def test_train_test_split_other_data(trajectory_dataset_xz):
 
     # Create the train DataLoader
     train_sampler = torch.utils.data.sampler.WeightedRandomSampler(
-        weights=trajectory_dataset_xz.sampling_probabilities[train_dataset.indices],
+        weights=trajectory_dataset_xz.sampling_probabilities[
+            train_dataset.indices
+        ],
         num_samples=len(train_dataset),
         replacement=True,
     )
     train_dataloader = DataLoader(
-        train_dataset, batch_size=8, sampler=train_sampler)
+        train_dataset, batch_size=8, sampler=train_sampler
+    )
 
     # Create the test DataLoader
     test_sampler = torch.utils.data.sampler.WeightedRandomSampler(
-        weights=trajectory_dataset_xz.sampling_probabilities[test_dataset.indices],
+        weights=trajectory_dataset_xz.sampling_probabilities[
+            test_dataset.indices
+        ],
         num_samples=len(test_dataset),
         replacement=True,
     )
     test_dataloader = DataLoader(
-        test_dataset, batch_size=8, sampler=test_sampler)
+        test_dataset, batch_size=8, sampler=test_sampler
+    )
 
 
 def test_one_hot_encode_observation():
@@ -320,8 +357,12 @@ def test_one_hot_encode_observation():
     output_tensor = one_hot_encode_observation(input_tensor)
 
     # Check the shape of the output tensor
-    assert output_tensor.shape == (4, 32, 32, len(
-        OBJECT_TO_IDX) + len(COLOR_TO_IDX) + len(STATE_TO_IDX))
+    assert output_tensor.shape == (
+        4,
+        32,
+        32,
+        len(OBJECT_TO_IDX) + len(COLOR_TO_IDX) + len(STATE_TO_IDX),
+    )
 
     # Check that the output tensor has the correct data type
     assert output_tensor.dtype == torch.float32
@@ -339,12 +380,15 @@ def test_one_hot_encode_observation():
 
                 assert output_tensor[b, i, j, value] == 1
                 assert output_tensor[b, i, j, len(OBJECT_TO_IDX) + color] == 1
-                assert output_tensor[b, i, j, len(
-                    OBJECT_TO_IDX) + len(COLOR_TO_IDX) + state] == 1
+                assert (
+                    output_tensor[
+                        b, i, j, len(OBJECT_TO_IDX) + len(COLOR_TO_IDX) + state
+                    ]
+                    == 1
+                )
 
 
 def test_trajectory_dataset__getitem__(trajectory_dataset):
-
     trajectory_dataset = copy.deepcopy(trajectory_dataset)
     trajectory_dataset.preprocess_observations = one_hot_encode_observation
 

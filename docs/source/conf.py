@@ -8,20 +8,21 @@
 
 import sys
 import os
-project = 'DecisionTransformerInterpretability'
-copyright = '2023, Joseph Bloom'
-author = 'Joseph Bloom'
-release = '0.1'
+
+project = "DecisionTransformerInterpretability"
+copyright = "2023, Joseph Bloom"
+author = "Joseph Bloom"
+release = "0.1"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinxcontrib.napoleon',
-    'myst_parser',
-    'sphinx-favicon',
-    "sphinx.ext.githubpages"
+    "sphinx.ext.autodoc",
+    "sphinxcontrib.napoleon",
+    "myst_parser",
+    "sphinx-favicon",
+    "sphinx.ext.githubpages",
 ]
 
 source_suffix = {
@@ -29,22 +30,20 @@ source_suffix = {
     ".md": "markdown",
 }
 
-templates_path = ['_templates']
+templates_path = ["_templates"]
 exclude_patterns = []
 
 
-sys.path.insert(0, os.path.abspath('../..'))
+sys.path.insert(0, os.path.abspath("../.."))
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'furo'
+html_theme = "furo"
 html_title = "Decision Transformer Interpretability Documentation"
-html_static_path = ['_static']
+html_static_path = ["_static"]
 html_theme_options = {
-    'light_logo': 'assets/Logo_white.png',
-    "dark_logo": 'assets/Logo_transparent.png',
+    "light_logo": "assets/Logo_white.png",
+    "dark_logo": "assets/Logo_transparent.png",
 }
-favicons = [
-    'assets/Logo_black.ico'
-]
+favicons = ["assets/Logo_black.ico"]

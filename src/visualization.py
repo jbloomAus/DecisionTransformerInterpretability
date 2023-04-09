@@ -9,7 +9,7 @@ def find_agent(observation):
     for i in range(width):
         for j in range(height):
             object = IDX_TO_OBJECT[int(observation[i, j][0])]
-            if object == 'agent':
+            if object == "agent":
                 return i, j
 
     return -1, -1
@@ -17,7 +17,9 @@ def find_agent(observation):
 
 def render_minigrid_observation(env, observation):
     if isinstance(observation, np.ndarray):
-        observation = observation.copy()  # so we don't edit the original object
+        observation = (
+            observation.copy()
+        )  # so we don't edit the original object
     elif isinstance(observation, torch.Tensor):
         observation = observation.numpy().copy()
 
@@ -35,4 +37,9 @@ def render_minigrid_observation(env, observation):
 
 
 def render_minigrid_observations(env, observations):
-    return np.array([render_minigrid_observation(env, observation) for observation in observations])
+    return np.array(
+        [
+            render_minigrid_observation(env, observation)
+            for observation in observations
+        ]
+    )

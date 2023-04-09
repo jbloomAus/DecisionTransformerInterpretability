@@ -14,7 +14,6 @@ from src.streamlit_app.constants import twenty_idx_format_func
 
 
 def test_twenty_idx_format_func():
-
     assert twenty_idx_format_func(0) == "unseen"
     assert twenty_idx_format_func(9) == "lava"
     assert twenty_idx_format_func(10) == "agent"

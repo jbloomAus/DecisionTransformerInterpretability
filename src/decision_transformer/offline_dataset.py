@@ -12,44 +12,46 @@ from minigrid.core.constants import COLOR_TO_IDX, OBJECT_TO_IDX, STATE_TO_IDX
 from torch.utils.data import Dataset
 
 
-class TrajectoryReader():
-    '''
+class TrajectoryReader:
+    """
     The trajectory reader is responsible for reading trajectories from a file.
-    '''
+    """
 
     def __init__(self, path):
         self.path = path.strip()
 
     def read(self):
         # if path ends in .pkl, read as pickle
-        if self.path.endswith('.pkl'):
-            with open(self.path, 'rb') as f:
+        if self.path.endswith(".pkl"):
+            with open(self.path, "rb") as f:
                 data = pickle.load(f)
         # if path ends in .xz, read as lzma
-        elif self.path.endswith('.xz'):
-            with lzma.open(self.path, 'rb') as f:
+        elif self.path.endswith(".xz"):
+            with lzma.open(self.path, "rb") as f:
                 data = pickle.load(f)
-        elif self.path.endswith('.gz'):
-            with gzip.open(self.path, 'rb') as f:
+        elif self.path.endswith(".gz"):
+            with gzip.open(self.path, "rb") as f:
                 data = pickle.load(f)
         else:
             raise ValueError(
-                f"Path {self.path} is not a valid trajectory file")
+                f"Path {self.path} is not a valid trajectory file"
+            )
 
         return data
 
 
 class TrajectoryDataset(Dataset):
-
-    def __init__(self,
-                 trajectory_path,
-                 max_len=1,
-                 prob_go_from_end=0,
-                 pct_traj=1.0,
-                 rtg_scale=1,
-                 normalize_state=False,
-                 preprocess_observations: Callable = None,
-                 device='cpu'):
+    def __init__(
+        self,
+        trajectory_path,
+        max_len=1,
+        prob_go_from_end=0,
+        pct_traj=1.0,
+        rtg_scale=1,
+        normalize_state=False,
+        preprocess_observations: Callable = None,
+        device="cpu",
+    ):
         self.trajectory_path = trajectory_path
         self.max_len = max_len
         self.prob_go_from_end = prob_go_from_end
@@ -61,16 +63,15 @@ class TrajectoryDataset(Dataset):
         self.load_trajectories()
 
     def load_trajectories(self) -> None:
-
         traj_reader = TrajectoryReader(self.trajectory_path)
         data = traj_reader.read()
 
-        observations = data['data'].get('observations')
-        actions = data['data'].get('actions')
-        rewards = data['data'].get('rewards')
-        dones = data['data'].get('dones')
-        truncated = data['data'].get('truncated')
-        infos = data['data'].get('infos')
+        observations = data["data"].get("observations")
+        actions = data["data"].get("actions")
+        rewards = data["data"].get("rewards")
+        dones = data["data"].get("dones")
+        truncated = data["data"].get("truncated")
+        infos = data["data"].get("infos")
 
         observations = np.array(observations)
         actions = np.array(actions)
@@ -80,19 +81,23 @@ class TrajectoryDataset(Dataset):
 
         # check whether observations are flat or an image
         if observations.shape[-1] == 3:
-            self.observation_type = 'index'
+            self.observation_type = "index"
         elif observations.shape[-1] == 20:
-            self.observation_type = 'one_hot'
+            self.observation_type = "one_hot"
         else:
             raise ValueError(
-                "Observations are not flat or images, check the shape of the observations: ", observations.shape)
+                "Observations are not flat or images, check the shape of the observations: ",
+                observations.shape,
+            )
 
-        if self.observation_type != 'flat':
+        if self.observation_type != "flat":
             t_observations = rearrange(
-                torch.tensor(observations), "t b h w c -> (b t) h w c")
+                torch.tensor(observations), "t b h w c -> (b t) h w c"
+            )
         else:
             t_observations = rearrange(
-                torch.tensor(observations), "t b f -> (b t) f")
+                torch.tensor(observations), "t b f -> (b t) f"
+            )
 
         t_actions = rearrange(torch.tensor(actions), "t b -> (b t)")
         t_rewards = rearrange(torch.tensor(rewards), "t b -> (b t)")
@@ -116,12 +121,14 @@ class TrajectoryDataset(Dataset):
         self.actions = [i for i, m in zip(self.actions, traj_len_mask) if m]
         self.rewards = [i for i, m in zip(self.rewards, traj_len_mask) if m]
         self.dones = [i for i, m in zip(self.dones, traj_len_mask) if m]
-        self.truncated = [i for i, m in zip(
-            self.truncated, traj_len_mask) if m]
+        self.truncated = [
+            i for i, m in zip(self.truncated, traj_len_mask) if m
+        ]
         self.states = [i for i, m in zip(self.states, traj_len_mask) if m]
         self.returns = [i for i, m in zip(self.returns, traj_len_mask) if m]
-        self.timesteps = [i for i, m in zip(
-            self.timesteps, traj_len_mask) if m]
+        self.timesteps = [
+            i for i, m in zip(self.timesteps, traj_len_mask) if m
+        ]
         self.traj_lens = self.traj_lens[traj_len_mask]
 
         self.num_timesteps = sum(self.traj_lens)
@@ -130,7 +137,7 @@ class TrajectoryDataset(Dataset):
         self.state_dim = list(self.states[0][0].shape)
         self.act_dim = list(self.actions[0][0].shape)
         self.max_ep_len = max([len(i) for i in self.states])
-        self.metadata = data['metadata']
+        self.metadata = data["metadata"]
 
         self.indices = self.get_indices_of_top_p_trajectories(self.pct_traj)
         self.sampling_probabilities = self.get_sampling_probabilities()
@@ -153,7 +160,10 @@ class TrajectoryDataset(Dataset):
         timesteps = self.traj_lens[sorted_inds[-1]]
         ind = self.num_trajectories - 1
 
-        while ind >= 0 and timesteps + self.traj_lens[sorted_inds[ind]] < num_timesteps:
+        while (
+            ind >= 0
+            and timesteps + self.traj_lens[sorted_inds[ind]] < num_timesteps
+        ):
             timesteps += self.traj_lens[sorted_inds[ind]]
             ind -= 1
             num_trajectories += 1
@@ -163,8 +173,9 @@ class TrajectoryDataset(Dataset):
         return sorted_inds
 
     def get_sampling_probabilities(self):
-        p_sample = self.traj_lens[self.indices] / \
-            sum(self.traj_lens[self.indices])
+        p_sample = self.traj_lens[self.indices] / sum(
+            self.traj_lens[self.indices]
+        )
         return p_sample
 
     def discount_cumsum(self, x, gamma):
@@ -177,12 +188,13 @@ class TrajectoryDataset(Dataset):
     def get_state_mean_std(self):
         # used for input normalization
         all_states = np.concatenate(self.states, axis=0)
-        state_mean, state_std = np.mean(
-            all_states, axis=0), np.std(all_states, axis=0) + 1e-6
+        state_mean, state_std = (
+            np.mean(all_states, axis=0),
+            np.std(all_states, axis=0) + 1e-6,
+        )
         return state_mean, state_std
 
     def get_batch(self, batch_size=256, max_len=100, prob_go_from_end=None):
-
         sorted_inds = self.indices
 
         batch_inds = np.random.choice(
@@ -193,14 +205,22 @@ class TrajectoryDataset(Dataset):
         )
 
         # initialize np arrays not lists
-        states, actions, rewards, dones, rewards_to_gos, timesteps, mask = [], [], [], [], [], [], []
+        states, actions, rewards, dones, rewards_to_gos, timesteps, mask = (
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+            [],
+        )
         for i in range(batch_size):
-
             # get the trajectory
             traj_index = sorted_inds[batch_inds[i]]
 
             s, a, r, d, rtg, ti, m = self.get_traj(
-                traj_index, max_len, prob_go_from_end=prob_go_from_end)
+                traj_index, max_len, prob_go_from_end=prob_go_from_end
+            )
 
             rewards.append(r)
             actions.append(a)
@@ -210,10 +230,11 @@ class TrajectoryDataset(Dataset):
             mask.append(m)
             timesteps.append(ti)
 
-        return self.return_tensors(states, actions, rewards, rewards_to_gos, dones, timesteps, mask)
+        return self.return_tensors(
+            states, actions, rewards, rewards_to_gos, dones, timesteps, mask
+        )
 
     def get_traj(self, traj_index, max_len=100, prob_go_from_end=None):
-
         traj_rewards = self.rewards[traj_index]
         traj_states = self.states[traj_index]
         traj_actions = self.actions[traj_index]
@@ -227,12 +248,13 @@ class TrajectoryDataset(Dataset):
                 si = max(0, si)  # make sure it's not negative
 
         # get sequences from dataset
-        s = traj_states[si:si + max_len].reshape(1, -1, *self.state_dim)
-        a = traj_actions[si:si + max_len].reshape(1, -1, *self.act_dim)
-        r = traj_rewards[si:si + max_len].reshape(1, -1, 1)
-        d = traj_dones[si:si + max_len].reshape(1, -1)
-        rtg = self.discount_cumsum(traj_rewards[si:], gamma=1.)[
-            :s.shape[1] + 1].reshape(1, -1, 1)
+        s = traj_states[si : si + max_len].reshape(1, -1, *self.state_dim)
+        a = traj_actions[si : si + max_len].reshape(1, -1, *self.act_dim)
+        r = traj_rewards[si : si + max_len].reshape(1, -1, 1)
+        d = traj_dones[si : si + max_len].reshape(1, -1)
+        rtg = self.discount_cumsum(traj_rewards[si:], gamma=1.0)[
+            : s.shape[1] + 1
+        ].reshape(1, -1, 1)
         ti = np.arange(si, si + s.shape[1]).reshape(1, -1)
 
         # if the trajectory is shorter than max_len, pad it
@@ -262,11 +284,17 @@ class TrajectoryDataset(Dataset):
 
     def add_padding(self, tokens, padding_token, padding_required):
         if padding_required > 0:
-            return np.concatenate([np.ones((1, padding_required, *tokens.shape[2:])) * padding_token, tokens], axis=1)
+            return np.concatenate(
+                [
+                    np.ones((1, padding_required, *tokens.shape[2:]))
+                    * padding_token,
+                    tokens,
+                ],
+                axis=1,
+            )
         return tokens
 
     def return_tensors(self, s, a, r, rtg, d, timesteps, mask):
-
         if isinstance(s, torch.Tensor):
             s = s.to(dtype=torch.float32, device=self.device)
         else:
@@ -286,14 +314,16 @@ class TrajectoryDataset(Dataset):
             rtg = rtg.to(dtype=torch.float32, device=self.device)
         else:
             rtg = torch.from_numpy(rtg).to(
-                dtype=torch.float32, device=self.device)
+                dtype=torch.float32, device=self.device
+            )
 
         if isinstance(d, torch.Tensor):
             d = d.to(dtype=torch.bool, device=self.device)
         else:
             d = torch.from_numpy(d).to(dtype=torch.bool, device=self.device)
         timesteps = torch.from_numpy(timesteps).to(
-            dtype=torch.long, device=self.device)
+            dtype=torch.long, device=self.device
+        )
         mask = torch.from_numpy(mask).to(dtype=torch.bool, device=self.device)
 
         # squeeze out the batch dimension
@@ -315,7 +345,7 @@ class TrajectoryDataset(Dataset):
         s, a, r, d, rtg, ti, m = self.get_traj(
             traj_index,
             max_len=self.max_len,
-            prob_go_from_end=self.prob_go_from_end
+            prob_go_from_end=self.prob_go_from_end,
         )
         if self.preprocess_observations is not None:
             s = self.preprocess_observations(s)
@@ -324,16 +354,14 @@ class TrajectoryDataset(Dataset):
 
 
 class TrajectoryVisualizer:
-
     def __init__(self, trajectory_dataset: TrajectoryDataset):
-
         self.trajectory_loader = trajectory_dataset
 
     def plot_reward_over_time(self):
-
         reward = [i[-1] for i in self.trajectory_loader.rewards if len(i) > 0]
-        timesteps = [i.max()
-                     for i in self.trajectory_loader.timesteps if len(i) > 0]
+        timesteps = [
+            i.max() for i in self.trajectory_loader.timesteps if len(i) > 0
+        ]
 
         # create a categorical color array for reward <0, 0, >0
         colors = np.zeros(len(reward))
@@ -359,7 +387,6 @@ class TrajectoryVisualizer:
         return fig
 
     def plot_base_action_frequencies(self):
-
         fig = px.bar(
             y=torch.concat(self.trajectory_loader.actions).bincount()
             # x=[IDX_TO_ACTION[i] for i in range(7)],
@@ -394,7 +421,8 @@ def one_hot_encode_observation(img: torch.Tensor) -> torch.Tensor:
 
                 out[b, i, j, value] = 1
                 out[b, i, j, len(OBJECT_TO_IDX) + color] = 1
-                out[b, i, j, len(OBJECT_TO_IDX) +
-                    len(COLOR_TO_IDX) + state] = 1
+                out[
+                    b, i, j, len(OBJECT_TO_IDX) + len(COLOR_TO_IDX) + state
+                ] = 1
 
     return torch.from_numpy(out).float()

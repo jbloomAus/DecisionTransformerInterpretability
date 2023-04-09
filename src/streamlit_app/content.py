@@ -1,11 +1,16 @@
 import streamlit as st
 import pandas as pd
-from .constants import IDX_TO_STATE, IDX_TO_ACTION, IDX_TO_OBJECT, IDX_TO_COLOR, STATE_TO_IDX
+from .constants import (
+    IDX_TO_STATE,
+    IDX_TO_ACTION,
+    IDX_TO_OBJECT,
+    IDX_TO_COLOR,
+    STATE_TO_IDX,
+)
 
 
 def help_page():
     with st.expander("Basic help"):
-
         st.markdown(
             """
             # Help
@@ -35,7 +40,6 @@ def help_page():
 
 def analysis_help():
     with st.expander("Analysis Help"):
-
         st.markdown(
             """
             # Analysis Help
@@ -79,7 +83,6 @@ def analysis_help():
 
 
 def reference_tables():
-
     with st.expander("Reference Tables"):
         st.markdown(
             """
@@ -94,8 +97,11 @@ def reference_tables():
                 ## Object Space
                 """
             )
-            st.table(pd.DataFrame.from_dict(IDX_TO_OBJECT,
-                                            orient="index", columns=["Object"]))
+            st.table(
+                pd.DataFrame.from_dict(
+                    IDX_TO_OBJECT, orient="index", columns=["Object"]
+                )
+            )
 
         with b:
             st.markdown(
@@ -103,23 +109,31 @@ def reference_tables():
                 ## Color Space
                 """
             )
-            st.table(pd.DataFrame.from_dict(
-                IDX_TO_COLOR, orient="index", columns=["Color"]))
+            st.table(
+                pd.DataFrame.from_dict(
+                    IDX_TO_COLOR, orient="index", columns=["Color"]
+                )
+            )
         with c:
             st.markdown(
                 """
                 ## State Space
                 """
             )
-            st.table(pd.DataFrame.from_dict(
-                IDX_TO_STATE, orient="index", columns=["State"]))
+            st.table(
+                pd.DataFrame.from_dict(
+                    IDX_TO_STATE, orient="index", columns=["State"]
+                )
+            )
 
         with d:
-
             st.markdown(
                 """
                 ## Action Space
                 """
             )
-            st.table(pd.DataFrame.from_dict(IDX_TO_ACTION,
-                                            orient="index", columns=["Action"]))
+            st.table(
+                pd.DataFrame.from_dict(
+                    IDX_TO_ACTION, orient="index", columns=["Action"]
+                )
+            )

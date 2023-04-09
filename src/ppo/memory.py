@@ -19,25 +19,29 @@ from .utils import get_obs_preprocessor
 
 @dataclass
 class Minibatch:
-    '''
+    """
     A dataclass containing the tensors of a minibatch of experiences.
-    '''
+    """
+
     obs: TT["batch", "obs_shape"]  # noqa: F821
     actions: TT["batch"]  # noqa: F821
     logprobs: TT["batch"]  # noqa: F821
     advantages: TT["batch"]  # noqa: F821
     values: TT["batch"]  # noqa: F821
     returns: TT["batch"]  # noqa: F821
-    recurrence_memory: Optional[TT["batch", "memory_size"]] = None  # noqa: F821
+    recurrence_memory: Optional[
+        TT["batch", "memory_size"]
+    ] = None  # noqa: F821
     mask: Optional[TT["batch"]] = None  # noqa: F821
 
 
 @dataclass
 class TrajectoryMinibatch:
-    '''
+    """
     A dataclass containing the tensors of a minibatch of experiences,
     including trajectory information leading up to each step.
-    '''
+    """
+
     obs: TT["batch", "T", "obs_shape"]  # noqa: F821
     actions: TT["batch", "T"]  # noqa: F821
     logprobs: TT["batch"]  # noqa: F821
@@ -46,6 +50,7 @@ class TrajectoryMinibatch:
     returns: TT["batch"]  # noqa: F821
     timesteps: TT["batch", "T"]  # noqa: F821
     rewards: TT["batch", "T"]  # noqa: F821
+
 
 # @dataclass
 # class Experience:
@@ -62,12 +67,17 @@ class TrajectoryMinibatch:
 #     mask: Optional[TT["bool"]] = None
 
 
-class Memory():
-    '''
+class Memory:
+    """
     A memory buffer for storing experiences during the rollout phase.
-    '''
+    """
 
-    def __init__(self, envs: gym.vector.SyncVectorEnv, args: OnlineTrainConfig, device: t.device = t.device("cpu")):
+    def __init__(
+        self,
+        envs: gym.vector.SyncVectorEnv,
+        args: OnlineTrainConfig,
+        device: t.device = t.device("cpu"),
+    ):
         """
         Initializes the memory buffer.
 
@@ -98,7 +108,6 @@ class Memory():
         self.experiences.append(experiences)
         if info and isinstance(info, dict):
             if "final_info" in info.keys():
-
                 for item in info["final_info"]:
                     if isinstance(item, dict):
                         if "episode" in item.keys():
@@ -112,7 +121,7 @@ class Memory():
                     self.global_step += 1
 
     def sample_experiences(self):
-        '''Prints out a randomly selected experience as a sanity check.
+        """Prints out a randomly selected experience as a sanity check.
 
         Each experience consists of a tuple containing:
         - obs: observations of the environment
@@ -130,14 +139,21 @@ class Memory():
             logprob: [...]
             value  : [...]
             reward : [...]
-        '''
+        """
         idx = np.random.randint(0, len(self.experiences))
         print(f"Sample {idx+1}/{len(self.experiences)}:")
-        for i, n in enumerate(["obs", "done", "action", "logprob", "value", "reward"]):
+        for i, n in enumerate(
+            ["obs", "done", "action", "logprob", "value", "reward"]
+        ):
             print(f"{n:8}: {self.experiences[idx][i].cpu().numpy().tolist()}")
 
-    def get_minibatch_indexes(self, batch_size: int, minibatch_size: int, recurrence: Optional[int] = None) -> List[np.ndarray]:
-        '''
+    def get_minibatch_indexes(
+        self,
+        batch_size: int,
+        minibatch_size: int,
+        recurrence: Optional[int] = None,
+    ) -> List[np.ndarray]:
+        """
         Return a list of length (batch_size // minibatch_size) where each element
         is an array of indexes into the batch.
 
@@ -145,14 +161,17 @@ class Memory():
         seperated by the recurrence value.
 
         Each index should appear exactly once.
-        '''
+        """
         assert batch_size % minibatch_size == 0
         mb_num = batch_size // minibatch_size
 
         if recurrence is None:
             indices = np.random.permutation(batch_size)
             indices = rearrange(
-                indices, "(mb_num mb_size) -> mb_num mb_size", mb_size=minibatch_size)
+                indices,
+                "(mb_num mb_size) -> mb_num mb_size",
+                mb_size=minibatch_size,
+            )
             indices = list(indices)
         else:
             assert batch_size % recurrence == 0
@@ -160,7 +179,8 @@ class Memory():
             # has shape batch_size // recurrence, divide this into num minibatches
             indices = np.random.permutation(indices)
             indices = rearrange(
-                indices, "(mb_num mb_size) -> mb_num mb_size", mb_num=mb_num)
+                indices, "(mb_num mb_size) -> mb_num mb_size", mb_num=mb_num
+            )
 
         return indices
 
@@ -173,9 +193,9 @@ class Memory():
         dones: TT["T", "env"],  # noqa: F821
         device: t.device,
         gamma: float,
-        gae_lambda: float
+        gae_lambda: float,
     ) -> TT["T", "env"]:  # noqa: F821
-        '''
+        """
         Compute advantages using Generalized Advantage Estimation.
 
         Generalized Advantage Estimation (GAE) is a technique used in
@@ -195,7 +215,7 @@ class Memory():
 
         Returns:
         - advantages (Tensor): the advantages of the states.
-        '''
+        """
         T = values.shape[0]
         next_values = t.concat([values[1:], next_value.unsqueeze(0)])
         next_dones = t.concat([dones[1:], next_done.unsqueeze(0)])
@@ -203,12 +223,18 @@ class Memory():
         advantages = t.zeros_like(deltas).to(device)
         advantages[-1] = deltas[-1]
         for t_ in reversed(range(1, T)):
-            advantages[t_ - 1] = deltas[t_ - 1] + gamma * \
-                gae_lambda * (1.0 - dones[t_]) * advantages[t_]
+            advantages[t_ - 1] = (
+                deltas[t_ - 1]
+                + gamma * gae_lambda * (1.0 - dones[t_]) * advantages[t_]
+            )
         return advantages
 
-    def get_minibatches(self, recurrence: Optional[int] = None, indexes: Optional[List[np.array]] = None) -> List[Minibatch]:
-        '''Return a list of length (batch_size // minibatch_size)
+    def get_minibatches(
+        self,
+        recurrence: Optional[int] = None,
+        indexes: Optional[List[np.array]] = None,
+    ) -> List[Minibatch]:
+        """Return a list of length (batch_size // minibatch_size)
           where each element is an array of indexes into the batch.
 
         Args:
@@ -217,9 +243,11 @@ class Memory():
 
         Returns:
         - List[MiniBatch]: a list of minibatches.
-        '''
+        """
         obs, dones, actions, logprobs, values, rewards, *extras = [
-            t.stack(arr)if isinstance(arr[0], t.Tensor) else arr for arr in zip(*self.experiences)]
+            t.stack(arr) if isinstance(arr[0], t.Tensor) else arr
+            for arr in zip(*self.experiences)
+        ]
         advantages = self.compute_advantages(
             self.next_value,
             self.next_done,
@@ -228,38 +256,52 @@ class Memory():
             dones,
             self.device,
             self.args.gamma,
-            self.args.gae_lambda
+            self.args.gae_lambda,
         )
         returns = advantages + values
 
         if indexes is None:
             indexes = self.get_minibatch_indexes(
-                self.args.batch_size, self.args.minibatch_size, recurrence)
+                self.args.batch_size, self.args.minibatch_size, recurrence
+            )
 
         minibatches = []
         for ind in indexes:
             batch = []
-            for arr in [obs, actions, logprobs, advantages, values, returns, *extras]:
+            for arr in [
+                obs,
+                actions,
+                logprobs,
+                advantages,
+                values,
+                returns,
+                *extras,
+            ]:
                 if isinstance(arr, t.Tensor):
                     flat_arr = arr.transpose(0, 1).flatten(
-                        0, 1)  # usually arr is a tensor
+                        0, 1
+                    )  # usually arr is a tensor
                     batch.append(flat_arr[ind])
                 else:
                     num_steps = len(arr)
                     num_envs = len(arr[0])
                     # in lstm, arr can be a list of attribute dictionaries with the mission statement as well.
                     # this should flatten the obss correctly.
-                    flat_arr = [arr[i][j]
-                                for j in range(num_envs)
-                                for i in range(num_steps)]
+                    flat_arr = [
+                        arr[i][j]
+                        for j in range(num_envs)
+                        for i in range(num_steps)
+                    ]
                     batch.append([flat_arr[i] for i in ind])
 
             minibatches.append(Minibatch(*batch))
 
         return minibatches
 
-    def get_trajectory_minibatches(self, timesteps: int, prob_go_from_end: float = 0.1) -> List[TrajectoryMinibatch]:
-        '''Return a list of trajectory minibatches, where each minibatch contains
+    def get_trajectory_minibatches(
+        self, timesteps: int, prob_go_from_end: float = 0.1
+    ) -> List[TrajectoryMinibatch]:
+        """Return a list of trajectory minibatches, where each minibatch contains
         experiences from a single trajectory.
 
         Args:
@@ -267,9 +309,10 @@ class Memory():
 
         Returns:
         - List[TrajectoryMinibatch]: a list of minibatches.
-        '''
+        """
         obs, dones, actions, logprobs, values, rewards = [
-            t.stack(arr) for arr in zip(*self.experiences)]
+            t.stack(arr) for arr in zip(*self.experiences)
+        ]
 
         next_values = t.cat([values[1:], self.next_value.unsqueeze(0)])
         next_dones = t.cat([dones[1:], self.next_done.unsqueeze(0)])
@@ -305,8 +348,15 @@ class Memory():
         traj_dones = t.tensor_split(dones, traj_end_idxs)
         traj_next_values = t.tensor_split(next_values, traj_end_idxs)
         traj_next_dones = t.tensor_split(next_dones, traj_end_idxs)
-        print([i for i, (next_val, obs) in enumerate(
-            zip(traj_next_values, traj_obs)) if len(next_val) != len(obs)])
+        print(
+            [
+                i
+                for i, (next_val, obs) in enumerate(
+                    zip(traj_next_values, traj_obs)
+                )
+                if len(next_val) != len(obs)
+            ]
+        )
         # px.imshow(traj_obs[0][:,:,:,0].transpose(-1,-2), animation_frame = 0, range_color = [0,10]).show()
 
         # so now we have lists of trajectories, what we want is to split each trajectory
@@ -329,7 +379,6 @@ class Memory():
         trajectory_lengths = [len(traj) for traj in traj_obs]
 
         for _ in range(self.args.num_minibatches):
-
             minibatch_obs = []
             minibatch_actions = []
             minibatch_logprobs = []
@@ -340,7 +389,6 @@ class Memory():
             minibatch_rewards = []
 
             for _ in range(self.args.minibatch_size):
-
                 # randomly select a trajectory
                 traj_idx = np.random.randint(n_trajectories)
 
@@ -371,12 +419,20 @@ class Memory():
 
                 # get the trajectory
                 current_traj_obs = traj_obs[traj_idx][start_idx:end_idx]
-                current_traj_actions = traj_actions[traj_idx][start_idx:end_idx]
-                current_traj_logprobs = traj_logprobs[traj_idx][start_idx:end_idx]
+                current_traj_actions = traj_actions[traj_idx][
+                    start_idx:end_idx
+                ]
+                current_traj_logprobs = traj_logprobs[traj_idx][
+                    start_idx:end_idx
+                ]
                 current_traj_values = traj_values[traj_idx][start_idx:end_idx]
                 current_traj_dones = traj_dones[traj_idx][start_idx:end_idx]
-                current_traj_rewards = traj_rewards[traj_idx][start_idx:end_idx]
-                current_traj_next_value = traj_next_values[traj_idx][end_idx - 1]
+                current_traj_rewards = traj_rewards[traj_idx][
+                    start_idx:end_idx
+                ]
+                current_traj_next_value = traj_next_values[traj_idx][
+                    end_idx - 1
+                ]
                 current_traj_next_done = traj_next_dones[traj_idx][end_idx - 1]
 
                 # make timesteps
@@ -391,10 +447,12 @@ class Memory():
                     current_traj_dones,
                     self.device,
                     self.args.gamma,
-                    self.args.gae_lambda
+                    self.args.gae_lambda,
                 )
 
-                current_traj_returns = current_traj_advantages + current_traj_values
+                current_traj_returns = (
+                    current_traj_advantages + current_traj_values
+                )
 
                 # we need to pad current_traj_obs and current_traj_actions
                 current_traj_obs = pad_tensor(
@@ -402,7 +460,7 @@ class Memory():
                     timesteps,
                     ignore_first_dim=False,
                     pad_token=0,
-                    pad_left=True
+                    pad_left=True,
                 )
 
                 current_traj_actions = pad_tensor(
@@ -410,7 +468,7 @@ class Memory():
                     timesteps,
                     ignore_first_dim=False,
                     pad_token=0,
-                    pad_left=True
+                    pad_left=True,
                 )
 
                 current_traj_timesteps = pad_tensor(
@@ -418,7 +476,7 @@ class Memory():
                     timesteps,
                     ignore_first_dim=False,
                     pad_token=0,
-                    pad_left=True
+                    pad_left=True,
                 )
                 # print([i for i, (next_val, obs) in enumerate(zip(traj_next_values, traj_obs)) if len(next_val) != len(obs)])
                 # add to minibatch
@@ -444,23 +502,25 @@ class Memory():
             minibatch_timesteps = t.stack(minibatch_timesteps)
             minibatch_rewards = t.stack(minibatch_rewards)
 
-            minibatches.append(TrajectoryMinibatch(
-                obs=minibatch_obs,
-                actions=minibatch_actions,
-                logprobs=minibatch_logprobs,
-                advantages=minibatch_advantages,
-                values=minibatch_values,
-                returns=minibatch_returns,
-                timesteps=minibatch_timesteps,
-                rewards=minibatch_rewards
-            ))
+            minibatches.append(
+                TrajectoryMinibatch(
+                    obs=minibatch_obs,
+                    actions=minibatch_actions,
+                    logprobs=minibatch_logprobs,
+                    advantages=minibatch_advantages,
+                    values=minibatch_values,
+                    returns=minibatch_returns,
+                    timesteps=minibatch_timesteps,
+                    rewards=minibatch_rewards,
+                )
+            )
 
         return minibatches
 
     def get_printable_output(self) -> str:
-        '''Sets a new progress bar description, if any episodes have terminated.
+        """Sets a new progress bar description, if any episodes have terminated.
         If not, then the bar's description won't change.
-        '''
+        """
         if self.episode_lengths:
             global_step = self.global_step
             avg_episode_length = np.mean(self.episode_lengths)
@@ -468,9 +528,9 @@ class Memory():
             return f"{global_step=:<06}\n{avg_episode_length=:<3.2f}\n{avg_episode_return=:<3.2f}"
 
     def reset(self) -> None:
-        '''Function to be called at the end of each rollout period, to make
+        """Function to be called at the end of each rollout period, to make
         space for new experiences to be generated.
-        '''
+        """
         self.experiences = []
         self.vars_to_log = defaultdict(dict)
         self.episode_lengths = []
@@ -480,16 +540,15 @@ class Memory():
             obs = self.obs_preprocessor(obs)
             self.next_obs = t.tensor(obs).to(self.device)
             self.next_done = t.zeros(self.envs.num_envs).to(
-                self.device, dtype=t.float)
+                self.device, dtype=t.float
+            )
 
     def add_vars_to_log(self, **kwargs):
-        '''Add variables to storage, for eventual logging (if args.track=True).
-        '''
+        """Add variables to storage, for eventual logging (if args.track=True)."""
         self.vars_to_log[self.global_step] |= kwargs
 
     def log(self) -> None:
-        '''Logs variables to wandb.
-        '''
+        """Logs variables to wandb."""
         for step, vars_to_log in self.vars_to_log.items():
             wandb.log(vars_to_log, step=step)
 
@@ -501,11 +560,11 @@ def process_memory_vars_to_log(memory_vars_to_log):
     # Flatten the nested dictionary and prepare data for DataFrame
     data = []
     for key, value in memory_dict.items():
-        episode_length = value['episode_length'][0]
-        episode_return = value['episode_return'][0]
+        episode_length = value["episode_length"][0]
+        episode_return = value["episode_return"][0]
         data.append([key, episode_length, episode_return])
 
     # Create a DataFrame with columns 'id', 'episode_length', and 'episode_return'
-    df = pd.DataFrame(data, columns=['id', 'episode_length', 'episode_return'])
+    df = pd.DataFrame(data, columns=["id", "episode_length", "episode_return"])
 
     return df

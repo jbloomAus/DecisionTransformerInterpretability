@@ -10,7 +10,11 @@ from .model import DecisionTransformer as DecisionTransformerLegacy
 import torch as t
 
 from src.models.trajectory_transformer import DecisionTransformer
-from src.config import EnvironmentConfig, TransformerModelConfig, OfflineTrainConfig
+from src.config import (
+    EnvironmentConfig,
+    TransformerModelConfig,
+    OfflineTrainConfig,
+)
 from .offline_dataset import TrajectoryDataset
 
 
@@ -49,7 +53,8 @@ def parse_args():
     parser = argparse.ArgumentParser(
         prog="Decision Transformer",
         description="Train a decision transformer on a trajectory dataset.",
-        epilog="The last enemy that shall be defeated is death.")
+        epilog="The last enemy that shall be defeated is death.",
+    )
     parser.add_argument("--exp_name", type=str, default="Dev")
     parser.add_argument("--d_model", type=int, default=128)
     parser.add_argument("--trajectory_path", type=str)
@@ -62,29 +67,50 @@ def parse_args():
     parser.add_argument("--train_epochs", type=int, default=10)
     parser.add_argument("--test_epochs", type=int, default=3)
     parser.add_argument("--learning_rate", type=float, default=0.0001)
-    parser.add_argument("--linear_time_embedding", type=bool,
-                        default=False, action=argparse.BooleanOptionalAction)
+    parser.add_argument(
+        "--linear_time_embedding",
+        type=bool,
+        default=False,
+        action=argparse.BooleanOptionalAction,
+    )
     parser.add_argument("--pct_traj", type=float, default=1)
     parser.add_argument("--weight_decay", type=float, default=0.001)
     parser.add_argument("--seed", type=int, default=1)
-    parser.add_argument("--track", type=bool, default=False,
-                        action=argparse.BooleanOptionalAction)
-    parser.add_argument("--wandb_project_name", type=str,
-                        default="DecisionTransformerInterpretability")
+    parser.add_argument(
+        "--track",
+        type=bool,
+        default=False,
+        action=argparse.BooleanOptionalAction,
+    )
+    parser.add_argument(
+        "--wandb_project_name",
+        type=str,
+        default="DecisionTransformerInterpretability",
+    )
     parser.add_argument("--wandb_entity", type=str, default=None)
     parser.add_argument("--test_frequency", type=int, default=100)
     parser.add_argument("--eval_frequency", type=int, default=100)
     parser.add_argument("--eval_episodes", type=int, default=10)
     parser.add_argument("--eval_num_envs", type=int, default=8)
-    parser.add_argument("--initial_rtg", action='append',
-                        help='<Required> Set flag', required=False, default=[0, 1])
+    parser.add_argument(
+        "--initial_rtg",
+        action="append",
+        help="<Required> Set flag",
+        required=False,
+        default=[0, 1],
+    )
     parser.add_argument("--prob_go_from_end", type=float, default=0.1)
     parser.add_argument("--eval_max_time_steps", type=int, default=1000)
     parser.add_argument("--cuda", action=argparse.BooleanOptionalAction)
-    parser.add_argument("--model_type", type=str,
-                        default="decision_transformer")
-    parser.add_argument("--convert_to_one_hot", type=bool, default=False,
-                        action=argparse.BooleanOptionalAction)
+    parser.add_argument(
+        "--model_type", type=str, default="decision_transformer"
+    )
+    parser.add_argument(
+        "--convert_to_one_hot",
+        type=bool,
+        default=False,
+        action=argparse.BooleanOptionalAction,
+    )
     args = parser.parse_args()
     return args
 
@@ -96,33 +122,43 @@ def load_decision_transformer(model_path, env):
             return load_legacy_decision_transformer(state_dict, env)
 
         # get number of layers from the state dict
-        num_layers = max([int(re.findall(r'\d+', k)[0])
-                          for k in state_dict.keys() if "transformer.blocks" in k]) + 1
-        d_model = state_dict['reward_embedding.0.weight'].shape[0]
-        d_mlp = state_dict['transformer.blocks.0.mlp.W_out'].shape[0]
-        n_heads = state_dict['transformer.blocks.0.attn.W_O'].shape[0]
-        max_timestep = state_dict['time_embedding.weight'].shape[0] - 1
-        n_ctx = state_dict['transformer.pos_embed.W_pos'].shape[0]
-        layer_norm = 'transformer.blocks.0.ln1.w' in state_dict
+        num_layers = (
+            max(
+                [
+                    int(re.findall(r"\d+", k)[0])
+                    for k in state_dict.keys()
+                    if "transformer.blocks" in k
+                ]
+            )
+            + 1
+        )
+        d_model = state_dict["reward_embedding.0.weight"].shape[0]
+        d_mlp = state_dict["transformer.blocks.0.mlp.W_out"].shape[0]
+        n_heads = state_dict["transformer.blocks.0.attn.W_O"].shape[0]
+        max_timestep = state_dict["time_embedding.weight"].shape[0] - 1
+        n_ctx = state_dict["transformer.pos_embed.W_pos"].shape[0]
+        layer_norm = "transformer.blocks.0.ln1.w" in state_dict
 
-        if 'state_encoder.weight' in state_dict:
+        if "state_encoder.weight" in state_dict:
             # otherwise it would be a sequential and wouldn't have this
-            state_embedding_type = 'grid'
+            state_embedding_type = "grid"
 
-        if state_dict['time_embedding.weight'].shape[1] == 1:
+        if state_dict["time_embedding.weight"].shape[1] == 1:
             time_embedding_type = "linear"
         else:
             time_embedding_type = "embedding"
 
         environment_config = EnvironmentConfig(
             env_id=env.unwrapped.spec.id,
-            one_hot_obs=isinstance(env.observation_space,
-                                   OneHotPartialObsWrapper),
+            one_hot_obs=isinstance(
+                env.observation_space, OneHotPartialObsWrapper
+            ),
             img_obs=isinstance(env.observation_space, RGBImgPartialObsWrapper),
             view_size=env.unwrapped.observation_space["image"].shape[0],
             fully_observed=False,
             capture_video=False,
-            render_mode='rgb_array')
+            render_mode="rgb_array",
+        )
 
         transformer_config = TransformerModelConfig(
             d_model=d_model,
@@ -135,8 +171,12 @@ def load_decision_transformer(model_path, env):
             state_embedding_type=state_embedding_type,
         )
     else:
-        state_dict, trajectory_data_set, transformer_config, _ = load_model_data(
-            model_path)
+        (
+            state_dict,
+            trajectory_data_set,
+            transformer_config,
+            _,
+        ) = load_model_data(model_path)
 
         if "state_encoder.weight" in state_dict.keys():
             return load_legacy_decision_transformer(state_dict, env)
@@ -146,41 +186,50 @@ def load_decision_transformer(model_path, env):
         #     EnvironmentConfig(env.__spec__),
         # )
         environment_config = EnvironmentConfig(
-            env_id=trajectory_data_set.metadata['args']['env_id'],
+            env_id=trajectory_data_set.metadata["args"]["env_id"],
             one_hot_obs=trajectory_data_set.observation_type == "one_hot",
-            view_size=trajectory_data_set.metadata['args']['view_size'],
+            view_size=trajectory_data_set.metadata["args"]["view_size"],
             fully_observed=False,
             capture_video=False,
-            render_mode='rgb_array')
+            render_mode="rgb_array",
+        )
 
     model = DecisionTransformer(
         environment_config=environment_config,
-        transformer_config=transformer_config
+        transformer_config=transformer_config,
     )
 
     model.load_state_dict(state_dict)
     return model
 
+
 # To maintain backwards compatibility with the old models.
 
 
 def load_legacy_decision_transformer(state_dict, env):
-
     # get number of layers from the state dict
-    num_layers = max([int(re.findall(r'\d+', k)[0])
-                      for k in state_dict.keys() if "transformer.blocks" in k]) + 1
-    d_model = state_dict['reward_embedding.0.weight'].shape[0]
-    d_mlp = state_dict['transformer.blocks.0.mlp.W_out'].shape[0]
-    n_heads = state_dict['transformer.blocks.0.attn.W_O'].shape[0]
-    max_timestep = state_dict['time_embedding.weight'].shape[0] - 1
-    n_ctx = state_dict['transformer.pos_embed.W_pos'].shape[0]
-    layer_norm = 'transformer.blocks.0.ln1.w' in state_dict
+    num_layers = (
+        max(
+            [
+                int(re.findall(r"\d+", k)[0])
+                for k in state_dict.keys()
+                if "transformer.blocks" in k
+            ]
+        )
+        + 1
+    )
+    d_model = state_dict["reward_embedding.0.weight"].shape[0]
+    d_mlp = state_dict["transformer.blocks.0.mlp.W_out"].shape[0]
+    n_heads = state_dict["transformer.blocks.0.attn.W_O"].shape[0]
+    max_timestep = state_dict["time_embedding.weight"].shape[0] - 1
+    n_ctx = state_dict["transformer.pos_embed.W_pos"].shape[0]
+    layer_norm = "transformer.blocks.0.ln1.w" in state_dict
 
-    if 'state_encoder.weight' in state_dict:
+    if "state_encoder.weight" in state_dict:
         # otherwise it would be a sequential and wouldn't have this
-        state_embedding_type = 'grid'
+        state_embedding_type = "grid"
 
-    if state_dict['time_embedding.weight'].shape[1] == 1:
+    if state_dict["time_embedding.weight"].shape[1] == 1:
         time_embedding_type = "linear"
     else:
         time_embedding_type = "learned"
@@ -196,7 +245,7 @@ def load_legacy_decision_transformer(state_dict, env):
         n_heads=n_heads,
         max_timestep=max_timestep,
         n_ctx=n_ctx,
-        layer_norm=layer_norm
+        layer_norm=layer_norm,
     )
 
     model.load_state_dict(state_dict)
@@ -212,10 +261,12 @@ def load_model_data(model_path):
     model_info = t.load(model_path)
     state_dict = model_info["model_state_dict"]
     transformer_config = TransformerModelConfig(
-        **json.loads(model_info["transformer_config"]))
+        **json.loads(model_info["transformer_config"])
+    )
     transformer_config.device = t.device(transformer_config.device)
     offline_config = OfflineTrainConfig(
-        **json.loads(model_info["offline_config"]))
+        **json.loads(model_info["offline_config"])
+    )
     offline_config.device = t.device(offline_config.device)
 
     trajectory_data_set = TrajectoryDataset(
@@ -230,7 +281,7 @@ def load_model_data(model_path):
 
 
 def get_max_len_from_model_type(model_type: str, n_ctx: int):
-    '''
+    """
     Ihe max len in timesteps is 3 for decision transformers
     and 2 for clone transformers since decision transformers
     have 3 tokens per timestep and clone transformers have 2.
@@ -239,7 +290,7 @@ def get_max_len_from_model_type(model_type: str, n_ctx: int):
     for the most recent state/action and then add another
     timestep for every 3 tokens for decision transformers and
     every 2 tokens for clone transformers.
-    '''
+    """
     assert model_type in ["decision_transformer", "clone_transformer"]
     if model_type == "decision_transformer":
         return 1 + n_ctx // 3

@@ -5,8 +5,13 @@ from gymnasium.vector import SyncVectorEnv
 from tqdm.autonotebook import tqdm
 
 import wandb
-from src.config import (EnvironmentConfig, OnlineTrainConfig, RunConfig,
-                        TransformerModelConfig, LSTMModelConfig)
+from src.config import (
+    EnvironmentConfig,
+    OnlineTrainConfig,
+    RunConfig,
+    TransformerModelConfig,
+    LSTMModelConfig,
+)
 
 from .memory import Memory
 from .utils import store_model_checkpoint
@@ -14,12 +19,13 @@ from .agent import get_agent, PPOAgent
 
 
 def train_ppo(
-        run_config: RunConfig,
-        online_config: OnlineTrainConfig,
-        environment_config: EnvironmentConfig,
-        model_config: Optional[Union[TransformerModelConfig, LSTMModelConfig]],
-        envs: SyncVectorEnv,
-        trajectory_writer=None) -> PPOAgent:
+    run_config: RunConfig,
+    online_config: OnlineTrainConfig,
+    environment_config: EnvironmentConfig,
+    model_config: Optional[Union[TransformerModelConfig, LSTMModelConfig]],
+    envs: SyncVectorEnv,
+    trajectory_writer=None,
+) -> PPOAgent:
     """
     Trains a PPO agent on a given environment.
 
@@ -42,7 +48,10 @@ def train_ppo(
     optimizer, scheduler = agent.make_optimizer(
         num_updates=num_updates,
         initial_lr=online_config.learning_rate,
-        end_lr=online_config.learning_rate if not online_config.decay_lr else 0.0)
+        end_lr=online_config.learning_rate
+        if not online_config.decay_lr
+        else 0.0,
+    )
 
     checkpoint_num = 1
     if run_config.track:
@@ -50,25 +59,37 @@ def train_ppo(
         prepare_video_dir(video_path)
         videos = []
         checkpoint_artifact = wandb.Artifact(
-            f"{run_config.exp_name}_checkpoints", type="model")
+            f"{run_config.exp_name}_checkpoints", type="model"
+        )
         checkpoint_interval = num_updates // online_config.num_checkpoints + 1
         checkpoint_num = store_model_checkpoint(
-            agent, online_config, run_config, checkpoint_num, checkpoint_artifact)
+            agent,
+            online_config,
+            run_config,
+            checkpoint_num,
+            checkpoint_artifact,
+        )
 
     progress_bar = tqdm(range(num_updates), position=0, leave=True)
     for n in progress_bar:
-
         agent.rollout(memory, online_config.num_steps, envs, trajectory_writer)
-        agent.learn(memory, online_config, optimizer,
-                    scheduler, run_config.track)
+        agent.learn(
+            memory, online_config, optimizer, scheduler, run_config.track
+        )
 
         if run_config.track:
             memory.log()
             videos = check_and_upload_new_video(
-                video_path=video_path, videos=videos, step=memory.global_step)
-            if (n+1) % checkpoint_interval == 0:
+                video_path=video_path, videos=videos, step=memory.global_step
+            )
+            if (n + 1) % checkpoint_interval == 0:
                 checkpoint_num = store_model_checkpoint(
-                    agent, online_config, run_config, checkpoint_num, checkpoint_artifact)
+                    agent,
+                    online_config,
+                    run_config,
+                    checkpoint_num,
+                    checkpoint_artifact,
+                )
 
         output = memory.get_printable_output()
         progress_bar.set_description(output)
@@ -77,7 +98,12 @@ def train_ppo(
 
     if run_config.track:
         checkpoint_num = store_model_checkpoint(
-            agent, online_config, run_config, checkpoint_num, checkpoint_artifact)
+            agent,
+            online_config,
+            run_config,
+            checkpoint_num,
+            checkpoint_artifact,
+        )
         wandb.log_artifact(checkpoint_artifact)  # Upload checkpoints to wandb
 
     if trajectory_writer is not None:
@@ -108,12 +134,17 @@ def check_and_upload_new_video(video_path, videos, step=None):
     if new_videos:
         for new_video in new_videos:
             path_to_video = os.path.join(video_path, new_video)
-            wandb.log({"video": wandb.Video(
-                path_to_video,
-                fps=4,
-                caption=new_video,
-                format="mp4",
-            )}, step=step)
+            wandb.log(
+                {
+                    "video": wandb.Video(
+                        path_to_video,
+                        fps=4,
+                        caption=new_video,
+                        format="mp4",
+                    )
+                },
+                step=step,
+            )
     return current_videos
 
 

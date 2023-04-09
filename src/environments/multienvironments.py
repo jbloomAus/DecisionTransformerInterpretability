@@ -3,16 +3,16 @@ import numpy as np
 
 
 class MultiEnvSampler(gym.Env):
-
     metadata = {
         "render_modes": ["human", "rgb_array"],
         "render_fps": 10,
     }
 
-    def __init__(self, envs, p=None, render_mode='rgb_array'):
+    def __init__(self, envs, p=None, render_mode="rgb_array"):
         if len(envs) < 2:
             raise ValueError(
-                "MultiEnvSampler requires at least two environments")
+                "MultiEnvSampler requires at least two environments"
+            )
         self.envs = envs
         # don't call it num_envs because this interacts badly with RecordEpisodeStatistics wrapper. Solve later.
         self.n_envs = len(envs)
@@ -22,7 +22,8 @@ class MultiEnvSampler(gym.Env):
             self.p = np.ones(self.n_envs) / self.n_envs
         elif len(self.p) != self.n_envs:
             raise ValueError(
-                "The length of p must be equal to the number of environments")
+                "The length of p must be equal to the number of environments"
+            )
 
         obs_space = self.envs[0].observation_space
         action_space = self.envs[0].action_space
@@ -54,7 +55,8 @@ class MultiEnvSampler(gym.Env):
 
     def step(self, action):
         obs, reward, done, info, truncated = self.envs[self.env_id].step(
-            action)
+            action
+        )
         return obs, reward, done, info, truncated
 
     def render(self):
@@ -72,7 +74,7 @@ class MultiEnvSampler(gym.Env):
         return env_id
 
     def _homogenize_mission_spaces(self):
-        '''resets all mission spaces to be equal to the first env'''
+        """resets all mission spaces to be equal to the first env"""
         # set mission space to the first env with a mission space's mission space
         if self.envs[0].observation_space["mission"] is not None:
             mission_space = self.envs[0].observation_space["mission"]

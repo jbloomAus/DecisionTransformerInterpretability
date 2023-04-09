@@ -1,4 +1,3 @@
-
 import plotly.express as px
 import streamlit as st
 import numpy as np
@@ -6,8 +5,15 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from typing import List
 
-action_string_to_id = {"left": 0, "right": 1, "forward": 2,
-                       "pickup": 3, "drop": 4, "toggle": 5, "done": 6}
+action_string_to_id = {
+    "left": 0,
+    "right": 1,
+    "forward": 2,
+    "pickup": 3,
+    "drop": 4,
+    "toggle": 5,
+    "done": 6,
+}
 action_id_to_string = {v: k for k, v in action_string_to_id.items()}
 
 
@@ -20,20 +26,19 @@ def plot_action_preds(action_preds):
 
     n_actions = len(action_preds)
     action_preds = pd.DataFrame(
-        action_preds,
-        index=list(action_id_to_string.values())[:n_actions]
+        action_preds, index=list(action_id_to_string.values())[:n_actions]
     )
-    fig = px.bar(action_preds, orientation='h',
-                 labels={"index": "", "value": "Probability"},
-                 height=320,
-                 width=320,
-                 # labels={"index": "Action", "value": "Probability"},
-                 text=action_preds[0].astype(float).round(2),
-                 )
+    fig = px.bar(
+        action_preds,
+        orientation="h",
+        labels={"index": "", "value": "Probability"},
+        height=320,
+        width=320,
+        # labels={"index": "Action", "value": "Probability"},
+        text=action_preds[0].astype(float).round(2),
+    )
     fig.update_layout(
-        margin=dict(l=0, r=0, t=10, b=20),
-        showlegend=False,
-        font=dict(size=18)
+        margin=dict(l=0, r=0, t=10, b=20), showlegend=False, font=dict(size=18)
     )
     # fig.update_xaxes(
     #     range=[0,1]
@@ -42,14 +47,15 @@ def plot_action_preds(action_preds):
         # ticktext=action_preds,
         tickfont=dict(size=18),
         ticklabelposition="inside",
-        automargin=True
+        automargin=True,
     )
 
     st.plotly_chart(fig, use_container_width=True)
 
 
-def plot_attention_pattern_single(cache, layer, softmax=True, specific_heads: List = None):
-
+def plot_attention_pattern_single(
+    cache, layer, softmax=True, specific_heads: List = None
+):
     n_tokens = st.session_state.dt.n_ctx - 1
     if softmax:
         if cache["pattern", layer, "attn"].shape[0] == 1:
@@ -81,15 +87,13 @@ def render_env(env):
     # use matplotlib to render the image
     fig, ax = plt.subplots()
     ax.imshow(img)
-    plt.axis('off')
-    plt.subplots_adjust(top=1, bottom=0, right=1, left=0,
-                        hspace=0, wspace=0)
+    plt.axis("off")
+    plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
     plt.margins(0, 0)
     return fig
 
 
 def plot_single_residual_stream_contributions(residual_decomp):
-
     # this plot assumes you only have a single dim
     for key in residual_decomp.keys():
         residual_decomp[key] = residual_decomp[key].squeeze(0)
@@ -106,13 +110,14 @@ def plot_single_residual_stream_contributions(residual_decomp):
         legend_title="",
     )
     fig.update_yaxes(range=[-13, 13])
-    fig.update_traces(texttemplate='%{text:.3f}', textposition='auto')
-    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+    fig.update_traces(texttemplate="%{text:.3f}", textposition="auto")
+    fig.update_layout(uniformtext_minsize=8, uniformtext_mode="hide")
     st.plotly_chart(fig, use_container_width=True)
 
 
-def plot_single_residual_stream_contributions_comparison(residual_decomp_1, residual_decomp_2):
-
+def plot_single_residual_stream_contributions_comparison(
+    residual_decomp_1, residual_decomp_2
+):
     # this plot assumes you only have a single dim
     for key in residual_decomp_1.keys():
         residual_decomp_1[key] = residual_decomp_1[key].squeeze(0)
@@ -128,11 +133,11 @@ def plot_single_residual_stream_contributions_comparison(residual_decomp_1, resi
     df = pd.concat([df1, df2], axis=1)
 
     texts = [df1.values, df2.values]
-    fig = px.bar(df, barmode='group')
+    fig = px.bar(df, barmode="group")
 
     for i, t in enumerate(texts):
         fig.data[i].text = t
-        fig.data[i].textposition = 'auto'
+        fig.data[i].textposition = "auto"
 
     fig.update_layout(
         title="Residual Decomposition",
@@ -141,6 +146,6 @@ def plot_single_residual_stream_contributions_comparison(residual_decomp_1, resi
         legend_title="",
     )
     fig.update_yaxes(range=[-13, 13])
-    fig.update_traces(texttemplate='%{text:.3f}', textposition='auto')
-    fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+    fig.update_traces(texttemplate="%{text:.3f}", textposition="auto")
+    fig.update_layout(uniformtext_minsize=8, uniformtext_mode="hide")
     st.plotly_chart(fig, use_container_width=True)

@@ -4,20 +4,15 @@ from src.config import EnvironmentConfig
 from minigrid.wrappers import FullyObsWrapper, OneHotPartialObsWrapper
 
 
-def make_env(
-    config: EnvironmentConfig,
-    seed: int,
-    idx: int,
-    run_name: str
-):
+def make_env(config: EnvironmentConfig, seed: int, idx: int, run_name: str):
     """Return a function that returns an environment after setting up boilerplate."""
 
     # only one of fully observed or flat one hot can be true.
     assert not (
-        config.fully_observed and config.one_hot_obs), "Can't have both fully_observed and flat_one_hot."
+        config.fully_observed and config.one_hot_obs
+    ), "Can't have both fully_observed and flat_one_hot."
 
     def thunk():
-
         kwargs = {}
         if config.render_mode:
             kwargs["render_mode"] = config.render_mode
@@ -34,7 +29,7 @@ def make_env(
                 f"videos/{run_name}",
                 # Video every 50 runs for env #1
                 episode_trigger=lambda x: x % config.video_frequency == 0,
-                disable_logger=True
+                disable_logger=True,
             )
 
         # hard code for now!

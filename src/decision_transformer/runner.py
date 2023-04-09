@@ -7,22 +7,35 @@ from typing import Callable
 import torch as t
 
 import wandb
-from src.config import (EnvironmentConfig, OfflineTrainConfig, RunConfig,
-                        TransformerModelConfig, ConfigJsonEncoder)
-from src.models.trajectory_transformer import CloneTransformer, DecisionTransformer
+from src.config import (
+    EnvironmentConfig,
+    OfflineTrainConfig,
+    RunConfig,
+    TransformerModelConfig,
+    ConfigJsonEncoder,
+)
+from src.models.trajectory_transformer import (
+    CloneTransformer,
+    DecisionTransformer,
+)
 
 # from .model import DecisionTransformer
-from .offline_dataset import TrajectoryDataset, TrajectoryVisualizer, one_hot_encode_observation
+from .offline_dataset import (
+    TrajectoryDataset,
+    TrajectoryVisualizer,
+    one_hot_encode_observation,
+)
 from .train import train
 from .utils import get_max_len_from_model_type
 from src.environments.registration import register_envs
 
 
 def run_decision_transformer(
-        run_config: RunConfig,
-        transformer_config: TransformerModelConfig,
-        offline_config: OfflineTrainConfig,
-        make_env: Callable):
+    run_config: RunConfig,
+    transformer_config: TransformerModelConfig,
+    offline_config: OfflineTrainConfig,
+    make_env: Callable,
+):
     warnings.filterwarnings("ignore", category=DeprecationWarning)
 
     if run_config.device == "cuda":
@@ -47,11 +60,14 @@ def run_decision_transformer(
         raise ValueError("Must specify a trajectory path.")
 
     max_len = get_max_len_from_model_type(
-        offline_config.model_type,
-        transformer_config.n_ctx
+        offline_config.model_type, transformer_config.n_ctx
     )
 
-    preprocess_observations = None if not offline_config.convert_to_one_hot else one_hot_encode_observation
+    preprocess_observations = (
+        None
+        if not offline_config.convert_to_one_hot
+        else one_hot_encode_observation
+    )
     trajectory_data_set = TrajectoryDataset(
         trajectory_path=offline_config.trajectory_path,
         max_len=max_len,
@@ -65,25 +81,30 @@ def run_decision_transformer(
     register_envs()
 
     # make an environment
-    env_id = trajectory_data_set.metadata['args']['env_id']
+    env_id = trajectory_data_set.metadata["args"]["env_id"]
     # pretty print the metadata
     print(trajectory_data_set.metadata)
 
-    if "view_size" not in trajectory_data_set.metadata['args']:
-        trajectory_data_set.metadata['args']['view_size'] = 7
+    if "view_size" not in trajectory_data_set.metadata["args"]:
+        trajectory_data_set.metadata["args"]["view_size"] = 7
 
     environment_config = EnvironmentConfig(
-        env_id=trajectory_data_set.metadata['args']['env_id'],
+        env_id=trajectory_data_set.metadata["args"]["env_id"],
         one_hot_obs=trajectory_data_set.observation_type == "one_hot",
-        view_size=trajectory_data_set.metadata['args']['view_size'],
+        view_size=trajectory_data_set.metadata["args"]["view_size"],
         fully_observed=False,
         capture_video=False,
-        render_mode='rgb_array')
+        render_mode="rgb_array",
+    )
 
     env = make_env(environment_config, seed=0, idx=0, run_name="dev")
     env = env()
 
-    wandb_args = run_config.__dict__ | transformer_config.__dict__ | offline_config.__dict__
+    wandb_args = (
+        run_config.__dict__
+        | transformer_config.__dict__
+        | offline_config.__dict__
+    )
 
     if run_config.track:
         run_name = f"{env_id}__{run_config.exp_name}__{run_config.seed}__{int(time.time())}"
@@ -91,24 +112,26 @@ def run_decision_transformer(
             project=run_config.wandb_project_name,
             entity=run_config.wandb_entity,
             name=run_name,
-            config=wandb_args)
+            config=wandb_args,
+        )
         trajectory_visualizer = TrajectoryVisualizer(trajectory_data_set)
         fig = trajectory_visualizer.plot_reward_over_time()
         wandb.log({"dataset/reward_over_time": wandb.Plotly(fig)})
         fig = trajectory_visualizer.plot_base_action_frequencies()
         wandb.log({"dataset/base_action_frequencies": wandb.Plotly(fig)})
         wandb.log(
-            {"dataset/num_trajectories": trajectory_data_set.num_trajectories})
+            {"dataset/num_trajectories": trajectory_data_set.num_trajectories}
+        )
 
     if offline_config.model_type == "decision_transformer":
         model = DecisionTransformer(
             environment_config=environment_config,
-            transformer_config=transformer_config
+            transformer_config=transformer_config,
         )
     else:
         model = CloneTransformer(
             environment_config=environment_config,
-            transformer_config=transformer_config
+            transformer_config=transformer_config,
         )
 
     if run_config.track:
@@ -142,11 +165,18 @@ def run_decision_transformer(
             os.mkdir("models")
 
         model_path = f"models/{run_name}.pt"
-        t.save({
-            "model_state_dict": model.state_dict(),
-            "transformer_config": json.dumps(transformer_config, cls=ConfigJsonEncoder),
-            "offline_config": json.dumps(offline_config, cls=ConfigJsonEncoder),
-        }, model_path)
+        t.save(
+            {
+                "model_state_dict": model.state_dict(),
+                "transformer_config": json.dumps(
+                    transformer_config, cls=ConfigJsonEncoder
+                ),
+                "offline_config": json.dumps(
+                    offline_config, cls=ConfigJsonEncoder
+                ),
+            },
+            model_path,
+        )
         artifact = wandb.Artifact(run_name, type="model")
         artifact.add_file(model_path)
         wandb.log_artifact(artifact)

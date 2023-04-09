@@ -7,7 +7,11 @@ from einops import rearrange
 from tqdm import tqdm
 import wandb
 from argparse import Namespace
-from src.models.trajectory_transformer import TrajectoryTransformer, DecisionTransformer, CloneTransformer
+from src.models.trajectory_transformer import (
+    TrajectoryTransformer,
+    DecisionTransformer,
+    CloneTransformer,
+)
 from src.config import EnvironmentConfig
 from .offline_dataset import TrajectoryDataset
 from torch.utils.data.sampler import WeightedRandomSampler
@@ -17,53 +21,62 @@ from .utils import get_max_len_from_model_type
 
 
 def train(
-        model: TrajectoryTransformer,
-        trajectory_data_set: TrajectoryDataset,
-        env,
-        make_env,
-        batch_size=128,
-        lr=0.0001,
-        weight_decay=0.0,
-        device="cpu",
-        track=False,
-        train_epochs=100,
-        test_epochs=10,
-        test_frequency=10,
-        eval_frequency=10,
-        eval_episodes=10,
-        initial_rtg=[0.0, 1.0],
-        eval_max_time_steps=100,
-        eval_num_envs=8,):
+    model: TrajectoryTransformer,
+    trajectory_data_set: TrajectoryDataset,
+    env,
+    make_env,
+    batch_size=128,
+    lr=0.0001,
+    weight_decay=0.0,
+    device="cpu",
+    track=False,
+    train_epochs=100,
+    test_epochs=10,
+    test_frequency=10,
+    eval_frequency=10,
+    eval_episodes=10,
+    initial_rtg=[0.0, 1.0],
+    eval_max_time_steps=100,
+    eval_num_envs=8,
+):
     loss_fn = nn.CrossEntropyLoss()
     model = model.to(device)
-    optimizer = t.optim.Adam(model.parameters(), lr=lr,
-                             weight_decay=weight_decay)
+    optimizer = t.optim.Adam(
+        model.parameters(), lr=lr, weight_decay=weight_decay
+    )
 
     train_dataset, test_dataset = random_split(
-        trajectory_data_set, [0.90, 0.10])
+        trajectory_data_set, [0.90, 0.10]
+    )
 
     # Create the train DataLoader
     train_sampler = WeightedRandomSampler(
-        weights=trajectory_data_set.sampling_probabilities[train_dataset.indices],
+        weights=trajectory_data_set.sampling_probabilities[
+            train_dataset.indices
+        ],
         num_samples=len(train_dataset),
         replacement=True,
     )
     train_dataloader = DataLoader(
-        train_dataset, batch_size=batch_size, sampler=train_sampler)
+        train_dataset, batch_size=batch_size, sampler=train_sampler
+    )
 
     # Create the test DataLoader
     test_sampler = WeightedRandomSampler(
-        weights=trajectory_data_set.sampling_probabilities[test_dataset.indices],
+        weights=trajectory_data_set.sampling_probabilities[
+            test_dataset.indices
+        ],
         num_samples=len(test_dataset),
         replacement=True,
     )
     test_dataloader = DataLoader(
-        test_dataset, batch_size=batch_size, sampler=test_sampler)
+        test_dataset, batch_size=batch_size, sampler=test_sampler
+    )
 
     train_batches_per_epoch = len(train_dataloader)
     pbar = tqdm(range(train_epochs))
     for epoch in pbar:
-        for batch, (s, a, r, d, rtg, ti, m) in (enumerate(train_dataloader)):
+        for batch, (s, a, r, d, rtg, ti, m) in enumerate(train_dataloader):
             total_batches = epoch * train_batches_per_epoch + batch
 
             model.train()
@@ -82,24 +95,25 @@ def train(
                     # remove last action
                     actions=action,
                     rtgs=rtg[:, :-1],  # remove last rtg
-                    timesteps=ti.unsqueeze(-1)
+                    timesteps=ti.unsqueeze(-1),
                 )
             elif isinstance(model, CloneTransformer):
                 _, action_preds = model.forward(
                     states=s,
                     # remove last action
-                    actions=a[:, :- \
-                              1].unsqueeze(-1) if a.shape[1] > 1 else None,
-                    timesteps=ti.unsqueeze(-1)
+                    actions=a[:, :-1].unsqueeze(-1)
+                    if a.shape[1] > 1
+                    else None,
+                    timesteps=ti.unsqueeze(-1),
                 )
 
-            action_preds = rearrange(action_preds, 'b t a -> (b t) a')
-            a_exp = rearrange(a, 'b t -> (b t)').to(t.int64)
+            action_preds = rearrange(action_preds, "b t a -> (b t) a")
+            a_exp = rearrange(a, "b t -> (b t)").to(t.int64)
 
             # ignore dummy action
             loss = loss_fn(
                 action_preds[a_exp != env.action_space.n],
-                a_exp[a_exp != env.action_space.n]
+                a_exp[a_exp != env.action_space.n],
             )
 
             loss.backward()
@@ -109,10 +123,14 @@ def train(
 
             if track:
                 wandb.log({"train/loss": loss.item()}, step=total_batches)
-                tokens_seen = (total_batches + 1) * \
-                    batch_size * (model.transformer_config.n_ctx // 3)
-                wandb.log({"metrics/tokens_seen": tokens_seen},
-                          step=total_batches)
+                tokens_seen = (
+                    (total_batches + 1)
+                    * batch_size
+                    * (model.transformer_config.n_ctx // 3)
+                )
+                wandb.log(
+                    {"metrics/tokens_seen": tokens_seen}, step=total_batches
+                )
 
         # # at test frequency
         if epoch % test_frequency == 0:
@@ -122,16 +140,21 @@ def train(
                 env=env,
                 epochs=test_epochs,
                 track=track,
-                batch_number=total_batches)
+                batch_number=total_batches,
+            )
 
-        eval_env_config = EnvironmentConfig(env_id=env.spec.id,
-                                            capture_video=True,
-                                            max_steps=min(
-                                                model.environment_config.max_steps, eval_max_time_steps),
-                                            fully_observed=False,
-                                            one_hot_obs=(
-                                                trajectory_data_set.observation_type == "one_hot"),
-                                            view_size=env.observation_space['image'].shape[0] if "image" in list(env.observation_space.keys()) else 7)
+        eval_env_config = EnvironmentConfig(
+            env_id=env.spec.id,
+            capture_video=True,
+            max_steps=min(
+                model.environment_config.max_steps, eval_max_time_steps
+            ),
+            fully_observed=False,
+            one_hot_obs=(trajectory_data_set.observation_type == "one_hot"),
+            view_size=env.observation_space["image"].shape[0]
+            if "image" in list(env.observation_space.keys())
+            else 7,
+        )
 
         eval_env_func = make_env(
             config=eval_env_config,
@@ -151,19 +174,21 @@ def train(
                     batch_number=total_batches,
                     initial_rtg=float(rtg),
                     device=device,
-                    num_envs=eval_num_envs)
+                    num_envs=eval_num_envs,
+                )
 
     return model
 
 
 @pytest.mark.skip(reason="This is not a test")
 def test(
-        model: TrajectoryTransformer,
-        dataloader: DataLoader,
-        env,
-        epochs=10,
-        track=False,
-        batch_number=0):
+    model: TrajectoryTransformer,
+    dataloader: DataLoader,
+    env,
+    epochs=10,
+    track=False,
+    batch_number=0,
+):
     model.eval()
 
     loss_fn = nn.CrossEntropyLoss()
@@ -176,7 +201,7 @@ def test(
     test_batches_per_epoch = len(dataloader)
 
     for epoch in pbar:
-        for batch, (s, a, r, d, rtg, ti, m) in (enumerate(dataloader)):
+        for batch, (s, a, r, d, rtg, ti, m) in enumerate(dataloader):
             if model.transformer_config.time_embedding_type == "linear":
                 ti = ti.to(t.float32)
 
@@ -185,25 +210,27 @@ def test(
             if isinstance(model, DecisionTransformer):
                 _, action_preds, _ = model.forward(
                     states=s,
-                    actions=a[:, :-
-                              1].unsqueeze(-1) if a.shape[1] > 1 else None,
+                    actions=a[:, :-1].unsqueeze(-1)
+                    if a.shape[1] > 1
+                    else None,
                     rtgs=rtg[:, :-1],
-                    timesteps=ti.unsqueeze(-1)
+                    timesteps=ti.unsqueeze(-1),
                 )
             elif isinstance(model, CloneTransformer):
                 _, action_preds = model.forward(
                     states=s,
                     # remove last action
-                    actions=a[:, :- \
-                              1].unsqueeze(-1) if a.shape[1] > 1 else None,
-                    timesteps=ti.unsqueeze(-1)
+                    actions=a[:, :-1].unsqueeze(-1)
+                    if a.shape[1] > 1
+                    else None,
+                    timesteps=ti.unsqueeze(-1),
                 )
 
-            action_preds = rearrange(action_preds, 'b t a -> (b t) a')
-            a_exp = rearrange(a, 'b t -> (b t)').to(t.int64)
+            action_preds = rearrange(action_preds, "b t a -> (b t) a")
+            a_exp = rearrange(a, "b t -> (b t)").to(t.int64)
 
             a_hat = t.argmax(action_preds, dim=-1)
-            a_exp = rearrange(a, 'b t -> (b t)').to(t.int64)
+            a_exp = rearrange(a, "b t -> (b t)").to(t.int64)
 
             action_preds = action_preds[a_exp != env.action_space.n]
             a_hat = a_hat[a_exp != env.action_space.n]
@@ -226,21 +253,20 @@ def test(
 
 
 def evaluate_dt_agent(
-        env_id: str,
-        model: TrajectoryTransformer,
-        env_func,
-        trajectories=300,
-        track=False,
-        batch_number=0,
-        initial_rtg=0.98,
-        use_tqdm=True,
-        device="cpu",
-        num_envs=8):
+    env_id: str,
+    model: TrajectoryTransformer,
+    env_func,
+    trajectories=300,
+    track=False,
+    batch_number=0,
+    initial_rtg=0.98,
+    use_tqdm=True,
+    device="cpu",
+    num_envs=8,
+):
     model.eval()
 
-    env = gymnasium.vector.SyncVectorEnv(
-        [env_func for _ in range(num_envs)]
-    )
+    env = gymnasium.vector.SyncVectorEnv([env_func for _ in range(num_envs)])
     video_path = os.path.join("videos", env.envs[0].run_name)
 
     if not hasattr(model, "transformer_config"):
@@ -250,8 +276,9 @@ def evaluate_dt_agent(
         )
 
     max_len = get_max_len_from_model_type(
-        model_type="decision_transformer" if isinstance(
-            model, DecisionTransformer) else "clone_transformer",
+        model_type="decision_transformer"
+        if isinstance(model, DecisionTransformer)
+        else "clone_transformer",
         n_ctx=model.transformer_config.n_ctx,
     )
 
@@ -278,10 +305,10 @@ def evaluate_dt_agent(
 
     # each env will get its own seed by incrementing on the given seed
     obs, _ = env.reset(seed=0)
-    obs = t.tensor(obs['image']).unsqueeze(1)
-    rtg = rearrange(t.ones(num_envs, dtype=t.int) * initial_rtg, 'e -> e 1 1')
-    a = rearrange(t.zeros(num_envs, dtype=t.int), 'e -> e 1 1')
-    timesteps = rearrange(t.zeros(num_envs, dtype=t.int), 'e -> e 1 1')
+    obs = t.tensor(obs["image"]).unsqueeze(1)
+    rtg = rearrange(t.ones(num_envs, dtype=t.int) * initial_rtg, "e -> e 1 1")
+    a = rearrange(t.zeros(num_envs, dtype=t.int), "e -> e 1 1")
+    timesteps = rearrange(t.zeros(num_envs, dtype=t.int), "e -> e 1 1")
 
     obs = obs.to(device)
     rtg = rtg.to(device)
@@ -294,55 +321,81 @@ def evaluate_dt_agent(
     # get first action
     if isinstance(model, DecisionTransformer):
         state_preds, action_preds, reward_preds = model.forward(
-            states=obs, actions=None, rtgs=rtg, timesteps=timesteps)
+            states=obs, actions=None, rtgs=rtg, timesteps=timesteps
+        )
     elif isinstance(model, CloneTransformer):
         state_preds, action_preds = model.forward(
-            states=obs, actions=None, timesteps=timesteps)
+            states=obs, actions=None, timesteps=timesteps
+        )
     else:  # it's probably a legacy model in which case the interface is:
         state_preds, action_preds, reward_preds = model.forward(
-            states=obs, actions=a, rtgs=rtg, timesteps=timesteps)
+            states=obs, actions=a, rtgs=rtg, timesteps=timesteps
+        )
 
     new_action = t.argmax(action_preds, dim=-1).squeeze(-1)
     new_obs, new_reward, terminated, truncated, info = env.step(new_action)
 
     current_trajectory_length = t.ones(num_envs, dtype=t.int)
     while n_terminated + n_truncated < trajectories:
-
         # concat init obs to new obs
         obs = t.cat(
-            [obs, t.tensor(new_obs['image']).unsqueeze(1).to(device)], dim=1)
+            [obs, t.tensor(new_obs["image"]).unsqueeze(1).to(device)], dim=1
+        )
 
         # add new reward to init reward
-        rtg = t.cat([rtg, rtg[:, -1:, :] -
-                     rearrange(t.tensor(new_reward).to(device), 'e -> e 1 1')], dim=1)
+        rtg = t.cat(
+            [
+                rtg,
+                rtg[:, -1:, :]
+                - rearrange(t.tensor(new_reward).to(device), "e -> e 1 1"),
+            ],
+            dim=1,
+        )
 
         # add new timesteps
-        timesteps = t.cat([timesteps, rearrange(
-            current_trajectory_length.to(device), 'e -> e 1 1')], dim=1)
+        timesteps = t.cat(
+            [
+                timesteps,
+                rearrange(current_trajectory_length.to(device), "e -> e 1 1"),
+            ],
+            dim=1,
+        )
 
         if model.transformer_config.time_embedding_type == "linear":
             timesteps = timesteps.to(t.float32)
 
-        a = t.cat([a, rearrange(new_action, 'e -> e 1 1')], dim=1)
+        a = t.cat([a, rearrange(new_action, "e -> e 1 1")], dim=1)
 
         # truncations:
         obs = obs[:, -max_len:] if obs.shape[1] > max_len else obs
-        actions = a[:, -(obs.shape[1] - 1):] if (a.shape[1]
-                                                 > 1 and max_len > 1) else None
-        timesteps = timesteps[:, -
-                              max_len:] if timesteps.shape[1] > max_len else timesteps
+        actions = (
+            a[:, -(obs.shape[1] - 1) :]
+            if (a.shape[1] > 1 and max_len > 1)
+            else None
+        )
+        timesteps = (
+            timesteps[:, -max_len:]
+            if timesteps.shape[1] > max_len
+            else timesteps
+        )
         rtg = rtg[:, -max_len:] if rtg.shape[1] > max_len else rtg
 
         if isinstance(model, DecisionTransformer):
             state_preds, action_preds, reward_preds = model.forward(
-                states=obs, actions=actions, rtgs=rtg, timesteps=timesteps)
+                states=obs, actions=actions, rtgs=rtg, timesteps=timesteps
+            )
         elif isinstance(model, CloneTransformer):
             state_preds, action_preds = model.forward(
-                states=obs, actions=actions, timesteps=timesteps)
+                states=obs, actions=actions, timesteps=timesteps
+            )
         else:  # it's probably a legacy model in which case the interface is:
             steps = model.transformer_config.n_ctx // 3
             state_preds, action_preds, reward_preds = model.forward(
-                states=obs[:, -steps:], actions=a[:, -steps:], rtgs=rtg[:, -steps:], timesteps=timesteps[:, -steps:])
+                states=obs[:, -steps:],
+                actions=a[:, -steps:],
+                rtgs=rtg[:, -steps:],
+                timesteps=timesteps[:, -steps:],
+            )
 
         new_action = t.argmax(action_preds, dim=-1).squeeze(-1)
         if new_action.dim() > 1:
@@ -372,21 +425,29 @@ def evaluate_dt_agent(
             if use_tqdm:
                 [next(pbar_it, None) for _ in range(sum(dones))]
 
-            current_videos = [i for i in os.listdir(
-                video_path) if i.endswith(".mp4")]
-            if track and (len(current_videos) > len(videos)):  # we have a new video
+            current_videos = [
+                i for i in os.listdir(video_path) if i.endswith(".mp4")
+            ]
+            if track and (
+                len(current_videos) > len(videos)
+            ):  # we have a new video
                 new_videos = [i for i in current_videos if i not in videos]
                 for new_video in new_videos:
                     path_to_video = os.path.join(video_path, new_video)
-                    wandb.log({f"media/video/{initial_rtg}/": wandb.Video(
-                        path_to_video,
-                        fps=4,
-                        format="mp4",
-                        caption=f"{env_id}, after {n_terminated + n_truncated} episodes, reward {new_reward}, rtg {initial_rtg}"
-                    )}, step=batch_number)
+                    wandb.log(
+                        {
+                            f"media/video/{initial_rtg}/": wandb.Video(
+                                path_to_video,
+                                fps=4,
+                                format="mp4",
+                                caption=f"{env_id}, after {n_terminated + n_truncated} episodes, reward {new_reward}, rtg {initial_rtg}",
+                            )
+                        },
+                        step=batch_number,
+                    )
             videos = current_videos  # update videos
 
-    collected_trajectories = (n_terminated + n_truncated)
+    collected_trajectories = n_terminated + n_truncated
 
     statistics = {
         "initial_rtg": initial_rtg,
@@ -396,7 +457,7 @@ def evaluate_dt_agent(
         "prop_positive_reward": n_positive / collected_trajectories,
         "mean_traj_length": sum(traj_lengths) / collected_trajectories,
         "traj_lengths": traj_lengths,
-        "rewards": rewards
+        "rewards": rewards,
     }
 
     env.close()
@@ -406,12 +467,25 @@ def evaluate_dt_agent(
             if key == "initial_rtg":
                 continue
             if key == "traj_lengths":
-                wandb.log({f"eval/{str(initial_rtg)}/traj_lengths": wandb.Histogram(
-                    value)}, step=batch_number)
+                wandb.log(
+                    {
+                        f"eval/{str(initial_rtg)}/traj_lengths": wandb.Histogram(
+                            value
+                        )
+                    },
+                    step=batch_number,
+                )
             elif key == "rewards":
-                wandb.log({f"eval/{str(initial_rtg)}/rewards": wandb.Histogram(
-                    value)}, step=batch_number)
-            wandb.log({f"eval/{str(initial_rtg)}/" +
-                       key: value}, step=batch_number)
+                wandb.log(
+                    {
+                        f"eval/{str(initial_rtg)}/rewards": wandb.Histogram(
+                            value
+                        )
+                    },
+                    step=batch_number,
+                )
+            wandb.log(
+                {f"eval/{str(initial_rtg)}/" + key: value}, step=batch_number
+            )
 
     return statistics
