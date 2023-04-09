@@ -4,15 +4,26 @@ import pytest
 import torch
 import gymnasium as gym
 
-from src.config import (EnvironmentConfig, OnlineTrainConfig, RunConfig,
-                        TransformerModelConfig, LSTMModelConfig)
-from src.ppo.my_probe_envs import Probe1, Probe2, Probe3, Probe4, Probe5, Probe6
+from src.config import (
+    EnvironmentConfig,
+    OnlineTrainConfig,
+    RunConfig,
+    TransformerModelConfig,
+    LSTMModelConfig,
+)
+from src.ppo.my_probe_envs import (
+    Probe1,
+    Probe2,
+    Probe3,
+    Probe4,
+    Probe5,
+    Probe6,
+)
 from src.ppo.runner import ppo_runner
 
-# load probe envs so we can use them to debug.
-for i in range(6):
-    probes = [Probe1, Probe2, Probe3, Probe4, Probe5, Probe6]
-    gym.envs.registration.register(id=f"Probe{i+1}-v0", entry_point=probes[i])
+from src.environments.registration import register_envs
+
+register_envs()
 
 
 def test_ppo_runner():
@@ -34,12 +45,12 @@ def test_ppo_runner():
         render_mode="rgb_array",
         capture_video=True,
         video_dir="videos",
-        device=run_config.device
+        device=run_config.device,
     )
 
     online_config = OnlineTrainConfig(
         hidden_size=64,
-        total_timesteps=200000,
+        total_timesteps=2000,
         learning_rate=0.00025,
         decay_lr=True,
         num_envs=30,
@@ -59,11 +70,12 @@ def test_ppo_runner():
         run_config=run_config,
         environment_config=environment_config,
         online_config=online_config,
-        model_config=None
+        model_config=None,
     )
 
     assert os.path.exists(
-        "trajectories/test/test_ppo.gz"), "Trajectory file not saved"
+        "trajectories/test/test_ppo.gz"
+    ), "Trajectory file not saved"
 
 
 @pytest.mark.skip(reason="Traj PPO not working")
@@ -106,7 +118,7 @@ def test_ppo_runner_traj_model():
         max_grad_norm=2,
         trajectory_path=None,
         prob_go_from_end=0.1,
-        device=run_config.device
+        device=run_config.device,
     )
 
     transformer_model_config = TransformerModelConfig(
@@ -118,14 +130,14 @@ def test_ppo_runner_traj_model():
         time_embedding_type="embedding",
         state_embedding_type="grid",
         seed=1,
-        device=run_config.device
+        device=run_config.device,
     )
 
     ppo_runner(
         run_config=run_config,
         environment_config=environment_config,
         online_config=online_config,
-        transformer_model_config=transformer_model_config
+        transformer_model_config=transformer_model_config,
     )
 
 
@@ -134,7 +146,7 @@ def test_ppo_runner_traj_model_memory():
     run_config = RunConfig(
         exp_name="Test-PPO-Transformer-Memory",
         seed=1,
-        device = "cuda" if torch.cuda.is_available() else "cpu",
+        device="cuda" if torch.cuda.is_available() else "cpu",
         track=True,
         wandb_project_name="PPO-MiniGrid",
         wandb_entity=None,
@@ -172,7 +184,7 @@ def test_ppo_runner_traj_model_memory():
         max_grad_norm=2,
         trajectory_path=None,
         prob_go_from_end=0.2,
-        device=run_config.device
+        device=run_config.device,
     )
 
     transformer_model_config = TransformerModelConfig(
@@ -184,14 +196,14 @@ def test_ppo_runner_traj_model_memory():
         time_embedding_type="embedding",
         state_embedding_type="grid",
         seed=1,
-        device="cpu"
+        device="cpu",
     )
 
     ppo_runner(
         run_config=run_config,
         environment_config=environment_config,
         online_config=online_config,
-        transformer_model_config=transformer_model_config
+        transformer_model_config=transformer_model_config,
     )
 
 
@@ -207,7 +219,9 @@ def test_ppo_runner_lstm_model():
 
     environment_config = EnvironmentConfig(
         # env_id="MiniGrid-RedBlueDoors-6x6-v0",
-        env_id="MiniGrid-MemoryS7-v0",
+        # env_id="MiniGrid-MemoryS7-v0",
+        # env_id="MiniGrid-MemoryS7RandomDirection-v0",
+        env_id="MiniGrid-MemoryS7FixedStart-v0",
         # env_id="MiniGrid-Dynamic-Obstacles-8x8-v0",
         # env_id="Probe6-v0",
         view_size=7,
@@ -216,14 +230,16 @@ def test_ppo_runner_lstm_model():
         fully_observed=False,
         render_mode="rgb_array",
         capture_video=True,
+        video_frequency=1000,
         video_dir="videos",
-        device = run_config.device
+        device=run_config.device,
     )
 
     online_config = OnlineTrainConfig(
         use_trajectory_model=True,
         hidden_size=128,
-        total_timesteps=200000,
+        total_timesteps=6 * 2000000,
+        # total_timesteps=2000,
         learning_rate=0.0001,
         decay_lr=True,
         num_envs=14,
@@ -238,7 +254,7 @@ def test_ppo_runner_lstm_model():
         max_grad_norm=0.5,
         trajectory_path=None,
         prob_go_from_end=0.0,
-        device=run_config.device
+        device=run_config.device,
     )
 
     lstm_model_config = LSTMModelConfig(
@@ -249,14 +265,15 @@ def test_ppo_runner_lstm_model():
         use_instr=False,
         lang_model="gru",
         use_memory=True,
+        recurrence=8,
         arch="bow_endpool_res",
         aux_info=False,
-        device=run_config.device
+        device=run_config.device,
     )
 
     ppo_runner(
         run_config=run_config,
         environment_config=environment_config,
         online_config=online_config,
-        model_config=lstm_model_config
+        model_config=lstm_model_config,
     )
