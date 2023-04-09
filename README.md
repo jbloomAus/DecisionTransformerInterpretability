@@ -1,6 +1,7 @@
 # Decision Transformer Interpretability
 
 [![build](https://github.com/jbloomAus/DecisionTransformerInterpretability/actions/workflows/build.yml/badge.svg)](https://github.com/jbloomAus/DecisionTransformerInterpretability/actions/workflows/build.yml)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 # [Docs Here](https://jbloomaus.github.io/DecisionTransformerInterpretability/) [App Here](https://jbloomaus-decisiontransformerinterpretability-app-4edcnc.streamlit.app/)
 
