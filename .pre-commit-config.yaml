@@ -11,3 +11,8 @@ repos:
     rev: 23.1.0
     hooks:
     -   id: black
+-   repo: https://github.com/PyCQA/flake8
+    rev: 4.0.1
+    hooks:
+    -   id: flake8
+        args: [--count, --select=E9,F63,F7,F82 --show-source --statistics, --exit-zero, --max-complexity=10, --max-line-length=127]
