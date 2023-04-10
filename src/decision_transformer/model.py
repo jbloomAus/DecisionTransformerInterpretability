@@ -65,8 +65,8 @@ class PosEmbedTokens(nn.Module):
 
     def forward(
         self,
-        tokens: TT["batch", "position"],
-        past_kv_pos_offset: int = 0,  # noqa: F821
+        tokens: TT["batch", "position"],  # noqa: F821
+        past_kv_pos_offset: int = 0,
     ) -> TT["batch", "position", "d_model"]:  # noqa: F821
         """Tokens have shape [batch, pos]
         Output shape [pos, d_model] - will be broadcast along batch dim"""
@@ -219,8 +219,8 @@ class DecisionTransformer(nn.Module):
         rtgs: TT["batch", "position"],  # noqa: F821
         timesteps: TT["batch", "position"],  # noqa: F821
     ) -> Tuple[
-        TT[...], TT["batch", "position"], TT["batch", "position"]
-    ]:  # noqa: F821
+        TT[...], TT["batch", "position"], TT["batch", "position"]  # noqa: F821
+    ]:
         # states: (batch, block_size, 56, 56, 3)
         # actions: (batch, block_size, 1)
         # targets: (batch, block_size, 1)

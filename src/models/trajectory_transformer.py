@@ -417,14 +417,14 @@ class DecisionTransformer(TrajectoryTransformer):
     def forward(
         self,
         # has variable shape, starting with batch, position
-        states: TT[...],
+        states: TT[...],  # noqa: F821
         actions: TT["batch", "position"],  # noqa: F821
         rtgs: TT["batch", "position"],  # noqa: F821
         timesteps: TT["batch", "position"],  # noqa: F821
         pad_action: bool = True,
     ) -> Tuple[
-        TT[...], TT["batch", "position"], TT["batch", "position"]
-    ]:  # noqa: F821
+        TT[...], TT["batch", "position"], TT["batch", "position"]  # noqa: F821
+    ]:
         batch_size = states.shape[0]
         seq_length = states.shape[1]
         no_actions = actions is None
@@ -556,8 +556,8 @@ class CloneTransformer(TrajectoryTransformer):
         timesteps: TT["batch", "position"],  # noqa: F821
         pad_action: bool = True,
     ) -> Tuple[
-        TT[...], TT["batch", "position"], TT["batch", "position"]
-    ]:  # noqa: F821
+        TT[...], TT["batch", "position"], TT["batch", "position"]  # noqa: F821
+    ]:
         batch_size = states.shape[0]
         seq_length = states.shape[1]
 
@@ -754,8 +754,8 @@ class PosEmbedTokens(nn.Module):
 
     def forward(
         self,
-        tokens: TT["batch", "position"],
-        past_kv_pos_offset: int = 0,  # noqa: F821
+        tokens: TT["batch", "position"],  # noqa: F821
+        past_kv_pos_offset: int = 0,
     ) -> TT["batch", "position", "d_model"]:  # noqa: F821
         """Tokens have shape [batch, pos]
         Output shape [pos, d_model] - will be broadcast along batch dim"""

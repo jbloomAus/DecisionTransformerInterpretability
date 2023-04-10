@@ -30,8 +30,8 @@ class Minibatch:
     values: TT["batch"]  # noqa: F821
     returns: TT["batch"]  # noqa: F821
     recurrence_memory: Optional[
-        TT["batch", "memory_size"]
-    ] = None  # noqa: F821
+        TT["batch", "memory_size"]  # noqa: F821
+    ] = None
     mask: Optional[TT["batch"]] = None  # noqa: F821
 
 
