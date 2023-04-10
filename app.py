@@ -2,12 +2,18 @@ import time
 
 import streamlit as st
 
+from src.streamlit_app.causal_analysis_components import show_ablation
 from src.streamlit_app.components import (
     hyperpar_side_bar,
     record_keypresses,
     render_game_screen,
     render_trajectory_details,
     reset_button,
+)
+from src.streamlit_app.content import (
+    analysis_help,
+    help_page,
+    reference_tables,
 )
 from src.streamlit_app.dynamic_analysis_components import (
     render_observation_view,
@@ -19,16 +25,10 @@ from src.streamlit_app.setup import initialize_playground
 from src.streamlit_app.static_analysis_components import (
     show_ov_circuit,
     show_qk_circuit,
-    show_time_embeddings,
     show_rtg_embeddings,
+    show_time_embeddings,
 )
 from src.streamlit_app.visualizations import action_string_to_id
-from src.streamlit_app.causal_analysis_components import show_ablation
-from src.streamlit_app.content import (
-    help_page,
-    analysis_help,
-    reference_tables,
-)
 
 start = time.time()
 
