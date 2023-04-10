@@ -1,23 +1,25 @@
-from src.environments.environments import make_env
-from src.decision_transformer.utils import (
-    load_decision_transformer,
-    model_stored_in_legacy_format,
-    load_model_data,
-)
+import argparse
+
+# import a  base python logger
+import logging
+import math
+import os
+import warnings
+
+import numpy as np
+import torch as t
+
+from src.config import EnvironmentConfig
 from src.decision_transformer.calibration import (
     calibration_statistics,
     plot_calibration_statistics,
 )
-from src.config import EnvironmentConfig
-import argparse
-import warnings
-import numpy as np
-import os
-import torch as t
-import math
-
-# import a  base python logger
-import logging
+from src.decision_transformer.utils import (
+    load_decision_transformer,
+    load_model_data,
+    model_stored_in_legacy_format,
+)
+from src.environments.environments import make_env
 
 logging.basicConfig(level=logging.INFO)
 

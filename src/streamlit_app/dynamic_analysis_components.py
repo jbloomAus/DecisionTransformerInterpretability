@@ -4,20 +4,20 @@ import streamlit as st
 import torch as t
 from einops import rearrange
 from fancy_einsum import einsum
-from minigrid.core.constants import IDX_TO_OBJECT, IDX_TO_COLOR
+from minigrid.core.constants import IDX_TO_COLOR, IDX_TO_OBJECT
+
+from .analysis import get_residual_decomp
 from .constants import (
-    IDX_TO_STATE,
     IDX_TO_ACTION,
+    IDX_TO_STATE,
     three_channel_schema,
     twenty_idx_format_func,
 )
-
+from .utils import fancy_histogram, fancy_imshow
 from .visualizations import (
     plot_attention_pattern_single,
     plot_single_residual_stream_contributions,
 )
-from .analysis import get_residual_decomp
-from .utils import fancy_histogram, fancy_imshow
 
 
 def show_attention_pattern(dt, cache):

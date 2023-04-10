@@ -1,21 +1,22 @@
+import gymnasium as gym
+import numpy as np
 import pytest
 import torch as t
-import numpy as np
 from einops import rearrange
-import gymnasium as gym
 from minigrid.wrappers import (
-    RGBImgPartialObsWrapper,
     ImgObsWrapper,
     OneHotPartialObsWrapper,
+    RGBImgPartialObsWrapper,
 )
-from src.environments.wrappers import ViewSizeWrapper, RenderResizeWrapper
-from src.models.trajectory_transformer import (
-    DecisionTransformer,
-    CloneTransformer,
-    StateEncoder,
-    ActorTransformer,
-)
+
 from src.config import EnvironmentConfig, TransformerModelConfig
+from src.environments.wrappers import RenderResizeWrapper, ViewSizeWrapper
+from src.models.trajectory_transformer import (
+    ActorTransformer,
+    CloneTransformer,
+    DecisionTransformer,
+    StateEncoder,
+)
 
 
 def test_state_encoder():

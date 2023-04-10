@@ -1,12 +1,14 @@
-from src.utils import TrajectoryWriter
-import torch.nn as nn
-import torch as t
-import gymnasium as gym
-from typing import Optional
-from src.ppo.utils import get_obs_preprocessor
-import numpy as np
 from dataclasses import dataclass
+from typing import Optional
+
+import gymnasium as gym
+import numpy as np
+import torch as t
+import torch.nn as nn
 import tqdm._tqdm_notebook as tqdm
+
+from src.ppo.utils import get_obs_preprocessor
+from src.utils import TrajectoryWriter
 
 
 @dataclass

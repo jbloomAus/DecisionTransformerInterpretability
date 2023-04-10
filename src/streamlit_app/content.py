@@ -1,10 +1,11 @@
-import streamlit as st
 import pandas as pd
+import streamlit as st
+
 from .constants import (
-    IDX_TO_STATE,
     IDX_TO_ACTION,
-    IDX_TO_OBJECT,
     IDX_TO_COLOR,
+    IDX_TO_OBJECT,
+    IDX_TO_STATE,
     STATE_TO_IDX,
 )
 

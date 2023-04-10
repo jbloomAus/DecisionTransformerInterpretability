@@ -1,16 +1,18 @@
+import copy
+
 import pytest
 import torch
-import copy
+from torch.utils.data import DataLoader, random_split
 from torch.utils.data.sampler import WeightedRandomSampler
-from torch.utils.data import random_split, DataLoader
-from src.config import TransformerModelConfig, EnvironmentConfig
-from src.models.trajectory_transformer import (
-    DecisionTransformer,
-    CloneTransformer,
-)
-from src.environments.environments import make_env
-from src.decision_transformer.train import evaluate_dt_agent, test
+
+from src.config import EnvironmentConfig, TransformerModelConfig
 from src.decision_transformer.offline_dataset import TrajectoryDataset
+from src.decision_transformer.train import evaluate_dt_agent, test
+from src.environments.environments import make_env
+from src.models.trajectory_transformer import (
+    CloneTransformer,
+    DecisionTransformer,
+)
 
 
 @pytest.fixture

@@ -1,24 +1,23 @@
 import pytest
 import torch
-
 from minigrid.envs import (
-    MemoryEnv,
     DynamicObstaclesEnv,
     EmptyEnv,
     FourRoomsEnv,
+    MemoryEnv,
 )
 from minigrid.envs.babyai import (
+    BossLevel,
     GoToDoor,
     GoToRedBlueBall,
     UnlockLocal,
-    BossLevel,
 )
 from minigrid.wrappers import RGBImgPartialObsWrapper
 
+from src.config import LSTMModelConfig
+
 # stuff I need to commit to MiniGrid
 from src.environments.wrappers import DictObservationSpaceWrapper
-
-from src.config import LSTMModelConfig
 from src.models.trajectory_lstm import TrajectoryLSTM
 from src.utils import DictList
 

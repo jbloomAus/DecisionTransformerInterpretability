@@ -3,18 +3,17 @@ import pytest
 import torch
 import torch.nn as nn
 from gymnasium.spaces import Box, Dict
+from transformer_lens import HookedTransformer
+
 from src.config import EnvironmentConfig, TransformerModelConfig
 from src.models.trajectory_transformer import (
-    TrajectoryTransformer,
-    DecisionTransformer,
-)
-from src.models.trajectory_transformer import (
-    CloneTransformer,
     ActorTransformer,
+    CloneTransformer,
     CriticTransfomer,
+    DecisionTransformer,
+    StateEncoder,
+    TrajectoryTransformer,
 )
-from src.models.trajectory_transformer import StateEncoder
-from transformer_lens import HookedTransformer
 
 
 @pytest.fixture

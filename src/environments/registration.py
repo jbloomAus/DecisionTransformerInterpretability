@@ -1,6 +1,7 @@
 from gymnasium import register
-from .memory import MemoryEnv
-from .multienvironments import MultiEnvSampler
+from minigrid.core.world_object import Lava, Wall
+from minigrid.envs import CrossingEnv, DynamicObstaclesEnv, MultiRoomEnv
+
 from src.ppo.my_probe_envs import (
     Probe1,
     Probe2,
@@ -9,8 +10,9 @@ from src.ppo.my_probe_envs import (
     Probe5,
     Probe6,
 )
-from minigrid.envs import DynamicObstaclesEnv, CrossingEnv, MultiRoomEnv
-from minigrid.core.world_object import Lava, Wall
+
+from .memory import MemoryEnv
+from .multienvironments import MultiEnvSampler
 
 
 def get_dynamic_obstacles_multi_env(render_mode="rgb_array", max_steps=1000):

@@ -1,11 +1,11 @@
 from src.config import (
-    RunConfig,
-    TransformerModelConfig,
     EnvironmentConfig,
     OnlineTrainConfig,
+    RunConfig,
+    TransformerModelConfig,
 )
-from src.ppo.utils import parse_args
 from src.ppo.runner import ppo_runner
+from src.ppo.utils import parse_args
 
 if __name__ == "__main__":
     args = parse_args()

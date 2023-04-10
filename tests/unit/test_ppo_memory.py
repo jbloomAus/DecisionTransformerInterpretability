@@ -1,8 +1,9 @@
+from dataclasses import dataclass
+
+import gymnasium as gym
 import pytest
 import torch
-import gymnasium as gym
-from dataclasses import dataclass
-import torch
+
 from src.ppo.memory import Memory, Minibatch
 
 

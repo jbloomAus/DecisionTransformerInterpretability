@@ -1,6 +1,5 @@
-from typing import Dict, Union, Tuple
+from typing import Dict, Tuple, Union
 
-from gymnasium.spaces import Box, Dict
 import einops
 import numpy as np
 import torch
@@ -8,14 +7,16 @@ import torch as t
 import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange
+from gymnasium.spaces import Box, Dict
 from torchtyping import TensorType as TT
 from transformer_lens import EasyTransformer, EasyTransformerConfig
 from transformer_lens.HookedTransformerConfig import HookedTransformerConfig
 
 
 def seed_everything(seed: int):
-    import random
     import os
+    import random
+
     import numpy as np
     import torch
 

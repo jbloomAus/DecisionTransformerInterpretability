@@ -1,9 +1,10 @@
+import numpy as np
 import pandas as pd
 import plotly.express as px
-from tqdm import tqdm
-import numpy as np
-from .train import evaluate_dt_agent
 import plotly.graph_objects as go
+from tqdm import tqdm
+
+from .train import evaluate_dt_agent
 
 
 def calibration_statistics(

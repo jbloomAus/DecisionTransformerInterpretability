@@ -1,14 +1,14 @@
-import pytest
 import gymnasium as gym
+import pytest
 
 from src.config import (
-    TransformerModelConfig,
-    LSTMModelConfig,
     EnvironmentConfig,
+    LSTMModelConfig,
     OfflineTrainConfig,
     OnlineTrainConfig,
+    RunConfig,
+    TransformerModelConfig,
 )
-from src.config import RunConfig
 
 
 def test_environment_config():

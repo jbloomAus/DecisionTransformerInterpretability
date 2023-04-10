@@ -1,15 +1,16 @@
-import pytest
 import os
+
+import pytest
 
 # from src.decision_transformer.utils import DTArgs
 from src.config import (
-    RunConfig,
-    TransformerModelConfig,
     EnvironmentConfig,
     OfflineTrainConfig,
+    RunConfig,
+    TransformerModelConfig,
 )
-from src.run_decision_transformer import run_decision_transformer
 from src.environments.environments import make_env
+from src.run_decision_transformer import run_decision_transformer
 
 
 @pytest.fixture

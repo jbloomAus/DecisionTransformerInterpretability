@@ -1,19 +1,21 @@
 import json
 import os
+
 import pytest
 import torch
 
 from src.config import (
-    EnvironmentConfig,
     ConfigJsonEncoder,
-    TransformerModelConfig,
+    EnvironmentConfig,
     OfflineTrainConfig,
+    OnlineTrainConfig,
+    RunConfig,
+    TransformerModelConfig,
 )
-from src.config import RunConfig, OnlineTrainConfig
-from src.ppo.runner import ppo_runner
 from src.decision_transformer.offline_dataset import TrajectoryDataset
-from src.models.trajectory_transformer import DecisionTransformer
 from src.decision_transformer.utils import load_model_data
+from src.models.trajectory_transformer import DecisionTransformer
+from src.ppo.runner import ppo_runner
 
 
 @pytest.fixture()

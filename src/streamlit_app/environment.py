@@ -1,9 +1,9 @@
-import streamlit as st
-import torch as t
+import math
 
 import gymnasium as gym
 import minigrid
-import math
+import streamlit as st
+import torch as t
 
 from src.config import EnvironmentConfig
 from src.decision_transformer.utils import load_decision_transformer

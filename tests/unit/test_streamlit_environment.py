@@ -1,8 +1,8 @@
+import gymnasium as gym
 import pytest
 
-import gymnasium as gym
-from src.streamlit_app.environment import get_env_and_dt
 from src.decision_transformer.model import DecisionTransformer
+from src.streamlit_app.environment import get_env_and_dt
 
 
 def test_get_env_and_dt():

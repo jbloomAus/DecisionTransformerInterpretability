@@ -1,5 +1,5 @@
-import pytest
 import gymnasium as gym
+import pytest
 
 from src.environments.registration import register_envs
 

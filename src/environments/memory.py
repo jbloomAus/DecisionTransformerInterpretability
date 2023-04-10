@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import numpy as np
-
 from minigrid.core.actions import Actions
 from minigrid.core.grid import Grid
 from minigrid.core.mission import MissionSpace

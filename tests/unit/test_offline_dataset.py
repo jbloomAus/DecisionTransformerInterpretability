@@ -1,6 +1,7 @@
+import copy
+
 import pytest
 import torch
-import copy
 from minigrid.core.constants import COLOR_TO_IDX, OBJECT_TO_IDX, STATE_TO_IDX
 from torch.utils.data import DataLoader, random_split
 from torch.utils.data.sampler import WeightedRandomSampler

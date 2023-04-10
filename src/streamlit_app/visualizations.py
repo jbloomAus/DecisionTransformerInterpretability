@@ -1,9 +1,10 @@
-import plotly.express as px
-import streamlit as st
+from typing import List
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from typing import List
+import plotly.express as px
+import streamlit as st
 
 action_string_to_id = {
     "left": 0,

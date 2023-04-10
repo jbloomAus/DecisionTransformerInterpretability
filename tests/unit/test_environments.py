@@ -1,8 +1,8 @@
+import numpy as np
 import pytest
 
 from src.config import EnvironmentConfig
 from src.environments.environments import make_env
-import numpy as np
 
 
 def test_make_env():

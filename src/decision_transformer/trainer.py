@@ -1,10 +1,12 @@
+import time
+from typing import Callable
+
 import numpy as np
 import torch as t
 import torch.nn as nn
-import time
+
 import wandb
 
-from typing import Callable
 from .model import DecisionTransformer
 
 

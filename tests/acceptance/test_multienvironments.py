@@ -1,6 +1,7 @@
-import pytest
 import gymnasium as gym
-from minigrid.envs import DynamicObstaclesEnv, CrossingEnv, MultiRoomEnv
+import pytest
+from minigrid.envs import CrossingEnv, DynamicObstaclesEnv, MultiRoomEnv
+
 from src.environments.multienvironments import MultiEnvSampler
 
 # test that the envs are registered

@@ -1,6 +1,6 @@
-from minigrid.core.constants import IDX_TO_OBJECT
 import numpy as np
 import torch
+from minigrid.core.constants import IDX_TO_OBJECT
 
 
 def find_agent(observation):

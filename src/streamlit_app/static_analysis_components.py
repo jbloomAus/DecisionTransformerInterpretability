@@ -2,14 +2,15 @@ import plotly.express as px
 import streamlit as st
 import torch as t
 from fancy_einsum import einsum
-from .utils import fancy_histogram, fancy_imshow
 from minigrid.core.constants import IDX_TO_COLOR, IDX_TO_OBJECT, STATE_TO_IDX
+
 from .constants import (
-    IDX_TO_STATE,
     IDX_TO_ACTION,
+    IDX_TO_STATE,
     three_channel_schema,
     twenty_idx_format_func,
 )
+from .utils import fancy_histogram, fancy_imshow
 
 
 def show_qk_circuit(dt):

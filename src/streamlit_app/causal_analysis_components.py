@@ -1,14 +1,14 @@
 import streamlit as st
-
 from torchtyping import TensorType as TT
 from transformer_lens.hook_points import HookPoint
+
+from .analysis import get_residual_decomp
 from .environment import get_action_preds
 from .visualizations import (
     plot_action_preds,
     plot_single_residual_stream_contributions,
     plot_single_residual_stream_contributions_comparison,
 )
-from .analysis import get_residual_decomp
 
 
 def show_ablation(dt, logit_dir, original_cache):

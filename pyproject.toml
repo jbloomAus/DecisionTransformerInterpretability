@@ -6,3 +6,6 @@ exclude = '''
     \.git
 )/
 '''
+
+[tool.isort]
+profile = "black"

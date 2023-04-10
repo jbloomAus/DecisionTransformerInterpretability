@@ -7,15 +7,15 @@ from tqdm.autonotebook import tqdm
 import wandb
 from src.config import (
     EnvironmentConfig,
+    LSTMModelConfig,
     OnlineTrainConfig,
     RunConfig,
     TransformerModelConfig,
-    LSTMModelConfig,
 )
 
+from .agent import PPOAgent, get_agent
 from .memory import Memory
 from .utils import store_model_checkpoint
-from .agent import get_agent, PPOAgent
 
 
 def train_ppo(

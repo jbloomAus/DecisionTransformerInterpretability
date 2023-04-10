@@ -1,6 +1,7 @@
 import streamlit as st
 import torch as t
-from .environment import get_env_and_dt, get_action_from_user
+
+from .environment import get_action_from_user, get_env_and_dt
 
 action_string_to_id = {
     "left": 0,

@@ -1,23 +1,23 @@
-import pytest
+from dataclasses import dataclass
+
 import gymnasium as gym
+import pytest
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from dataclasses import dataclass
-
-from src.ppo.agent import (
-    PPOScheduler,
-    PPOAgent,
-    FCAgent,
-    TransformerPPOAgent,
-    LSTMPPOAgent,
-    get_agent,
-)
 
 # only use get_agent class test
 from src.config import LSTMModelConfig, TransformerModelConfig
-from src.models.trajectory_transformer import TrajectoryTransformer
 from src.models.trajectory_lstm import TrajectoryLSTM
+from src.models.trajectory_transformer import TrajectoryTransformer
+from src.ppo.agent import (
+    FCAgent,
+    LSTMPPOAgent,
+    PPOAgent,
+    PPOScheduler,
+    TransformerPPOAgent,
+    get_agent,
+)
 from src.ppo.memory import Memory
 
 

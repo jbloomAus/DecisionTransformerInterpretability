@@ -1,19 +1,19 @@
-import torch
+import dataclasses
 import gzip
+import json
 import lzma
 import os
 import pickle
 import time
-import dataclasses
-import json
-from src.config import ConfigJsonEncoder
 from typing import Dict
 
 import numpy as np
+import torch
 import torch as t
 from typeguard import typechecked
 
 import wandb
+from src.config import ConfigJsonEncoder
 
 
 class TrajectoryWriter:

@@ -1,23 +1,23 @@
-import warnings
-import gymnasium as gym
-import torch as t
-import wandb
 import time
-
+import warnings
 from typing import Optional, Union
 
+import gymnasium as gym
+import torch as t
+
+import wandb
 from src.config import (
+    EnvironmentConfig,
+    LSTMModelConfig,
+    OnlineTrainConfig,
     RunConfig,
     TransformerModelConfig,
-    EnvironmentConfig,
-    OnlineTrainConfig,
-    LSTMModelConfig,
 )
-from src.ppo.utils import set_global_seeds
-from src.ppo.train import train_ppo
-from src.utils import TrajectoryWriter
 from src.environments.environments import make_env
 from src.environments.registration import register_envs
+from src.ppo.train import train_ppo
+from src.ppo.utils import set_global_seeds
+from src.utils import TrajectoryWriter
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 

@@ -1,21 +1,21 @@
 """
 This module contains the configuration classes for the project.
 """
+import copy
 import dataclasses
 import json
 import os
 import uuid
 from dataclasses import dataclass
-import torch
-import copy
 
 import gymnasium as gym
-
+import torch
 from minigrid.wrappers import (
     FullyObsWrapper,
-    RGBImgPartialObsWrapper,
     OneHotPartialObsWrapper,
+    RGBImgPartialObsWrapper,
 )
+
 from src.environments.wrappers import ViewSizeWrapper
 
 

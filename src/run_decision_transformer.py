@@ -1,12 +1,12 @@
 """
 This file is the entry point for running the decision transformer.
 """
+import torch as t
+
+from .config import OfflineTrainConfig, RunConfig, TransformerModelConfig
 from .decision_transformer.runner import run_decision_transformer
 from .decision_transformer.utils import parse_args
-from .config import RunConfig, TransformerModelConfig, OfflineTrainConfig
 from .environments.environments import make_env
-
-import torch as t
 
 if __name__ == "__main__":
     args = parse_args()

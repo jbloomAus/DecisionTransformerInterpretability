@@ -8,12 +8,13 @@ import torch as t
 
 import wandb
 from src.config import (
+    ConfigJsonEncoder,
     EnvironmentConfig,
     OfflineTrainConfig,
     RunConfig,
     TransformerModelConfig,
-    ConfigJsonEncoder,
 )
+from src.environments.registration import register_envs
 from src.models.trajectory_transformer import (
     CloneTransformer,
     DecisionTransformer,
@@ -27,7 +28,6 @@ from .offline_dataset import (
 )
 from .train import train
 from .utils import get_max_len_from_model_type
-from src.environments.registration import register_envs
 
 
 def run_decision_transformer(

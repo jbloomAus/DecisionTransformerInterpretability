@@ -1,22 +1,25 @@
 import os
-import pytest
+from argparse import Namespace
+
 import gymnasium.vector
+import numpy as np
+import pytest
 import torch as t
 import torch.nn as nn
 from einops import rearrange
-from tqdm import tqdm
-import wandb
-from argparse import Namespace
-from src.models.trajectory_transformer import (
-    TrajectoryTransformer,
-    DecisionTransformer,
-    CloneTransformer,
-)
-from src.config import EnvironmentConfig
-from .offline_dataset import TrajectoryDataset
+from torch.utils.data import DataLoader, random_split
 from torch.utils.data.sampler import WeightedRandomSampler
-from torch.utils.data import random_split, DataLoader
-import numpy as np
+from tqdm import tqdm
+
+import wandb
+from src.config import EnvironmentConfig
+from src.models.trajectory_transformer import (
+    CloneTransformer,
+    DecisionTransformer,
+    TrajectoryTransformer,
+)
+
+from .offline_dataset import TrajectoryDataset
 from .utils import get_max_len_from_model_type
 
 

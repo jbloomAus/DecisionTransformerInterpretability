@@ -1,15 +1,16 @@
-import pytest
-
 import warnings
-import torch as t
+
 import numpy as np
-from src.environments.environments import make_env
-from src.decision_transformer.utils import load_decision_transformer
+import pytest
+import torch as t
+
+from src.config import EnvironmentConfig
 from src.decision_transformer.calibration import (
     calibration_statistics,
     plot_calibration_statistics,
 )
-from src.config import EnvironmentConfig
+from src.decision_transformer.utils import load_decision_transformer
+from src.environments.environments import make_env
 
 
 def test_calibration_end_to_end():

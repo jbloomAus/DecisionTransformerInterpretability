@@ -1,16 +1,17 @@
 import os
-import pytest
 
-import torch
 import gymnasium as gym
+import pytest
+import torch
 
 from src.config import (
     EnvironmentConfig,
+    LSTMModelConfig,
     OnlineTrainConfig,
     RunConfig,
     TransformerModelConfig,
-    LSTMModelConfig,
 )
+from src.environments.registration import register_envs
 from src.ppo.my_probe_envs import (
     Probe1,
     Probe2,
@@ -20,8 +21,6 @@ from src.ppo.my_probe_envs import (
     Probe6,
 )
 from src.ppo.runner import ppo_runner
-
-from src.environments.registration import register_envs
 
 register_envs()
 

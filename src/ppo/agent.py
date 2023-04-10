@@ -10,12 +10,11 @@ import torch as t
 from torch import nn, optim
 from torch.distributions.categorical import Categorical
 
-from src.utils import TrajectoryWriter
 from src.config import (
-    RunConfig,
     EnvironmentConfig,
     LSTMModelConfig,
     OnlineTrainConfig,
+    RunConfig,
     TransformerModelConfig,
 )
 from src.environments.environments import make_env
@@ -24,7 +23,7 @@ from src.models.trajectory_transformer import (
     ActorTransformer,
     CriticTransfomer,
 )
-from src.utils import DictList
+from src.utils import DictList, TrajectoryWriter
 
 from .loss_functions import (
     calc_clipped_surrogate_objective,

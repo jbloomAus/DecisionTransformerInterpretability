@@ -1,8 +1,8 @@
+from typing import Optional, Tuple, Union
+
 import gymnasium as gym
 import numpy as np
-from typing import Union, Tuple
-from typing import Optional
-from gymnasium.spaces import Discrete, Box
+from gymnasium.spaces import Box, Discrete
 
 MAIN = __name__ == "__main__"
 

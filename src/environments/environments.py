@@ -1,7 +1,9 @@
 import gymnasium as gym
-from .wrappers import RenderResizeWrapper, ViewSizeWrapper
-from src.config import EnvironmentConfig
 from minigrid.wrappers import FullyObsWrapper, OneHotPartialObsWrapper
+
+from src.config import EnvironmentConfig
+
+from .wrappers import RenderResizeWrapper, ViewSizeWrapper
 
 
 def make_env(config: EnvironmentConfig, seed: int, idx: int, run_name: str):
