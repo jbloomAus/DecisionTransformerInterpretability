@@ -1,6 +1,4 @@
 import argparse
-
-# import a  base python logger
 import logging
 import math
 import os
@@ -16,12 +14,103 @@ from src.decision_transformer.calibration import (
 )
 from src.decision_transformer.utils import (
     load_decision_transformer,
-    load_model_data,
     model_stored_in_legacy_format,
 )
 from src.environments.environments import make_env
 
 logging.basicConfig(level=logging.INFO)
+
+
+def runner(args):
+    logger = logging.getLogger(__name__)
+
+    logger.info(f"Loading model from {args.model_path}")
+    logger.info(f"Using environment {args.env_id}")
+
+    if model_stored_in_legacy_format(args.model_path):
+        state_dict = t.load(args.model_path)
+        one_hot_encoded = not (
+            state_dict["state_encoder.weight"].shape[-1] % 20
+        )  # hack for now
+
+        if one_hot_encoded:
+            view_size = int(
+                math.sqrt(state_dict["state_encoder.weight"].shape[-1] // 20)
+            )
+        else:
+            view_size = int(
+                math.sqrt(state_dict["state_encoder.weight"].shape[-1] // 3)
+            )
+
+        max_time_steps = state_dict["time_embedding.weight"].shape[0]
+
+        legacy_env_config = EnvironmentConfig(
+            env_id=args.env_id,
+            fully_observed=False,
+            one_hot_obs=one_hot_encoded,
+            max_steps=max_time_steps,
+            view_size=view_size,
+        )
+
+        env_func = make_env(
+            config=legacy_env_config, seed=1, idx=0, run_name="dev"
+        )
+
+        dt = load_decision_transformer(args.model_path, env_func())
+
+        d_model = dt.d_model
+        n_heads = dt.n_heads
+        d_mlp = dt.d_mlp
+        n_ctx = dt.n_ctx
+        n_layers = dt.n_layers
+        max_timestep = dt.max_timestep
+
+    else:
+        dt = load_decision_transformer(args.model_path)
+        env_func = make_env(
+            config=dt.environment_config, seed=1, idx=0, run_name="dev"
+        )
+        transformer_config = dt.transformer_config
+
+        d_model = transformer_config.d_model
+        n_heads = transformer_config.n_heads
+        d_mlp = transformer_config.d_mlp
+        n_ctx = transformer_config.n_ctx
+        n_layers = transformer_config.n_layers
+        max_timestep = dt.environment_config.max_steps
+
+    warnings.filterwarnings("ignore", category=UserWarning)
+    statistics = calibration_statistics(
+        dt,
+        args.env_id,
+        env_func,
+        initial_rtg_range=np.linspace(
+            args.initial_rtg_min,
+            args.initial_rtg_max,
+            int(
+                (args.initial_rtg_max - args.initial_rtg_min)
+                / args.initial_rtg_step
+            ),
+        ),
+        trajectories=args.n_trajectories,
+        num_envs=args.num_envs,
+    )
+
+    fig = plot_calibration_statistics(statistics, show_spread=True, CI=0.95)
+
+    # make font title smaller
+    fig.update_layout(
+        title=f"{args.env_id} - d_model: {d_model} - n_heads: {n_heads} - d_mlp: {d_mlp} - n_ctx: {n_ctx} "
+        f"- n_layers: {n_layers} - max_timestep: {max_timestep}",
+        title_font_size=10,
+    )
+
+    if not os.path.exists("figures"):
+        os.mkdir("figures")
+
+    # format the output path according to the input path.
+    args.output_path = f"figures/{args.model_path.split('/')[-1].split('.')[0]}_calibration.png"
+    fig.write_image(args.output_path)
 
 
 if __name__ == "__main__":
@@ -69,99 +158,4 @@ if __name__ == "__main__":
     logger.info(f"Loading model from {args.model_path}")
     logger.info(f"Using environment {args.env_id}")
 
-    if model_stored_in_legacy_format(args.model_path):
-        state_dict = t.load(args.model_path)
-        one_hot_encoded = not (
-            state_dict["state_encoder.weight"].shape[-1] % 20
-        )  # hack for now
-
-        if one_hot_encoded:
-            view_size = int(
-                math.sqrt(state_dict["state_encoder.weight"].shape[-1] // 20)
-            )
-        else:
-            view_size = int(
-                math.sqrt(state_dict["state_encoder.weight"].shape[-1] // 3)
-            )
-
-        max_time_steps = state_dict["time_embedding.weight"].shape[0]
-
-        legacy_env_config = EnvironmentConfig(
-            env_id=args.env_id,
-            fully_observed=False,
-            one_hot_obs=one_hot_encoded,
-            max_steps=max_time_steps,
-            view_size=args.view_size,
-        )
-
-        env_func = make_env(
-            config=legacy_env_config, seed=1, idx=0, run_name="dev"
-        )
-
-        dt = load_decision_transformer(args.model_path, env_func())
-
-        d_model = dt.d_model
-        n_heads = dt.n_heads
-        d_mlp = dt.d_mlp
-        n_ctx = dt.n_ctx
-        n_layers = dt.n_layers
-        max_timestep = dt.max_timestep
-    else:
-        (
-            state_dict,
-            trajectory_data_set,
-            transformer_config,
-            _,
-        ) = load_model_data(args.model_path)
-
-        env_config = EnvironmentConfig(
-            env_id=args.env_id,
-            fully_observed=False,
-            one_hot_obs=(trajectory_data_set.observation_type == "one_hot"),
-            max_steps=trajectory_data_set.metadata["args"]["max_steps"],
-            view_size=trajectory_data_set.metadata["args"]["view_size"],
-        )
-
-        env_func = make_env(config=env_config, seed=1, idx=0, run_name="dev")
-
-        dt = load_decision_transformer(args.model_path, env_func())
-
-        d_model = transformer_config.d_model
-        n_heads = transformer_config.n_heads
-        d_mlp = transformer_config.d_mlp
-        n_ctx = transformer_config.n_ctx
-        n_layers = transformer_config.n_layers
-        max_timestep = trajectory_data_set.metadata["args"]["max_steps"]
-
-    warnings.filterwarnings("ignore", category=UserWarning)
-    statistics = calibration_statistics(
-        dt,
-        args.env_id,
-        env_func,
-        initial_rtg_range=np.linspace(
-            args.initial_rtg_min,
-            args.initial_rtg_max,
-            int(
-                (args.initial_rtg_max - args.initial_rtg_min)
-                / args.initial_rtg_step
-            ),
-        ),
-        trajectories=args.n_trajectories,
-        num_envs=args.num_envs,
-    )
-
-    fig = plot_calibration_statistics(statistics, show_spread=True, CI=0.95)
-    # add all the hyperparameters to the title (env id, d_model, n_heads, d_mlp, n_ctx, n_layers, max_timestep, layernorm)
-    # make font title smaller
-    fig.update_layout(
-        title=f"{args.env_id} - d_model: {d_model} - n_heads: {n_heads} - d_mlp: {d_mlp} - n_ctx: {n_ctx} "
-        f"- n_layers: {n_layers} - max_timestep: {max_timestep}",
-        title_font_size=10,
-    )
-
-    if not os.path.exists("figures"):
-        os.mkdir("figures")
-
-    # format the output path according to the input path.
-    args.output_path = f"figures/{args.model_path.split('/')[-1].split('.')[0]}_calibration.png"
-    fig.write_image(args.output_path)
+    runner(args)

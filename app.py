@@ -47,6 +47,8 @@ initial_rtg = hyperpar_side_bar()
 model_path = (
     "models/MiniGrid-Dynamic-Obstacles-8x8-v0/demo_model_overnight_training.pt"
 )
+# model_path = "dev/artifacts/MiniGrid-MemoryS7FixedStart-v0__MiniGrid-MemoryS7FixedStart-v0__1__1680856400:v0/MiniGrid-MemoryS7FixedStart-v0__MiniGrid-MemoryS7FixedStart-v0__1__1680856400.pt"
+
 # model_path="models/MiniGrid-Dynamic-Obstacles-8x8-v0/demo_model_one_hot_overnight.pt"
 # model_path = "artifacts/MiniGrid-DoorKey-8x8-v0__Dev__1__1673268725:v0/MiniGrid-DoorKey-8x8-v0__Dev__1__1673268725.pt"
 # model_path = "artifacts/MiniGrid-MemoryS13Random-v0__MiniGrid-MemoryS13Random__1__1675311480:v0/MiniGrid-MemoryS13Random-v0__MiniGrid-MemoryS13Random__1__1675311480.pt"

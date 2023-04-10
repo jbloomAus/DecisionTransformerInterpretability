@@ -115,7 +115,11 @@ def parse_args():
     return args
 
 
-def load_decision_transformer(model_path, env):
+def load_decision_transformer(
+    model_path, env=None
+) -> DecisionTransformer | DecisionTransformerLegacy:
+    """ """
+
     if model_stored_in_legacy_format(model_path):
         state_dict = t.load(model_path)
         if "state_encoder.weight" in state_dict.keys():
@@ -171,28 +175,18 @@ def load_decision_transformer(model_path, env):
             state_embedding_type=state_embedding_type,
         )
     else:
-        (
-            state_dict,
-            trajectory_data_set,
-            transformer_config,
-            _,
-        ) = load_model_data(model_path)
+        model_info = t.load(model_path)
+        state_dict = model_info["model_state_dict"]
+        transformer_config = TransformerModelConfig(
+            **json.loads(model_info["model_config"])
+        )
+
+        environment_config = EnvironmentConfig(
+            **json.loads(model_info["environment_config"])
+        )
 
         if "state_encoder.weight" in state_dict.keys():
             return load_legacy_decision_transformer(state_dict, env)
-
-        # now we can create the model
-        # model = DecisionTransformer(
-        #     EnvironmentConfig(env.__spec__),
-        # )
-        environment_config = EnvironmentConfig(
-            env_id=trajectory_data_set.metadata["args"]["env_id"],
-            one_hot_obs=trajectory_data_set.observation_type == "one_hot",
-            view_size=trajectory_data_set.metadata["args"]["view_size"],
-            fully_observed=False,
-            capture_video=False,
-            render_mode="rgb_array",
-        )
 
     model = DecisionTransformer(
         environment_config=environment_config,
@@ -204,8 +198,6 @@ def load_decision_transformer(model_path, env):
 
 
 # To maintain backwards compatibility with the old models.
-
-
 def load_legacy_decision_transformer(state_dict, env):
     # get number of layers from the state dict
     num_layers = (
@@ -255,29 +247,6 @@ def load_legacy_decision_transformer(state_dict, env):
 def model_stored_in_legacy_format(model_path):
     model_info = t.load(model_path)
     return "model_state_dict" not in model_info
-
-
-def load_model_data(model_path):
-    model_info = t.load(model_path)
-    state_dict = model_info["model_state_dict"]
-    transformer_config = TransformerModelConfig(
-        **json.loads(model_info["transformer_config"])
-    )
-    transformer_config.device = t.device(transformer_config.device)
-    offline_config = OfflineTrainConfig(
-        **json.loads(model_info["offline_config"])
-    )
-    offline_config.device = t.device(offline_config.device)
-
-    trajectory_data_set = TrajectoryDataset(
-        trajectory_path=offline_config.trajectory_path,
-        max_len=transformer_config.n_ctx // 3,
-        pct_traj=offline_config.pct_traj,
-        prob_go_from_end=offline_config.prob_go_from_end,
-        device=transformer_config.device,
-    )
-
-    return state_dict, trajectory_data_set, transformer_config, offline_config
 
 
 def get_max_len_from_model_type(model_type: str, n_ctx: int):

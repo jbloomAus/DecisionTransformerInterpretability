@@ -1,21 +1,16 @@
-import json
-import os
-
 import pytest
-import torch
+import os
+from argparse import Namespace
 
+from src.run_calibration import runner
 from src.config import (
     EnvironmentConfig,
     OfflineTrainConfig,
-    OnlineTrainConfig,
-    RunConfig,
     TransformerModelConfig,
 )
 
-from src.decision_transformer.runner import store_transformer_model
-from src.decision_transformer.offline_dataset import TrajectoryDataset
-from src.decision_transformer.utils import load_decision_transformer
 from src.models.trajectory_transformer import DecisionTransformer
+from src.decision_transformer.runner import store_transformer_model
 
 
 @pytest.fixture()
@@ -25,17 +20,22 @@ def cleanup_test_results() -> None:
 
 
 @pytest.fixture()
-def run_config() -> RunConfig:
-    run_config = RunConfig(
-        exp_name="Test-PPO-Basic",
-        seed=1,
-        device="cuda" if torch.cuda.is_available() else "cpu",
-        track=False,
-        wandb_project_name="PPO-MiniGrid",
-        wandb_entity=None,
-    )
+def legacy_model_path():
+    return "models/MiniGrid-DoorKey-8x8-v0/first_pass.pt"
 
-    return run_config
+
+@pytest.fixture()
+def args():
+    return Namespace(
+        env_id="MiniGrid-DoorKey-8x8-v0",
+        model_path="to_be_filled_in",
+        max_len=1,
+        n_trajectories=20,
+        initial_rtg_min=0,
+        initial_rtg_max=1,
+        initial_rtg_step=0.5,
+        num_envs=4,
+    )
 
 
 @pytest.fixture()
@@ -51,28 +51,6 @@ def environment_config() -> EnvironmentConfig:
         video_dir="videos",
     )
     return environment_config
-
-
-@pytest.fixture()
-def online_config() -> OnlineTrainConfig:
-    online_config = OnlineTrainConfig(
-        hidden_size=64,
-        total_timesteps=2000,
-        learning_rate=0.00025,
-        decay_lr=True,
-        num_envs=30,
-        num_steps=64,
-        gamma=0.99,
-        gae_lambda=0.95,
-        num_minibatches=30,
-        update_epochs=4,
-        clip_coef=0.4,
-        ent_coef=0.25,
-        vf_coef=0.5,
-        max_grad_norm=2,
-        trajectory_path="trajectories/MiniGrid-DoorKey-8x8-trajectories.pkl",
-    )
-    return online_config
 
 
 @pytest.fixture()
@@ -117,10 +95,11 @@ def offline_config() -> OfflineTrainConfig:
     return offline_config
 
 
-def test_load_decision_transformer(
-    transformer_config,
+@pytest.fixture()
+def saved_model_path(
     offline_config,
     environment_config,
+    transformer_config,
     cleanup_test_results,
 ):
     model = DecisionTransformer(
@@ -135,19 +114,14 @@ def test_load_decision_transformer(
         offline_config=offline_config,
     )
 
-    new_model = load_decision_transformer(path)
-
-    assert_state_dicts_are_equal(new_model.state_dict(), model.state_dict())
-
-    assert new_model.transformer_config == transformer_config
-    assert new_model.environment_config == environment_config
+    return path
 
 
-def assert_state_dicts_are_equal(dict1, dict2):
-    keys1 = sorted(dict1.keys())
-    keys2 = sorted(dict2.keys())
+def test_calibration_legacy_model(args):
+    args.model_path = "models/MiniGrid-DoorKey-8x8-v0/first_pass.pt"
+    runner(args)
 
-    assert keys1 == keys2
 
-    for key1, key2 in zip(keys1, keys2):
-        assert dict1[key1].equal(dict2[key2])
+def test_calibration_current(args, saved_model_path):
+    args.model_path = saved_model_path
+    runner(args)

@@ -165,21 +165,34 @@ def run_decision_transformer(
             os.mkdir("models")
 
         model_path = f"models/{run_name}.pt"
-        t.save(
-            {
-                "model_state_dict": model.state_dict(),
-                "transformer_config": json.dumps(
-                    transformer_config, cls=ConfigJsonEncoder
-                ),
-                "offline_config": json.dumps(
-                    offline_config, cls=ConfigJsonEncoder
-                ),
-            },
-            model_path,
+
+        store_transformer_model(
+            path=model_path,
+            model=model,
+            offline_config=offline_config,
         )
+
         artifact = wandb.Artifact(run_name, type="model")
         artifact.add_file(model_path)
         wandb.log_artifact(artifact)
         os.remove(model_path)
 
         wandb.finish()
+
+
+def store_transformer_model(path, model, offline_config):
+    t.save(
+        {
+            "model_state_dict": model.state_dict(),
+            "offline_config": json.dumps(
+                offline_config, cls=ConfigJsonEncoder
+            ),
+            "environment_config": json.dumps(
+                model.environment_config, cls=ConfigJsonEncoder
+            ),
+            "model_config": json.dumps(
+                model.transformer_config, cls=ConfigJsonEncoder
+            ),
+        },
+        path,
+    )
