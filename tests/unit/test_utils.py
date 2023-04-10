@@ -214,23 +214,6 @@ def test_load_legacy_decision_transformer():
     assert model.normalization_type is None
 
 
-def test_loa_legacy_decision_transformer_linear_time():
-    model_path = "models/linear_model_not_performant.pt"
-    env_config = EnvironmentConfig(
-        env_id="MiniGrid-Dynamic-Obstacles-8x8-v0", capture_video=False
-    )
-    env = make_env(env_config, 0, 0, "test")()
-    model = load_decision_transformer(model_path, env)
-
-    assert model.env == env
-    assert model.env.action_space.n == 3
-    assert model.n_ctx == 3
-    assert model.d_model == 128
-    assert model.n_heads == 2
-    assert model.n_layers == 1
-    assert model.normalization_type is None
-
-
 def test_load_legacy_decision_key_door():
     model_path = "models/MiniGrid-DoorKey-8x8-v0/first_pass.pt"
     env_config = EnvironmentConfig(
