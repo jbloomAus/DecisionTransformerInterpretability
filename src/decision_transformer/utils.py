@@ -97,7 +97,7 @@ def parse_args():
         action="append",
         help="<Required> Set flag",
         required=False,
-        default=[0, 1],
+        default=[],
     )
     parser.add_argument("--prob_go_from_end", type=float, default=0.1)
     parser.add_argument("--eval_max_time_steps", type=int, default=1000)
