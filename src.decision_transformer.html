@@ -224,153 +224,8 @@
 <dd></dd></dl>
 
 </section>
-<section id="module-src.decision_transformer.model">
-<span id="src-decision-transformer-model-module"></span><h2>src.decision_transformer.model module<a class="headerlink" href="#module-src.decision_transformer.model" title="Permalink to this heading">#</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="src.decision_transformer.model.DecisionTransformer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.decision_transformer.model.</span></span><span class="sig-name descname"><span class="pre">DecisionTransformer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_heads</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d_mlp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_layers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer_norm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_embedding_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'CNN'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_embedding_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'learned'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_timestep</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2048</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_ctx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cpu'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.model.DecisionTransformer" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="src.decision_transformer.model.DecisionTransformer.check_input_sizes">
-<span class="sig-name descname"><span class="pre">check_input_sizes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">states</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.model.DecisionTransformer.check_input_sizes" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.decision_transformer.model.DecisionTransformer.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">states</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtgs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#src.decision_transformer.model.DecisionTransformer.forward" title="Permalink to this definition">#</a></dt>
-<dd><p>Defines the computation performed at every call.</p>
-<p>Should be overridden by all subclasses.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Although the recipe for forward pass needs to be defined within
-this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
-instead of this since the former takes care of running the
-registered hooks while the latter silently ignores them.</p>
-</div>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.decision_transformer.model.DecisionTransformer.get_action">
-<span class="sig-name descname"><span class="pre">get_action</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">states</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtgs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.model.DecisionTransformer.get_action" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.decision_transformer.model.DecisionTransformer.get_action_embeddings">
-<span class="sig-name descname"><span class="pre">get_action_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">actions</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.model.DecisionTransformer.get_action_embeddings" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.decision_transformer.model.DecisionTransformer.get_logits">
-<span class="sig-name descname"><span class="pre">get_logits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seq_length</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.model.DecisionTransformer.get_logits" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.decision_transformer.model.DecisionTransformer.get_reward_embeddings">
-<span class="sig-name descname"><span class="pre">get_reward_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rtgs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.model.DecisionTransformer.get_reward_embeddings" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.decision_transformer.model.DecisionTransformer.get_state_embeddings">
-<span class="sig-name descname"><span class="pre">get_state_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">states</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.model.DecisionTransformer.get_state_embeddings" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.decision_transformer.model.DecisionTransformer.get_time_embeddings">
-<span class="sig-name descname"><span class="pre">get_time_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.model.DecisionTransformer.get_time_embeddings" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.decision_transformer.model.DecisionTransformer.get_token_embeddings">
-<span class="sig-name descname"><span class="pre">get_token_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_embeddings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_embeddings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_embeddings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reward_embeddings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.model.DecisionTransformer.get_token_embeddings" title="Permalink to this definition">#</a></dt>
-<dd><dl class="simple">
-<dt>We need to compose the embeddings for:</dt><dd><ul class="simple">
-<li><p>states</p></li>
-<li><p>actions</p></li>
-<li><p>rewards</p></li>
-<li><p>time</p></li>
-</ul>
-</dd>
-</dl>
-<p>Handling the cases where:
-1. we are training:</p>
-<blockquote>
-<div><ol class="arabic simple">
-<li><p>we may not have action yet (reward, state)</p></li>
-<li><p>we have (action, state, reward)…</p></li>
-</ol>
-</div></blockquote>
-<ol class="arabic simple" start="2">
-<li><dl class="simple">
-<dt>we are evaluating:</dt><dd><ol class="arabic simple">
-<li><p>we have a target “a reward” followed by state</p></li>
-</ol>
-</dd>
-</dl>
-</li>
-</ol>
-<p>1.1 and 2.1 are the same, but we need to handle the target as the initial reward.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.decision_transformer.model.DecisionTransformer.to_tokens">
-<span class="sig-name descname"><span class="pre">to_tokens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">states</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">actions</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtgs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timesteps</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.model.DecisionTransformer.to_tokens" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.model.DecisionTransformer.training">
-<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#src.decision_transformer.model.DecisionTransformer.training" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="src.decision_transformer.model.PosEmbedTokens">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.decision_transformer.model.</span></span><span class="sig-name descname"><span class="pre">PosEmbedTokens</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cfg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">HookedTransformerConfig</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.model.PosEmbedTokens" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="src.decision_transformer.model.PosEmbedTokens.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tokens</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">past_kv_pos_offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="headerlink" href="#src.decision_transformer.model.PosEmbedTokens.forward" title="Permalink to this definition">#</a></dt>
-<dd><p>Tokens have shape [batch, pos]
-Output shape [pos, d_model] - will be broadcast along batch dim</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.model.PosEmbedTokens.training">
-<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#src.decision_transformer.model.PosEmbedTokens.training" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="src.decision_transformer.model.StateEncoder">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.decision_transformer.model.</span></span><span class="sig-name descname"><span class="pre">StateEncoder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_embed</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.model.StateEncoder" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="src.decision_transformer.model.StateEncoder.forward">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.model.StateEncoder.forward" title="Permalink to this definition">#</a></dt>
-<dd><p>Defines the computation performed at every call.</p>
-<p>Should be overridden by all subclasses.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Although the recipe for forward pass needs to be defined within
-this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
-instead of this since the former takes care of running the
-registered hooks while the latter silently ignores them.</p>
-</div>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.model.StateEncoder.training">
-<span class="sig-name descname"><span class="pre">training</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><a class="headerlink" href="#src.decision_transformer.model.StateEncoder.training" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.decision_transformer.model.seed_everything">
-<span class="sig-prename descclassname"><span class="pre">src.decision_transformer.model.</span></span><span class="sig-name descname"><span class="pre">seed_everything</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.model.seed_everything" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
+<section id="src-decision-transformer-model-module">
+<h2>src.decision_transformer.model module<a class="headerlink" href="#src-decision-transformer-model-module" title="Permalink to this heading">#</a></h2>
 </section>
 <section id="module-src.decision_transformer.offline_dataset">
 <span id="src-decision-transformer-offline-dataset-module"></span><h2>src.decision_transformer.offline_dataset module<a class="headerlink" href="#module-src.decision_transformer.offline_dataset" title="Permalink to this heading">#</a></h2>
@@ -491,20 +346,8 @@ registered hooks while the latter silently ignores them.</p>
 <dd></dd></dl>
 
 </section>
-<section id="module-src.decision_transformer.trainer">
-<span id="src-decision-transformer-trainer-module"></span><h2>src.decision_transformer.trainer module<a class="headerlink" href="#module-src.decision_transformer.trainer" title="Permalink to this heading">#</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="src.decision_transformer.trainer.Trainer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.decision_transformer.trainer.</span></span><span class="sig-name descname"><span class="pre">Trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#src.decision_transformer.model.DecisionTransformer" title="src.decision_transformer.model.DecisionTransformer"><span class="pre">DecisionTransformer</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask_action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">get_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_loss_fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">CrossEntropyLoss()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_loss_fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">CrossEntropyLoss()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reward_loss_fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">MSELoss()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_coef</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_coef</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reward_coef</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scheduler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.trainer.Trainer" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>I like this abstraction from the original paper so let’s emulate it.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="src.decision_transformer.trainer.Trainer.train_step">
-<span class="sig-name descname"><span class="pre">train_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">step</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.trainer.Trainer.train_step" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
+<section id="src-decision-transformer-trainer-module">
+<h2>src.decision_transformer.trainer module<a class="headerlink" href="#src-decision-transformer-trainer-module" title="Permalink to this heading">#</a></h2>
 </section>
 <section id="module-src.decision_transformer.utils">
 <span id="src-decision-transformer-utils-module"></span><h2>src.decision_transformer.utils module<a class="headerlink" href="#module-src.decision_transformer.utils" title="Permalink to this heading">#</a></h2>
@@ -663,17 +506,7 @@ every 2 tokens for clone transformers.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="src.decision_transformer.utils.load_decision_transformer">
-<span class="sig-prename descclassname"><span class="pre">src.decision_transformer.utils.</span></span><span class="sig-name descname"><span class="pre">load_decision_transformer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DecisionTransformer</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#src.decision_transformer.model.DecisionTransformer" title="src.decision_transformer.model.DecisionTransformer"><span class="pre">DecisionTransformer</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#src.decision_transformer.utils.load_decision_transformer" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.load_legacy_decision_transformer">
-<span class="sig-prename descclassname"><span class="pre">src.decision_transformer.utils.</span></span><span class="sig-name descname"><span class="pre">load_legacy_decision_transformer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.utils.load_legacy_decision_transformer" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.model_stored_in_legacy_format">
-<span class="sig-prename descclassname"><span class="pre">src.decision_transformer.utils.</span></span><span class="sig-name descname"><span class="pre">model_stored_in_legacy_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.utils.model_stored_in_legacy_format" title="Permalink to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">src.decision_transformer.utils.</span></span><span class="sig-name descname"><span class="pre">load_decision_transformer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DecisionTransformer</span></span></span><a class="headerlink" href="#src.decision_transformer.utils.load_decision_transformer" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -749,34 +582,7 @@ every 2 tokens for clone transformers.</p>
 <li><a class="reference internal" href="#src.decision_transformer.calibration.plot_calibration_statistics"><code class="docutils literal notranslate"><span class="pre">plot_calibration_statistics()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#module-src.decision_transformer.model">src.decision_transformer.model module</a><ul>
-<li><a class="reference internal" href="#src.decision_transformer.model.DecisionTransformer"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer</span></code></a><ul>
-<li><a class="reference internal" href="#src.decision_transformer.model.DecisionTransformer.check_input_sizes"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.check_input_sizes()</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.model.DecisionTransformer.forward"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.forward()</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.model.DecisionTransformer.get_action"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.get_action()</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.model.DecisionTransformer.get_action_embeddings"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.get_action_embeddings()</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.model.DecisionTransformer.get_logits"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.get_logits()</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.model.DecisionTransformer.get_reward_embeddings"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.get_reward_embeddings()</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.model.DecisionTransformer.get_state_embeddings"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.get_state_embeddings()</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.model.DecisionTransformer.get_time_embeddings"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.get_time_embeddings()</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.model.DecisionTransformer.get_token_embeddings"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.get_token_embeddings()</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.model.DecisionTransformer.to_tokens"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.to_tokens()</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.model.DecisionTransformer.training"><code class="docutils literal notranslate"><span class="pre">DecisionTransformer.training</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#src.decision_transformer.model.PosEmbedTokens"><code class="docutils literal notranslate"><span class="pre">PosEmbedTokens</span></code></a><ul>
-<li><a class="reference internal" href="#src.decision_transformer.model.PosEmbedTokens.forward"><code class="docutils literal notranslate"><span class="pre">PosEmbedTokens.forward()</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.model.PosEmbedTokens.training"><code class="docutils literal notranslate"><span class="pre">PosEmbedTokens.training</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#src.decision_transformer.model.StateEncoder"><code class="docutils literal notranslate"><span class="pre">StateEncoder</span></code></a><ul>
-<li><a class="reference internal" href="#src.decision_transformer.model.StateEncoder.forward"><code class="docutils literal notranslate"><span class="pre">StateEncoder.forward()</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.model.StateEncoder.training"><code class="docutils literal notranslate"><span class="pre">StateEncoder.training</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#src.decision_transformer.model.seed_everything"><code class="docutils literal notranslate"><span class="pre">seed_everything()</span></code></a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#src-decision-transformer-model-module">src.decision_transformer.model module</a></li>
 <li><a class="reference internal" href="#module-src.decision_transformer.offline_dataset">src.decision_transformer.offline_dataset module</a><ul>
 <li><a class="reference internal" href="#src.decision_transformer.offline_dataset.TrajectoryDataset"><code class="docutils literal notranslate"><span class="pre">TrajectoryDataset</span></code></a><ul>
 <li><a class="reference internal" href="#src.decision_transformer.offline_dataset.TrajectoryDataset.add_padding"><code class="docutils literal notranslate"><span class="pre">TrajectoryDataset.add_padding()</span></code></a></li>
@@ -813,13 +619,7 @@ every 2 tokens for clone transformers.</p>
 <li><a class="reference internal" href="#src.decision_transformer.train.train"><code class="docutils literal notranslate"><span class="pre">train()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#module-src.decision_transformer.trainer">src.decision_transformer.trainer module</a><ul>
-<li><a class="reference internal" href="#src.decision_transformer.trainer.Trainer"><code class="docutils literal notranslate"><span class="pre">Trainer</span></code></a><ul>
-<li><a class="reference internal" href="#src.decision_transformer.trainer.Trainer.train_step"><code class="docutils literal notranslate"><span class="pre">Trainer.train_step()</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
+<li><a class="reference internal" href="#src-decision-transformer-trainer-module">src.decision_transformer.trainer module</a></li>
 <li><a class="reference internal" href="#module-src.decision_transformer.utils">src.decision_transformer.utils module</a><ul>
 <li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs"><code class="docutils literal notranslate"><span class="pre">DTArgs</span></code></a><ul>
 <li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.batch_size"><code class="docutils literal notranslate"><span class="pre">DTArgs.batch_size</span></code></a></li>
@@ -853,8 +653,6 @@ every 2 tokens for clone transformers.</p>
 </li>
 <li><a class="reference internal" href="#src.decision_transformer.utils.get_max_len_from_model_type"><code class="docutils literal notranslate"><span class="pre">get_max_len_from_model_type()</span></code></a></li>
 <li><a class="reference internal" href="#src.decision_transformer.utils.load_decision_transformer"><code class="docutils literal notranslate"><span class="pre">load_decision_transformer()</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.load_legacy_decision_transformer"><code class="docutils literal notranslate"><span class="pre">load_legacy_decision_transformer()</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.model_stored_in_legacy_format"><code class="docutils literal notranslate"><span class="pre">model_stored_in_legacy_format()</span></code></a></li>
 <li><a class="reference internal" href="#src.decision_transformer.utils.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
 </ul>
 </li>
