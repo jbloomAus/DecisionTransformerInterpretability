@@ -2,7 +2,7 @@ import argparse
 import json
 import re
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Union
 
 import torch as t
 from minigrid.wrappers import OneHotPartialObsWrapper, RGBImgPartialObsWrapper
@@ -118,7 +118,7 @@ def parse_args():
 # TODO Suppourt loading Clone Transformers
 def load_decision_transformer(
     model_path, env=None
-) -> DecisionTransformer | DecisionTransformerLegacy:
+) -> Union[DecisionTransformer, DecisionTransformerLegacy]:
     """ """
 
     if model_stored_in_legacy_format(model_path):
