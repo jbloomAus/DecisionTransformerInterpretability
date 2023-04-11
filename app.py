@@ -30,6 +30,10 @@ from src.streamlit_app.static_analysis_components import (
 )
 from src.streamlit_app.visualizations import action_string_to_id
 
+from src.decision_transformer.model import (
+    DecisionTransformer as LegacyDecisionTransformer,
+)
+
 start = time.time()
 
 st.set_page_config(
@@ -44,11 +48,11 @@ with st.sidebar:
 
 initial_rtg = hyperpar_side_bar()
 
-model_path = (
-    "models/MiniGrid-Dynamic-Obstacles-8x8-v0/demo_model_overnight_training.pt"
-)
+# model_path = (
+#     "models/MiniGrid-Dynamic-Obstacles-8x8-v0/demo_model_overnight_training.pt"
+# )
 # model_path = "dev/artifacts/MiniGrid-MemoryS7FixedStart-v0__MiniGrid-MemoryS7FixedStart-v0__1__1680856400:v0/MiniGrid-MemoryS7FixedStart-v0__MiniGrid-MemoryS7FixedStart-v0__1__1680856400.pt"
-
+model_path = "dev/artifacts/MiniGrid-Dynamic-Obstacles-8x8-v0__Test-DT-n_ctx2__1__1681108010:v0/MiniGrid-Dynamic-Obstacles-8x8-v0__Test-DT-n_ctx2__1__1681108010.pt"
 # model_path="models/MiniGrid-Dynamic-Obstacles-8x8-v0/demo_model_one_hot_overnight.pt"
 # model_path = "artifacts/MiniGrid-DoorKey-8x8-v0__Dev__1__1673268725:v0/MiniGrid-DoorKey-8x8-v0__Dev__1__1673268725.pt"
 # model_path = "artifacts/MiniGrid-MemoryS13Random-v0__MiniGrid-MemoryS13Random__1__1675311480:v0/MiniGrid-MemoryS13Random-v0__MiniGrid-MemoryS13Random__1__1675311480.pt"
@@ -88,10 +92,17 @@ with st.sidebar:
         negative_action_direction = action_string_to_id[
             negative_action_direction
         ]
-        logit_dir = (
-            dt.predict_actions.weight[positive_action_direction]
-            - dt.predict_actions.weight[negative_action_direction]
-        )
+
+        if isinstance(dt, LegacyDecisionTransformer):
+            logit_dir = (
+                dt.predict_actions.weight[positive_action_direction]
+                - dt.predict_actions.weight[negative_action_direction]
+            )
+        else:
+            logit_dir = (
+                dt.action_predictor.weight[positive_action_direction]
+                - dt.action_predictor.weight[negative_action_direction]
+            )
     else:
         st.warning("Single Logit Analysis may be misleading.")
         selected_action_direction = st.selectbox(

@@ -251,7 +251,7 @@ class DecisionTransformer(TrajectoryTransformer):
             transformer_config=transformer_config,
             **kwargs,
         )
-
+        self.model_type = "decision_transformer"
         self.reward_embedding = nn.Sequential(
             nn.Linear(1, self.transformer_config.d_model, bias=False)
         )
@@ -465,7 +465,7 @@ class CloneTransformer(TrajectoryTransformer):
         environment_config: EnvironmentConfig,
     ):
         super().__init__(transformer_config, environment_config)
-
+        self.model_type = "clone_transformer"
         # n_ctx must be odd (previous state, action, next state)
         assert (transformer_config.n_ctx - 1) % 2 == 0
         self.transformer = (

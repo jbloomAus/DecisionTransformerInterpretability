@@ -9,13 +9,13 @@ from minigrid.wrappers import OneHotPartialObsWrapper, RGBImgPartialObsWrapper
 
 from src.config import (
     EnvironmentConfig,
-    OfflineTrainConfig,
     TransformerModelConfig,
 )
-from src.models.trajectory_transformer import DecisionTransformer
-
+from src.models.trajectory_transformer import (
+    DecisionTransformer,
+    CloneTransformer,
+)
 from .model import DecisionTransformer as DecisionTransformerLegacy
-from .offline_dataset import TrajectoryDataset
 
 
 @dataclass
@@ -115,6 +115,7 @@ def parse_args():
     return args
 
 
+# TODO Suppourt loading Clone Transformers
 def load_decision_transformer(
     model_path, env=None
 ) -> DecisionTransformer | DecisionTransformerLegacy:

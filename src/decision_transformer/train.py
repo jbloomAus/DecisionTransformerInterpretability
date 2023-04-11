@@ -279,10 +279,8 @@ def evaluate_dt_agent(
         )
 
     max_len = get_max_len_from_model_type(
-        model_type="decision_transformer"
-        if isinstance(model, DecisionTransformer)
-        else "clone_transformer",
-        n_ctx=model.transformer_config.n_ctx,
+        model.model_type,
+        model.transformer_config.n_ctx,
     )
 
     traj_lengths = []

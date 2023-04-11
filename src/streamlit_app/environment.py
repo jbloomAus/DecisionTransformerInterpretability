@@ -7,10 +7,21 @@ import streamlit as st
 import torch as t
 
 from src.config import EnvironmentConfig
-
-from src.decision_transformer.utils import load_decision_transformer
+from src.models.trajectory_transformer import (
+    DecisionTransformer,
+    CloneTransformer,
+)
+from src.decision_transformer.model import (
+    DecisionTransformer as LegacyDecisionTransformer,
+)
+from src.decision_transformer.utils import (
+    load_decision_transformer,
+    get_max_len_from_model_type,
+)
 from src.environments.environments import make_env
 from src.utils import pad_tensor
+
+from .legacy import get_action_preds_legacy
 
 
 @st.cache(allow_output_mutation=True)
@@ -63,6 +74,10 @@ def get_env_and_dt(model_path):
     env = env()
 
     dt = load_decision_transformer(model_path, env)
+    if not hasattr(dt, "n_ctx"):
+        dt.n_ctx = dt.transformer_config.n_ctx
+    if not hasattr(dt, "time_embedding_type"):
+        dt.time_embedding_type = dt.transformer_config.time_embedding_type
     return env, dt
 
 
@@ -113,7 +128,14 @@ def get_env_and_dt_legacy(model_path):
 
 
 def get_action_preds(dt):
-    max_len = dt.n_ctx // 3
+    # so we can ignore older models when making updates
+    if isinstance(dt, LegacyDecisionTransformer):
+        return get_action_preds_legacy(dt)
+
+    max_len = get_max_len_from_model_type(
+        dt.model_type,
+        dt.transformer_config.n_ctx,
+    )
 
     if "timestep_adjustment" in st.session_state:
         timesteps = (
@@ -125,11 +147,31 @@ def get_action_preds(dt):
     actions = st.session_state.a[:, -max_len:]
     rtg = st.session_state.rtg[:, -max_len:]
 
-    if obs.shape[1] < max_len:
-        obs = pad_tensor(obs, max_len)
-        actions = pad_tensor(actions, max_len, pad_token=dt.env.action_space.n)
-        rtg = pad_tensor(rtg, max_len, pad_token=0)
-        timesteps = pad_tensor(timesteps, max_len, pad_token=0)
+    # truncations:
+    obs = obs[:, -max_len:] if obs.shape[1] > max_len else obs
+    actions = (
+        actions[:, -(obs.shape[1] - 1) :]
+        if (actions.shape[1] > 1 and max_len > 1)
+        else None
+    )
+    timesteps = (
+        timesteps[:, -max_len:] if timesteps.shape[1] > max_len else timesteps
+    )
+    rtg = rtg[:, -max_len:] if rtg.shape[1] > max_len else rtg
+
+    # st.write("max len: ", max_len)
+    # st.write(obs.shape)
+    # st.write(actions.shape)
+    # st.write(rtg.shape)
+    # st.write(timesteps.shape)
+
+    # if obs.shape[1] < max_len:
+    #     obs = pad_tensor(obs, max_len)
+    #     if actions is not None:
+    #         actions = pad_tensor(actions, max_len, pad_token=dt.environment_config.action_space.n)
+    #     if rtg is not None:
+    #         rtg = pad_tensor(rtg, max_len, pad_token=0)
+    #     timesteps = pad_tensor(timesteps, max_len, pad_token=0)
 
     if dt.time_embedding_type == "linear":
         timesteps = timesteps.to(dtype=t.float32)
@@ -138,14 +180,15 @@ def get_action_preds(dt):
 
     tokens = dt.to_tokens(
         obs,
-        actions.to(dtype=t.long),
+        actions,
         rtg,
         timesteps.to(dtype=t.long),
     )
 
     x, cache = dt.transformer.run_with_cache(tokens, remove_batch_dim=False)
+
     state_preds, action_preds, reward_preds = dt.get_logits(
-        x, batch_size=1, seq_length=max_len
+        x, batch_size=1, seq_length=obs.shape[1], no_actions=actions is None
     )
 
     return action_preds, x, cache, tokens

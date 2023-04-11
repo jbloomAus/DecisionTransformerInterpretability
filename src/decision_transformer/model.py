@@ -101,6 +101,10 @@ class DecisionTransformer(nn.Module):
         """
         super().__init__()
 
+        print(
+            "Note: This is a legacy architecture that is no longer maintained."
+        )
+        self.model_type = "decision_transformer"
         self.env = env
         self.d_model = d_model
         self.n_heads = n_heads
