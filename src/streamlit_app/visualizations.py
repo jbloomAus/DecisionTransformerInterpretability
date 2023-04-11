@@ -65,7 +65,6 @@ def plot_attention_pattern_single(
         if cache["pattern", layer, "attn"].shape[0] == 1:
             attention_pattern = cache["attn_scores", layer, "attn"][0]
 
-    attention_pattern = attention_pattern[:, :n_tokens, :n_tokens]
     if specific_heads is not None:
         attention_pattern = attention_pattern[specific_heads]
 

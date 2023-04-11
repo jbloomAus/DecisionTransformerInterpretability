@@ -522,6 +522,9 @@ def test_sample_from_agents(lstm_agents):
     max_steps = lstm_agents[0].environment_config.max_steps
     num_envs = 4
 
+    if not os.path.exists("tmp"):
+        os.mkdir("tmp")
+
     all_episode_lengths, all_episode_returns = sample_from_agents(
         lstm_agents,
         rollout_length=rollout_length,

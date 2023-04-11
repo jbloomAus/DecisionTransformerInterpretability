@@ -27,7 +27,7 @@ def show_qk_circuit(dt):
         )
 
         W_E_rtg = dt.reward_embedding[0].weight
-        W_E_state = dt.state_encoder.weight
+        W_E_state = dt.state_embedding.weight
         W_Q = dt.transformer.blocks[0].attn.W_Q
         W_K = dt.transformer.blocks[0].attn.W_K
 
@@ -41,11 +41,12 @@ def show_qk_circuit(dt):
         # W_QK_full = W_E_rtg.T @ W_QK @ W_E_state
         W_QK_full = W_E_state.T @ W_QK @ W_E_rtg
 
-        channels = dt.env.observation_space["image"].shape[-1]
-        height = dt.env.observation_space["image"].shape[0]
-        width = dt.env.observation_space["image"].shape[1]
+        n_heads = dt.transformer_config.n_heads
+        height, width, channels = dt.environment_config.observation_space[
+            "image"
+        ].shape
         W_QK_full_reshaped = W_QK_full.reshape(
-            dt.n_heads, 1, channels, height, width
+            n_heads, 1, channels, height, width
         )
 
         selection_columns = st.columns(2)
@@ -53,7 +54,7 @@ def show_qk_circuit(dt):
         with selection_columns[0]:
             heads = st.multiselect(
                 "Select Heads",
-                options=list(range(dt.n_heads)),
+                options=list(range(n_heads)),
                 key="head qk",
                 default=[0],
             )
@@ -105,21 +106,22 @@ def show_ov_circuit(dt):
             """
         )
 
-        W_U = dt.predict_actions.weight
+        W_U = dt.action_predictor.weight
         W_O = dt.transformer.blocks[0].attn.W_O
         W_V = dt.transformer.blocks[0].attn.W_V
-        W_E = dt.state_encoder.weight
+        W_E = dt.state_embedding.weight
         W_OV = W_V @ W_O
 
         # st.plotly_chart(px.imshow(W_OV.detach().numpy(), facet_col=0), use_container_width=True)
         OV_circuit_full = W_E.T @ W_OV @ W_U.T
 
-        channels = dt.env.observation_space["image"].shape[-1]
-        height = dt.env.observation_space["image"].shape[0]
-        width = dt.env.observation_space["image"].shape[1]
+        height, width, channels = dt.environment_config.observation_space[
+            "image"
+        ].shape
         n_actions = W_U.shape[0]
+        n_heads = dt.transformer_config.n_heads
         OV_circuit_full_reshaped = OV_circuit_full.reshape(
-            dt.n_heads, channels, height, width, n_actions
+            n_heads, channels, height, width, n_actions
         )
 
         if channels == 3:
@@ -134,7 +136,7 @@ def show_ov_circuit(dt):
         with selection_columns[0]:
             heads = st.multiselect(
                 "Select Heads",
-                options=list(range(dt.n_heads)),
+                options=list(range(n_heads)),
                 key="head ov",
                 default=[0],
             )

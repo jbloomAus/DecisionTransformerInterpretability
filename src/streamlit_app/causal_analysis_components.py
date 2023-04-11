@@ -17,8 +17,8 @@ def show_ablation(dt, logit_dir, original_cache):
         # list out the components of the transformer
 
         # make a streamlit form for choosing a component to ablate
-        n_layers = dt.n_layers
-        n_heads = dt.n_heads
+        n_layers = dt.transformer_config.n_layers
+        n_heads = dt.transformer_config.n_heads
 
         columns = st.columns(4)
         with columns[0]:

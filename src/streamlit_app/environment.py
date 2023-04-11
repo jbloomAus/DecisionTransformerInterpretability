@@ -77,52 +77,6 @@ def get_env_and_dt(model_path):
     return env, dt
 
 
-def get_env_and_dt_legacy(model_path):
-    # we need to one if the env was one hot encoded. Some tech debt here.
-    state_dict = t.load(model_path)
-    one_hot_encoded = not (
-        state_dict["state_encoder.weight"].shape[-1] % 20
-    )  # hack for now
-    # list all mini grid envs
-    minigrid_envs = [i for i in gym.envs.registry.keys() if "MiniGrid" in i]
-    # find the env id in the path
-    env_ids = [i for i in minigrid_envs if i in model_path]
-    if len(env_ids) == 0:
-        raise ValueError(
-            f"Could not find the env id in the model path: {model_path}"
-        )
-    elif len(env_ids) > 1:
-        raise ValueError(
-            f"Found more than one env id in the model path: {model_path}"
-        )
-    else:
-        env_id = env_ids[0]
-    # env_id = 'MiniGrid-Dynamic-Obstacles-8x8-v0'
-    if one_hot_encoded:
-        view_size = int(
-            math.sqrt(state_dict["state_encoder.weight"].shape[-1] // 20)
-        )
-    else:
-        view_size = int(
-            math.sqrt(state_dict["state_encoder.weight"].shape[-1] // 3)
-        )
-
-    env_config = EnvironmentConfig(
-        env_id=env_id,
-        capture_video=False,
-        fully_observed=False,
-        one_hot_obs=one_hot_encoded,
-        view_size=view_size,
-        max_steps=30,
-    )
-
-    env = make_env(env_config, seed=4200, idx=0, run_name="dev")
-    env = env()
-
-    dt = load_decision_transformer(model_path, env)
-    return env, dt
-
-
 def get_action_preds(dt):
     # so we can ignore older models when making updates
 

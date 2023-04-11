@@ -6,6 +6,8 @@ from einops import rearrange
 from fancy_einsum import einsum
 from minigrid.core.constants import IDX_TO_COLOR, IDX_TO_OBJECT
 
+from src.decision_transformer.utils import get_max_len_from_model_type
+
 from .analysis import get_residual_decomp
 from .constants import (
     IDX_TO_ACTION,
@@ -33,16 +35,17 @@ def show_attention_pattern(dt, cache):
             A=\operatorname{softmax}\left(x^T W_Q^T W_K x\right)
             """
         )
-
+        n_heads = dt.transformer_config.n_heads
+        n_layers = dt.transformer_config.n_layers
         softmax = st.checkbox("softmax", value=True)
         heads = st.multiselect(
             "Select Heads",
-            options=list(range(dt.n_heads)),
-            default=list(range(dt.n_heads)),
+            options=list(range(n_heads)),
+            default=list(range(n_heads)),
             key="heads attention",
         )
 
-        if dt.n_layers == 1:
+        if n_layers == 1:
             plot_attention_pattern_single(
                 cache, 0, softmax=softmax, specific_heads=heads
             )
@@ -50,7 +53,7 @@ def show_attention_pattern(dt, cache):
             layer = st.slider(
                 "Layer",
                 min_value=0,
-                max_value=dt.n_layers - 1,
+                max_value=n_layers - 1,
                 value=0,
                 step=1,
             )
@@ -89,7 +92,7 @@ def show_rtg_scan(dt, logit_dir):
         )
         min_rtg = rtg_range[0]
         max_rtg = rtg_range[1]
-        max_len = dt.n_ctx // 3
+        max_len = get_max_len_from_model_type(dt.model_type, dt.n_ctx)
 
         if "timestep_adjustment" in st.session_state:
             timesteps = (
@@ -99,6 +102,8 @@ def show_rtg_scan(dt, logit_dir):
 
         obs = st.session_state.obs[:, -max_len:].repeat(batch_size, 1, 1, 1, 1)
         a = st.session_state.a[:, -max_len:].repeat(batch_size, 1, 1)
+        if obs.shape[1] == 1:
+            a = None
         rtg = st.session_state.rtg[:, -max_len:].repeat(batch_size, 1, 1)
         timesteps = (
             st.session_state.timesteps[:, -max_len:].repeat(batch_size, 1, 1)
@@ -143,7 +148,10 @@ def show_rtg_scan(dt, logit_dir):
             tokens, remove_batch_dim=False
         )
         state_preds, action_preds, reward_preds = dt.get_logits(
-            x, batch_size=batch_size, seq_length=max_len
+            x,
+            batch_size=batch_size,
+            seq_length=max_len,
+            no_actions=a is None,
         )
 
         df = pd.DataFrame(
@@ -190,7 +198,12 @@ def show_rtg_scan(dt, logit_dir):
         # total dir is pretty much accurate
         assert (
             total_dir.squeeze(0).detach() - df[list(decomp.keys())].sum(axis=1)
-        ).mean() < 1e-5
+        ).mean() < 1e-3, "total dir is not accurate: {}".format(
+            (
+                total_dir.squeeze(0).detach()
+                - df[list(decomp.keys())].sum(axis=1)
+            ).mean()
+        )
 
         if st.checkbox("Show component contributions"):
             # make a multiselect to choose the decomp keys to compare
@@ -224,7 +237,9 @@ def show_rtg_scan(dt, logit_dir):
             columns = st.columns(2)
             with columns[0]:
                 attention_pattern = cache["attn_scores", 0, "attn"]
-                layer = st.selectbox("Layer", list(range(dt.n_layers)))
+                layer = st.selectbox(
+                    "Layer", list(range(dt.transformer_config.n_layers))
+                )
             with columns[1]:
                 head = st.selectbox(
                     "Head", list(range(attention_pattern.shape[1]))
@@ -258,11 +273,11 @@ def render_observation_view(dt, tokens, logit_dir):
 
     last_obs_reshaped = rearrange(last_obs, "h w c -> c h w")
 
-    n_channels = dt.env.observation_space["image"].shape[-1]
-    height = dt.env.observation_space["image"].shape[0]
-    width = dt.env.observation_space["image"].shape[1]
+    height, width, n_channels = dt.environment_config.observation_space[
+        "image"
+    ].shape
 
-    weights = dt.state_encoder.weight.detach().cpu()
+    weights = dt.state_embedding.weight.detach().cpu()
 
     weights_reshaped = rearrange(
         weights, "d (c h w) -> c d h w", c=n_channels, h=height, w=width

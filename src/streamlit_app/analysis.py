@@ -11,7 +11,7 @@ def name_residual_components(dt, cache):
         "hook_pos_embed",
     ]
 
-    n_layers = dt.n_layers
+    n_layers = dt.transformer_config.n_layers
 
     # start with input
     for layer in range(n_layers):
@@ -24,12 +24,12 @@ def name_residual_components(dt, cache):
     return result
 
 
-def get_residual_decomp(dt, cache, logit_dir, nice_names=True, seq_pos=-2):
+def get_residual_decomp(dt, cache, logit_dir, nice_names=True, seq_pos=-1):
     """
     Returns the residual decomposition for the decision transformer
     """
     decomp = {}
-    n_heads = dt.n_heads
+    n_heads = dt.transformer_config.n_heads
     state_dict = dt.state_dict()
     # get the residual components
     residual_components = name_residual_components(dt, cache)

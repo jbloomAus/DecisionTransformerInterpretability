@@ -20,8 +20,10 @@ from src.models.trajectory_transformer import DecisionTransformer
 
 @pytest.fixture()
 def cleanup_test_results() -> None:
-    yield
-    os.remove("tmp/model_data.pt")
+    if not os.path.exists("tmp"):
+        os.mkdir("tmp")
+    if os.path.exists("tmp/model_data.pt"):
+        os.remove("tmp/model_data.pt")
 
 
 @pytest.fixture()

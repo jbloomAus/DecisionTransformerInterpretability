@@ -75,6 +75,9 @@ def online_config():
 def test_trajectory_writer_numpy(
     environment_config, run_config, online_config
 ):
+    if not os.path.exists("tmp"):
+        os.mkdir("tmp")
+
     trajectory_writer = TrajectoryWriter(
         path="tmp/test_trajectory_writer_writer.pkl",
         run_config=run_config,

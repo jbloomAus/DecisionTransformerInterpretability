@@ -1,4 +1,5 @@
 import gymnasium as gym
+import os
 import pytest
 
 from src.config import (
@@ -27,6 +28,8 @@ def decision_transformer_path():
         environment_config=environment_config,
         transformer_config=transformer_config,
     )
+    if not os.path.exists("tmp"):
+        os.mkdir("tmp")
 
     path = "tmp/dt.pt"
     store_transformer_model(
