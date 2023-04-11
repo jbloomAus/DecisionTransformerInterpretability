@@ -1,8 +1,6 @@
-import pandas as pd
-import plotly.express as px
 import streamlit as st
 import streamlit.components.v1 as components
-import torch as t
+import uuid
 
 from .environment import get_action_preds
 from .utils import read_index_html
@@ -76,7 +74,7 @@ def render_trajectory_details():
 
 
 def reset_button():
-    if st.button("reset"):
+    if st.button("reset", key=uuid.uuid4()):
         del st.session_state.env
         del st.session_state.dt
         st.experimental_rerun()

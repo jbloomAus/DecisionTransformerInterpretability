@@ -1,5 +1,6 @@
 import plotly.express as px
 import streamlit as st
+import os
 
 
 def read_index_html():
@@ -24,3 +25,12 @@ def fancy_histogram(vector):
     fig = px.histogram(vector)
     fig.update_layout(showlegend=False)
     st.plotly_chart(fig, use_container_width=True)
+
+
+def list_models(path):
+    model_list = []
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            if file.endswith(".pt"):
+                model_list.append(os.path.join(root, file))
+    return model_list

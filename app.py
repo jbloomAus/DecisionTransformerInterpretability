@@ -30,6 +30,8 @@ from src.streamlit_app.static_analysis_components import (
 )
 from src.streamlit_app.visualizations import action_string_to_id
 
+from src.streamlit_app.model_index import model_index
+
 start = time.time()
 
 st.set_page_config(
@@ -42,11 +44,16 @@ with st.sidebar:
     )
     st.title("Decision Transformer Interpretability")
 
+model_directory = "models"
+selected_model_path = st.sidebar.selectbox(
+    label="Select Model",
+    options=model_index.keys(),
+    format_func=lambda x: model_index[x],
+    key="model_selector",
+)
+
 initial_rtg = hyperpar_side_bar()
 
-model_path = (
-    "models/MiniGrid-Dynamic-Obstacles-8x8-v0/ReproduceOriginalPostShort.pt"
-)
 
 action_string_to_id = {
     "left": 0,
@@ -60,7 +67,7 @@ action_string_to_id = {
 action_id_to_string = {v: k for k, v in action_string_to_id.items()}
 
 st.session_state.max_len = 1
-env, dt = initialize_playground(model_path, initial_rtg)
+env, dt = initialize_playground(selected_model_path, initial_rtg)
 x, cache, tokens = render_game_screen(dt, env)
 record_keypresses()
 
