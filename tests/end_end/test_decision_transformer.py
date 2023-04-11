@@ -61,6 +61,7 @@ def test_decision_transformer(download_training_data, n_ctx):
         eval_episodes=10,
         initial_rtg=[-1, 0, 1],
         eval_max_time_steps=1000,
+        model_type="decision_transformer",
     )
 
     run_decision_transformer(

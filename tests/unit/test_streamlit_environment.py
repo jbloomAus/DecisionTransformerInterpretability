@@ -8,9 +8,7 @@ from src.config import (
     TransformerModelConfig,
 )
 from src.models.trajectory_transformer import DecisionTransformer
-from src.decision_transformer.model import (
-    DecisionTransformer as LegacyDecisionTransformer,
-)
+
 from src.decision_transformer.runner import store_transformer_model
 from src.streamlit_app.environment import get_env_and_dt
 from src.environments.registration import register_envs
@@ -38,16 +36,6 @@ def decision_transformer_path():
     )
 
     return path
-
-
-def test_get_env_and_dt_legacy_model():
-    env, dt = get_env_and_dt(
-        "models/MiniGrid-Dynamic-Obstacles-8x8-v0/demo_model_overnight_training.pt"
-    )
-
-    assert isinstance(dt, LegacyDecisionTransformer)
-    assert isinstance(env, gym.Env)
-    assert dt.env == env
 
 
 def test_get_env_and_dt(decision_transformer_path):

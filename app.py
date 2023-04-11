@@ -30,10 +30,6 @@ from src.streamlit_app.static_analysis_components import (
 )
 from src.streamlit_app.visualizations import action_string_to_id
 
-from src.decision_transformer.model import (
-    DecisionTransformer as LegacyDecisionTransformer,
-)
-
 start = time.time()
 
 st.set_page_config(
@@ -93,16 +89,10 @@ with st.sidebar:
             negative_action_direction
         ]
 
-        if isinstance(dt, LegacyDecisionTransformer):
-            logit_dir = (
-                dt.predict_actions.weight[positive_action_direction]
-                - dt.predict_actions.weight[negative_action_direction]
-            )
-        else:
-            logit_dir = (
-                dt.action_predictor.weight[positive_action_direction]
-                - dt.action_predictor.weight[negative_action_direction]
-            )
+        logit_dir = (
+            dt.action_predictor.weight[positive_action_direction]
+            - dt.action_predictor.weight[negative_action_direction]
+        )
     else:
         st.warning("Single Logit Analysis may be misleading.")
         selected_action_direction = st.selectbox(

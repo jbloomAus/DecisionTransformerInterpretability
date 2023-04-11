@@ -20,11 +20,6 @@ def cleanup_test_results() -> None:
 
 
 @pytest.fixture()
-def legacy_model_path():
-    return "models/MiniGrid-DoorKey-8x8-v0/first_pass.pt"
-
-
-@pytest.fixture()
 def args():
     return Namespace(
         env_id="MiniGrid-DoorKey-8x8-v0",
@@ -115,11 +110,6 @@ def saved_model_path(
     )
 
     return path
-
-
-def test_calibration_legacy_model(args):
-    args.model_path = "models/MiniGrid-DoorKey-8x8-v0/first_pass.pt"
-    runner(args)
 
 
 def test_calibration_current(args, saved_model_path):

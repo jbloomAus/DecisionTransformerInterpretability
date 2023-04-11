@@ -11,17 +11,13 @@ from src.models.trajectory_transformer import (
     DecisionTransformer,
     CloneTransformer,
 )
-from src.decision_transformer.model import (
-    DecisionTransformer as LegacyDecisionTransformer,
-)
+
 from src.decision_transformer.utils import (
     load_decision_transformer,
     get_max_len_from_model_type,
 )
 from src.environments.environments import make_env
 from src.utils import pad_tensor
-
-from .legacy import get_action_preds_legacy
 
 
 @st.cache(allow_output_mutation=True)
@@ -129,8 +125,6 @@ def get_env_and_dt_legacy(model_path):
 
 def get_action_preds(dt):
     # so we can ignore older models when making updates
-    if isinstance(dt, LegacyDecisionTransformer):
-        return get_action_preds_legacy(dt)
 
     max_len = get_max_len_from_model_type(
         dt.model_type,
