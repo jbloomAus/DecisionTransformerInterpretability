@@ -24,7 +24,6 @@ from src.utils import pad_tensor
 def get_env_and_dt(model_path):
     # we need to one if the env was one hot encoded. Some tech debt here.
     state_dict = t.load(model_path)
-    st.write(state_dict.keys())
 
     env_config = state_dict["environment_config"]
     env_config = EnvironmentConfig(**json.loads(env_config))
@@ -101,7 +100,7 @@ def get_action_preds(dt):
     state_preds, action_preds, reward_preds = dt.get_logits(
         x, batch_size=1, seq_length=obs.shape[1], no_actions=actions is None
     )
-
+    st.write(action_preds.shape)
     return action_preds, x, cache, tokens
 
 

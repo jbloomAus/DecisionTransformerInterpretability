@@ -41,7 +41,7 @@ def show_ablation(dt, logit_dir, original_cache):
             dt.transformer.blocks[layer].hook_mlp_out.add_hook(ablation_func)
 
         action_preds, x, cache, tokens = get_action_preds(dt)
-
+        dt.transformer.reset_hooks()
         if st.checkbox("show action predictions"):
             plot_action_preds(action_preds)
         if st.checkbox("show counterfactual residual contributions"):
@@ -79,9 +79,9 @@ def get_ablation_function(ablate_to_mean, head_to_ablate, component="HEAD"):
         print(f"Shape of the value tensor: {value.shape}")
 
         if ablate_to_mean:
-            value[:, :-1, :] = value[:, :-1, :].mean(dim=2, keepdim=True)
+            value[:, :, :] = value[:, :, :].mean(dim=2, keepdim=True)
         else:
-            value[:, :-1, :] = 0  # ablate all but the last token
+            value[:, :, :] = 0  # ablate all but the last token
         return value
 
     if component == "HEAD":

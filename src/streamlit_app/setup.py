@@ -30,7 +30,6 @@ def initialize_playground(model_path, initial_rtg):
         st.session_state.timesteps = t.tensor([0]).unsqueeze(0).unsqueeze(0)
         st.session_state.dt = dt
     else:
-        st.write("already initialized")
         env = st.session_state.env
         dt = st.session_state.dt
 

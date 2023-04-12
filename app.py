@@ -52,13 +52,16 @@ with st.sidebar:
 
     model_directory = "models"
 
-    selected_model_path = st.selectbox(
-        label="Select Model",
-        options=model_index.keys(),
-        format_func=lambda x: model_index[x],
-        key="model_selector",
-        on_change=reset_env_dt,
-    )
+    with st.form("model_selector"):
+        selected_model_path = st.selectbox(
+            label="Select Model",
+            options=model_index.keys(),
+            format_func=lambda x: model_index[x],
+            key="model_selector",
+        )
+        submitted = st.form_submit_button("Load Model")
+        if submitted:
+            reset_env_dt()
 
 initial_rtg = hyperpar_side_bar()
 
