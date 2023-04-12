@@ -246,7 +246,7 @@ def test(
             accuracy = n_correct.item() / n_actions
             pbar.set_description(f"Testing DT: Accuracy so far {accuracy:.4f}")
 
-    mean_loss = loss.item() / epochs * test_batches_per_epoch
+    mean_loss = loss.item() / (epochs * test_batches_per_epoch)
 
     if track:
         wandb.log({"test/loss": mean_loss}, step=batch_number)
