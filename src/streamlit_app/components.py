@@ -75,8 +75,7 @@ def render_trajectory_details():
 
 def reset_button():
     if st.button("reset", key=uuid.uuid4()):
-        del st.session_state.env
-        del st.session_state.dt
+        reset_env_dt()
         st.experimental_rerun()
 
 
@@ -86,3 +85,8 @@ def record_keypresses():
         height=0,
         width=0,
     )
+
+
+def reset_env_dt():
+    del st.session_state.env
+    del st.session_state.dt

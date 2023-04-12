@@ -9,6 +9,7 @@ from src.streamlit_app.components import (
     render_game_screen,
     render_trajectory_details,
     reset_button,
+    reset_env_dt,
 )
 from src.streamlit_app.content import (
     analysis_help,
@@ -32,25 +33,32 @@ from src.streamlit_app.visualizations import action_string_to_id
 
 from src.streamlit_app.model_index import model_index
 
+from src.environments.registration import register_envs
+
+register_envs()
 start = time.time()
 
 st.set_page_config(
     page_title="Decision Transformer Interpretability",
     page_icon="assets/logofiles/Logo_black.ico",
 )
+
+
 with st.sidebar:
     st.image(
         "assets/logofiles/Logo_transparent.png", use_column_width="always"
     )
     st.title("Decision Transformer Interpretability")
 
-model_directory = "models"
-selected_model_path = st.sidebar.selectbox(
-    label="Select Model",
-    options=model_index.keys(),
-    format_func=lambda x: model_index[x],
-    key="model_selector",
-)
+    model_directory = "models"
+
+    selected_model_path = st.selectbox(
+        label="Select Model",
+        options=model_index.keys(),
+        format_func=lambda x: model_index[x],
+        key="model_selector",
+        on_change=reset_env_dt,
+    )
 
 initial_rtg = hyperpar_side_bar()
 
