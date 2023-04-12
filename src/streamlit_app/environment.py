@@ -94,7 +94,6 @@ def get_action_preds(dt):
         rtg,
         timesteps.to(dtype=t.long),
     )
-
     x, cache = dt.transformer.run_with_cache(tokens, remove_batch_dim=False)
 
     state_preds, action_preds, reward_preds = dt.get_logits(

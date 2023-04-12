@@ -24,7 +24,14 @@ def name_residual_components(dt, cache):
     return result
 
 
-def get_residual_decomp(dt, cache, logit_dir, nice_names=True, seq_pos=-1):
+def get_residual_decomp(
+    dt,
+    cache,
+    logit_dir,
+    nice_names=True,
+    seq_pos=-1,
+    include_attention_bias=False,
+):
     """
     Returns the residual decomposition for the decision transformer
     """
@@ -54,7 +61,8 @@ def get_residual_decomp(dt, cache, logit_dir, nice_names=True, seq_pos=-1):
         elif component.endswith(".hook_mlp_out"):
             decomp[component] = cache[component][:, seq_pos, :] @ logit_dir
         elif component.endswith(".b_O"):
-            decomp[component] = state_dict[component] @ logit_dir
+            if include_attention_bias:
+                decomp[component] = state_dict[component] @ logit_dir
 
     for k in decomp:
         decomp[k] = decomp[k].detach().numpy()

@@ -101,9 +101,9 @@ def show_rtg_scan(dt, logit_dir):
             )
 
         obs = st.session_state.obs[:, -max_len:].repeat(batch_size, 1, 1, 1, 1)
-        a = st.session_state.a[:, -max_len:].repeat(batch_size, 1, 1)
+        actions = st.session_state.a[:, -max_len:].repeat(batch_size, 1, 1)
         if obs.shape[1] == 1:
-            a = None
+            actions = None
         rtg = st.session_state.rtg[:, -max_len:].repeat(batch_size, 1, 1)
         timesteps = (
             st.session_state.timesteps[:, -max_len:].repeat(batch_size, 1, 1)
@@ -113,8 +113,22 @@ def show_rtg_scan(dt, logit_dir):
             t.linspace(min_rtg, max_rtg, batch_size)
             .unsqueeze(-1)
             .unsqueeze(-1)
-            .repeat(1, max_len, 1)
+            .repeat(1, obs.shape[1], 1)
         )
+
+        # duplicate truncation code
+        obs = obs[:, -max_len:] if obs.shape[1] > max_len else obs
+        actions = (
+            actions[:, -(obs.shape[1] - 1) :]
+            if (actions.shape[1] > 1 and max_len > 1)
+            else None
+        )
+        timesteps = (
+            timesteps[:, -max_len:]
+            if timesteps.shape[1] > max_len
+            else timesteps
+        )
+        rtg = rtg[:, -max_len:] if rtg.shape[1] > max_len else rtg
 
         if st.checkbox("add timestep noise"):
             # we want to add random integers in the range of a slider to the the timestep, the min/max on slider should be the max timesteps
@@ -142,34 +156,46 @@ def show_rtg_scan(dt, logit_dir):
         else:
             timesteps = timesteps.to(t.long)
 
-        tokens = dt.to_tokens(obs, a, rtg, timesteps)
-
+        # print out shape of each
+        tokens = dt.to_tokens(obs, actions, rtg, timesteps)
         x, cache = dt.transformer.run_with_cache(
             tokens, remove_batch_dim=False
         )
         state_preds, action_preds, reward_preds = dt.get_logits(
             x,
             batch_size=batch_size,
-            seq_length=max_len,
-            no_actions=a is None,
+            seq_length=obs.shape[1],
+            no_actions=actions is None,
         )
 
-        df = pd.DataFrame(
-            {
-                "RTG": rtg.squeeze(1).squeeze(1).detach().cpu().numpy(),
-                "Left": action_preds[:, 0, 0].detach().cpu().numpy(),
-                "Right": action_preds[:, 0, 1].detach().cpu().numpy(),
-                "Forward": action_preds[:, 0, 2].detach().cpu().numpy(),
-            }
-        )
+        preds_over_rtg = {
+            "RTG": rtg[:, 0, 0].detach().cpu().numpy(),
+            "Left": action_preds[:, 0, 0].detach().cpu().numpy(),
+            "Right": action_preds[:, 0, 1].detach().cpu().numpy(),
+            "Forward": action_preds[:, 0, 2].detach().cpu().numpy(),
+        }
 
-        # st.write(df.head())
+        if action_preds.shape[-1] == 7:
+            preds_over_rtg["Pickup"] = (
+                action_preds[:, 0, 3].detach().cpu().numpy()
+            )
+            preds_over_rtg["Drop"] = (
+                action_preds[:, 0, 4].detach().cpu().numpy()
+            )
+            preds_over_rtg["Toggle"] = (
+                action_preds[:, 0, 5].detach().cpu().numpy()
+            )
+            preds_over_rtg["Done"] = (
+                action_preds[:, 0, 6].detach().cpu().numpy()
+            )
+
+        df = pd.DataFrame(preds_over_rtg)
 
         # draw a line graph with left,right forward over RTG
         fig = px.line(
             df,
             x="RTG",
-            y=["Left", "Right", "Forward"],
+            y=["Left", "Right", "Forward", "Pickup", "Drop", "Toggle", "Done"],
             title="Action Prediction vs RTG",
         )
 
@@ -186,16 +212,15 @@ def show_rtg_scan(dt, logit_dir):
         if st.checkbox("Show Logit Scan"):
             st.plotly_chart(fig, use_container_width=True)
 
-        total_dir = x[:, 1, :] @ logit_dir
+        total_dir = x[:, -1, :] @ logit_dir
 
         # Now let's do the inner product with the logit dir of the components.
         decomp = get_residual_decomp(dt, cache, logit_dir)
 
         df = pd.DataFrame(decomp)
-        df["RTG"] = rtg.squeeze(1).squeeze(1).detach().cpu().numpy()
-        df["Total Dir"] = total_dir.squeeze(0).detach().cpu().numpy()
+        df["RTG"] = rtg[:, -1].squeeze(1).detach().cpu().numpy()
+        df["Total Dir"] = total_dir.detach().cpu().numpy()
 
-        # total dir is pretty much accurate
         assert (
             total_dir.squeeze(0).detach() - df[list(decomp.keys())].sum(axis=1)
         ).mean() < 1e-3, "total dir is not accurate: {}".format(
