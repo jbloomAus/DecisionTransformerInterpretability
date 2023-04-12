@@ -100,7 +100,6 @@ def get_action_preds(dt):
     state_preds, action_preds, reward_preds = dt.get_logits(
         x, batch_size=1, seq_length=obs.shape[1], no_actions=actions is None
     )
-    st.write(action_preds.shape)
     return action_preds, x, cache, tokens
 
 

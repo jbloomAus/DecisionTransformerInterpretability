@@ -13,9 +13,6 @@ from .visualizations import (
 
 def show_ablation(dt, logit_dir, original_cache):
     with st.expander("Ablation Experiment"):
-        st.write("ablation experiment here")
-        # list out the components of the transformer
-
         # make a streamlit form for choosing a component to ablate
         n_layers = dt.transformer_config.n_layers
         n_heads = dt.transformer_config.n_heads
