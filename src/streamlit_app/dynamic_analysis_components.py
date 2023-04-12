@@ -118,11 +118,12 @@ def show_rtg_scan(dt, logit_dir):
 
         # duplicate truncation code
         obs = obs[:, -max_len:] if obs.shape[1] > max_len else obs
-        actions = (
-            actions[:, -(obs.shape[1] - 1) :]
-            if (actions.shape[1] > 1 and max_len > 1)
-            else None
-        )
+        if actions is not None:
+            actions = (
+                actions[:, -(obs.shape[1] - 1) :]
+                if (actions.shape[1] > 1 and max_len > 1)
+                else None
+            )
         timesteps = (
             timesteps[:, -max_len:]
             if timesteps.shape[1] > max_len
@@ -192,12 +193,28 @@ def show_rtg_scan(dt, logit_dir):
         df = pd.DataFrame(preds_over_rtg)
 
         # draw a line graph with left,right forward over RTG
-        fig = px.line(
-            df,
-            x="RTG",
-            y=["Left", "Right", "Forward", "Pickup", "Drop", "Toggle", "Done"],
-            title="Action Prediction vs RTG",
-        )
+        if action_preds.shape[-1] == 7:
+            fig = px.line(
+                df,
+                x="RTG",
+                y=[
+                    "Left",
+                    "Right",
+                    "Forward",
+                    "Pickup",
+                    "Drop",
+                    "Toggle",
+                    "Done",
+                ],
+                title="Action Prediction vs RTG",
+            )
+        else:
+            fig = px.line(
+                df,
+                x="RTG",
+                y=["Left", "Right", "Forward"],
+                title="Action Prediction vs RTG",
+            )
 
         fig.update_layout(
             xaxis_title="RTG",
