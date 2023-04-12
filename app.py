@@ -114,7 +114,7 @@ with st.sidebar:
         selected_action_direction = action_string_to_id[
             selected_action_direction
         ]
-        logit_dir = dt.predict_actions.weight[selected_action_direction]
+        logit_dir = dt.action_predictor.weight[selected_action_direction]
 
     st.subheader("Analysis Selection")
     static_analyses = st.multiselect(
