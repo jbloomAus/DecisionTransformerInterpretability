@@ -391,7 +391,7 @@ def render_observation_view(dt, tokens, logit_dir):
             else:
                 time_contribution = (time_embedding[0] @ logit_dir).item()
 
-            token_contribution = (tokens[0][1] @ logit_dir).item()
+            token_contribution = (tokens[0][-1] @ logit_dir).item()
 
             contributions = {
                 **contributions,
