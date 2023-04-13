@@ -4,7 +4,7 @@
 # torchvision==0.14.0
 
 # Transformer Lens V2
-transformer-lens @ git+https://github.com/neelnanda-io/TransformerLens@25b9e076fd6a44d053f5e2925a5d1ff802692ab2
+transformer-lens==1.2.1
 circuitsvis==1.39.1
 protobuf==3.20
 
