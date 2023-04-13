@@ -1,5 +1,6 @@
 from typing import List
-
+import streamlit.components.v1 as components
+import circuitsvis as cv
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -58,28 +59,42 @@ def plot_attention_pattern_single(
     cache, layer, softmax=True, specific_heads: List = None
 ):
     n_tokens = st.session_state.dt.n_ctx - 1
+
+    n = n_tokens // 3 - 1
+    labels = []
+
+    for i in range(1, n + 1):
+        labels.append("R" + str(i))
+        labels.append("S" + str(i))
+        labels.append("A" + str(i))
+
+    labels.pop()  # remove the last A
+
     if softmax:
         if cache["pattern", layer, "attn"].shape[0] == 1:
             attention_pattern = cache["pattern", layer, "attn"][0]
+            if specific_heads is not None:
+                attention_pattern = attention_pattern[specific_heads]
+            result = cv.attention.attention_patterns(
+                attention=attention_pattern, tokens=labels
+            )
+            components.html(str(result), width=500, height=800)
+        else:
+            st.write("Not implemented yet")
+
     else:
         if cache["pattern", layer, "attn"].shape[0] == 1:
             attention_pattern = cache["attn_scores", layer, "attn"][0]
 
-    if specific_heads is not None:
-        attention_pattern = attention_pattern[specific_heads]
+            if specific_heads is not None:
+                attention_pattern = attention_pattern[specific_heads]
 
-    # st.write(attention_pattern.shape)
-    # st.write("n tokens", n_tokens)
-    # x_label = ["RTG","State","Action"]*((n_tokens+1)//3)
-
-    fig = px.imshow(
-        attention_pattern,
-        facet_col=0,
-        range_color=[0, 1],
-    )
-    # fig.update_xaxes(showticklabels=False).update_yaxes(showticklabels=False)
-
-    st.plotly_chart(fig, use_container_width=True)
+            result = cv.attention.attention_heads(
+                attention=attention_pattern, tokens=labels
+            )
+            components.html(str(result), width=500, height=800)
+        else:
+            st.write("Not implemented yet")
 
 
 def render_env(env):
