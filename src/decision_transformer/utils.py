@@ -1,11 +1,7 @@
 import argparse
 import json
-import re
-from dataclasses import dataclass, field
-from typing import List, Union
 
 import torch as t
-from minigrid.wrappers import OneHotPartialObsWrapper, RGBImgPartialObsWrapper
 
 from src.config import (
     EnvironmentConfig,
@@ -15,37 +11,6 @@ from src.models.trajectory_transformer import (
     DecisionTransformer,
     CloneTransformer,
 )
-
-
-@dataclass
-class DTArgs:
-    exp_name: str = "Dev"
-    d_model: int = 128
-    trajectory_path: str = "trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0c8c5dccc-b418-492e-bdf8-2c21256cd9f3.pkl"
-    n_heads: int = 4
-    d_mlp: int = 256
-    n_layers: int = 2
-    n_ctx: int = 3
-    layer_norm: bool = False
-    batch_size: int = 64
-    train_epochs: int = 10
-    test_epochs: int = 3
-    learning_rate: float = 0.0001
-    linear_time_embedding: bool = False
-    pct_traj: float = 1
-    weight_decay: float = 0.001
-    seed: int = 1
-    track: bool = True
-    wandb_project_name: str = "DecisionTransformerInterpretability"
-    wandb_entity: str = None
-    test_frequency: int = 100
-    test_batches: int = 10
-    eval_frequency: int = 100
-    eval_episodes: int = 10
-    initial_rtg: List[float] = field(default_factory=lambda: [0.0, 1.0])
-    prob_go_from_end: float = 0.1
-    eval_max_time_steps: int = 1000
-    cuda: bool = True
 
 
 def parse_args():
@@ -114,7 +79,7 @@ def parse_args():
     return args
 
 
-# TODO Suppourt loading Clone Transformers
+# TODO Support loading Clone Transformers
 def load_decision_transformer(model_path, env=None) -> DecisionTransformer:
     """ """
 
@@ -153,3 +118,76 @@ def get_max_len_from_model_type(model_type: str, n_ctx: int):
         return 1 + n_ctx // 3
     else:
         return 1 + n_ctx // 2
+
+
+def initialize_padding_inputs(
+    max_len: int,
+    initial_obs: dict,
+    initial_rtg: float,
+    action_pad_token: int,
+    batch_size=1,
+):
+    """
+    Initializes input tensors for a decision transformer based on the given maximum length of the sequence, initial observation, initial return-to-go (rtg) value,
+    and padding token for actions.
+
+    Padding token for rtg is assumed to be the initial RTG at all values. This is important.
+    Padding token for initial obs is 0. But it could be -1 and we might parameterize in the future.
+    Mask is initialized to 0.0 and then set to 1.0 for all values that are not padding (one value currently)
+
+    Args:
+    - max_len (int): maximum length of the sequence
+    - initial_obs (Dict[str, Union[torch.Tensor, np.ndarray]]): initial observation dictionary, containing an "image" tensor with shape (batch_size, channels, height, width)
+    - initial_rtg (float): initial return-to-go value used to initialize the reward-to-go tensor
+    - action_pad_token (int): padding token used to initialize the actions tensor
+    - batch_size (int): batch size of the sequences (default: 1)
+
+    Returns:
+    - obs (torch.Tensor): tensor of shape (batch_size, max_len, channels, height, width), initialized with zeros and the initial observation in the last dimension
+    - actions (torch.Tensor): tensor of shape (batch_size, max_len - 1, 1), initialized with the padding token
+    - reward (torch.Tensor): tensor of shape (batch_size, max_len, 1), initialized with zeros
+    - rtg (torch.Tensor): tensor of shape (1, max_len, 1), initialized with the initial rtg value and broadcasted to the batch size dimension
+    - timesteps (torch.Tensor): tensor of shape (batch_size, max_len, 1), initialized with zeros
+    - mask (torch.Tensor): tensor of shape (batch_size, max_len), initialized with zeros and ones at the last position to mark the end of the sequence
+    """
+
+    mask = t.concat(
+        (
+            t.zeros((batch_size, max_len - 1), dtype=t.bool),
+            t.ones((batch_size, 1), dtype=t.bool),
+        ),
+        dim=1,
+    )
+
+    obs_dim = initial_obs["image"].shape[-3:]  # last 3 dims are image dims
+    if len(initial_obs["image"].shape) == 3:  # no batch dim
+        # add batch and time dim
+        assert (
+            batch_size == 1
+        ), "only one initial obs provided but batch size > 1"
+        obs_image = t.tensor(initial_obs["image"])[None, None, :, :, :]
+    elif len(initial_obs["image"].shape) == 4:  # batch dim
+        # add batch dim
+        obs_image = t.tensor(initial_obs["image"])[:, None, :, :, :]
+    else:
+        print(obs_dim)
+
+    obs = t.concat(
+        (
+            t.zeros((batch_size, max_len - 1, *obs_dim)),
+            obs_image,
+        ),
+        dim=1,
+    )
+
+    reward = t.zeros((batch_size, max_len, 1), dtype=t.float)  # no reward yet
+    rtg = initial_rtg * t.ones((1, max_len, 1), dtype=t.float)  # no reward yet
+    timesteps = t.zeros(
+        (batch_size, max_len, 1), dtype=t.long
+    )  # no reward yet
+
+    actions = (
+        t.ones(batch_size, max_len - 1, 1, dtype=t.long) * action_pad_token
+    )  # done action
+
+    return obs, actions, reward, rtg, timesteps, mask

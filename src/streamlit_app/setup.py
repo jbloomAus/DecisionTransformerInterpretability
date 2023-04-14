@@ -1,8 +1,11 @@
 import streamlit as st
 import torch as t
 
-from src.decision_transformer.utils import get_max_len_from_model_type
-from .environment import get_action_from_user, get_env_and_dt
+from src.decision_transformer.utils import (
+    get_max_len_from_model_type,
+    initialize_padding_inputs,
+)
+from .environment import get_env_and_dt, get_action_from_user
 
 action_string_to_id = {
     "left": 0,
@@ -24,44 +27,22 @@ def initialize_playground(model_path, initial_rtg):
         max_len = get_max_len_from_model_type(
             dt.model_type, dt.transformer_config.n_ctx
         )
-        st.session_state.max_len = max_len
-        # initilize the session state trajectory details
-
-        mask = t.concat(
-            (
-                t.zeros((1, max_len - 1), dtype=t.bool),
-                t.ones((1, 1), dtype=t.bool),
-            ),
-            dim=1,
-        )
-        obs_dim = obs["image"].shape
-
-        obs = t.concat(
-            (
-                t.zeros((1, max_len - 1, *obs_dim)),
-                t.tensor(obs["image"]).unsqueeze(0).unsqueeze(0),
-            ),
-            dim=1,
-        )
-
-        reward = t.zeros((1, max_len, 1), dtype=t.float)  # no reward yet
-        rtg = initial_rtg * t.ones(
-            (1, max_len, 1), dtype=t.float
-        )  # no reward yet
-        timesteps = t.zeros((1, max_len, 1), dtype=t.long)  # no reward yet
 
         action_pad_token = dt.environment_config.action_space.n
-        actions = (
-            t.ones(1, max_len - 1, 1, dtype=t.long) * action_pad_token
-        )  # done action
 
+        obs, actions, reward, rtg, timesteps, mask = initialize_padding_inputs(
+            max_len, obs, initial_rtg, action_pad_token
+        )
+
+        st.session_state.max_len = max_len
         st.session_state.mask = mask
         st.session_state.obs = obs
         st.session_state.reward = reward
         st.session_state.rtg = rtg
-        st.session_state.a = actions  # no action taken yet
+        st.session_state.a = actions
         st.session_state.timesteps = timesteps
         st.session_state.dt = dt
+
     else:
         env = st.session_state.env
         dt = st.session_state.dt

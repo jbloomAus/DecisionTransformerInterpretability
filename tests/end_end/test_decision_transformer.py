@@ -2,7 +2,6 @@ import os
 
 import pytest
 
-# from src.decision_transformer.utils import DTArgs
 from src.config import (
     EnvironmentConfig,
     OfflineTrainConfig,
