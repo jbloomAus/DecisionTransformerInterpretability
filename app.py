@@ -136,6 +136,10 @@ with st.sidebar:
     causal_analyses = st.multiselect("Select Causal Analyses", ["Ablation"])
 analyses = dynamic_analyses + static_analyses + causal_analyses
 
+with st.sidebar:
+    render_trajectory_details()
+    reset_button()
+
 if len(analyses) == 0:
     st.warning("Please select at least one analysis.")
 
@@ -167,8 +171,6 @@ st.session_state.env = env
 st.session_state.dt = dt
 
 with st.sidebar:
-    render_trajectory_details()
-    reset_button()
     end = time.time()
     st.write(f"Time taken: {end - start}")
 
