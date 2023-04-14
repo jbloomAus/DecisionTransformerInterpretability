@@ -47,53 +47,36 @@ def get_action_preds(dt):
         dt.transformer_config.n_ctx,
     )
 
-    if "timestep_adjustment" in st.session_state:
-        timesteps = (
-            st.session_state.timesteps[:, -max_len:]
-            + st.session_state.timestep_adjustment
-        )
+    timesteps = st.session_state.timesteps[:, -max_len:]
+    timesteps = (
+        timesteps + st.session_state.timestep_adjustment
+        if "timestep_adjustment" in st.session_state
+        else timesteps
+    )
 
-    obs = st.session_state.obs[:, -max_len:]
-    actions = st.session_state.a[:, -max_len:]
-    rtg = st.session_state.rtg[:, -max_len:]
+    obs = st.session_state.obs
+    actions = st.session_state.a
+    rtg = st.session_state.rtg
 
     # truncations:
     obs = obs[:, -max_len:] if obs.shape[1] > max_len else obs
-    actions = (
-        actions[:, -(obs.shape[1] - 1) :]
-        if (actions.shape[1] > 1 and max_len > 1)
-        else None
-    )
+    if actions is not None:
+        actions = (
+            actions[:, -(obs.shape[1] - 1) :]
+            if (actions.shape[1] > 1 and max_len > 1)
+            else None
+        )
     timesteps = (
         timesteps[:, -max_len:] if timesteps.shape[1] > max_len else timesteps
     )
     rtg = rtg[:, -max_len:] if rtg.shape[1] > max_len else rtg
-
-    # st.write("max len: ", max_len)
-    # st.write(obs.shape)
-    # st.write(actions.shape)
-    # st.write(rtg.shape)
-    # st.write(timesteps.shape)
-
-    # if obs.shape[1] < max_len:
-    #     obs = pad_tensor(obs, max_len)
-    #     if actions is not None:
-    #         actions = pad_tensor(actions, max_len, pad_token=dt.environment_config.action_space.n)
-    #     if rtg is not None:
-    #         rtg = pad_tensor(rtg, max_len, pad_token=0)
-    #     timesteps = pad_tensor(timesteps, max_len, pad_token=0)
 
     if dt.time_embedding_type == "linear":
         timesteps = timesteps.to(dtype=t.float32)
     else:
         timesteps = timesteps.to(dtype=t.long)
 
-    tokens = dt.to_tokens(
-        obs,
-        actions,
-        rtg,
-        timesteps.to(dtype=t.long),
-    )
+    tokens = dt.to_tokens(obs, actions, rtg, timesteps)
     x, cache = dt.transformer.run_with_cache(tokens, remove_batch_dim=False)
 
     state_preds, action_preds, reward_preds = dt.get_logits(
@@ -116,7 +99,10 @@ def respond_to_action(env, action, initial_rtg):
         ],
         dim=1,
     )
-    # print(t.tensor(action).unsqueeze(0).unsqueeze(0).shape)
+
+    if st.session_state.a is None:
+        st.session_state.a = t.tensor([action]).unsqueeze(0).unsqueeze(0)
+
     st.session_state.a = t.cat(
         [st.session_state.a, t.tensor([action]).unsqueeze(0).unsqueeze(0)],
         dim=1,

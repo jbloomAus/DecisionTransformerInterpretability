@@ -232,7 +232,9 @@ def show_rtg_scan(dt, logit_dir):
         total_dir = x[:, -1, :] @ logit_dir
 
         # Now let's do the inner product with the logit dir of the components.
-        decomp = get_residual_decomp(dt, cache, logit_dir)
+        decomp = get_residual_decomp(
+            dt, cache, logit_dir, include_attention_bias=True
+        )
 
         df = pd.DataFrame(decomp)
         df["RTG"] = rtg[:, -1].squeeze(1).detach().cpu().numpy()
@@ -240,12 +242,18 @@ def show_rtg_scan(dt, logit_dir):
 
         assert (
             total_dir.squeeze(0).detach() - df[list(decomp.keys())].sum(axis=1)
-        ).mean() < 1e-3, "total dir is not accurate: {}".format(
+        ).mean() < 1e-3, "total dir is not accurate - average difference: {}".format(
             (
                 total_dir.squeeze(0).detach()
                 - df[list(decomp.keys())].sum(axis=1)
             ).mean()
         )
+
+        # find all columns with "Attention Bias" in them and remove them from the df
+        df = df[[col for col in df.columns if "Attention Bias" not in col]]
+        # also remove them from decomp
+        decomp = {k: v for k, v in decomp.items() if "Attention Bias" not in k}
+        # remove
 
         if st.checkbox("Show component contributions"):
             # make a multiselect to choose the decomp keys to compare
