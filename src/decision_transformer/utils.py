@@ -126,6 +126,7 @@ def initialize_padding_inputs(
     initial_rtg: float,
     action_pad_token: int,
     batch_size=1,
+    device="cpu",
 ):
     """
     Initializes input tensors for a decision transformer based on the given maximum length of the sequence, initial observation, initial return-to-go (rtg) value,
@@ -151,43 +152,49 @@ def initialize_padding_inputs(
     - mask (torch.Tensor): tensor of shape (batch_size, max_len), initialized with zeros and ones at the last position to mark the end of the sequence
     """
 
+    device = t.device(device)
+
     mask = t.concat(
         (
             t.zeros((batch_size, max_len - 1), dtype=t.bool),
             t.ones((batch_size, 1), dtype=t.bool),
         ),
         dim=1,
-    )
+    ).to(device)
 
-    obs_dim = initial_obs["image"].shape[-3:]  # last 3 dims are image dims
-    if len(initial_obs["image"].shape) == 3:  # no batch dim
-        # add batch and time dim
+    obs_dim = initial_obs["image"].shape[-3:]
+    if len(initial_obs["image"].shape) == 3:
         assert (
             batch_size == 1
         ), "only one initial obs provided but batch size > 1"
-        obs_image = t.tensor(initial_obs["image"])[None, None, :, :, :]
-    elif len(initial_obs["image"].shape) == 4:  # batch dim
-        # add batch dim
-        obs_image = t.tensor(initial_obs["image"])[:, None, :, :, :]
+        obs_image = t.tensor(initial_obs["image"])[None, None, :, :, :].to(
+            device
+        )
+    elif len(initial_obs["image"].shape) == 4:
+        obs_image = t.tensor(initial_obs["image"])[:, None, :, :, :].to(device)
     else:
-        print(obs_dim)
+        raise ValueError(
+            "initial obs image has invalid shape: {}".format(
+                initial_obs["image"].shape
+            )
+        )
 
     obs = t.concat(
         (
-            t.zeros((batch_size, max_len - 1, *obs_dim)),
+            t.zeros((batch_size, max_len - 1, *obs_dim)).to(device),
             obs_image,
         ),
         dim=1,
-    )
+    ).to(float)
 
-    reward = t.zeros((batch_size, max_len, 1), dtype=t.float)  # no reward yet
-    rtg = initial_rtg * t.ones((1, max_len, 1), dtype=t.float)  # no reward yet
-    timesteps = t.zeros(
-        (batch_size, max_len, 1), dtype=t.long
-    )  # no reward yet
+    reward = t.zeros((batch_size, max_len, 1), dtype=t.float).to(device)
+    rtg = initial_rtg * t.ones((batch_size, max_len, 1), dtype=t.float).to(
+        device
+    )
+    timesteps = t.zeros((batch_size, max_len, 1), dtype=t.long).to(device)
 
     actions = (
         t.ones(batch_size, max_len - 1, 1, dtype=t.long) * action_pad_token
-    )  # done action
+    ).to(device)
 
     return obs, actions, reward, rtg, timesteps, mask

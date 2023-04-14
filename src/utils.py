@@ -86,9 +86,9 @@ class TrajectoryWriter:
 
     def write(self, upload_to_wandb: bool = False):
         data = {
-            "observations": np.array(self.observations, dtype=np.float64),
+            "observations": np.array(self.observations, dtype=np.float),
             "actions": np.array(self.actions, dtype=np.int64),
-            "rewards": np.array(self.rewards, dtype=np.float64),
+            "rewards": np.array(self.rewards, dtype=np.float),
             "dones": np.array(self.dones, dtype=bool),
             "truncated": np.array(self.truncated, dtype=bool),
             "infos": np.array(self.infos, dtype=object),

@@ -6,6 +6,7 @@ import numpy as np
 import torch as t
 from einops import rearrange
 from tqdm import tqdm
+from copy import deepcopy
 
 import wandb
 from src.models.trajectory_transformer import (
@@ -14,7 +15,7 @@ from src.models.trajectory_transformer import (
     TrajectoryTransformer,
 )
 
-from .utils import get_max_len_from_model_type
+from .utils import get_max_len_from_model_type, initialize_padding_inputs
 
 
 def evaluate_dt_agent(
@@ -68,35 +69,36 @@ def evaluate_dt_agent(
 
     # each env will get its own seed by incrementing on the given seed
     obs, _ = env.reset(seed=0)
-    obs = t.tensor(obs["image"]).unsqueeze(1)
-    rtg = rearrange(t.ones(num_envs, dtype=t.int) * initial_rtg, "e -> e 1 1")
-    a = rearrange(t.zeros(num_envs, dtype=t.int), "e -> e 1 1")
-    timesteps = rearrange(t.zeros(num_envs, dtype=t.int), "e -> e 1 1")
-
-    obs = obs.to(device)
-    rtg = rtg.to(device)
-    a = a.to(device)
-    timesteps = timesteps.to(device)
+    action_pad_token = (
+        env.single_action_space.n
+    )  # current pad token for actions
+    obs, actions, reward, rtg, timesteps, mask = initialize_padding_inputs(
+        max_len=max_len,
+        initial_obs=obs,
+        initial_rtg=initial_rtg,
+        action_pad_token=action_pad_token,
+        batch_size=num_envs,
+        device=device,
+    )
 
     if model.transformer_config.time_embedding_type == "linear":
         timesteps = timesteps.to(t.float32)
 
     # get first action
     if isinstance(model, DecisionTransformer):
-        state_preds, action_preds, reward_preds = model.forward(
-            states=obs, actions=None, rtgs=rtg, timesteps=timesteps
+        _, action_preds, _ = model.forward(
+            states=obs, actions=actions, rtgs=rtg, timesteps=timesteps
         )
     elif isinstance(model, CloneTransformer):
-        state_preds, action_preds = model.forward(
-            states=obs, actions=None, timesteps=timesteps
+        _, action_preds = model.forward(
+            states=obs, actions=actions, timesteps=timesteps
         )
     else:
         raise ValueError("Model type not supported")
 
-    new_action = t.argmax(action_preds, dim=-1).squeeze(-1)
+    new_action = t.argmax(action_preds[:, -1], dim=-1).squeeze(-1)
     new_obs, new_reward, terminated, truncated, info = env.step(new_action)
-
-    current_trajectory_length = t.ones(num_envs, dtype=t.int)
+    dones = np.logical_or(terminated, truncated)
     while n_terminated + n_truncated < trajectories:
         # concat init obs to new obs
         obs = t.cat(
@@ -104,42 +106,28 @@ def evaluate_dt_agent(
         )
 
         # add new reward to init reward
-        rtg = t.cat(
-            [
-                rtg,
-                rtg[:, -1:, :]
-                - rearrange(t.tensor(new_reward).to(device), "e -> e 1 1"),
-            ],
-            dim=1,
-        )
+        new_rtg = rtg[:, -1:, :] - new_reward[None, :, None]
+        rtg = t.cat([rtg, new_rtg], dim=1)
 
         # add new timesteps
-        timesteps = t.cat(
-            [
-                timesteps,
-                rearrange(current_trajectory_length.to(device), "e -> e 1 1"),
-            ],
-            dim=1,
-        )
+        # if we are done, we don't want to increment the timestep,
+        # so we use the not operator to flip the done bit
+        new_timestep = timesteps[:, -1:, :] + np.invert(dones)[:, None, None]
+        timesteps = t.cat([timesteps, new_timestep], dim=1)
 
         if model.transformer_config.time_embedding_type == "linear":
             timesteps = timesteps.to(t.float32)
 
-        a = t.cat([a, rearrange(new_action, "e -> e 1 1")], dim=1)
+        if max_len > 1:
+            actions = t.cat(
+                [actions, rearrange(new_action, "e -> e 1 1")], dim=1
+            )
 
         # truncations:
-        obs = obs[:, -max_len:] if obs.shape[1] > max_len else obs
-        actions = (
-            a[:, -(obs.shape[1] - 1) :]
-            if (a.shape[1] > 1 and max_len > 1)
-            else None
-        )
-        timesteps = (
-            timesteps[:, -max_len:]
-            if timesteps.shape[1] > max_len
-            else timesteps
-        )
-        rtg = rtg[:, -max_len:] if rtg.shape[1] > max_len else rtg
+        obs = obs[:, -max_len:]
+        actions = actions[:, -(max_len - 1) :] if max_len > 1 else None
+        timesteps = timesteps[:, -max_len:]
+        rtg = rtg[:, -max_len:]
 
         if isinstance(model, DecisionTransformer):
             state_preds, action_preds, reward_preds = model.forward(
@@ -154,17 +142,17 @@ def evaluate_dt_agent(
                 "Model type not supported for evaluation."
             )
 
-        new_action = t.argmax(action_preds, dim=-1).squeeze(-1)
-        if new_action.dim() > 1:
-            new_action = new_action[:, -1]
-        # convert to numpy
+        new_action = t.argmax(action_preds, dim=-1)[:, -1].squeeze(-1)
+
         new_obs, new_reward, terminated, truncated, info = env.step(new_action)
-        # print(f"took action  {action} at timestep {i} for reward {new_reward}")
 
         n_positive = n_positive + sum(new_reward > 0)
         reward_total += sum(new_reward)
         n_terminated += sum(terminated)
         n_truncated += sum(truncated)
+        current_trajectory_length = (
+            timesteps[:, -1, :].squeeze(-1).detach().cpu() + 1
+        )
 
         if use_tqdm:
             pbar.set_description(
@@ -173,10 +161,46 @@ def evaluate_dt_agent(
             )
 
         dones = np.logical_or(terminated, truncated)
-        current_trajectory_length += np.invert(dones)
+
         traj_lengths.extend(current_trajectory_length[dones].tolist())
         rewards.extend(new_reward[dones])
         current_trajectory_length[dones] = 0
+
+        # for each done, replace the obs, rtg, action, timestep with the new obs, rtg, action, timestep
+        batch_reset_indexes = np.where(dones)
+        if sum(dones) > 0:
+            _new_obs = deepcopy(new_obs)
+            _new_obs["image"] = _new_obs["image"][batch_reset_indexes]
+            (
+                _obs,
+                _actions,
+                reward[batch_reset_indexes],
+                _rtg,
+                timesteps[batch_reset_indexes],
+                mask[batch_reset_indexes],
+            ) = initialize_padding_inputs(
+                max_len=max_len,
+                initial_obs=_new_obs,
+                initial_rtg=initial_rtg,
+                action_pad_token=action_pad_token,
+                batch_size=sum(dones),
+                device=device,
+            )
+
+            # TODO: annoying dtype issues I'll solve another day...
+            obs[batch_reset_indexes] = _obs.to(dtype=obs.dtype)
+            rtg[batch_reset_indexes] = _rtg.to(dtype=rtg.dtype)
+
+            # hack, obs, action, timesteps and rtg will all be modified on
+            # next loop iteration so pad them appropriate to counteract this
+            if actions is not None:
+                actions[batch_reset_indexes] = _actions
+                new_action[batch_reset_indexes] = action_pad_token  # pad token
+
+            obs[batch_reset_indexes, -1] = 0  # pad token
+            new_reward[
+                batch_reset_indexes
+            ] = 0  # effectively removes reward which would be added
 
         if np.any(dones):
             if use_tqdm:

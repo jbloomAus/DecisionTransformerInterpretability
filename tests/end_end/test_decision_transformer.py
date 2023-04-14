@@ -128,7 +128,7 @@ def test_decision_transformer_bespoke():
         exp_name="MiniGrid-MemoryS7FixedStart-v0",
         wandb_project_name="DecisionTransformerInterpretability",
         seed=1,
-        track=False,
+        track=True,
     )
 
     transformer_model_config = TransformerModelConfig(

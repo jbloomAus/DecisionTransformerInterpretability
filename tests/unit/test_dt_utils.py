@@ -1,4 +1,4 @@
-import torch as t
+import torch
 import pytest
 import numpy as np
 
@@ -66,9 +66,17 @@ def test_initialize_padding_inputs(max_len, initial_obs, action_pad_token):
     assert obs.shape == (batch_size, max_len, *dim_obs)
     assert actions.shape == (batch_size, max_len - 1, 1)
     assert reward.shape == (batch_size, max_len, 1)
-    assert rtg.shape == (1, max_len, 1)
+    assert rtg.shape == (batch_size, max_len, 1)
     assert timesteps.shape == (batch_size, max_len, 1)
     assert mask.shape == (batch_size, max_len)
+
+    # Test types
+    assert obs.dtype == torch.float64
+    assert actions.dtype == torch.int64
+    assert reward.dtype == torch.float32
+    assert rtg.dtype == torch.float32
+    assert timesteps.dtype == torch.int64
+    assert mask.dtype == torch.bool
 
     # Test values
     assert np.all(obs.numpy()[:, -1, ...] == initial_obs["image"])
@@ -106,7 +114,7 @@ def test_initialize_padding_inputs_batch():
     assert obs.shape == (batch_size, max_len, *dim_obs)
     assert actions.shape == (batch_size, max_len - 1, 1)
     assert reward.shape == (batch_size, max_len, 1)
-    assert rtg.shape == (1, max_len, 1)
+    assert rtg.shape == (batch_size, max_len, 1)
     assert timesteps.shape == (batch_size, max_len, 1)
     assert mask.shape == (batch_size, max_len)
 
