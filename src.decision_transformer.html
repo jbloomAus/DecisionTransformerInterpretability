@@ -331,11 +331,6 @@
 <section id="module-src.decision_transformer.train">
 <span id="src-decision-transformer-train-module"></span><h2>src.decision_transformer.train module<a class="headerlink" href="#module-src.decision_transformer.train" title="Permalink to this heading">#</a></h2>
 <dl class="py function">
-<dt class="sig sig-object py" id="src.decision_transformer.train.evaluate_dt_agent">
-<span class="sig-prename descclassname"><span class="pre">src.decision_transformer.train.</span></span><span class="sig-name descname"><span class="pre">evaluate_dt_agent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TrajectoryTransformer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env_func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">300</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_rtg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.98</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_tqdm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cpu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_envs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.train.evaluate_dt_agent" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="src.decision_transformer.train.test">
 <span class="sig-prename descclassname"><span class="pre">src.decision_transformer.train.</span></span><span class="sig-name descname"><span class="pre">test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TrajectoryTransformer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataloader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">env</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.train.test" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
@@ -351,147 +346,6 @@
 </section>
 <section id="module-src.decision_transformer.utils">
 <span id="src-decision-transformer-utils-module"></span><h2>src.decision_transformer.utils module<a class="headerlink" href="#module-src.decision_transformer.utils" title="Permalink to this heading">#</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.decision_transformer.utils.</span></span><span class="sig-name descname"><span class="pre">DTArgs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exp_name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'Dev'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d_model:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trajectory_path:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0c8c5dccc-b418-492e-bdf8-2c21256cd9f3.pkl'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_heads:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d_mlp:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">256</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_layers:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_ctx:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer_norm:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">64</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_epochs:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_epochs:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linear_time_embedding:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pct_traj:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight_decay:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">track:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wandb_project_name:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'DecisionTransformerInterpretability'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wandb_entity:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_frequency:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_batches:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_frequency:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_episodes:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_rtg:</span> <span class="pre">List[float]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prob_go_from_end:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_max_time_steps:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cuda:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.utils.DTArgs" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.batch_size">
-<span class="sig-name descname"><span class="pre">batch_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">64</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.batch_size" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.cuda">
-<span class="sig-name descname"><span class="pre">cuda</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.cuda" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.d_mlp">
-<span class="sig-name descname"><span class="pre">d_mlp</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">256</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.d_mlp" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.d_model">
-<span class="sig-name descname"><span class="pre">d_model</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">128</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.d_model" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.eval_episodes">
-<span class="sig-name descname"><span class="pre">eval_episodes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.eval_episodes" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.eval_frequency">
-<span class="sig-name descname"><span class="pre">eval_frequency</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">100</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.eval_frequency" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.eval_max_time_steps">
-<span class="sig-name descname"><span class="pre">eval_max_time_steps</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1000</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.eval_max_time_steps" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.exp_name">
-<span class="sig-name descname"><span class="pre">exp_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Dev'</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.exp_name" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.initial_rtg">
-<span class="sig-name descname"><span class="pre">initial_rtg</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.initial_rtg" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.layer_norm">
-<span class="sig-name descname"><span class="pre">layer_norm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.layer_norm" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.learning_rate">
-<span class="sig-name descname"><span class="pre">learning_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0001</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.learning_rate" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.linear_time_embedding">
-<span class="sig-name descname"><span class="pre">linear_time_embedding</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.linear_time_embedding" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.n_ctx">
-<span class="sig-name descname"><span class="pre">n_ctx</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.n_ctx" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.n_heads">
-<span class="sig-name descname"><span class="pre">n_heads</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.n_heads" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.n_layers">
-<span class="sig-name descname"><span class="pre">n_layers</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.n_layers" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.pct_traj">
-<span class="sig-name descname"><span class="pre">pct_traj</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.pct_traj" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.prob_go_from_end">
-<span class="sig-name descname"><span class="pre">prob_go_from_end</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.1</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.prob_go_from_end" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.seed">
-<span class="sig-name descname"><span class="pre">seed</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.seed" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.test_batches">
-<span class="sig-name descname"><span class="pre">test_batches</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.test_batches" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.test_epochs">
-<span class="sig-name descname"><span class="pre">test_epochs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.test_epochs" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.test_frequency">
-<span class="sig-name descname"><span class="pre">test_frequency</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">100</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.test_frequency" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.track">
-<span class="sig-name descname"><span class="pre">track</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.track" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.train_epochs">
-<span class="sig-name descname"><span class="pre">train_epochs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.train_epochs" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.trajectory_path">
-<span class="sig-name descname"><span class="pre">trajectory_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0c8c5dccc-b418-492e-bdf8-2c21256cd9f3.pkl'</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.trajectory_path" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.wandb_entity">
-<span class="sig-name descname"><span class="pre">wandb_entity</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.wandb_entity" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.wandb_project_name">
-<span class="sig-name descname"><span class="pre">wandb_project_name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'DecisionTransformerInterpretability'</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.wandb_project_name" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="src.decision_transformer.utils.DTArgs.weight_decay">
-<span class="sig-name descname"><span class="pre">weight_decay</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.001</span></em><a class="headerlink" href="#src.decision_transformer.utils.DTArgs.weight_decay" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
 <dl class="py function">
 <dt class="sig sig-object py" id="src.decision_transformer.utils.get_max_len_from_model_type">
 <span class="sig-prename descclassname"><span class="pre">src.decision_transformer.utils.</span></span><span class="sig-name descname"><span class="pre">get_max_len_from_model_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_ctx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.utils.get_max_len_from_model_type" title="Permalink to this definition">#</a></dt>
@@ -502,6 +356,29 @@ have 3 tokens per timestep and clone transformers have 2.</p>
 for the most recent state/action and then add another
 timestep for every 3 tokens for decision transformers and
 every 2 tokens for clone transformers.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="src.decision_transformer.utils.initialize_padding_inputs">
+<span class="sig-prename descclassname"><span class="pre">src.decision_transformer.utils.</span></span><span class="sig-name descname"><span class="pre">initialize_padding_inputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_len</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_rtg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action_pad_token</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.utils.initialize_padding_inputs" title="Permalink to this definition">#</a></dt>
+<dd><p>Initializes input tensors for a decision transformer based on the given maximum length of the sequence, initial observation, initial return-to-go (rtg) value,
+and padding token for actions.</p>
+<p>Padding token for rtg is assumed to be the initial RTG at all values. This is important.
+Padding token for initial obs is 0. But it could be -1 and we might parameterize in the future.
+Mask is initialized to 0.0 and then set to 1.0 for all values that are not padding (one value currently)</p>
+<p>Args:
+- max_len (int): maximum length of the sequence
+- initial_obs (Dict[str, Union[torch.Tensor, np.ndarray]]): initial observation dictionary, containing an “image” tensor with shape (batch_size, channels, height, width)
+- initial_rtg (float): initial return-to-go value used to initialize the reward-to-go tensor
+- action_pad_token (int): padding token used to initialize the actions tensor
+- batch_size (int): batch size of the sequences (default: 1)</p>
+<p>Returns:
+- obs (torch.Tensor): tensor of shape (batch_size, max_len, channels, height, width), initialized with zeros and the initial observation in the last dimension
+- actions (torch.Tensor): tensor of shape (batch_size, max_len - 1, 1), initialized with the padding token
+- reward (torch.Tensor): tensor of shape (batch_size, max_len, 1), initialized with zeros
+- rtg (torch.Tensor): tensor of shape (1, max_len, 1), initialized with the initial rtg value and broadcasted to the batch size dimension
+- timesteps (torch.Tensor): tensor of shape (batch_size, max_len, 1), initialized with zeros
+- mask (torch.Tensor): tensor of shape (batch_size, max_len), initialized with zeros and ones at the last position to mark the end of the sequence</p>
 </dd></dl>
 
 <dl class="py function">
@@ -614,44 +491,14 @@ every 2 tokens for clone transformers.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-src.decision_transformer.train">src.decision_transformer.train module</a><ul>
-<li><a class="reference internal" href="#src.decision_transformer.train.evaluate_dt_agent"><code class="docutils literal notranslate"><span class="pre">evaluate_dt_agent()</span></code></a></li>
 <li><a class="reference internal" href="#src.decision_transformer.train.test"><code class="docutils literal notranslate"><span class="pre">test()</span></code></a></li>
 <li><a class="reference internal" href="#src.decision_transformer.train.train"><code class="docutils literal notranslate"><span class="pre">train()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#src-decision-transformer-trainer-module">src.decision_transformer.trainer module</a></li>
 <li><a class="reference internal" href="#module-src.decision_transformer.utils">src.decision_transformer.utils module</a><ul>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs"><code class="docutils literal notranslate"><span class="pre">DTArgs</span></code></a><ul>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.batch_size"><code class="docutils literal notranslate"><span class="pre">DTArgs.batch_size</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.cuda"><code class="docutils literal notranslate"><span class="pre">DTArgs.cuda</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.d_mlp"><code class="docutils literal notranslate"><span class="pre">DTArgs.d_mlp</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.d_model"><code class="docutils literal notranslate"><span class="pre">DTArgs.d_model</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.eval_episodes"><code class="docutils literal notranslate"><span class="pre">DTArgs.eval_episodes</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.eval_frequency"><code class="docutils literal notranslate"><span class="pre">DTArgs.eval_frequency</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.eval_max_time_steps"><code class="docutils literal notranslate"><span class="pre">DTArgs.eval_max_time_steps</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.exp_name"><code class="docutils literal notranslate"><span class="pre">DTArgs.exp_name</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.initial_rtg"><code class="docutils literal notranslate"><span class="pre">DTArgs.initial_rtg</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.layer_norm"><code class="docutils literal notranslate"><span class="pre">DTArgs.layer_norm</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.learning_rate"><code class="docutils literal notranslate"><span class="pre">DTArgs.learning_rate</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.linear_time_embedding"><code class="docutils literal notranslate"><span class="pre">DTArgs.linear_time_embedding</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.n_ctx"><code class="docutils literal notranslate"><span class="pre">DTArgs.n_ctx</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.n_heads"><code class="docutils literal notranslate"><span class="pre">DTArgs.n_heads</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.n_layers"><code class="docutils literal notranslate"><span class="pre">DTArgs.n_layers</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.pct_traj"><code class="docutils literal notranslate"><span class="pre">DTArgs.pct_traj</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.prob_go_from_end"><code class="docutils literal notranslate"><span class="pre">DTArgs.prob_go_from_end</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.seed"><code class="docutils literal notranslate"><span class="pre">DTArgs.seed</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.test_batches"><code class="docutils literal notranslate"><span class="pre">DTArgs.test_batches</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.test_epochs"><code class="docutils literal notranslate"><span class="pre">DTArgs.test_epochs</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.test_frequency"><code class="docutils literal notranslate"><span class="pre">DTArgs.test_frequency</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.track"><code class="docutils literal notranslate"><span class="pre">DTArgs.track</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.train_epochs"><code class="docutils literal notranslate"><span class="pre">DTArgs.train_epochs</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.trajectory_path"><code class="docutils literal notranslate"><span class="pre">DTArgs.trajectory_path</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.wandb_entity"><code class="docutils literal notranslate"><span class="pre">DTArgs.wandb_entity</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.wandb_project_name"><code class="docutils literal notranslate"><span class="pre">DTArgs.wandb_project_name</span></code></a></li>
-<li><a class="reference internal" href="#src.decision_transformer.utils.DTArgs.weight_decay"><code class="docutils literal notranslate"><span class="pre">DTArgs.weight_decay</span></code></a></li>
-</ul>
-</li>
 <li><a class="reference internal" href="#src.decision_transformer.utils.get_max_len_from_model_type"><code class="docutils literal notranslate"><span class="pre">get_max_len_from_model_type()</span></code></a></li>
+<li><a class="reference internal" href="#src.decision_transformer.utils.initialize_padding_inputs"><code class="docutils literal notranslate"><span class="pre">initialize_padding_inputs()</span></code></a></li>
 <li><a class="reference internal" href="#src.decision_transformer.utils.load_decision_transformer"><code class="docutils literal notranslate"><span class="pre">load_decision_transformer()</span></code></a></li>
 <li><a class="reference internal" href="#src.decision_transformer.utils.parse_args"><code class="docutils literal notranslate"><span class="pre">parse_args()</span></code></a></li>
 </ul>
