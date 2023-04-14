@@ -7,7 +7,8 @@ from torch.utils.data.sampler import WeightedRandomSampler
 
 from src.config import EnvironmentConfig, TransformerModelConfig
 from src.decision_transformer.offline_dataset import TrajectoryDataset
-from src.decision_transformer.train import evaluate_dt_agent, test
+from src.decision_transformer.train import test
+from src.decision_transformer.eval import evaluate_dt_agent
 from src.environments.environments import make_env
 from src.models.trajectory_transformer import (
     CloneTransformer,
