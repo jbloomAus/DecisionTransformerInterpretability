@@ -26,8 +26,11 @@ def render_minigrid_observation(env, observation):
     agent_pos = find_agent(observation)
     agent_dir = observation[agent_pos[0], agent_pos[1]][2]
 
-    observation[agent_pos[0], agent_pos[1]] = [0, 0, 0]
-
+    # print(agent_pos, agent_dir)
+    # observation[agent_pos[0], agent_pos[1]] = [0, 0, 0]
+    # import streamlit as st
+    # st.write(env.spec.id)
+    # st.write(env.observation_space)
     grid, _ = env.grid.decode(observation.astype(np.uint8))
 
     i = agent_pos[0]

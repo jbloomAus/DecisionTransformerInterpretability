@@ -34,9 +34,12 @@ def initialize_playground(model_path, initial_rtg):
             max_len, obs, initial_rtg, action_pad_token
         )
 
+        rendered_obs = t.from_numpy(env.render()).unsqueeze(0)
+
         st.session_state.max_len = max_len
         st.session_state.mask = mask
         st.session_state.obs = obs
+        st.session_state.rendered_obs = rendered_obs
         st.session_state.reward = reward
         st.session_state.rtg = rtg
         st.session_state.a = actions

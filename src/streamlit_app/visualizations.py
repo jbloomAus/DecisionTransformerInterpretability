@@ -92,7 +92,7 @@ def plot_attention_pattern_single(
             result = cv.attention.attention_heads(
                 attention=attention_pattern, tokens=labels
             )
-            components.html(str(result), width=500, height=400)
+            components.html(str(result), width=500, height=700)
         else:
             st.write("Not implemented yet")
 

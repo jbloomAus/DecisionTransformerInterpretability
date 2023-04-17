@@ -50,7 +50,6 @@ def hyperpar_side_bar():
             )
         if "rtg" in st.session_state:
             # get cumulative reward
-            max_len = st.session_state.max_len
             cumulative_reward = st.session_state.reward.cumsum(dim=1)
             rtg = initial_rtg * torch.ones(
                 (1, cumulative_reward.shape[1], 1), dtype=torch.float

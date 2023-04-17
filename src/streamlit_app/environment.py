@@ -100,6 +100,15 @@ def respond_to_action(env, action, initial_rtg):
         dim=1,
     )
 
+    # store the rendered image
+    st.session_state.rendered_obs = t.cat(
+        [
+            st.session_state.rendered_obs,
+            t.from_numpy(env.render()).unsqueeze(0),
+        ],
+        dim=0,
+    )
+
     if st.session_state.a is None:
         st.session_state.a = t.tensor([action]).unsqueeze(0).unsqueeze(0)
 

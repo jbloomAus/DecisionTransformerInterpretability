@@ -1,6 +1,7 @@
 import time
 
 import streamlit as st
+import plotly.express as px
 
 from src.streamlit_app.causal_analysis_components import show_ablation
 from src.streamlit_app.components import (
@@ -77,7 +78,7 @@ action_string_to_id = {
 }
 action_id_to_string = {v: k for k, v in action_string_to_id.items()}
 
-st.session_state.max_len = 1
+# st.session_state.max_len = 1
 env, dt = initialize_playground(selected_model_path, initial_rtg)
 x, cache, tokens = render_game_screen(dt, env)
 record_keypresses()
@@ -164,6 +165,35 @@ if "Attention Pattern" in analyses:
 if "Observation View" in analyses:
     render_observation_view(dt, tokens, logit_dir)
 
+
+st.markdown("""---""")
+
+with st.expander("Show history"):
+    rendered_obss = st.session_state.rendered_obs
+    trajectory_length = rendered_obss.shape[0]
+
+    historic_actions = st.session_state.a[0, -trajectory_length:].flatten()
+
+    if trajectory_length > 1:
+        right_adjustment = 1 + st.session_state.max_len - trajectory_length
+
+        state_number = st.slider(
+            "State Number",
+            min_value=right_adjustment,
+            max_value=right_adjustment + trajectory_length - 1,
+            step=1,
+            format="State Number: %d",
+        )
+
+        i = state_number - right_adjustment
+        action_name_func = (
+            lambda a: "None" if a == 7 else action_id_to_string[a]
+        )
+        st.write(f"A{i}:", action_name_func(historic_actions[i].item()))
+        st.write(f"A{i+1}:", action_name_func(historic_actions[i + 1].item()))
+        st.plotly_chart(px.imshow(rendered_obss[i, :, :, :]))
+    else:
+        st.warning("No history to show")
 
 st.markdown("""---""")
 
