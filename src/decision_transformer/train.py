@@ -92,7 +92,7 @@ def train(
                     states=s,
                     # remove last action
                     actions=action,
-                    rtgs=rtg[:, :-1],  # remove last rtg
+                    rtgs=rtg,  # remove last rtg
                     timesteps=ti.unsqueeze(-1),
                 )
             elif isinstance(model, CloneTransformer):
@@ -211,7 +211,7 @@ def test(
                     actions=a[:, :-1].unsqueeze(-1)
                     if a.shape[1] > 1
                     else None,
-                    rtgs=rtg[:, :-1],
+                    rtgs=rtg,
                     timesteps=ti.unsqueeze(-1),
                 )
             elif isinstance(model, CloneTransformer):

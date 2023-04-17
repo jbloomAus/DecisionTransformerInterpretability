@@ -2,6 +2,7 @@ import copy
 
 import pytest
 import torch
+import numpy as np
 from minigrid.core.constants import COLOR_TO_IDX, OBJECT_TO_IDX, STATE_TO_IDX
 from torch.utils.data import DataLoader, random_split
 from torch.utils.data.sampler import WeightedRandomSampler
@@ -59,7 +60,7 @@ def test_trajectory_reader_xz(trajectory_reader_xz):
     assert data is not None
 
 
-def test_trajectory_dataset_init(trajectory_dataset):
+def test_init(trajectory_dataset):
     assert trajectory_dataset.num_trajectories == 54
     assert trajectory_dataset.num_timesteps == 49920
     assert trajectory_dataset.actions is not None
@@ -91,7 +92,7 @@ def test_trajectory_dataset_init(trajectory_dataset):
     )
 
 
-def test_trajectory_dataset_init_xz(trajectory_dataset_xz):
+def test_init_xz(trajectory_dataset_xz):
     trajectory_dataset = trajectory_dataset_xz
 
     assert trajectory_dataset.num_trajectories == 238
@@ -114,7 +115,7 @@ def test_trajectory_dataset_init_xz(trajectory_dataset_xz):
     ) == get_len_i_for_i_in_list(trajectory_dataset.states)
 
 
-def test_trajectory_dataset_get_indices_of_top_p_trajectories_1(
+def test_get_indices_of_top_p_trajectories_1(
     trajectory_dataset,
 ):
     indices = trajectory_dataset.get_indices_of_top_p_trajectories(1.0)
@@ -130,7 +131,7 @@ def test_trajectory_dataset_get_indices_of_top_p_trajectories_1(
         )
 
 
-def test_trajectory_dataset_get_indices_of_top_p_trajectories_01(
+def test_get_indices_of_top_p_trajectories_01(
     trajectory_dataset,
 ):
     indices = trajectory_dataset.get_indices_of_top_p_trajectories(0.1)
@@ -146,7 +147,7 @@ def test_trajectory_dataset_get_indices_of_top_p_trajectories_01(
         )
 
 
-def test_trajectory_dataset__getitem__(trajectory_dataset):
+def test__getitem__(trajectory_dataset):
     s, a, r, d, rtg, timesteps, mask = trajectory_dataset[0]
 
     assert isinstance(s, torch.Tensor)
@@ -166,7 +167,7 @@ def test_trajectory_dataset__getitem__(trajectory_dataset):
     assert mask.shape == (100,)
 
 
-def test_trajectory_dataset_sampling_probabilities(trajectory_dataset):
+def test_sampling_probabilities(trajectory_dataset):
     assert (
         len(trajectory_dataset.sampling_probabilities)
         == trajectory_dataset.num_trajectories
@@ -187,7 +188,7 @@ def test_trajectory_dataset_sampling_probabilities(trajectory_dataset):
     )
 
 
-def test_trajectory_dataset_discount_cumusum_10(trajectory_dataset):
+def test_discount_cumusum_10(trajectory_dataset):
     vector = torch.tensor([1, 2, 3], dtype=torch.float32)
     discount = 1.0
     expected = torch.tensor([1, 2, 3], dtype=torch.float32)
@@ -200,7 +201,7 @@ def test_trajectory_dataset_discount_cumusum_10(trajectory_dataset):
     torch.testing.assert_allclose(torch.tensor(actual), expected)
 
 
-def test_trajectory_dataset_as_dataloader(trajectory_dataset):
+def test_as_dataloader(trajectory_dataset):
     sampler = WeightedRandomSampler(
         weights=trajectory_dataset.sampling_probabilities,
         num_samples=trajectory_dataset.num_trajectories,
@@ -215,7 +216,7 @@ def test_trajectory_dataset_as_dataloader(trajectory_dataset):
         assert a.shape == (8, 100)
         assert r.shape == (8, 100, 1)
         assert d.shape == (8, 100)
-        assert rtg.shape == (8, 101, 1)
+        assert rtg.shape == (8, 100, 1)
         assert timesteps.shape == (8, 100)
         assert mask.shape == (8, 100)
 
@@ -256,7 +257,7 @@ def test_train_test_split(trajectory_dataset):
     assert a.shape == (100,)
     assert r.shape == (100, 1)
     assert d.shape == (100,)
-    assert rtg.shape == (101, 1)
+    assert rtg.shape == (100, 1)
     assert timesteps.shape == (100,)
     assert mask.shape == (100,)
 
@@ -265,7 +266,7 @@ def test_train_test_split(trajectory_dataset):
     assert a.shape == (100,)
     assert r.shape == (100, 1)
     assert d.shape == (100,)
-    assert rtg.shape == (101, 1)
+    assert rtg.shape == (100, 1)
     assert timesteps.shape == (100,)
     assert mask.shape == (100,)
 
@@ -312,7 +313,7 @@ def test_train_test_split_other_data(trajectory_dataset_xz):
     assert a.shape == (100,)
     assert r.shape == (100, 1)
     assert d.shape == (100,)
-    assert rtg.shape == (101, 1)
+    assert rtg.shape == (100, 1)
     assert timesteps.shape == (100,)
     assert mask.shape == (100,)
 
@@ -321,7 +322,7 @@ def test_train_test_split_other_data(trajectory_dataset_xz):
     assert a.shape == (100,)
     assert r.shape == (100, 1)
     assert d.shape == (100,)
-    assert rtg.shape == (101, 1)
+    assert rtg.shape == (100, 1)
     assert timesteps.shape == (100,)
     assert mask.shape == (100,)
 
@@ -389,7 +390,7 @@ def test_one_hot_encode_observation():
                 )
 
 
-def test_trajectory_dataset__getitem__(trajectory_dataset):
+def test__getitem__(trajectory_dataset):
     trajectory_dataset = copy.deepcopy(trajectory_dataset)
     trajectory_dataset.preprocess_observations = one_hot_encode_observation
 
@@ -405,8 +406,44 @@ def test_trajectory_dataset__getitem__(trajectory_dataset):
 
     assert s.shape == (100, 7, 7, 20)
     assert a.shape == (100,)
-    assert r.shape == (100, 1)  # flatten this later?
+    assert r.shape == (100, 1)
     assert d.shape == (100,)
-    assert rtg.shape == (101, 1)  # how did we get the extra timestep?
+    assert rtg.shape == (100, 1)
     assert timesteps.shape == (100,)
     assert mask.shape == (100,)
+
+
+def test__getitem__expanded(trajectory_dataset_xz):
+    # sample a bunch of different indexes
+    for _ in range(100):
+        i = np.random.randint(0, len(trajectory_dataset_xz))
+        s, a, r, d, rtg, ti, m = trajectory_dataset_xz[i]
+        pos_dim = trajectory_dataset_xz.max_len
+        # test shapes
+        assert s.shape[0] == pos_dim
+        assert a.shape == (pos_dim,)
+        assert r.shape == (pos_dim, 1)  # end of timestep
+        assert rtg.shape == (pos_dim, 1)  # beginning of time step
+        assert d.shape == (pos_dim,)
+        assert ti.shape == (pos_dim,)
+        assert m.shape == (pos_dim,)
+        # assert m.sum() == pos_dim # will update this in a sec
+
+        # test dtypes
+        for t in [s, a, r, rtg, d, ti, m]:
+            assert type(t) == torch.Tensor
+
+        assert s.dtype == torch.float32
+        assert a.dtype == torch.int64
+        assert ti.dtype == torch.int64
+        assert r.dtype == torch.float32
+        assert rtg.dtype == torch.float32
+        assert m.dtype == torch.bool
+        assert d.dtype == torch.bool
+
+        # for example:
+        assert rtg[0] == r.sum()
+        assert rtg[-1] == r[-1]
+        # assert that the different between RTG's is in fact the reward
+        for i in range(pos_dim - 1):
+            assert rtg[i] == rtg[i + 1] + r[i]

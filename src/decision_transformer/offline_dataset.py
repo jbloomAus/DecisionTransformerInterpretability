@@ -252,14 +252,7 @@ class TrajectoryDataset(Dataset):
         a = traj_actions[si : si + max_len].reshape(1, -1, *self.act_dim)
         r = traj_rewards[si : si + max_len].reshape(1, -1, 1)
         d = traj_dones[si : si + max_len].reshape(1, -1)
-        rtg = self.discount_cumsum(traj_rewards[si:], gamma=1.0)[
-            : s.shape[1] + 1
-        ].reshape(1, -1, 1)
         ti = np.arange(si, si + s.shape[1]).reshape(1, -1)
-
-        # if the trajectory is shorter than max_len, pad it
-        if rtg.shape[1] <= s.shape[1]:
-            rtg = np.concatenate([rtg, np.zeros((1, 1, 1))], axis=1)
 
         # sometime the trajectory is shorter than max_len (due to random start index or end of episode)
         tlen = s.shape[1]
@@ -272,9 +265,13 @@ class TrajectoryDataset(Dataset):
         a = self.add_padding(a, -10, padding_required)
         r = self.add_padding(r, 0, padding_required)
         d = self.add_padding(d, 2, padding_required)
-        rtg = self.add_padding(rtg, 0, padding_required)
         ti = self.add_padding(ti, 0, padding_required)
         m = self.add_padding(np.ones((1, tlen)), 0, padding_required)
+
+        # calculate RTG on padded reward vector
+        rtg = self.discount_cumsum(r.flatten(), gamma=1.0)[
+            : s.shape[1] + 1
+        ].reshape(1, -1, 1)
 
         # padding and state + reward normalization
         s = (s - self.state_mean) / self.state_std
@@ -335,6 +332,7 @@ class TrajectoryDataset(Dataset):
         timesteps = timesteps.squeeze(0)
         mask = mask.squeeze(0)
 
+        # TODO fix the order of d, rtg here.
         return s, a, r, d, rtg, timesteps, mask
 
     def __len__(self):
