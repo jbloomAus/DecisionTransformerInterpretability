@@ -188,10 +188,17 @@ def show_time_embeddings(dt, logit_dir):
         if dt.time_embedding_type == "linear":
             time_steps = t.arange(100).unsqueeze(0).unsqueeze(-1).to(t.float32)
             time_embeddings = dt.get_time_embeddings(time_steps).squeeze(0)
-            dot_prod = time_embeddings @ logit_dir
         else:
-            dot_prod = dt.time_embedding.weight @ logit_dir
+            time_embeddings = dt.time_embedding.weight
 
+        max_timestep = st.slider(
+            "Max timestep",
+            min_value=1,
+            max_value=time_embeddings.shape[0] - 1,
+            value=time_embeddings.shape[0] - 1,
+        )
+        time_embeddings = time_embeddings[: max_timestep + 1]
+        dot_prod = time_embeddings @ logit_dir
         dot_prod = dot_prod.detach()
 
         show_initial = st.checkbox("Show initial time embedding", value=True)
@@ -213,6 +220,24 @@ def show_time_embeddings(dt, logit_dir):
                 annotation_text="Current timestep",
             )
         st.plotly_chart(fig, use_container_width=True)
+
+        def calc_cosine_similarity_matrix(matrix: t.Tensor) -> t.Tensor:
+            # Check if the input matrix is square
+            # assert matrix.shape[0] == matrix.shape[1], "The input matrix must be square."
+
+            # Normalize the column vectors
+            norms = t.norm(
+                matrix, dim=0
+            )  # Compute the norms of the column vectors
+            normalized_matrix = (
+                matrix / norms
+            )  # Normalize the column vectors by dividing each element by the corresponding norm
+
+            # Compute the cosine similarity matrix using matrix multiplication
+            return t.matmul(normalized_matrix.t(), normalized_matrix)
+
+        similarity_matrix = calc_cosine_similarity_matrix(time_embeddings.T)
+        st.plotly_chart(px.imshow(similarity_matrix.detach().numpy()))
 
 
 def show_rtg_embeddings(dt, logit_dir):
