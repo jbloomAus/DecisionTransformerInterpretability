@@ -1,7 +1,7 @@
 import sys
 import argparse
 from src.ppo.agent import load_saved_checkpoint
-from src.utils import TrajectoryWriter
+from src.utils.trajectory_writer import TrajectoryWriter
 from src.config import RunConfig, OnlineTrainConfig
 from src.ppo.memory import Memory
 

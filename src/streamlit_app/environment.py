@@ -17,7 +17,6 @@ from src.decision_transformer.utils import (
     get_max_len_from_model_type,
 )
 from src.environments.environments import make_env
-from src.utils import pad_tensor
 
 
 @st.cache(allow_output_mutation=True)

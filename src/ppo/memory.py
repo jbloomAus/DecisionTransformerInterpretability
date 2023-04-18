@@ -12,7 +12,7 @@ from torchtyping import TensorType as TT
 
 import wandb
 from src.config import OnlineTrainConfig
-from src.utils import pad_tensor
+from src.utils.trajectory_utils import pad_tensor
 
 from .utils import get_obs_preprocessor
 

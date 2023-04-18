@@ -23,7 +23,8 @@ from src.models.trajectory_transformer import (
     ActorTransformer,
     CriticTransfomer,
 )
-from src.utils import DictList, TrajectoryWriter
+from src.utils.dictlist import DictList
+from src.utils.trajectory_writer import TrajectoryWriter
 
 from .loss_functions import (
     calc_clipped_surrogate_objective,

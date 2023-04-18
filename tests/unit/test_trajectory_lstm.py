@@ -19,7 +19,7 @@ from src.config import LSTMModelConfig
 # stuff I need to commit to MiniGrid
 from src.environments.wrappers import DictObservationSpaceWrapper
 from src.models.trajectory_lstm import TrajectoryLSTM
-from src.utils import DictList
+from src.utils.dictlist import DictList
 
 # create a fixture which can be used to parameterize different minigrid_envs
 # @pytest.fixture

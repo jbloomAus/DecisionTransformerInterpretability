@@ -6,10 +6,7 @@ import numpy as np
 import pytest
 import torch
 
-from src.config import EnvironmentConfig
-from src.decision_transformer.utils import load_decision_transformer
-from src.environments.environments import make_env
-from src.utils import TrajectoryWriter
+from src.utils.trajectory_writer import TrajectoryWriter
 
 
 @pytest.fixture

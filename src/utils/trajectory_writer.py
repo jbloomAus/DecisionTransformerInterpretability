@@ -8,8 +8,6 @@ import time
 from typing import Dict
 
 import numpy as np
-import torch
-import torch as t
 from typeguard import typechecked
 
 import wandb
@@ -130,75 +128,3 @@ class TrajectoryWriter:
             wandb.log_artifact(artifact)
 
         print(f"Trajectory written to {self.path}")
-
-
-def pad_tensor(
-    tensor, length=100, ignore_first_dim=True, pad_token=0, pad_left=False
-):
-    if ignore_first_dim:
-        if tensor.shape[1] < length:
-            pad_shape = (
-                tensor.shape[0],
-                length - tensor.shape[1],
-                *tensor.shape[2:],
-            )
-            pad = t.ones(pad_shape) * pad_token
-
-            if pad_left:
-                tensor = t.cat([pad, tensor], dim=1)
-            else:
-                tensor = t.cat([tensor, pad], dim=1)
-
-        return tensor
-    else:
-        if tensor.shape[0] < length:
-            pad_shape = (length - tensor.shape[0], *tensor.shape[1:])
-            pad = t.ones(pad_shape) * pad_token
-
-            if pad_left:
-                tensor = t.cat([pad, tensor], dim=0)
-            else:
-                tensor = t.cat([tensor, pad], dim=0)
-
-        return tensor
-
-
-class DictList(dict):
-    """A dictionary of lists of same size. Dictionary items can be
-    accessed using `.` notation and list items using `[]` notation.
-
-    Example:
-        >>> d = DictList({"a": [[1, 2], [3, 4]], "b": [[5], [6]]})
-        >>> d.a
-        [[1, 2], [3, 4]]
-        >>> d[0]
-        DictList({"a": [1, 2], "b": [5]})
-    """
-
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
-
-    def __init__(self, input_list):
-        if isinstance(input_list, dict):
-            super().__init__(input_list)
-        elif isinstance(input_list, list):
-            keys = input_list[0].keys()
-            stacked_dict = {
-                key: torch.stack([getattr(dl, key) for dl in input_list])
-                for key in keys
-            }
-            super().__init__(stacked_dict)
-        else:
-            raise ValueError(
-                "Input should be either a dictionary or a list of DictLists containing tensors."
-            )
-
-    def __len__(self):
-        return len(next(iter(dict.values(self))))
-
-    def __getitem__(self, index):
-        return DictList({key: value[index] for key, value in dict.items(self)})
-
-    def __setitem__(self, index, d):
-        for key, value in d.items():
-            dict.__getitem__(self, key)[index] = value
