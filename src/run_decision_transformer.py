@@ -14,10 +14,11 @@ if __name__ == "__main__":
     run_config = RunConfig(
         exp_name=args.exp_name,
         seed=args.seed,
-        device="cuda" if args.cuda else "cpu",
+        device="cuda" if args.cuda and t.cuda.is_available() else "cpu",
         track=args.track,
         wandb_project_name=args.wandb_project_name,
         wandb_entity=args.wandb_entity,
+
     )
 
     TIME_EMBEDDING_TYPE = (
@@ -32,7 +33,7 @@ if __name__ == "__main__":
         layer_norm=args.layer_norm,
         time_embedding_type=TIME_EMBEDDING_TYPE,
         n_ctx=args.n_ctx,
-        device="cuda" if args.cuda and t.cuda.is_available() else "cpu",
+        device=run_config.device
     )
 
     offline_config = OfflineTrainConfig(
@@ -53,6 +54,7 @@ if __name__ == "__main__":
         eval_max_time_steps=args.eval_max_time_steps,
         track=args.track,
         convert_to_one_hot=args.convert_to_one_hot,
+        device=run_config.device
     )
 
     run_decision_transformer(
