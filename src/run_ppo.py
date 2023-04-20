@@ -26,6 +26,7 @@ if __name__ == "__main__":
         max_steps=args.max_steps,
         capture_video=args.capture_video,
         view_size=args.view_size,
+        device=run_config.device,
     )
 
     online_config = OnlineTrainConfig(
