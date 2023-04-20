@@ -55,5 +55,5 @@ if __name__ == "__main__":
         run_config=run_config,
         environment_config=environment_config,
         online_config=online_config,
-        transformer_model_config=transformer_config,
+        model_config=transformer_config,
     )
