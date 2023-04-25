@@ -6,21 +6,20 @@ from src.config import RunConfig, OnlineTrainConfig
 from src.ppo.memory import Memory
 
 
-def runner(checkpoint_path, num_envs, rollout_length, trajectory_path=None):
+def runner(checkpoint_path, num_envs, rollout_length, trajectory_path):
     agent = load_saved_checkpoint(checkpoint_path, num_envs)
     memory = Memory(
         agent.envs, OnlineTrainConfig(num_envs=num_envs), device=agent.device
     )
-    if trajectory_path:
-        trajectory_writer = TrajectoryWriter(
-            path=trajectory_path,
-            run_config=RunConfig(track=False),
-            environment_config=agent.environment_config,
-            online_config=OnlineTrainConfig(num_envs=num_envs),
-            model_config=agent.model_config,
-        )
-    else:
-        trajectory_writer = None
+
+    trajectory_writer = TrajectoryWriter(
+        path=trajectory_path,
+        run_config=RunConfig(track=False),
+        environment_config=agent.environment_config,
+        online_config=OnlineTrainConfig(num_envs=num_envs),
+        model_config=agent.model_config,
+    )
+
     agent.rollout(memory, rollout_length, agent.envs, trajectory_writer)
     if trajectory_writer:
         trajectory_writer.tag_terminated_trajectories()
