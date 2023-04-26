@@ -68,17 +68,21 @@ def bottomk_sample(probs: Categorical, k: int):
 
 def sample_from_categorical(probs: Categorical, method: str, **kwargs):
     """
-    Returns a sample from the distribution
+    Returns a sample from the distribution according to the selected method.
+
+    Warning: Don't use anything other than basic when training PPO. This is
+    intended to assist demonstration collection and is not a part of the
+    PPO algorithm.
     """
     if method == "basic":
         return basic_sample(probs)
     elif method == "greedy":
         return greedy_sample(probs)
-    elif method == "temp":
-        return temp_sample(probs, **kwargs)
+    elif method == "temperature":
+        return temp_sample(probs, temperature=kwargs.get("temperature"))
     elif method == "topk":
-        return topk_sample(probs, **kwargs)
+        return topk_sample(probs, k=kwargs.get("k"))
     elif method == "bottomk":
-        return bottomk_sample(probs, **kwargs)
+        return bottomk_sample(probs, k=kwargs.get("k"))
     else:
         raise ValueError("Invalid sampling method provided: {}".format(method))

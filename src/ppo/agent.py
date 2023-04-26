@@ -2,7 +2,7 @@ import abc
 import json
 import os
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, Optional
 
 import gymnasium as gym
 import numpy as np
@@ -25,6 +25,9 @@ from src.models.trajectory_transformer import (
 )
 from src.utils.dictlist import DictList
 from src.utils.trajectory_writer import TrajectoryWriter
+
+from src.utils.sampling_methods import sample_from_categorical
+
 
 from .loss_functions import (
     calc_clipped_surrogate_objective,
@@ -104,7 +107,7 @@ class PPOAgent(nn.Module):
         return (optimizer, scheduler)
 
     @abc.abstractmethod
-    def rollout(self, memory, args, envs, trajectory_writer) -> None:
+    def rollout(self, memory, args, envs, trajectory_writer, **kwargs) -> None:
         pass
 
     @abc.abstractmethod
@@ -195,6 +198,8 @@ class FCAgent(PPOAgent):
         num_steps: int,
         envs: gym.vector.SyncVectorEnv,
         trajectory_writer=None,
+        sampling_method="basic",
+        **kwargs,
     ) -> None:
         """Performs the rollout phase of the PPO algorithm, collecting experience by interacting with the environment.
 
@@ -216,7 +221,7 @@ class FCAgent(PPOAgent):
                 logits = self.actor(obs)
                 value = self.critic(obs).flatten()
             probs = Categorical(logits=logits)
-            action = probs.sample()
+            action = sample_from_categorical(probs, sampling_method, **kwargs)
             logprob = probs.log_prob(action)
             next_obs, reward, next_done, next_truncated, info = envs.step(
                 action.cpu().numpy()
@@ -379,6 +384,8 @@ class TransformerPPOAgent(PPOAgent):
         num_steps: int,
         envs: gym.vector.SyncVectorEnv,
         trajectory_writer=None,
+        sampling_method="basic",
+        **kwargs,
     ) -> None:
         """Performs the rollout phase of the PPO algorithm, collecting experience by interacting with the environment.
 
@@ -455,7 +462,7 @@ class TransformerPPOAgent(PPOAgent):
 
             # get the last state action prediction
             probs = Categorical(logits=logits[:, -1])
-            action = probs.sample()
+            action = sample_from_categorical(probs, sampling_method, **kwargs)
             logprob = probs.log_prob(action)
             next_obs, reward, next_done, next_truncated, info = envs.step(
                 action.cpu().numpy()
@@ -652,6 +659,8 @@ class LSTMPPOAgent(PPOAgent):
         num_steps: int,
         envs: gym.vector.SyncVectorEnv,
         trajectory_writer=None,
+        sampling_method="basic",
+        **kwargs,
     ) -> None:
         device = memory.device
         cuda = device.type == "cuda"
@@ -670,7 +679,7 @@ class LSTMPPOAgent(PPOAgent):
                 recurrence_memory = results["memory"]
 
             probs = results["dist"]
-            action = probs.sample()
+            action = sample_from_categorical(probs, sampling_method, **kwargs)
             logprob = probs.log_prob(action)
             next_obs, reward, next_done, next_truncated, info = envs.step(
                 action.cpu().numpy()
@@ -995,7 +1004,11 @@ def load_all_agents_from_checkpoints(checkpoint_folder_path, num_envs=10):
 
 
 def sample_from_agents(
-    agents, rollout_length=2000, trajectory_path=None, num_envs=1
+    agents,
+    rollout_length=2000,
+    trajectory_path=None,
+    num_envs=1,
+    sampling_method="basic",
 ):
     all_episode_lengths = []
     all_episode_returns = []
@@ -1017,7 +1030,13 @@ def sample_from_agents(
             )
         else:
             trajectory_writer = None
-        agent.rollout(memory, rollout_length, agent.envs, trajectory_writer)
+        agent.rollout(
+            memory,
+            rollout_length,
+            agent.envs,
+            trajectory_writer,
+            sampling_method,
+        )
         if trajectory_writer:
             trajectory_writer.tag_terminated_trajectories()
             trajectory_writer.write(upload_to_wandb=False)

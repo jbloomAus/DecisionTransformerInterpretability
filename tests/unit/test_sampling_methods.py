@@ -133,7 +133,7 @@ def test_sample_from_categorical_with_batch_dim(random_probs):
     # Test temperature sampling
     temperature = 0.5
     indices = sample_from_categorical(
-        categorical_random, method="temp", temperature=temperature
+        categorical_random, method="temperature", temperature=temperature
     )
     assert torch.all((indices >= 0) & (indices < len(random_probs_batch[0])))
 
@@ -155,4 +155,7 @@ def test_sample_from_categorical_with_batch_dim(random_probs):
 
     # Test invalid method
     with pytest.raises(ValueError):
-        sample_from_categorical(categorical_random, method="invalid_method")
+        sample_from_categorical(
+            categorical_random,
+            method="invalid_method, valid methods are: basic, greedy, temp, topk, bottomk",
+        )
