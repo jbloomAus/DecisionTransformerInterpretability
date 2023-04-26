@@ -979,65 +979,6 @@ implement default like this:</p>
 </section>
 <section id="module-src.utils">
 <span id="src-utils-module"></span><h2>src.utils module<a class="headerlink" href="#module-src.utils" title="Permalink to this heading">#</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="src.utils.DictList">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.utils.</span></span><span class="sig-name descname"><span class="pre">DictList</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.utils.DictList" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></p>
-<p>A dictionary of lists of same size. Dictionary items can be
-accessed using <cite>.</cite> notation and list items using <cite>[]</cite> notation.</p>
-<p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="n">DictList</span><span class="p">({</span><span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="p">[[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]],</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="p">[[</span><span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">6</span><span class="p">]]})</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span><span class="o">.</span><span class="n">a</span>
-<span class="go">[[1, 2], [3, 4]]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-<span class="go">DictList({&quot;a&quot;: [1, 2], &quot;b&quot;: [5]})</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="src.utils.TrajectoryWriter">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">src.utils.</span></span><span class="sig-name descname"><span class="pre">TrajectoryWriter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">environment_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">online_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.utils.TrajectoryWriter" title="Permalink to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>The trajectory writer is responsible for writing trajectories to a file.
-During each rollout phase, it will collect:</p>
-<blockquote>
-<div><ul class="simple">
-<li><p>the observations</p></li>
-<li><p>the actions</p></li>
-<li><p>the rewards</p></li>
-<li><p>the dones</p></li>
-<li><p>the infos</p></li>
-</ul>
-</div></blockquote>
-<p>And store them in a set of lists, indexed by batch b and time t.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="src.utils.TrajectoryWriter.accumulate_trajectory">
-<span class="sig-name descname"><span class="pre">accumulate_trajectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">next_obs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reward</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">done</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">truncated</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.utils.TrajectoryWriter.accumulate_trajectory" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.utils.TrajectoryWriter.tag_terminated_trajectories">
-<span class="sig-name descname"><span class="pre">tag_terminated_trajectories</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#src.utils.TrajectoryWriter.tag_terminated_trajectories" title="Permalink to this definition">#</a></dt>
-<dd><p>Tag the last trajectory in each batch as done.
-This is needed when an episode in a minibatch is ended because the
-timesteps limit has been reached but the episode may not have been truncated
-or ended in the environment.</p>
-<p>I don’t love this solution, but it will do for now.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="src.utils.TrajectoryWriter.write">
-<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">upload_to_wandb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.utils.TrajectoryWriter.write" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="src.utils.pad_tensor">
-<span class="sig-prename descclassname"><span class="pre">src.utils.</span></span><span class="sig-name descname"><span class="pre">pad_tensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_first_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad_token</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad_left</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.utils.pad_tensor" title="Permalink to this definition">#</a></dt>
-<dd></dd></dl>
-
 </section>
 <section id="module-src.visualization">
 <span id="src-visualization-module"></span><h2>src.visualization module<a class="headerlink" href="#module-src.visualization" title="Permalink to this heading">#</a></h2>
@@ -1214,17 +1155,7 @@ or ended in the environment.</p>
 </li>
 <li><a class="reference internal" href="#module-src.run_decision_transformer">src.run_decision_transformer module</a></li>
 <li><a class="reference internal" href="#module-src.run_ppo">src.run_ppo module</a></li>
-<li><a class="reference internal" href="#module-src.utils">src.utils module</a><ul>
-<li><a class="reference internal" href="#src.utils.DictList"><code class="docutils literal notranslate"><span class="pre">DictList</span></code></a></li>
-<li><a class="reference internal" href="#src.utils.TrajectoryWriter"><code class="docutils literal notranslate"><span class="pre">TrajectoryWriter</span></code></a><ul>
-<li><a class="reference internal" href="#src.utils.TrajectoryWriter.accumulate_trajectory"><code class="docutils literal notranslate"><span class="pre">TrajectoryWriter.accumulate_trajectory()</span></code></a></li>
-<li><a class="reference internal" href="#src.utils.TrajectoryWriter.tag_terminated_trajectories"><code class="docutils literal notranslate"><span class="pre">TrajectoryWriter.tag_terminated_trajectories()</span></code></a></li>
-<li><a class="reference internal" href="#src.utils.TrajectoryWriter.write"><code class="docutils literal notranslate"><span class="pre">TrajectoryWriter.write()</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#src.utils.pad_tensor"><code class="docutils literal notranslate"><span class="pre">pad_tensor()</span></code></a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#module-src.utils">src.utils module</a></li>
 <li><a class="reference internal" href="#module-src.visualization">src.visualization module</a><ul>
 <li><a class="reference internal" href="#src.visualization.find_agent"><code class="docutils literal notranslate"><span class="pre">find_agent()</span></code></a></li>
 <li><a class="reference internal" href="#src.visualization.render_minigrid_observation"><code class="docutils literal notranslate"><span class="pre">render_minigrid_observation()</span></code></a></li>
