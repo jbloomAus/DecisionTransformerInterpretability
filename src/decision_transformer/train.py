@@ -17,7 +17,7 @@ from src.models.trajectory_transformer import (
 
 from .offline_dataset import TrajectoryDataset
 from .eval import evaluate_dt_agent
-from .utils import configure_optimizers, get_scheduler
+from .utils import configure_optimizers, get_scheduler, store_model_checkpoint
 
 
 def train(
@@ -27,6 +27,8 @@ def train(
     make_env,
     offline_config: OfflineTrainConfig,
     device="cpu",
+    track=False,
+    exp_name=""
 ):
     loss_fn = nn.CrossEntropyLoss()
     model = model.to(device)
@@ -34,6 +36,20 @@ def train(
     train_dataloader, test_dataloader = get_dataloaders(
         trajectory_data_set, offline_config
     )
+
+    if track:
+        checkpoint_artifact = wandb.Artifact(
+            f"{exp_name}_checkpoints", type="model"
+        )
+        checkpoint_num = 1
+        checkpoint_interval = offline_config.train_epochs // offline_config.num_checkpoints + 1
+        checkpoint_num = store_model_checkpoint(
+            model,
+            exp_name,
+            offline_config,
+            checkpoint_num,
+            checkpoint_artifact
+        )
 
     # get optimizer from string
     optimizer = configure_optimizers(model, offline_config)
@@ -159,6 +175,25 @@ def train(
                     device=device,
                     num_envs=offline_config.eval_num_envs,
                 )
+
+        if track and (epoch + 1) % checkpoint_interval == 0:
+            checkpoint_num = store_model_checkpoint(
+                model,
+                exp_name,
+                offline_config,
+                checkpoint_num,
+                checkpoint_artifact
+            )
+
+    if track:
+        store_model_checkpoint(
+            model,
+            exp_name,
+            offline_config,
+            checkpoint_num,
+            checkpoint_artifact
+        )
+        wandb.log_artifact(checkpoint_artifact)
 
     return model
 
