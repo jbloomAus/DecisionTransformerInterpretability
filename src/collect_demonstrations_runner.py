@@ -1,9 +1,11 @@
 import sys
+import time
 import argparse
 from src.ppo.agent import load_saved_checkpoint
 from src.utils.trajectory_writer import TrajectoryWriter
 from src.config import RunConfig, OnlineTrainConfig
 from src.ppo.memory import Memory
+from src.environments.registration import register_envs
 
 
 def runner(
@@ -12,6 +14,7 @@ def runner(
     trajectory_path: str,
     sampling_configs: list,
 ):
+    register_envs()
     agent = load_saved_checkpoint(checkpoint_path, num_envs)
     memory = Memory(
         agent.envs, OnlineTrainConfig(num_envs=num_envs), device=agent.device
@@ -25,14 +28,18 @@ def runner(
         model_config=agent.model_config,
     )
 
+    i = 0
     for config in sampling_configs:
+        print(f"Sampling with config: {config}")
         agent.rollout(
             memory=memory,
             num_steps=config["rollout_length"],
             envs=agent.envs,
             trajectory_writer=trajectory_writer,
-            **config
+            **config,
         )
+        i += 1
+        print(f"finished config: {i} out of {len(sampling_configs)}")
 
     if trajectory_writer:
         trajectory_writer.tag_terminated_trajectories()
@@ -125,4 +132,6 @@ def main():
 
 
 if __name__ == "__main__":
+    start = time.time()
     main()
+    print(f"Total time: {time.time() - start}")
