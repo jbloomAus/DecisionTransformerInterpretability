@@ -7,7 +7,7 @@ from torch.utils.data.sampler import WeightedRandomSampler
 from tqdm import tqdm
 
 import wandb
-from src.config import EnvironmentConfig
+from src.config import EnvironmentConfig, OfflineTrainConfig
 from src.models.trajectory_transformer import (
     CloneTransformer,
     DecisionTransformer,
@@ -16,11 +16,13 @@ from src.models.trajectory_transformer import (
 
 from .offline_dataset import TrajectoryDataset
 from .eval import evaluate_dt_agent
+from .utils import store_model_checkpoint
 
 
 def train(
     model: TrajectoryTransformer,
     trajectory_data_set: TrajectoryDataset,
+    offline_config: OfflineTrainConfig,
     env,
     make_env,
     batch_size=128,
@@ -36,6 +38,7 @@ def train(
     initial_rtg=[0.0, 1.0],
     eval_max_time_steps=100,
     eval_num_envs=8,
+    exp_name=""
 ):
     loss_fn = nn.CrossEntropyLoss()
     model = model.to(device)
@@ -70,6 +73,20 @@ def train(
     test_dataloader = DataLoader(
         test_dataset, batch_size=batch_size, sampler=test_sampler
     )
+
+    if track:
+        checkpoint_artifact = wandb.Artifact(
+            f"{exp_name}_checkpoints", type="model"
+        )
+        checkpoint_num = 1
+        checkpoint_interval = train_epochs // offline_config.num_checkpoints + 1
+        checkpoint_num = store_model_checkpoint(
+            model,
+            exp_name,
+            offline_config,
+            checkpoint_num,
+            checkpoint_artifact
+        )
 
     train_batches_per_epoch = len(train_dataloader)
     pbar = tqdm(range(train_epochs))
@@ -174,6 +191,25 @@ def train(
                     device=device,
                     num_envs=eval_num_envs,
                 )
+
+        if track and (epoch + 1) % checkpoint_interval == 0:
+            checkpoint_num = store_model_checkpoint(
+                model,
+                exp_name,
+                offline_config,
+                checkpoint_num,
+                checkpoint_artifact
+            )
+
+    if track:
+        store_model_checkpoint(
+            model,
+            exp_name,
+            offline_config,
+            checkpoint_num,
+            checkpoint_artifact
+        )
+        wandb.log_artifact(checkpoint_artifact)
 
     return model
 

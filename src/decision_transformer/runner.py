@@ -1,4 +1,3 @@
-import json
 import os
 import time
 import warnings
@@ -8,7 +7,6 @@ import torch as t
 
 import wandb
 from src.config import (
-    ConfigJsonEncoder,
     EnvironmentConfig,
     OfflineTrainConfig,
     RunConfig,
@@ -27,7 +25,7 @@ from .offline_dataset import (
     one_hot_encode_observation,
 )
 from .train import train
-from .utils import get_max_len_from_model_type
+from .utils import get_max_len_from_model_type, store_transformer_model
 
 
 def run_decision_transformer(
@@ -154,6 +152,8 @@ def run_decision_transformer(
         initial_rtg=offline_config.initial_rtg,
         eval_max_time_steps=offline_config.eval_max_time_steps,
         eval_num_envs=offline_config.eval_num_envs,
+        exp_name=run_config.exp_name,
+        offline_config=offline_config,
     )
 
     if run_config.track:
@@ -177,21 +177,3 @@ def run_decision_transformer(
         os.remove(model_path)
 
         wandb.finish()
-
-
-def store_transformer_model(path, model, offline_config):
-    t.save(
-        {
-            "model_state_dict": model.state_dict(),
-            "offline_config": json.dumps(
-                offline_config, cls=ConfigJsonEncoder
-            ),
-            "environment_config": json.dumps(
-                model.environment_config, cls=ConfigJsonEncoder
-            ),
-            "model_config": json.dumps(
-                model.transformer_config, cls=ConfigJsonEncoder
-            ),
-        },
-        path,
-    )

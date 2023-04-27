@@ -10,7 +10,7 @@ from src.config import (
 )
 
 from src.models.trajectory_transformer import DecisionTransformer
-from src.decision_transformer.runner import store_transformer_model
+from src.decision_transformer.utils import store_transformer_model
 
 
 @pytest.fixture()
