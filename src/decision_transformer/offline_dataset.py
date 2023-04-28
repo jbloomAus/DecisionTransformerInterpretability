@@ -239,6 +239,7 @@ class TrajectoryDataset(Dataset):
         traj_states = self.states[traj_index]
         traj_actions = self.actions[traj_index]
         traj_dones = self.dones[traj_index]
+        traj_rtg = self.discount_cumsum(traj_rewards, gamma=1.0)
 
         # start index
         si = random.randint(0, traj_rewards.shape[0] - 1)
@@ -251,6 +252,7 @@ class TrajectoryDataset(Dataset):
         s = traj_states[si : si + max_len].reshape(1, -1, *self.state_dim)
         a = traj_actions[si : si + max_len].reshape(1, -1, *self.act_dim)
         r = traj_rewards[si : si + max_len].reshape(1, -1, 1)
+        rtg = traj_rtg[si : si + max_len].reshape(1, -1, 1)
         d = traj_dones[si : si + max_len].reshape(1, -1)
         ti = np.arange(si, si + s.shape[1]).reshape(1, -1)
 
@@ -264,14 +266,10 @@ class TrajectoryDataset(Dataset):
         s = self.add_padding(s, 0, padding_required)
         a = self.add_padding(a, -10, padding_required)
         r = self.add_padding(r, 0, padding_required)
+        rtg = self.add_padding(rtg, rtg[0, -1], padding_required)
         d = self.add_padding(d, 2, padding_required)
         ti = self.add_padding(ti, 0, padding_required)
         m = self.add_padding(np.ones((1, tlen)), 0, padding_required)
-
-        # calculate RTG on padded reward vector
-        rtg = self.discount_cumsum(r.flatten(), gamma=1.0)[
-            : s.shape[1] + 1
-        ].reshape(1, -1, 1)
 
         # padding and state + reward normalization
         s = (s - self.state_mean) / self.state_std

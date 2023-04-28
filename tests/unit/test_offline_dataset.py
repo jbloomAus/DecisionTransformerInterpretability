@@ -394,23 +394,31 @@ def test__getitem__(trajectory_dataset):
     trajectory_dataset = copy.deepcopy(trajectory_dataset)
     trajectory_dataset.preprocess_observations = one_hot_encode_observation
 
-    s, a, r, d, rtg, timesteps, mask = trajectory_dataset[0]
+    for _ in range(100):
+        i = np.random.randint(0, len(trajectory_dataset))
+        s, a, r, d, rtg, timesteps, mask = trajectory_dataset[i]
 
-    assert isinstance(s, torch.Tensor)
-    assert isinstance(a, torch.Tensor)
-    assert isinstance(r, torch.Tensor)
-    assert isinstance(d, torch.Tensor)
-    assert isinstance(rtg, torch.Tensor)
-    assert isinstance(timesteps, torch.Tensor)
-    assert isinstance(mask, torch.Tensor)
+        assert isinstance(s, torch.Tensor)
+        assert isinstance(a, torch.Tensor)
+        assert isinstance(r, torch.Tensor)
+        assert isinstance(d, torch.Tensor)
+        assert isinstance(rtg, torch.Tensor)
+        assert isinstance(timesteps, torch.Tensor)
+        assert isinstance(mask, torch.Tensor)
 
-    assert s.shape == (100, 7, 7, 20)
-    assert a.shape == (100,)
-    assert r.shape == (100, 1)
-    assert d.shape == (100,)
-    assert rtg.shape == (100, 1)
-    assert timesteps.shape == (100,)
-    assert mask.shape == (100,)
+        assert s.shape == (100, 7, 7, 20)
+        assert a.shape == (100,)
+        assert r.shape == (100, 1)
+        assert d.shape == (100,)
+        assert rtg.shape == (100, 1)
+        assert timesteps.shape == (100,)
+        assert mask.shape == (100,)
+
+        # often won't sample end where r is non-zero
+        # but if we do, that's when we can ensure that
+        # rtg is being calculated correctly.
+        if r.max() > 0:
+            assert rtg[-1][0] == r.max()
 
 
 def test__getitem__expanded(trajectory_dataset_xz):
