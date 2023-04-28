@@ -3,6 +3,7 @@ import os
 
 import pytest
 import torch
+import wandb
 
 from src.config import (
     EnvironmentConfig,
@@ -12,9 +13,8 @@ from src.config import (
     TransformerModelConfig,
 )
 
-from src.decision_transformer.runner import store_transformer_model
 from src.decision_transformer.offline_dataset import TrajectoryDataset
-from src.decision_transformer.utils import load_decision_transformer
+from src.decision_transformer.utils import load_decision_transformer, store_model_checkpoint, store_transformer_model
 from src.models.trajectory_transformer import DecisionTransformer
 
 
@@ -143,6 +143,37 @@ def test_load_decision_transformer(
 
     assert new_model.transformer_config == transformer_config
     assert new_model.environment_config == environment_config
+
+
+def test_decision_transformer_checkpoint_saving_and_loading(
+        transformer_config, environment_config, offline_config, run_config
+):
+    wandb.init(mode="offline")
+    model = DecisionTransformer(
+        environment_config=environment_config,
+        transformer_config=transformer_config
+    )
+    checkpoint_artifact = wandb.Artifact(
+        f"{run_config.exp_name}_checkpoints", type="model"
+    )
+    checkpoint_num = 1
+
+    checkpoint_num = store_model_checkpoint(
+        model=model,
+        exp_name=run_config.exp_name,
+        offline_config=offline_config,
+        checkpoint_num=checkpoint_num,
+        checkpoint_artifact=checkpoint_artifact
+    )
+
+    assert checkpoint_num == 2
+
+    loaded_model = load_decision_transformer(f"models/{run_config.exp_name}_01.pt")
+
+    assert_state_dicts_are_equal(loaded_model.state_dict(), model.state_dict())
+
+    assert loaded_model.transformer_config == transformer_config
+    assert loaded_model.environment_config == environment_config
 
 
 def assert_state_dicts_are_equal(dict1, dict2):

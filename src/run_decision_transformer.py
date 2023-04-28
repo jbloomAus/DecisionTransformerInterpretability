@@ -54,7 +54,8 @@ if __name__ == "__main__":
         eval_max_time_steps=args.eval_max_time_steps,
         track=args.track,
         convert_to_one_hot=args.convert_to_one_hot,
-        device=run_config.device
+        device=run_config.device,
+        num_checkpoints=args.num_checkpoints,
     )
 
     run_decision_transformer(

@@ -160,6 +160,7 @@ class OfflineTrainConfig:
     initial_rtg: list[float] = (0.0, 1.0)
     eval_max_time_steps: int = 100
     eval_num_envs: int = 8
+    num_checkpoints: int = 10
 
     def __post_init__(self):
         assert self.model_type in ["decision_transformer", "clone_transformer"]
