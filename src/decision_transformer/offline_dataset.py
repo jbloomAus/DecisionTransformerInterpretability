@@ -239,7 +239,13 @@ class TrajectoryDataset(Dataset):
         traj_states = self.states[traj_index]
         traj_actions = self.actions[traj_index]
         traj_dones = self.dones[traj_index]
-        traj_rtg = self.discount_cumsum(traj_rewards, gamma=1.0)
+
+        # TODO: configure this so non-sparse tasks are dealt with correctly!
+        # This line is very slow if we use the "correct method"
+        traj_rtg = torch.ones(traj_rewards.shape) * traj_rewards[-1]
+
+        # "Correct method"
+        # traj_rtg = self.discount_cumsum(traj_rewards, gamma=1.0)
 
         # start index
         si = random.randint(0, traj_rewards.shape[0] - 1)
