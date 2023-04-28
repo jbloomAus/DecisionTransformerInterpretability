@@ -55,6 +55,10 @@ def test_transformer_model_config():
         # d_model is not divisible by n_heads
         TransformerModelConfig(d_model=100, n_heads=3)
 
+    with pytest.raises(AssertionError):
+        # d_model is not divisible by n_heads
+        TransformerModelConfig(layer_norm="test")
+
 
 def test_lstm_model_config():
     environment_config = EnvironmentConfig()

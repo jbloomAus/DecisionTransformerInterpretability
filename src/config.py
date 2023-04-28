@@ -6,6 +6,7 @@ import dataclasses
 import json
 import os
 import uuid
+from typing import Optional
 from dataclasses import dataclass
 
 import gymnasium as gym
@@ -73,7 +74,7 @@ class TransformerModelConfig:
     d_mlp: int = 256
     n_layers: int = 2
     n_ctx: int = 2
-    layer_norm: bool = False
+    layer_norm: Optional[str] = None
     state_embedding_type: str = "grid"
     time_embedding_type: str = "embedding"
     seed: int = 1
@@ -82,6 +83,13 @@ class TransformerModelConfig:
     def __post_init__(self):
         assert self.d_model % self.n_heads == 0
         self.d_head = self.d_model // self.n_heads
+        # match t-lens
+        assert self.layer_norm is None or self.layer_norm in [
+            "LNPre",
+            "LN",
+        ], "Layer norm must be None, PreLN, or LN, got {}".format(
+            self.layer_norm
+        )
         assert self.time_embedding_type in ["embedding", "linear"]
         if isinstance(self.device, str):
             self.device = torch.device(self.device)
