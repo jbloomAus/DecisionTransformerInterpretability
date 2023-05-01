@@ -84,8 +84,9 @@ class TransformerModelConfig:
         assert self.d_model % self.n_heads == 0
         self.d_head = self.d_model // self.n_heads
         # match t-lens
+
         assert self.layer_norm is None or self.layer_norm in [
-            "LNPre",
+            "PreLN",
             "LN",
         ], "Layer norm must be None, PreLN, or LN, got {}".format(
             self.layer_norm
