@@ -242,7 +242,7 @@ class TrajectoryDataset(Dataset):
 
         # TODO: configure this so non-sparse tasks are dealt with correctly!
         # This line is very slow if we use the "correct method"
-        traj_rtg = torch.ones(traj_rewards.shape) * traj_rewards[-1]
+        traj_rtg = np.ones(traj_rewards.shape) * traj_rewards[-1].item()
 
         # "Correct method"
         # traj_rtg = self.discount_cumsum(traj_rewards, gamma=1.0)
