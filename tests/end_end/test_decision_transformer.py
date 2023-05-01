@@ -76,7 +76,7 @@ def test_decision_transformer(download_training_data, n_ctx):
 @pytest.mark.parametrize("n_ctx", [2, 5, 8])
 def test_decision_transformer_preln(download_training_data, n_ctx):
     run_config = RunConfig(
-        exp_name="Test-DT-PreLN-n_ctx-" + str(n_ctx),
+        exp_name="Test-DT-LNPre-n_ctx-" + str(n_ctx),
         wandb_project_name="DecisionTransformerInterpretability",
         seed=1,
         track=True,
@@ -103,7 +103,7 @@ def test_decision_transformer_preln(download_training_data, n_ctx):
         prob_go_from_end=0.1,
         device="cpu",
         track=run_config.track,
-        train_epochs=500,
+        train_epochs=800,
         test_epochs=10,
         test_frequency=100,
         eval_frequency=100,

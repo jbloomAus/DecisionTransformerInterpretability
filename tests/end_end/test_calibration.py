@@ -56,7 +56,7 @@ def transformer_config() -> TransformerModelConfig:
         d_mlp=256,
         n_layers=2,
         n_ctx=2,
-        layer_norm=False,
+        layer_norm=None,
         state_embedding_type="grid",
         time_embedding_type="embedding",
         seed=1,

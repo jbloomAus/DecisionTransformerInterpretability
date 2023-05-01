@@ -64,7 +64,7 @@ def transformer_model_config():
         seed: int = 1
         device: str = "cpu"
         d_head: int = 64  # d_model // n_heads
-        layer_norm = False
+        layer_norm = None
 
     return DummyTransformerModelConfig()
 
@@ -84,7 +84,7 @@ def big_transformer_model_config():
         seed: int = 1
         device: str = "cpu"
         d_head: int = 64  # d_model // n_heads
-        layer_norm = False
+        layer_norm = None
 
     return DummyTransformerModelConfig()
 
