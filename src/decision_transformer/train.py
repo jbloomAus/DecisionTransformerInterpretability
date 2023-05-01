@@ -16,6 +16,7 @@ from src.models.trajectory_transformer import (
 
 from .offline_dataset import TrajectoryDataset
 from .eval import evaluate_dt_agent
+from .utils import get_optimizer
 
 
 def train(
@@ -23,6 +24,7 @@ def train(
     trajectory_data_set: TrajectoryDataset,
     env,
     make_env,
+    optimizer="Adam",
     batch_size=128,
     lr=0.0001,
     weight_decay=0.0,
@@ -39,9 +41,10 @@ def train(
 ):
     loss_fn = nn.CrossEntropyLoss()
     model = model.to(device)
-    optimizer = t.optim.Adam(
-        model.parameters(), lr=lr, weight_decay=weight_decay
-    )
+
+    # get optimizer from string
+    optimizer = get_optimizer(optimizer)
+    optimizer = optimizer(model.parameters(), lr=lr, weight_decay=weight_decay)
 
     train_dataset, test_dataset = random_split(
         trajectory_data_set, [0.90, 0.10]

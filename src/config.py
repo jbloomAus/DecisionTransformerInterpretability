@@ -157,6 +157,7 @@ class OfflineTrainConfig:
 
     trajectory_path: str
     batch_size: int = 128
+    optimizer: str = "AdamW"
     lr: float = 0.0001
     weight_decay: float = 0.0
     pct_traj: float = 1.0

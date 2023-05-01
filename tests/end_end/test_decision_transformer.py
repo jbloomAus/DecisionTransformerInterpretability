@@ -24,26 +24,23 @@ def download_training_data() -> None:
         )
 
 
-@pytest.mark.parametrize("n_ctx", [2, 5, 8])
-def test_decision_transformer(download_training_data, n_ctx):
-    run_config = RunConfig(
-        exp_name="Test-DT-n_ctx" + str(n_ctx),
-        wandb_project_name="DecisionTransformerInterpretability",
-        seed=1,
-        track=True,
-    )
-
+@pytest.fixture
+def transformer_model_config():
     transformer_model_config = TransformerModelConfig(
         d_model=128,
         n_heads=2,
         d_mlp=256,
         n_layers=1,
-        n_ctx=n_ctx,
+        n_ctx=2,
         time_embedding_type="embedding",
         seed=1,
         device="cpu",
     )
+    return transformer_model_config
 
+
+@pytest.fixture
+def offline_config():
     offline_config = OfflineTrainConfig(
         trajectory_path="trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl",
         batch_size=128,
@@ -52,16 +49,32 @@ def test_decision_transformer(download_training_data, n_ctx):
         pct_traj=1,
         prob_go_from_end=0.1,
         device="cpu",
-        track=run_config.track,
+        track=False,
         train_epochs=500,
         test_epochs=10,
         test_frequency=100,
         eval_frequency=100,
         eval_episodes=10,
         initial_rtg=[-1, 0, 1],
-        eval_max_time_steps=1000,
+        eval_max_time_steps=50,
         model_type="decision_transformer",
     )
+    return offline_config
+
+
+@pytest.mark.parametrize("n_ctx", [2, 5, 8])
+def test_decision_transformer(
+    download_training_data, n_ctx, transformer_model_config, offline_config
+):
+    run_config = RunConfig(
+        exp_name="Test-DT-n_ctx" + str(n_ctx),
+        wandb_project_name="DecisionTransformerInterpretability",
+        seed=1,
+        track=True,
+    )
+
+    transformer_model_config.n_ctx = n_ctx
+    offline_config.track = run_config.track
 
     run_decision_transformer(
         run_config=run_config,
@@ -74,7 +87,9 @@ def test_decision_transformer(download_training_data, n_ctx):
 
 
 @pytest.mark.parametrize("n_ctx", [2, 5, 8])
-def test_decision_transformer_preln(download_training_data, n_ctx):
+def test_decision_transformer_preln(
+    download_training_data, n_ctx, transformer_model_config, offline_config
+):
     run_config = RunConfig(
         exp_name="Test-DT-LNPre-n_ctx-" + str(n_ctx),
         wandb_project_name="DecisionTransformerInterpretability",
@@ -82,36 +97,34 @@ def test_decision_transformer_preln(download_training_data, n_ctx):
         track=True,
     )
 
-    transformer_model_config = TransformerModelConfig(
-        d_model=128,
-        n_heads=2,
-        d_mlp=256,
-        n_layers=1,
-        n_ctx=n_ctx,
-        layer_norm="LNPre",
-        time_embedding_type="embedding",
-        seed=1,
-        device="cpu",
+    transformer_model_config.n_ctx = n_ctx
+    transformer_model_config.layer_norm = "LNPre"
+    offline_config.track = run_config.track
+
+    run_decision_transformer(
+        run_config=run_config,
+        transformer_config=transformer_model_config,
+        offline_config=offline_config,
+        make_env=make_env,
     )
 
-    offline_config = OfflineTrainConfig(
-        trajectory_path="trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl",
-        batch_size=128,
-        lr=0.0001,
-        weight_decay=0.001,
-        pct_traj=1,
-        prob_go_from_end=0.1,
-        device="cpu",
-        track=run_config.track,
-        train_epochs=800,
-        test_epochs=10,
-        test_frequency=100,
-        eval_frequency=100,
-        eval_episodes=10,
-        initial_rtg=[-1, 0, 1],
-        eval_max_time_steps=50,
-        model_type="decision_transformer",
+    print("Test passed! Look at wandb and compare to the previous run.")
+
+
+@pytest.mark.parametrize("optimizer", ["sgd", "adam", "adamw"])
+def test_decision_transformer_optimizer(
+    download_training_data, optimizer, transformer_model_config, offline_config
+):
+    run_config = RunConfig(
+        exp_name="Test-DT-n_ctx-" + str(2) + "-" + optimizer,
+        wandb_project_name="DecisionTransformerInterpretability",
+        seed=1,
+        track=True,
     )
+
+    transformer_model_config.layer_norm = "LNPre"
+    offline_config.optimizer = optimizer
+    offline_config.track = run_config.track
 
     run_decision_transformer(
         run_config=run_config,

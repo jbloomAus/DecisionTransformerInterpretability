@@ -5,6 +5,7 @@ import numpy as np
 from src.decision_transformer.utils import (
     get_max_len_from_model_type,
     initialize_padding_inputs,
+    get_optimizer,
 )
 
 
@@ -132,4 +133,18 @@ def test_initialize_padding_inputs_batch():
                 [0] * (max_len - 1) + [1],
             ]
         )
+    )
+
+
+def test_get_optimizer():
+    dummy_model = torch.nn.Linear(1, 1)
+    assert isinstance(
+        get_optimizer("Adam")(dummy_model.parameters(), 0.01), torch.optim.Adam
+    )
+    assert isinstance(
+        get_optimizer("SGD")(dummy_model.parameters(), 0.01), torch.optim.SGD
+    )
+    assert isinstance(
+        get_optimizer("AdamW")(dummy_model.parameters(), 0.01),
+        torch.optim.AdamW,
     )

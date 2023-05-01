@@ -12,6 +12,8 @@ from src.models.trajectory_transformer import (
     CloneTransformer,
 )
 
+import torch.optim as optim
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -30,7 +32,9 @@ def parse_args():
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--train_epochs", type=int, default=10)
     parser.add_argument("--test_epochs", type=int, default=3)
-    parser.add_argument("--learning_rate", type=float, default=0.0001)
+    parser.add_argument("--optimizer", type=str, default="AdamW")
+    parser.add_argument("--learning_rate", type=float, default=0.001)
+    parser.add_argument("--weight_decay", type=float, default=0.01)
     parser.add_argument(
         "--linear_time_embedding",
         type=bool,
@@ -38,7 +42,6 @@ def parse_args():
         action=argparse.BooleanOptionalAction,
     )
     parser.add_argument("--pct_traj", type=float, default=1)
-    parser.add_argument("--weight_decay", type=float, default=0.001)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument(
         "--track",
@@ -198,3 +201,14 @@ def initialize_padding_inputs(
     ).to(device)
 
     return obs, actions, reward, rtg, timesteps, mask
+
+
+def get_optimizer(optimizer_name: str):
+    if optimizer_name.lower() == "sgd":
+        return optim.SGD
+    elif optimizer_name.lower() == "adam":
+        return optim.Adam
+    elif optimizer_name.lower() == "adamw":
+        return optim.AdamW
+    else:
+        raise ValueError(f"Unsupported optimizer: {optimizer_name}")
