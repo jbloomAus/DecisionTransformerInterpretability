@@ -85,10 +85,14 @@ class TransformerModelConfig:
         self.d_head = self.d_model // self.n_heads
         # match t-lens
 
+        # while we still have older configs lying around.
+        if self.layer_norm == False:
+            self.layer_norm = None
+
         assert self.layer_norm is None or self.layer_norm in [
-            "PreLN",
+            "LNPre",
             "LN",
-        ], "Layer norm must be None, PreLN, or LN, got {}".format(
+        ], "Layer norm must be None, LNPre, or LN, got {}".format(
             self.layer_norm
         )
         assert self.time_embedding_type in ["embedding", "linear"]
