@@ -37,23 +37,7 @@ def run_decision_transformer(
     make_env: Callable,
 ):
     warnings.filterwarnings("ignore", category=DeprecationWarning)
-    if run_config.device == t.device("cuda"):
-        if t.cuda.is_available():
-            device = t.device("cuda")
-        else:
-            print("CUDA not available, using CPU instead.")
-            device = t.device("cpu")
-    elif run_config.device == t.device("cpu"):
-        device = t.device("cpu")
-    elif run_config.device == t.device("mps"):
-        if t.mps.is_available():
-            device = t.device("mps")
-        else:
-            print("MPS not available, using CPU instead.")
-            device = t.device("cpu")
-    else:
-        print("Invalid device, using CPU instead.")
-        device = t.device("cpu")
+    device = set_device(run_config)
 
     if offline_config.trajectory_path is None:
         raise ValueError("Must specify a trajectory path.")
@@ -195,3 +179,25 @@ def store_transformer_model(path, model, offline_config):
         },
         path,
     )
+
+
+def set_device(run_config):
+    if run_config.device == t.device("cuda"):
+        if t.cuda.is_available():
+            device = t.device("cuda")
+        else:
+            print("CUDA not available, using CPU instead.")
+            device = t.device("cpu")
+    elif run_config.device == t.device("cpu"):
+        device = t.device("cpu")
+    elif run_config.device == t.device("mps"):
+        if t.mps.is_available():
+            device = t.device("mps")
+        else:
+            print("MPS not available, using CPU instead.")
+            device = t.device("cpu")
+    else:
+        print("Invalid device, using CPU instead.")
+        device = t.device("cpu")
+
+    return device
