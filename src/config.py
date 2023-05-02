@@ -157,23 +157,27 @@ class OfflineTrainConfig:
 
     trajectory_path: str
     batch_size: int = 128
+    convert_to_one_hot: bool = False
     optimizer: str = "AdamW"
+    scheduler: str = "ConstantWithWarmUp"
     lr: float = 0.0001
+    lr_end: float = 10e-8
     weight_decay: float = 0.0
+    warm_up_steps: int = 1000
+    num_cycles: int = 3
     pct_traj: float = 1.0
     prob_go_from_end: float = 0.0
-    device: str = "cpu"
-    track: bool = False
     train_epochs: int = 100
     test_epochs: int = 10
     test_frequency: int = 10
     eval_frequency: int = 10
     eval_episodes: int = 10
-    model_type: str = "decision_transformer"
-    convert_to_one_hot: bool = False
-    initial_rtg: list[float] = (0.0, 1.0)
     eval_max_time_steps: int = 100
     eval_num_envs: int = 8
+    initial_rtg: list[float] = (0.0, 1.0)
+    model_type: str = "decision_transformer"
+    track: bool = False
+    device: str = "cpu"
 
     def __post_init__(self):
         assert self.model_type in ["decision_transformer", "clone_transformer"]

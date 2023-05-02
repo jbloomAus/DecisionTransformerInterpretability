@@ -126,18 +126,7 @@ def run_decision_transformer(
         env=env,
         make_env=make_env,
         device=device,
-        lr=offline_config.lr,
-        weight_decay=offline_config.weight_decay,
-        batch_size=offline_config.batch_size,
-        track=offline_config.track,
-        train_epochs=offline_config.train_epochs,
-        test_epochs=offline_config.test_epochs,
-        test_frequency=offline_config.test_frequency,
-        eval_frequency=offline_config.eval_frequency,
-        eval_episodes=offline_config.eval_episodes,
-        initial_rtg=offline_config.initial_rtg,
-        eval_max_time_steps=offline_config.eval_max_time_steps,
-        eval_num_envs=offline_config.eval_num_envs,
+        offline_config=offline_config,
     )
 
     if run_config.track:

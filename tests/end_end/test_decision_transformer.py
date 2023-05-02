@@ -44,7 +44,7 @@ def offline_config():
     offline_config = OfflineTrainConfig(
         trajectory_path="trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl",
         batch_size=128,
-        lr=0.0001,
+        lr=0.001,
         weight_decay=0.001,
         pct_traj=1,
         prob_go_from_end=0.1,
@@ -94,7 +94,7 @@ def test_decision_transformer_preln(
         exp_name="Test-DT-LNPre-n_ctx-" + str(n_ctx),
         wandb_project_name="DecisionTransformerInterpretability",
         seed=1,
-        track=True,
+        track=False,
     )
 
     transformer_model_config.n_ctx = n_ctx
@@ -124,6 +124,42 @@ def test_decision_transformer_optimizer(
 
     transformer_model_config.layer_norm = "LNPre"
     offline_config.optimizer = optimizer
+    offline_config.track = run_config.track
+
+    run_decision_transformer(
+        run_config=run_config,
+        transformer_config=transformer_model_config,
+        offline_config=offline_config,
+        make_env=make_env,
+    )
+
+    print("Test passed! Look at wandb and compare to the previous run.")
+
+
+@pytest.mark.parametrize(
+    "scheduler",
+    [
+        "Constant",
+        "ConstantWithWarmUp",
+        "LinearWarmUpDecay",
+        "CosineAnnealing",
+        "CosineAnnealingWarmUp",
+        "CosineAnnealingWarmRestarts",
+    ],
+)
+def test_decision_transformer_scheduler(
+    download_training_data, scheduler, transformer_model_config, offline_config
+):
+    run_config = RunConfig(
+        exp_name="Test-DT-n_ctx-" + str(2) + "-" + scheduler,
+        wandb_project_name="DecisionTransformerInterpretability",
+        seed=1,
+        track=True,
+    )
+
+    # Interesting to run this with/without LNPre
+    transformer_model_config.layer_norm = "LNPre"
+    offline_config.scheduler = scheduler
     offline_config.track = run_config.track
 
     run_decision_transformer(

@@ -6,6 +6,7 @@ from src.decision_transformer.utils import (
     get_max_len_from_model_type,
     initialize_padding_inputs,
     get_optimizer,
+    get_scheduler,
 )
 
 
@@ -139,12 +140,67 @@ def test_initialize_padding_inputs_batch():
 def test_get_optimizer():
     dummy_model = torch.nn.Linear(1, 1)
     assert isinstance(
-        get_optimizer("Adam")(dummy_model.parameters(), 0.01), torch.optim.Adam
+        get_optimizer("Adam", dummy_model, 0.01), torch.optim.Adam
     )
+    assert isinstance(get_optimizer("SGD", dummy_model, 0.01), torch.optim.SGD)
     assert isinstance(
-        get_optimizer("SGD")(dummy_model.parameters(), 0.01), torch.optim.SGD
-    )
-    assert isinstance(
-        get_optimizer("AdamW")(dummy_model.parameters(), 0.01),
+        get_optimizer("AdamW", dummy_model, 0.01),
         torch.optim.AdamW,
+    )
+
+
+# TODO: Write better tests which actuall call the schedulers.
+def test_get_scheduler():
+    dummy_model = torch.nn.Linear(1, 1)
+    dummy_optimizer = torch.optim.Adam(dummy_model.parameters(), lr=0.01)
+
+    assert isinstance(
+        get_scheduler("constant", dummy_optimizer),
+        torch.optim.lr_scheduler.LambdaLR,
+    )
+
+    scheduler = get_scheduler(
+        "linearwarmupdecay",
+        dummy_optimizer,
+        warm_up_steps=10,
+        training_steps=100,
+        lr_end=0.1,
+    )
+
+    assert isinstance(
+        scheduler,
+        torch.optim.lr_scheduler.LambdaLR,
+    )
+
+    scheduler = get_scheduler(
+        "cosineannealingwarmup",
+        dummy_optimizer,
+        training_steps=100,
+        lr_end=0.001,
+    )
+
+    assert isinstance(
+        scheduler,
+        torch.optim.lr_scheduler.LambdaLR,
+    )
+
+    scheduler = get_scheduler(
+        "cosineannealing", dummy_optimizer, training_steps=100, lr_end=0.001
+    )
+
+    assert isinstance(
+        scheduler,
+        torch.optim.lr_scheduler.CosineAnnealingLR,
+    )
+
+    scheduler = get_scheduler(
+        "cosineannealingwarmrestarts",
+        dummy_optimizer,
+        training_steps=100,
+        lr_end=0.001,
+        num_cycles=5,
+    )
+    assert isinstance(
+        scheduler,
+        torch.optim.lr_scheduler.CosineAnnealingWarmRestarts,
     )

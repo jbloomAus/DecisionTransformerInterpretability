@@ -2,12 +2,13 @@ import pytest
 import torch as t
 import torch.nn as nn
 from einops import rearrange
+from dataclasses import asdict
 from torch.utils.data import DataLoader, random_split
 from torch.utils.data.sampler import WeightedRandomSampler
 from tqdm import tqdm
 
 import wandb
-from src.config import EnvironmentConfig
+from src.config import EnvironmentConfig, OfflineTrainConfig
 from src.models.trajectory_transformer import (
     CloneTransformer,
     DecisionTransformer,
@@ -16,7 +17,7 @@ from src.models.trajectory_transformer import (
 
 from .offline_dataset import TrajectoryDataset
 from .eval import evaluate_dt_agent
-from .utils import get_optimizer
+from .utils import get_optimizer, get_scheduler
 
 
 def train(
@@ -24,58 +25,36 @@ def train(
     trajectory_data_set: TrajectoryDataset,
     env,
     make_env,
-    optimizer="Adam",
-    batch_size=128,
-    lr=0.0001,
-    weight_decay=0.0,
+    offline_config: OfflineTrainConfig,
     device="cpu",
-    track=False,
-    train_epochs=100,
-    test_epochs=10,
-    test_frequency=10,
-    eval_frequency=10,
-    eval_episodes=10,
-    initial_rtg=[0.0, 1.0],
-    eval_max_time_steps=100,
-    eval_num_envs=8,
 ):
     loss_fn = nn.CrossEntropyLoss()
     model = model.to(device)
 
+    train_dataloader, test_dataloader = get_dataloaders(
+        trajectory_data_set, offline_config
+    )
+
     # get optimizer from string
-    optimizer = get_optimizer(optimizer)
-    optimizer = optimizer(model.parameters(), lr=lr, weight_decay=weight_decay)
-
-    train_dataset, test_dataset = random_split(
-        trajectory_data_set, [0.90, 0.10]
+    optimizer = get_optimizer(
+        offline_config.optimizer,
+        model,
+        lr=offline_config.lr,
+        weight_decay=offline_config.weight_decay,
     )
-
-    # Create the train DataLoader
-    train_sampler = WeightedRandomSampler(
-        weights=trajectory_data_set.sampling_probabilities[
-            train_dataset.indices
-        ],
-        num_samples=len(train_dataset),
-        replacement=True,
-    )
-    train_dataloader = DataLoader(
-        train_dataset, batch_size=batch_size, sampler=train_sampler
-    )
-
-    # Create the test DataLoader
-    test_sampler = WeightedRandomSampler(
-        weights=trajectory_data_set.sampling_probabilities[
-            test_dataset.indices
-        ],
-        num_samples=len(test_dataset),
-        replacement=True,
-    )
-    test_dataloader = DataLoader(
-        test_dataset, batch_size=batch_size, sampler=test_sampler
-    )
-
+    # TODO: Stop passing through all the args to the scheduler, shouldn't be necessary.
+    scheduler_config = asdict(offline_config)
+    del scheduler_config["optimizer"]
+    # get total number of training steps.
     train_batches_per_epoch = len(train_dataloader)
-    pbar = tqdm(range(train_epochs))
+    scheduler_config["training_steps"] = (
+        offline_config.train_epochs * train_batches_per_epoch
+    )
+    scheduler = get_scheduler(
+        offline_config.scheduler, optimizer, **scheduler_config
+    )
+
+    pbar = tqdm(range(offline_config.train_epochs))
     for epoch in pbar:
         for batch, (s, a, r, d, rtg, ti, m) in enumerate(train_dataloader):
             total_batches = epoch * train_batches_per_epoch + batch
@@ -119,28 +98,34 @@ def train(
 
             loss.backward()
             optimizer.step()
+            scheduler.step()
 
             pbar.set_description(f"Training DT: {loss.item():.4f}")
 
-            if track:
-                wandb.log({"train/loss": loss.item()}, step=total_batches)
+            if offline_config.track:
                 tokens_seen = (
                     (total_batches + 1)
-                    * batch_size
-                    * (model.transformer_config.n_ctx // 3)
+                    * offline_config.batch_size
+                    * model.transformer_config.n_ctx
                 )
+                learning_rate = optimizer.param_groups[0]["lr"]
+                wandb.log({"train/loss": loss.item()}, step=total_batches)
                 wandb.log(
                     {"metrics/tokens_seen": tokens_seen}, step=total_batches
                 )
+                wandb.log(
+                    {"metrics/learning_rate": learning_rate},
+                    step=total_batches,
+                )
 
         # # at test frequency
-        if epoch % test_frequency == 0:
+        if epoch % offline_config.test_frequency == 0:
             test(
                 model=model,
                 dataloader=test_dataloader,
                 env=env,
-                epochs=test_epochs,
-                track=track,
+                epochs=offline_config.test_epochs,
+                track=offline_config.track,
                 batch_number=total_batches,
             )
 
@@ -148,7 +133,8 @@ def train(
             env_id=env.spec.id,
             capture_video=True,
             max_steps=min(
-                model.environment_config.max_steps, eval_max_time_steps
+                model.environment_config.max_steps,
+                offline_config.eval_max_time_steps,
             ),
             fully_observed=False,
             one_hot_obs=(trajectory_data_set.observation_type == "one_hot"),
@@ -164,18 +150,18 @@ def train(
             run_name=f"dt_eval_videos_{batch}",
         )
 
-        if epoch % eval_frequency == 0:
-            for rtg in initial_rtg:
+        if epoch % offline_config.eval_frequency == 0:
+            for rtg in offline_config.initial_rtg:
                 evaluate_dt_agent(
                     env_id=env.spec.id,
                     model=model,
                     env_func=eval_env_func,
-                    trajectories=eval_episodes,
-                    track=track,
+                    trajectories=offline_config.eval_episodes,
+                    track=offline_config.track,
                     batch_number=total_batches,
                     initial_rtg=float(rtg),
                     device=device,
-                    num_envs=eval_num_envs,
+                    num_envs=offline_config.eval_num_envs,
                 )
 
     return model
@@ -251,3 +237,39 @@ def test(
         wandb.log({"test/accuracy": accuracy}, step=batch_number)
 
     return mean_loss, accuracy
+
+
+def get_dataloaders(trajectory_data_set, offline_config):
+    train_dataset, test_dataset = random_split(
+        trajectory_data_set, [0.90, 0.10]
+    )
+
+    # Create the train DataLoader
+    train_sampler = WeightedRandomSampler(
+        weights=trajectory_data_set.sampling_probabilities[
+            train_dataset.indices
+        ],
+        num_samples=len(train_dataset),
+        replacement=True,
+    )
+    train_dataloader = DataLoader(
+        train_dataset,
+        batch_size=offline_config.batch_size,
+        sampler=train_sampler,
+    )
+
+    # Create the test DataLoader
+    test_sampler = WeightedRandomSampler(
+        weights=trajectory_data_set.sampling_probabilities[
+            test_dataset.indices
+        ],
+        num_samples=len(test_dataset),
+        replacement=True,
+    )
+    test_dataloader = DataLoader(
+        test_dataset,
+        batch_size=offline_config.batch_size,
+        sampler=test_sampler,
+    )
+
+    return train_dataloader, test_dataloader
