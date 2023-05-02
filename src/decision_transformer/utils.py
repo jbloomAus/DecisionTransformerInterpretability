@@ -33,7 +33,13 @@ def parse_args():
     parser.add_argument("--train_epochs", type=int, default=10)
     parser.add_argument("--test_epochs", type=int, default=3)
     parser.add_argument("--optimizer", type=str, default="AdamW")
+    parser.add_argument(
+        "--scheduler", type=str, default="CosineAnnealingWarmup"
+    )
+    parser.add_argument("--warm_up_steps", type=int, default=1000)
     parser.add_argument("--learning_rate", type=float, default=0.001)
+    parser.add_argument("--lr_end", type=float, default=10e-8)
+    parser.add_argument("--num_cycles", type=int, default=3)
     parser.add_argument("--weight_decay", type=float, default=0.01)
     parser.add_argument(
         "--linear_time_embedding",
