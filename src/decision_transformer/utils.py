@@ -26,6 +26,8 @@ def parse_args():
     parser.add_argument("--trajectory_path", type=str)
     parser.add_argument("--n_heads", type=int, default=4)
     parser.add_argument("--d_mlp", type=int, default=256)
+    parser.add_argument("--activation_fn", type=str, default="relu")
+    parser.add_argument("--gated_mlp", action=argparse.BooleanOptionalAction)
     parser.add_argument("--n_layers", type=int, default=2)
     parser.add_argument("--n_ctx", type=int, default=3)
     parser.add_argument("--layer_norm", type=str, default=None)

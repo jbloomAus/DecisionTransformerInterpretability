@@ -218,7 +218,8 @@ class TrajectoryTransformer(nn.Module):
             d_vocab=self.transformer_config.d_model,
             # 3x the max timestep so we have room for an action, reward, and state per timestep
             n_ctx=self.transformer_config.n_ctx,
-            act_fn="relu",
+            act_fn=self.transformer_config.activation_fn,
+            gated_mlp=self.transformer_config.gated_mlp,
             normalization_type=self.transformer_config.layer_norm,
             attention_dir="causal",
             d_vocab_out=self.transformer_config.d_model,

@@ -172,6 +172,65 @@ def test_decision_transformer_scheduler(
     print("Test passed! Look at wandb and compare to the previous run.")
 
 
+@pytest.mark.parametrize(
+    "activation_fn",
+    ["relu", "gelu", "silu", "gelu_new", "solu_ln", "gelu_fast"],
+)
+def test_decision_transformer_activation_fn(
+    download_training_data,
+    activation_fn,
+    transformer_model_config,
+    offline_config,
+):
+    run_config = RunConfig(
+        exp_name="Test-DT-n_ctx-" + str(2) + "-" + activation_fn,
+        wandb_project_name="DecisionTransformerInterpretability",
+        seed=1,
+        track=True,
+    )
+
+    # Interesting to run this with/without LNPre
+    transformer_model_config.layer_norm = "LNPre"
+    transformer_model_config.activation_fn = activation_fn
+    offline_config.track = run_config.track
+
+    run_decision_transformer(
+        run_config=run_config,
+        transformer_config=transformer_model_config,
+        offline_config=offline_config,
+        make_env=make_env,
+    )
+
+    print("Test passed! Look at wandb and compare to the previous run.")
+
+
+@pytest.mark.parametrize("gated_mlp", [False, True])
+def test_decision_transformer_gated_mlp(
+    download_training_data, gated_mlp, transformer_model_config, offline_config
+):
+    run_config = RunConfig(
+        exp_name="Test-DT-n_ctx-" + str(2) + "-GatedMLP-" + str(gated_mlp),
+        wandb_project_name="DecisionTransformerInterpretability",
+        seed=1,
+        track=True,
+    )
+
+    # Interesting to run this with/without LNPre
+    transformer_model_config.layer_norm = "LNPre"
+    transformer_model_config.activation_fn = "gelu"
+    transformer_model_config.gated_mlp = gated_mlp
+    offline_config.track = run_config.track
+
+    run_decision_transformer(
+        run_config=run_config,
+        transformer_config=transformer_model_config,
+        offline_config=offline_config,
+        make_env=make_env,
+    )
+
+    print("Test passed! Look at wandb and compare to the previous run.")
+
+
 @pytest.mark.parametrize("n_ctx", [1, 3, 9])
 def test_clone_transformer(download_training_data, n_ctx):
     run_config = RunConfig(

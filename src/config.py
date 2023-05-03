@@ -75,6 +75,8 @@ class TransformerModelConfig:
     n_layers: int = 2
     n_ctx: int = 2
     layer_norm: Optional[str] = None
+    gated_mlp: bool = False
+    activation_fn: str = "relu"
     state_embedding_type: str = "grid"
     time_embedding_type: str = "embedding"
     seed: int = 1
@@ -95,6 +97,18 @@ class TransformerModelConfig:
         ], "Layer norm must be None, LNPre, or LN, got {}".format(
             self.layer_norm
         )
+
+        assert self.activation_fn in [
+            "relu",
+            "gelu",
+            "silu",
+            "gelu_new",
+            "solu_ln",
+            "gelu_fast",
+        ], "Activation function must be relu, gelu, silu, gelu_new, solu_ln, or gelu_fast, got {}".format(
+            self.activation_fn
+        )
+
         assert self.time_embedding_type in ["embedding", "linear"]
         if isinstance(self.device, str):
             self.device = torch.device(self.device)

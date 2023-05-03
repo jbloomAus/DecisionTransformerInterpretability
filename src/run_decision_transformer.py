@@ -28,6 +28,8 @@ if __name__ == "__main__":
         d_model=args.d_model,
         n_heads=args.n_heads,
         d_mlp=args.d_mlp,
+        activation_fn=args.activation_fn,
+        gated_mlp=args.gated_mlp,
         n_layers=args.n_layers,
         layer_norm=args.layer_norm,
         time_embedding_type=TIME_EMBEDDING_TYPE,

@@ -18,6 +18,8 @@ from src.models.trajectory_transformer import (
     StateEncoder,
 )
 
+from transformer_lens.components import MLP, GatedMLP
+
 
 def test_state_encoder():
     env = gym.make("MiniGrid-Empty-8x8-v0")
@@ -32,6 +34,91 @@ def test_state_encoder():
     x = rearrange(x, "b h w c-> b c h w")
     x = state_encoder(x)
     assert x.shape == (1, 64)
+
+
+def test_decision_transformer__init__():
+    # test default values
+    transformer_config = TransformerModelConfig()
+    environment_config = EnvironmentConfig(
+        env_id="MiniGrid-Empty-8x8-v0",
+        one_hot_obs=True,
+    )
+
+    decision_transformer = DecisionTransformer(
+        transformer_config=transformer_config,
+        environment_config=environment_config,
+    )
+
+    transformer = decision_transformer.transformer
+    # d_model: int = 128,
+
+    # n_heads: int = 4,
+    # d_mlp: int = 256,
+    assert transformer.blocks[0].mlp.W_in.shape == (128, 256)
+    assert transformer.blocks[0].mlp.W_out.shape == (256, 128)
+    assert transformer.blocks[0].mlp.b_in.shape == (256,)
+    assert transformer.blocks[0].mlp.b_out.shape == (128,)
+
+    # n_layers: int = 2,
+    assert len(decision_transformer.transformer.blocks) == 2
+    # n_ctx: int = 2,
+    assert transformer.blocks[0].attn.W_Q.shape == (4, 128, 32)
+    assert transformer.blocks[0].attn.W_K.shape == (4, 128, 32)
+    assert transformer.blocks[0].attn.W_V.shape == (4, 128, 32)
+    assert transformer.blocks[0].attn.W_O.shape == (4, 32, 128)
+    # layer_norm: str | None = None,
+    assert isinstance(transformer.blocks[0].ln1, t.nn.Identity)
+    # gated_mlp: bool = False,
+    assert isinstance(transformer.blocks[0].mlp, MLP)
+    # activation_fn: str = "relu",
+    assert transformer.cfg.act_fn == "relu"
+
+
+def test_decision_transformer__init__2():
+    # test non-default values
+    transformer_config = TransformerModelConfig(
+        d_model=256,
+        n_heads=8,
+        d_mlp=512,
+        n_layers=2,
+        n_ctx=5,
+        layer_norm="LNPre",
+        gated_mlp=True,
+        activation_fn="gelu",
+    )
+    environment_config = EnvironmentConfig(
+        env_id="MiniGrid-Empty-8x8-v0",
+        one_hot_obs=True,
+    )
+
+    decision_transformer = DecisionTransformer(
+        transformer_config=transformer_config,
+        environment_config=environment_config,
+    )
+
+    transformer = decision_transformer.transformer
+    # d_model: int = 128,
+
+    # n_heads: int = 2,
+    # d_mlp: int = 256,
+    assert transformer.blocks[0].mlp.W_in.shape == (256, 512)
+    assert transformer.blocks[0].mlp.W_out.shape == (512, 256)
+    assert transformer.blocks[0].mlp.b_in.shape == (512,)
+    assert transformer.blocks[0].mlp.b_out.shape == (256,)
+
+    # n_layers: int = 2,
+    assert len(decision_transformer.transformer.blocks) == 2
+    # n_ctx: int = 2,
+    assert transformer.blocks[0].attn.W_Q.shape == (8, 256, 32)
+    assert transformer.blocks[0].attn.W_K.shape == (8, 256, 32)
+    assert transformer.blocks[0].attn.W_V.shape == (8, 256, 32)
+    assert transformer.blocks[0].attn.W_O.shape == (8, 32, 256)
+    # layer_norm: not
+    assert not isinstance(transformer.blocks[0].ln1, t.nn.Identity)
+    # gated_mlp: bool = True
+    assert isinstance(transformer.blocks[0].mlp, GatedMLP)
+    # activation_fn: str = "gelu",
+    assert transformer.cfg.act_fn == "gelu"
 
 
 def test_decision_transformer_img_obs_forward():
