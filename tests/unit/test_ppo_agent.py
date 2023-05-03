@@ -59,6 +59,8 @@ def transformer_model_config():
         d_mlp: int = 256
         n_layers: int = 1
         n_ctx: int = 1
+        activation_fn: str = "relu"
+        gated_mlp: bool = False
         time_embedding_type: str = "embedding"
         state_embedding_type: str = "grid"
         seed: int = 1
@@ -79,6 +81,8 @@ def big_transformer_model_config():
         n_layers: int = 1
         # look at previous state (s,) and 4 full timesteps (s,a) before that.
         n_ctx: int = 9
+        activation_fn: str = "relu"
+        gated_mlp: bool = False
         time_embedding_type: str = "embedding"
         state_embedding_type: str = "grid"
         seed: int = 1

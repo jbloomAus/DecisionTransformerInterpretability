@@ -120,6 +120,8 @@ def transformer_model_config():
         d_mlp: int = 256
         n_layers: int = 1
         n_ctx: int = 1
+        activation_fn: str = "relu"
+        gated_mlp: bool = False
         time_embedding_type: str = "embedding"
         state_embedding_type: str = "grid"
         seed: int = 1
@@ -139,6 +141,8 @@ def large_transformer_model_config():
         d_mlp: int = 256
         n_layers: int = 1
         n_ctx: int = 1
+        activation_fn: str = "relu"
+        gated_mlp: bool = False
         time_embedding_type: str = "embedding"
         state_embedding_type: str = "grid"
         seed: int = 1
