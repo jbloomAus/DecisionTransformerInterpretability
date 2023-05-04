@@ -56,4 +56,4 @@ streamlit==1.16.0
 typeguard==2.13.3
 
 # positional encodings
-positional-encodings==6.0.1[torch]
+positional-encodings[torch]==6.0.1
