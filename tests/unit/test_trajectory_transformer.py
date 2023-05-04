@@ -11,9 +11,10 @@ from src.models.trajectory_transformer import (
     CloneTransformer,
     CriticTransfomer,
     DecisionTransformer,
-    StateEncoder,
     TrajectoryTransformer,
 )
+
+from src.models.components import MiniGridConvEmbedder
 
 
 @pytest.fixture
@@ -130,7 +131,7 @@ def test_initialize_time_embedding(transformer):
 def test_initialize_state_embedding(transformer):
     state_embedding = transformer.initialize_state_embedding()
     assert isinstance(state_embedding, nn.Linear) or isinstance(
-        state_embedding, StateEncoder
+        state_embedding, MiniGridConvEmbedder
     )
 
 

@@ -5,13 +5,14 @@ import einops
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+
 from einops import rearrange
 from gymnasium.spaces import Box, Dict
 from torchtyping import TensorType as TT
 from transformer_lens import HookedTransformer, HookedTransformerConfig
 
 from src.config import EnvironmentConfig, TransformerModelConfig
+from .components import MiniGridConvEmbedder
 
 
 class TrajectoryTransformer(nn.Module):
@@ -80,10 +81,10 @@ class TrajectoryTransformer(nn.Module):
     def get_state_embedding(self, states):
         # embed states and recast back to (batch, block_size, n_embd)
         block_size = states.shape[1]
-        if self.transformer_config.state_embedding_type == "CNN":
+        if self.transformer_config.state_embedding_type.lower() == "cnn":
             states = rearrange(
                 states,
-                "batch block height width channel -> (batch block) channel height width",
+                "batch block height width channel -> (batch block) height width channel",
             )
             state_embeddings = self.state_embedding(
                 states.type(torch.float32).contiguous()
@@ -173,8 +174,10 @@ class TrajectoryTransformer(nn.Module):
         return self.time_embedding
 
     def initialize_state_embedding(self):
-        if self.transformer_config.state_embedding_type == "CNN":
-            state_embedding = StateEncoder(self.transformer_config.d_model)
+        if self.transformer_config.state_embedding_type.lower() == "cnn":
+            state_embedding = MiniGridConvEmbedder(
+                self.transformer_config.d_model, endpool=True
+            )
         else:
             if isinstance(self.environment_config.observation_space, Dict):
                 n_obs = np.prod(
@@ -719,28 +722,6 @@ class CriticTransfomer(CloneTransformer):
     # hacky way to predict values instead of actions with same information
     def predict_actions(self, x):
         return self.value_predictor(x)
-
-
-class StateEncoder(nn.Module):
-    def __init__(self, n_embed):
-        super(StateEncoder, self).__init__()
-        self.n_embed = n_embed
-        # input has shape 56 x 56 x 3
-        # output has shape 1 x 1 x 512
-        self.conv1 = nn.Conv2d(3, 32, 8, stride=4, padding=0)  # 56 -> 13
-        self.conv2 = nn.Conv2d(32, 64, 4, stride=2, padding=0)  # 13 -> 5
-        self.conv3 = nn.Conv2d(64, 64, 3, stride=1, padding=0)  # 5 -> 3
-        self.flatten = nn.Flatten()
-        self.fc = nn.Linear(576, n_embed)
-
-    def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
-        x = self.flatten(x)
-        x = self.fc(x)
-        x = F.relu(x)
-        return x
 
 
 class PosEmbedTokens(nn.Module):

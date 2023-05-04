@@ -15,25 +15,9 @@ from src.models.trajectory_transformer import (
     ActorTransformer,
     CloneTransformer,
     DecisionTransformer,
-    StateEncoder,
 )
 
 from transformer_lens.components import MLP, GatedMLP
-
-
-def test_state_encoder():
-    env = gym.make("MiniGrid-Empty-8x8-v0")
-    env = RGBImgPartialObsWrapper(env)  # Get pixel observations
-    env = ImgObsWrapper(env)  # Get rid of the 'mission' field
-    obs, _ = env.reset()  # This now produces an RGB tensor only
-
-    state_encoder = StateEncoder(64)
-    assert state_encoder is not None
-
-    x = t.tensor(obs).unsqueeze(0).to(t.float32)
-    x = rearrange(x, "b h w c-> b c h w")
-    x = state_encoder(x)
-    assert x.shape == (1, 64)
 
 
 def test_decision_transformer__init__():
@@ -179,11 +163,14 @@ def test_decision_transformer_img_obs_forward():
     )  # no action or reward preds if no actions are given
 
 
-def test_decision_transformer_grid_obs_forward():
+@pytest.mark.parametrize("state_emb_type", ["grid", "cnn"])
+def test_decision_transformer_grid_obs_forward(state_emb_type):
     env = gym.make("MiniGrid-Empty-8x8-v0")
     obs, _ = env.reset()  # This now produces an RGB tensor only
 
-    transformer_config = TransformerModelConfig()
+    transformer_config = TransformerModelConfig(
+        state_embedding_type=state_emb_type
+    )
     environment_config = EnvironmentConfig(
         env_id="MiniGrid-Empty-8x8-v0",
         img_obs=False,

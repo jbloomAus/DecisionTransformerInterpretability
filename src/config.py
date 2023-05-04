@@ -91,6 +91,8 @@ class TransformerModelConfig:
         if self.layer_norm == False:
             self.layer_norm = None
 
+        assert self.state_embedding_type.lower() in ["grid", "cnn", "vit"]
+
         assert self.layer_norm is None or self.layer_norm in [
             "LNPre",
             "LN",
