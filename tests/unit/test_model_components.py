@@ -26,7 +26,6 @@ def env():
 def test_MiniGridBOWEmbedding_standard(env):
     state_embedding = MiniGridBOWEmbedding(
         embedding_dim=32,
-        d_model=128,
         max_values=[11, 6, 3],
         channel_names=["object", "color", "state"],
         view_size=7,
@@ -37,7 +36,7 @@ def test_MiniGridBOWEmbedding_standard(env):
     obs = torch.from_numpy(obs["image"]).unsqueeze(0)
     embed_2d = state_embedding(obs).detach()
 
-    assert embed_2d.shape == (1, 128)
+    assert embed_2d.shape == (1, 7, 7, 32)
 
     # check each channel shape:
     assert state_embedding.get_channel_embedding("object").shape == (11, 32)
@@ -65,7 +64,6 @@ def test_MiniGridBOWEmbedding_standard(env):
 def test_MiniGridBOWEmbedding_no_position(env):
     state_embedding = MiniGridBOWEmbedding(
         embedding_dim=32,
-        d_model=128,
         max_values=[11, 6, 3],
         channel_names=["object", "color", "state"],
         view_size=7,
@@ -76,7 +74,7 @@ def test_MiniGridBOWEmbedding_no_position(env):
     obs = torch.from_numpy(obs["image"]).unsqueeze(0)
     embed_2d = state_embedding(obs).detach()
 
-    assert embed_2d.shape == (1, 128)
+    assert embed_2d.shape == (1, 7, 7, 32)
 
     # assert norm
     all_emb = state_embedding.get_all_channel_embeddings().detach()

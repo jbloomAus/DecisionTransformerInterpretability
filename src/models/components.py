@@ -9,7 +9,6 @@ class MiniGridBOWEmbedding(nn.Module):
     def __init__(
         self,
         embedding_dim: int,
-        d_model: int,
         max_values=[11, 6, 3],
         channel_names=["object", "color", "state"],
         view_size=7,
@@ -29,13 +28,10 @@ class MiniGridBOWEmbedding(nn.Module):
             if add_positional_enc
             else nn.Identity()
         )
-        self.linear = nn.Linear(embedding_dim * view_size**2, d_model)
 
         # initialize embeddings
         initializer_range = 1.0 / np.sqrt(self.embedding_dim)
         nn.init.normal_(self.embedding.weight, mean=0.0, std=initializer_range)
-        nn.init.normal_(self.linear.weight, mean=0.0, std=initializer_range)
-        nn.init.zeros_(self.linear.bias)
 
     def forward(self, inputs: TT["batch", "x", "y", "channel"]):  # noqa: F821
         offsets = torch.Tensor([0, self.max_value, 2 * self.max_value]).to(
@@ -44,8 +40,6 @@ class MiniGridBOWEmbedding(nn.Module):
         inputs = (inputs + offsets[None, None, None, :]).long()
         x = self.embedding(inputs).sum(3)
         x = self.position_encoding(x)
-        x = x.flatten(1, -1)  # flatten
-        x = self.linear(x)
         return x
 
     def get_channel_embedding(self, channel_name):
