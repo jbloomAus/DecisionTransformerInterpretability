@@ -1,18 +1,21 @@
 from abc import abstractmethod
-from typing import Tuple, Union
+from typing import Tuple
 
-import einops
 import numpy as np
 import torch
 import torch.nn as nn
-
 from einops import rearrange
 from gymnasium.spaces import Box, Dict
 from torchtyping import TensorType as TT
 from transformer_lens import HookedTransformer, HookedTransformerConfig
 
 from src.config import EnvironmentConfig, TransformerModelConfig
-from .components import MiniGridConvEmbedder
+
+from .components import (
+    MiniGridConvEmbedder,
+    PosEmbedTokens,
+    MiniGridViTEmbedder,
+)
 
 
 class TrajectoryTransformer(nn.Module):
@@ -81,7 +84,10 @@ class TrajectoryTransformer(nn.Module):
     def get_state_embedding(self, states):
         # embed states and recast back to (batch, block_size, n_embd)
         block_size = states.shape[1]
-        if self.transformer_config.state_embedding_type.lower() == "cnn":
+        if self.transformer_config.state_embedding_type.lower() in [
+            "cnn",
+            "vit",
+        ]:
             states = rearrange(
                 states,
                 "batch block height width channel -> (batch block) height width channel",
@@ -89,6 +95,7 @@ class TrajectoryTransformer(nn.Module):
             state_embeddings = self.state_embedding(
                 states.type(torch.float32).contiguous()
             )  # (batch * block_size, n_embd)
+
         elif self.transformer_config.state_embedding_type == "grid":
             states = rearrange(
                 states,
@@ -177,6 +184,10 @@ class TrajectoryTransformer(nn.Module):
         if self.transformer_config.state_embedding_type.lower() == "cnn":
             state_embedding = MiniGridConvEmbedder(
                 self.transformer_config.d_model, endpool=True
+            )
+        elif self.transformer_config.state_embedding_type.lower() == "vit":
+            state_embedding = MiniGridViTEmbedder(
+                self.transformer_config.d_model,
             )
         else:
             if isinstance(self.environment_config.observation_space, Dict):
@@ -722,29 +733,3 @@ class CriticTransfomer(CloneTransformer):
     # hacky way to predict values instead of actions with same information
     def predict_actions(self, x):
         return self.value_predictor(x)
-
-
-class PosEmbedTokens(nn.Module):
-    def __init__(self, cfg: Union[Dict, HookedTransformerConfig]):
-        super().__init__()
-        if isinstance(cfg, Dict):
-            cfg = HookedTransformerConfig.from_dict(cfg)
-        self.cfg = cfg
-        self.W_pos = nn.Parameter(
-            torch.empty(self.cfg.n_ctx, self.cfg.d_model)
-        )
-
-    def forward(
-        self,
-        tokens: TT["batch", "position"],  # noqa: F821
-        past_kv_pos_offset: int = 0,
-    ) -> TT["batch", "position", "d_model"]:  # noqa: F821
-        """Tokens have shape [batch, pos]
-        Output shape [pos, d_model] - will be broadcast along batch dim"""
-
-        tokens_length = tokens.size(-2)
-        pos_embed = self.W_pos[:tokens_length, :]  # [pos, d_model]
-        broadcast_pos_embed = einops.repeat(
-            pos_embed, "pos d_model -> batch pos d_model", batch=tokens.size(0)
-        )  # [batch, pos, d_model]
-        return broadcast_pos_embed

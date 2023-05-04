@@ -57,6 +57,12 @@ def test_decision_transformer__init__():
     # activation_fn: str = "relu",
     assert transformer.cfg.act_fn == "relu"
 
+    num_params = sum(p.numel() for p in decision_transformer.parameters())
+    assert num_params == 646364  # that's closer to being reasonable.
+
+    num_params = sum(p.numel() for p in transformer.parameters())
+    assert num_params == 264192  # that's closer to being reasonable.
+
 
 def test_decision_transformer__init__2():
     # test non-default values
@@ -163,7 +169,7 @@ def test_decision_transformer_img_obs_forward():
     )  # no action or reward preds if no actions are given
 
 
-@pytest.mark.parametrize("state_emb_type", ["grid", "cnn"])
+@pytest.mark.parametrize("state_emb_type", ["grid", "cnn", "vit"])
 def test_decision_transformer_grid_obs_forward(state_emb_type):
     env = gym.make("MiniGrid-Empty-8x8-v0")
     obs, _ = env.reset()  # This now produces an RGB tensor only

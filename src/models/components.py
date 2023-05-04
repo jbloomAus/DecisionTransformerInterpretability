@@ -1,3 +1,6 @@
+from typing import Dict, Union
+
+import einops
 import numpy as np
 import torch
 import torch.nn as nn
@@ -5,6 +8,7 @@ import torch.nn.functional as F
 from positional_encodings.torch_encodings import PositionalEncoding2D, Summer
 from torchtyping import TensorType
 from torchtyping import TensorType as TT
+from transformer_lens import HookedTransformer, HookedTransformerConfig
 
 
 class MiniGridBOWEmbedding(nn.Module):
@@ -139,7 +143,8 @@ class MiniGridConvEmbedder(nn.Module):
         )  # use default initialization of BabyAI
 
     def forward(
-        self, x: TensorType["batch", 3, "height", "width"]  # noqa: F821
+        self,
+        x: TensorType["batch", "height", "width", "channel"],  # noqa: F821
     ) -> TensorType["batch", "embedding_dim", "height", "width"]:  # noqa: F821
         x = self.image_bow(x)  # Shape: [batch, embedding_dim, height, width]
         x = self.conv1(
@@ -161,3 +166,88 @@ class MiniGridConvEmbedder(nn.Module):
         x = F.relu(self.film_pool(x))
         x = x.reshape(x.shape[0], -1)
         return x
+
+
+class MiniGridViTEmbedder(nn.Module):
+    """
+    Experimental use of decoder only transformer as a vision model.
+
+    Differs from tradition ViT in that:
+    - It's not an encoder.
+    - We'll use the last token not the first.
+    - Will use positional encoding
+    """
+
+    def __init__(self, embedding_dim: int = 128):
+        super(MiniGridViTEmbedder, self).__init__()
+
+        self.image_bow = MiniGridBOWEmbedding(
+            embedding_dim=embedding_dim,
+            max_values=[11, 6, 3],
+            channel_names=["object", "color", "state"],
+            view_size=7,
+            add_positional_enc=True,
+        )
+
+        n_heads = 4
+        d_head = embedding_dim // n_heads
+        vit_config = HookedTransformerConfig(
+            n_layers=1,
+            d_model=embedding_dim,
+            d_head=d_head,
+            n_heads=n_heads,  #
+            d_mlp=256,  # doesn't matter, turning off
+            d_vocab=128,  # needs to match the model.
+            n_ctx=7 * 7,  # 7x7 grid
+            normalization_type=None,
+            attention_dir="causal",  # this is usually bidirectional
+            attn_only=True,
+            d_vocab_out=embedding_dim,  # adds a linear layer to the output
+        )
+
+        transformer = HookedTransformer(vit_config)
+        # we're going to pass it tokens via BOW.
+        transformer.embed = nn.Identity()
+        transformer.pos_embed = PosEmbedTokens(vit_config)
+        nn.init.normal_(
+            transformer.pos_embed.W_pos, vit_config.initializer_range
+        )
+        self.transformer = transformer
+
+    def forward(
+        self,
+        x: TensorType["batch", "height", "width", "channel"],  # noqa: F821
+    ) -> TensorType["batch", "embedding_dim", "height", "width"]:  # noqa: F821
+        x = self.image_bow(x)  # Shape: [batch, embedding_dim, height, width]
+        x = x.flatten(-2, -1).permute(
+            0, 2, 1
+        )  # Shape: [batch, embedding_dim, height*width]
+        x = self.transformer(x)  # Shape: [batch, height*width, embedding_dim]
+        return x[:, -1, :]  # Shape: [batch, embedding_dim] (last token)
+
+
+class PosEmbedTokens(nn.Module):
+    def __init__(self, cfg: Union[Dict, HookedTransformerConfig]):
+        super().__init__()
+        if isinstance(cfg, Dict):
+            cfg = HookedTransformerConfig.from_dict(cfg)
+        self.cfg = cfg
+        self.W_pos = nn.Parameter(
+            torch.empty(self.cfg.n_ctx, self.cfg.d_model)
+        )
+
+    def forward(
+        self,
+        tokens: TT["batch", "position"],  # noqa: F821
+        past_kv_pos_offset: int = 0,
+    ) -> TT["batch", "position", "d_model"]:  # noqa: F821
+        """Tokens have shape [batch, pos]
+        Output shape [pos, d_model] - will be broadcast along batch dim"""
+
+        tokens_length = tokens.size(-2)
+        pos_embed = self.W_pos[:tokens_length, :]  # [pos, d_model]
+        broadcast_pos_embed = einops.repeat(
+            pos_embed, "pos d_model -> batch pos d_model", batch=tokens.size(0)
+        )  # [batch, pos, d_model]
+
+        return broadcast_pos_embed

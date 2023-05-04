@@ -1,7 +1,11 @@
 import pytest
 import torch
 import torch.nn as nn
-from src.models.components import MiniGridBOWEmbedding, MiniGridConvEmbedder
+from src.models.components import (
+    MiniGridBOWEmbedding,
+    MiniGridConvEmbedder,
+    MiniGridViTEmbedder,
+)
 
 
 from src.environments.memory import MemoryEnv
@@ -140,3 +144,16 @@ def test_MiniGridConvEmbedder_no_endpool(obs):
 
     embed_2d = image_conv(obs).detach()
     assert embed_2d.shape == (1, 32)
+
+    num_params = sum(p.numel() for p in image_conv.parameters())
+    assert num_params == 14560  # that's insane!
+
+
+def test_MiniGridViTEmbedder(obs):
+    image_conv = MiniGridViTEmbedder(embedding_dim=32)
+
+    embed_2d = image_conv(obs).detach()
+    assert embed_2d.shape == (1, 32)
+
+    num_params = sum(p.numel() for p in image_conv.parameters())
+    assert num_params == 7904  # that's closer to being reasonable.
