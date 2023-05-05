@@ -117,9 +117,6 @@ def run_decision_transformer(
             transformer_config=transformer_config,
         )
 
-    if run_config.track:
-        wandb.watch(model, log="parameters")
-
     model = train(
         model=model,
         trajectory_data_set=trajectory_data_set,

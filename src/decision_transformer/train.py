@@ -53,7 +53,8 @@ def train(
     scheduler = get_scheduler(
         offline_config.scheduler, optimizer, **scheduler_config
     )
-
+    # can uncomment this to get logs of gradients and pars.
+    # wandb.watch(model, log="all", log_freq=train_batches_per_epoch)
     pbar = tqdm(range(offline_config.train_epochs))
     for epoch in pbar:
         for batch, (s, a, r, d, rtg, ti, m) in enumerate(train_dataloader):
@@ -70,7 +71,7 @@ def train(
 
             if isinstance(model, DecisionTransformer):
                 action = a[:, :-1].unsqueeze(-1) if a.shape[1] > 1 else None
-                _, action_preds, _ = model.forward(
+                _, action_preds, _ = model(
                     states=s,
                     # remove last action
                     actions=action,
@@ -78,7 +79,7 @@ def train(
                     timesteps=ti.unsqueeze(-1),
                 )
             elif isinstance(model, CloneTransformer):
-                _, action_preds = model.forward(
+                _, action_preds = model(
                     states=s,
                     # remove last action
                     actions=a[:, :-1].unsqueeze(-1)
@@ -195,7 +196,7 @@ def test(
             a[a == -10] = env.action_space.n
 
             if isinstance(model, DecisionTransformer):
-                _, action_preds, _ = model.forward(
+                _, action_preds, _ = model(
                     states=s,
                     actions=a[:, :-1].unsqueeze(-1)
                     if a.shape[1] > 1
@@ -204,7 +205,7 @@ def test(
                     timesteps=ti.unsqueeze(-1),
                 )
             elif isinstance(model, CloneTransformer):
-                _, action_preds = model.forward(
+                _, action_preds = model(
                     states=s,
                     # remove last action
                     actions=a[:, :-1].unsqueeze(-1)
