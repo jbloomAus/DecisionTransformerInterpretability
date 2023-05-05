@@ -231,7 +231,7 @@ def test_decision_transformer_gated_mlp(
     print("Test passed! Look at wandb and compare to the previous run.")
 
 
-@pytest.mark.parametrize("state_embedding_type", ["CNN", "ViT", "Default"])
+@pytest.mark.parametrize("state_embedding_type", ["CNN", "ViT", "Grid"])
 def test_decision_transformer_state_embedding(
     download_training_data,
     state_embedding_type,

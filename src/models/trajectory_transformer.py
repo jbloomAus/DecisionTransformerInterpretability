@@ -96,7 +96,7 @@ class TrajectoryTransformer(nn.Module):
                 states.type(torch.float32).contiguous()
             )  # (batch * block_size, n_embd)
 
-        elif self.transformer_config.state_embedding_type == "grid":
+        elif self.transformer_config.state_embedding_type.lower() == "grid":
             states = rearrange(
                 states,
                 "batch block height width channel -> (batch block) (channel height width)",
