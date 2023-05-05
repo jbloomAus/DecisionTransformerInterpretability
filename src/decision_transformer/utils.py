@@ -43,6 +43,7 @@ def parse_args():
     parser.add_argument("--lr_end", type=float, default=10e-8)
     parser.add_argument("--num_cycles", type=int, default=3)
     parser.add_argument("--weight_decay", type=float, default=0.01)
+    parser.add_argument("--state_embedding", type=str, default="grid")
     parser.add_argument(
         "--linear_time_embedding",
         type=bool,

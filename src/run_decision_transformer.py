@@ -33,6 +33,7 @@ if __name__ == "__main__":
         n_layers=args.n_layers,
         layer_norm=args.layer_norm,
         time_embedding_type=TIME_EMBEDDING_TYPE,
+        state_embedding_type=args.state_embedding,
         n_ctx=args.n_ctx,
         device=run_config.device,
     )
