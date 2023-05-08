@@ -357,6 +357,16 @@
 <section id="module-src.decision_transformer.utils">
 <span id="src-decision-transformer-utils-module"></span><h2>src.decision_transformer.utils module<a class="headerlink" href="#module-src.decision_transformer.utils" title="Permalink to this heading">#</a></h2>
 <dl class="py function">
+<dt class="sig sig-object py" id="src.decision_transformer.utils.configure_optimizers">
+<span class="sig-prename descclassname"><span class="pre">src.decision_transformer.utils.</span></span><span class="sig-name descname"><span class="pre">configure_optimizers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offline_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.utils.configure_optimizers" title="Permalink to this definition">#</a></dt>
+<dd><p><a class="reference external" href="https://github.com/karpathy/minGPT/blob/37baab71b9abea1b76ab957409a1cc2fbfba8a26/mingpt/model.py#LL215C1-L258C25">https://github.com/karpathy/minGPT/blob/37baab71b9abea1b76ab957409a1cc2fbfba8a26/mingpt/model.py#LL215C1-L258C25</a></p>
+<p>This long function is unfortunately doing something very simple and is being very defensive:
+We are separating out all parameters of the model into two buckets: those that will experience
+weight decay for regularization and those that won’t (biases, and layernorm/embedding weights).
+We are then returning the PyTorch optimizer object.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="src.decision_transformer.utils.get_max_len_from_model_type">
 <span class="sig-prename descclassname"><span class="pre">src.decision_transformer.utils.</span></span><span class="sig-name descname"><span class="pre">get_max_len_from_model_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_ctx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.utils.get_max_len_from_model_type" title="Permalink to this definition">#</a></dt>
 <dd><p>Ihe max len in timesteps is 3 for decision transformers
@@ -369,8 +379,13 @@ every 2 tokens for clone transformers.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="src.decision_transformer.utils.get_optim_groups">
+<span class="sig-prename descclassname"><span class="pre">src.decision_transformer.utils.</span></span><span class="sig-name descname"><span class="pre">get_optim_groups</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offline_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.utils.get_optim_groups" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="src.decision_transformer.utils.get_optimizer">
-<span class="sig-prename descclassname"><span class="pre">src.decision_transformer.utils.</span></span><span class="sig-name descname"><span class="pre">get_optimizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizer_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.utils.get_optimizer" title="Permalink to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">src.decision_transformer.utils.</span></span><span class="sig-name descname"><span class="pre">get_optimizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizer_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optim_groups</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#src.decision_transformer.utils.get_optimizer" title="Permalink to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -531,7 +546,9 @@ Mask is initialized to 0.0 and then set to 1.0 for all values that are not paddi
 </li>
 <li><a class="reference internal" href="#src-decision-transformer-trainer-module">src.decision_transformer.trainer module</a></li>
 <li><a class="reference internal" href="#module-src.decision_transformer.utils">src.decision_transformer.utils module</a><ul>
+<li><a class="reference internal" href="#src.decision_transformer.utils.configure_optimizers"><code class="docutils literal notranslate"><span class="pre">configure_optimizers()</span></code></a></li>
 <li><a class="reference internal" href="#src.decision_transformer.utils.get_max_len_from_model_type"><code class="docutils literal notranslate"><span class="pre">get_max_len_from_model_type()</span></code></a></li>
+<li><a class="reference internal" href="#src.decision_transformer.utils.get_optim_groups"><code class="docutils literal notranslate"><span class="pre">get_optim_groups()</span></code></a></li>
 <li><a class="reference internal" href="#src.decision_transformer.utils.get_optimizer"><code class="docutils literal notranslate"><span class="pre">get_optimizer()</span></code></a></li>
 <li><a class="reference internal" href="#src.decision_transformer.utils.get_scheduler"><code class="docutils literal notranslate"><span class="pre">get_scheduler()</span></code></a></li>
 <li><a class="reference internal" href="#src.decision_transformer.utils.initialize_padding_inputs"><code class="docutils literal notranslate"><span class="pre">initialize_padding_inputs()</span></code></a></li>
