@@ -1,8 +1,8 @@
 import argparse
 import json
-from typing import Optional
+from typing import Optional, Any
 
-import torch as t
+import torch
 import torch.nn as nn
 import torch.optim as optim
 import math
@@ -95,7 +95,7 @@ def parse_args():
 def load_decision_transformer(model_path, env=None) -> DecisionTransformer:
     """ """
 
-    model_info = t.load(model_path)
+    model_info = torch.load(model_path)
     state_dict = model_info["model_state_dict"]
     transformer_config = TransformerModelConfig(
         **json.loads(model_info["model_config"])
@@ -164,12 +164,12 @@ def initialize_padding_inputs(
     - mask (torch.Tensor): tensor of shape (batch_size, max_len), initialized with zeros and ones at the last position to mark the end of the sequence
     """
 
-    device = t.device(device)
+    device = torch.device(device)
 
-    mask = t.concat(
+    mask = torch.concat(
         (
-            t.zeros((batch_size, max_len - 1), dtype=t.bool),
-            t.ones((batch_size, 1), dtype=t.bool),
+            torch.zeros((batch_size, max_len - 1), dtype=torch.bool),
+            torch.ones((batch_size, 1), dtype=torch.bool),
         ),
         dim=1,
     ).to(device)
@@ -179,11 +179,13 @@ def initialize_padding_inputs(
         assert (
             batch_size == 1
         ), "only one initial obs provided but batch size > 1"
-        obs_image = t.tensor(initial_obs["image"])[None, None, :, :, :].to(
+        obs_image = torch.tensor(initial_obs["image"])[None, None, :, :, :].to(
             device
         )
     elif len(initial_obs["image"].shape) == 4:
-        obs_image = t.tensor(initial_obs["image"])[:, None, :, :, :].to(device)
+        obs_image = torch.tensor(initial_obs["image"])[:, None, :, :, :].to(
+            device
+        )
     else:
         raise ValueError(
             "initial obs image has invalid shape: {}".format(
@@ -191,34 +193,137 @@ def initialize_padding_inputs(
             )
         )
 
-    obs = t.concat(
+    obs = torch.concat(
         (
-            t.zeros((batch_size, max_len - 1, *obs_dim)).to(device),
+            torch.zeros((batch_size, max_len - 1, *obs_dim)).to(device),
             obs_image,
         ),
         dim=1,
     ).to(float)
 
-    reward = t.zeros((batch_size, max_len, 1), dtype=t.float).to(device)
-    rtg = initial_rtg * t.ones((batch_size, max_len, 1), dtype=t.float).to(
+    reward = torch.zeros((batch_size, max_len, 1), dtype=torch.float).to(
         device
     )
-    timesteps = t.zeros((batch_size, max_len, 1), dtype=t.long).to(device)
+    rtg = initial_rtg * torch.ones(
+        (batch_size, max_len, 1), dtype=torch.float
+    ).to(device)
+    timesteps = torch.zeros((batch_size, max_len, 1), dtype=torch.long).to(
+        device
+    )
 
     actions = (
-        t.ones(batch_size, max_len - 1, 1, dtype=t.long) * action_pad_token
+        torch.ones(batch_size, max_len - 1, 1, dtype=torch.long)
+        * action_pad_token
     ).to(device)
 
     return obs, actions, reward, rtg, timesteps, mask
 
 
-def get_optimizer(optimizer_name: str, model: nn.Module, lr: float, **kwargs):
+# Use MinGPT code for optimizer configuration
+def configure_optimizers(model, offline_config):
+    """
+    https://github.com/karpathy/minGPT/blob/37baab71b9abea1b76ab957409a1cc2fbfba8a26/mingpt/model.py#LL215C1-L258C25
+
+    This long function is unfortunately doing something very simple and is being very defensive:
+    We are separating out all parameters of the model into two buckets: those that will experience
+    weight decay for regularization and those that won't (biases, and layernorm/embedding weights).
+    We are then returning the PyTorch optimizer object.
+    """
+
+    optim_groups = get_optim_groups(model, offline_config)
+
+    optimizer = get_optimizer(
+        offline_config.optimizer,
+        optim_groups,
+        lr=offline_config.lr,
+        weight_decay=offline_config.weight_decay,
+    )
+    return optimizer
+
+
+def get_optim_groups(model, offline_config):
+    # separate out all parameters to those that will and won't experience regularizing weight decay
+    decay = set()
+    no_decay = set()
+    whitelist_weight_modules = (
+        torch.nn.Linear,
+    )  # not going to work trivially for HookedTransformer
+    blacklist_weight_modules = (
+        torch.nn.LayerNorm,
+        torch.nn.Embedding,
+    )  # not going to work trivially for HookedTransformer
+    for mn, m in model.named_modules():
+        for pn, p in m.named_parameters():
+            fpn = "%s.%s" % (mn, pn) if mn else pn  # full param name
+            # random note: because named_modules and named_parameters are recursive
+            # we will see the same tensors p many many times. but doing it this way
+            # allows us to know which parent module any tensor p belongs to...
+            if pn.endswith("bias") or "b_" in pn:
+                # all biases will not be decayed
+                no_decay.add(fpn)
+            elif "embedding" in pn:
+                # all embedding weights will not be decayed
+                # state_embedding and reward embedding are linear layers (sometimes)
+                no_decay.add(fpn)
+            elif pn.endswith("weight") and isinstance(
+                m, whitelist_weight_modules
+            ):
+                if (
+                    "embedding" not in mn
+                ):  # module named state_embedding is linear excluded.
+                    # weights of whitelist modules will be weight decayed
+                    decay.add(fpn)
+            elif "W_" in pn:
+                # weights of all tlens weight modules will be decayed
+                decay.add(fpn)
+            elif pn.endswith("weight") and isinstance(
+                m, blacklist_weight_modules
+            ):
+                # weights of blacklist modules will NOT be weight decayed
+                no_decay.add(fpn)
+
+    # validate that we considered every parameter
+    param_dict = {pn: p for pn, p in model.named_parameters()}
+    inter_params = decay & no_decay
+    union_params = decay | no_decay
+    assert (
+        len(inter_params) == 0
+    ), "parameters %s made it into both decay/no_decay sets!" % (
+        str(inter_params),
+    )
+    assert (
+        len(param_dict.keys() - union_params) == 0
+    ), "parameters %s were not separated into either decay/no_decay set!" % (
+        str(param_dict.keys() - union_params),
+    )
+
+    # create the pytorch optimizer object
+    optim_groups = [
+        {
+            "params": [param_dict[pn] for pn in sorted(list(decay))],
+            "weight_decay": offline_config.weight_decay,
+        },
+        {
+            "params": [param_dict[pn] for pn in sorted(list(no_decay))],
+            "weight_decay": 0.0,
+        },
+    ]
+
+    return optim_groups
+
+
+def get_optimizer(
+    optimizer_name: str,
+    optim_groups: list[dict[str, Any]],
+    lr: float,
+    **kwargs,
+):
     if optimizer_name.lower() == "sgd":
-        return optim.SGD(model.parameters(), lr=lr, **kwargs)
+        return optim.SGD(optim_groups, lr=lr, **kwargs)
     elif optimizer_name.lower() == "adam":
-        return optim.Adam(model.parameters(), lr=lr, **kwargs)
+        return optim.Adam(optim_groups, lr=lr, **kwargs)
     elif optimizer_name.lower() == "adamw":
-        return optim.AdamW(model.parameters(), lr=lr, **kwargs)
+        return optim.AdamW(optim_groups, lr=lr, **kwargs)
     else:
         raise ValueError(f"Unsupported optimizer: {optimizer_name}")
 

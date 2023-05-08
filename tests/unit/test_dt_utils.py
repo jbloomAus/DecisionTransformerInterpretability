@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 import pytest
 import numpy as np
 
@@ -139,12 +140,18 @@ def test_initialize_padding_inputs_batch():
 
 def test_get_optimizer():
     dummy_model = torch.nn.Linear(1, 1)
+    param_dict = dummy_model.parameters()
+
     assert isinstance(
-        get_optimizer("Adam", dummy_model, 0.01), torch.optim.Adam
+        get_optimizer("Adam", param_dict, 0.01), torch.optim.Adam
     )
-    assert isinstance(get_optimizer("SGD", dummy_model, 0.01), torch.optim.SGD)
+
+    param_dict = dummy_model.parameters()
+    assert isinstance(get_optimizer("SGD", param_dict, 0.01), torch.optim.SGD)
+
+    param_dict = dummy_model.parameters()
     assert isinstance(
-        get_optimizer("AdamW", dummy_model, 0.01),
+        get_optimizer("AdamW", param_dict, 0.01),
         torch.optim.AdamW,
     )
 

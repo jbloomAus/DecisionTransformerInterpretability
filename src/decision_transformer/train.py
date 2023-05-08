@@ -17,7 +17,7 @@ from src.models.trajectory_transformer import (
 
 from .offline_dataset import TrajectoryDataset
 from .eval import evaluate_dt_agent
-from .utils import get_optimizer, get_scheduler
+from .utils import configure_optimizers, get_scheduler
 
 
 def train(
@@ -36,12 +36,7 @@ def train(
     )
 
     # get optimizer from string
-    optimizer = get_optimizer(
-        offline_config.optimizer,
-        model,
-        lr=offline_config.lr,
-        weight_decay=offline_config.weight_decay,
-    )
+    optimizer = configure_optimizers(model, offline_config)
     # TODO: Stop passing through all the args to the scheduler, shouldn't be necessary.
     scheduler_config = asdict(offline_config)
     del scheduler_config["optimizer"]
