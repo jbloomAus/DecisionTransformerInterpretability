@@ -88,7 +88,9 @@ class TransformerModelConfig:
         # match t-lens
 
         # while we still have older configs lying around.
-        if self.layer_norm == False:
+        if self.layer_norm == False or self.layer_norm is None:
+            self.layer_norm = None
+        elif self.layer_norm.lower() == "none":
             self.layer_norm = None
 
         assert self.state_embedding_type.lower() in ["grid", "cnn", "vit"]

@@ -281,6 +281,8 @@ def get_optim_groups(model, offline_config):
             ):
                 # weights of blacklist modules will NOT be weight decayed
                 no_decay.add(fpn)
+            elif "ln1" in mn or "ln2" in mn or "ln_final" in mn:
+                no_decay.add(fpn)  # layer norm weights will not be decayed
 
     # validate that we considered every parameter
     param_dict = {pn: p for pn, p in model.named_parameters()}
