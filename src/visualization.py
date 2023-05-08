@@ -134,3 +134,116 @@ def tensor_2d_embedding_similarity(tensor, x, y, mode="heatmap"):
         )
 
     fig.show()
+
+
+def get_param_stats(model):
+    param_stats = []
+
+    for name, param in model.named_parameters():
+        mean = param.data.mean().item()
+        std = param.data.std().item()
+        if param.data.dim() > 1:
+            norm = torch.norm(param.data, dim=1).mean().item()
+        else:
+            norm = torch.norm(param.data).item()
+        param_stats.append(
+            {"name": name, "mean": mean, "std": std, "norm": norm}
+        )
+
+    df = pd.DataFrame(param_stats)
+    return df
+
+
+def plot_param_stats(df):
+    """
+    use get_param stats then this to look at properties of weights.
+    """
+    # Calculate log of standard deviation
+    df["log_std"] = -1 * np.log(df["std"])
+
+    # add color column to df, red for ends with weight, blue for ends with bias, purple if embedding
+    df["color"] = "green"
+    df.loc[df["name"].str.endswith("weight"), "color"] = "red"
+    df.loc[df["name"].str.contains("W_"), "color"] = "red"
+    df.loc[df["name"].str.endswith("bias"), "color"] = "blue"
+    df.loc[df["name"].str.contains("b_"), "color"] = "blue"
+    df.loc[df["name"].str.contains("embedding"), "color"] = "purple"
+
+    # make a name label which is name.split('.')[-1]
+    df["name_label"] = df["name"].apply(lambda x: x.split(".")[-1])
+
+    # Create the mean bar chart
+    fig_mean = go.Figure()
+    fig_mean.add_trace(
+        go.Bar(
+            x=df["name"],
+            y=df["mean"],
+            text=df["mean"],
+            textposition="outside",
+            hovertext=df["name_label"],
+            marker_color=df["color"],
+        )
+    )
+    fig_mean.update_traces(
+        texttemplate="%{text:.4f}",
+        hovertemplate="Parameter: %{hovertext}<br>Mean: %{text:.4f}",
+    )
+    fig_mean.update_yaxes(title_text="Mean")
+    fig_mean.update_xaxes(title_text="Parameter Name")
+    fig_mean.update_layout(title_text="Mean of Model Parameters")
+
+    # Create the norm chart
+    fig_norm = go.Figure()
+    fig_norm.add_trace(
+        go.Bar(
+            x=df["name"],
+            y=df["norm"],
+            text=df["norm"],
+            textposition="outside",
+            hovertext=df["name_label"],
+            marker_color=df["color"],
+        )
+    )
+    fig_norm.update_traces(
+        texttemplate="%{text:.4f}",
+        hovertemplate="Parameter: %{hovertext}<br>Norm: %{text:.4f}",
+    )
+    fig_norm.update_yaxes(title_text="Norm")
+    fig_norm.update_xaxes(title_text="Parameter Name")
+    fig_norm.update_layout(title_text="Norm of Model Parameters")
+
+    # Create the log of standard deviation bar chart
+    fig_log_std = go.Figure()
+    fig_log_std.add_trace(
+        go.Bar(
+            x=df["name"],
+            y=df["log_std"],
+            text=df["log_std"],
+            textposition="outside",
+            hovertext=df["name_label"],
+            marker_color=df["color"],
+        )
+    )
+    fig_log_std.update_traces(
+        texttemplate="%{text:.4f}",
+        hovertemplate="Parameter: %{hovertext}<br>Log Std: %{text:.4f}",
+    )
+    fig_log_std.update_yaxes(title_text="Log of Standard Deviation")
+    fig_log_std.update_xaxes(title_text="Parameter Name")
+    fig_log_std.update_layout(
+        title_text="Log of Standard Deviation of Model Parameters"
+    )
+    # add a horizontal line at y = 1.69
+    fig_log_std.add_shape(
+        type="line",
+        x0=0,
+        y0=-np.log(0.02),
+        x1=len(df["name"]),
+        y1=-np.log(0.02),
+        line=dict(color="red", width=2, dash="dash"),
+    )
+
+    # Show both plots
+    fig_mean.show()
+    fig_log_std.show()
+    fig_norm.show()
