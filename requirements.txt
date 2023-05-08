@@ -57,3 +57,6 @@ typeguard==2.13.3
 
 # positional encodings
 positional-encodings[torch]==6.0.1
+
+# model summaries
+torchinfo==1.7.2
