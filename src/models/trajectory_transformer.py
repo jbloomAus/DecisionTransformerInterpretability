@@ -35,6 +35,8 @@ class TrajectoryTransformer(nn.Module):
         self.transformer_config = transformer_config
         self.environment_config = environment_config
 
+        # Why is this in a sequential? Need to get rid of it at some
+        # point when I don't care about loading older models.
         self.action_embedding = nn.Sequential(
             nn.Embedding(
                 environment_config.action_space.n + 1,
@@ -61,6 +63,42 @@ class TrajectoryTransformer(nn.Module):
             self.transformer_config.d_model, environment_config.action_space.n
         )
         self.initialize_state_predictor()
+
+        self.initialize_weights()
+
+    def initialize_weights(self):
+        """
+        TransformerLens is weird so we have to use the module path
+        and can't just rely on the module instance as we do would
+        be the default approach in pytorch.
+        """
+        self.apply(self._init_weights_classic)
+
+        for name, param in self.named_parameters():
+            if "W_" in name:
+                nn.init.normal_(param, std=0.02)
+
+    def _init_weights_classic(self, module):
+        """
+        Use Min GPT Method.
+        https://github.com/karpathy/minGPT/blob/37baab71b9abea1b76ab957409a1cc2fbfba8a26/mingpt/model.py#L163
+
+        Will need to check that this works with the transformer_lens library.
+        """
+        if isinstance(module, nn.Linear):
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+            if module.bias is not None:
+                torch.nn.init.zeros_(module.bias)
+        elif isinstance(module, nn.Embedding):
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+        elif isinstance(module, nn.LayerNorm):
+            torch.nn.init.zeros_(module.bias)
+            torch.nn.init.ones_(module.weight)
+        elif (
+            "PosEmbedTokens" in module._get_name()
+        ):  # transformer lens components
+            for param in module.parameters():
+                torch.nn.init.normal_(param, mean=0.0, std=0.02)
 
     def get_time_embedding(self, timesteps):
         assert (
@@ -275,11 +313,7 @@ class DecisionTransformer(TrajectoryTransformer):
         # n_ctx include full timesteps except for the last where it doesn't know the action
         assert (transformer_config.n_ctx - 2) % 3 == 0
 
-        nn.init.normal_(
-            self.reward_embedding[0].weight,
-            mean=0.0,
-            std=1 / self.transformer_config.d_model,
-        )
+        self.initialize_weights()
 
     def predict_rewards(self, x):
         return self.reward_predictor(x)
@@ -486,6 +520,8 @@ class CloneTransformer(TrajectoryTransformer):
         self.transformer = (
             self.initialize_easy_transformer()
         )  # this might not be needed?
+
+        self.initialize_weights()
 
     def get_token_embeddings(
         self, state_embeddings, time_embeddings, action_embeddings=None
@@ -715,6 +751,7 @@ class CriticTransfomer(CloneTransformer):
         self.value_predictor = nn.Linear(
             transformer_config.d_model, 1, bias=True
         )
+        self.initialize_weights()
 
     def forward(
         self,

@@ -64,6 +64,80 @@ def critic_transformer():
     )
 
 
+def test_initialization_of_weights(
+    transformer,
+    decision_transformer,
+    clone_transformer,
+    actor_transformer,
+    critic_transformer,
+):
+    # Rather messy because of how Transformer is implemented
+    # and because of a mistake I made with the sequential
+    # on the action embedding.
+
+    for model in [
+        transformer,
+        decision_transformer,
+        clone_transformer,
+        actor_transformer,
+        critic_transformer,
+    ]:
+        # check that they all require grad and that they are all None
+        for p in model.parameters():
+            assert p.requires_grad
+            assert p.grad is None
+
+        # check that linear weights are centred with std 0.02
+        for name, p in model.named_parameters():
+            if isinstance(p, nn.Linear):
+                assert torch.allclose(p.weight.mean(), torch.tensor(0.0))
+                assert torch.allclose(p.weight.std(), torch.tensor(0.02))
+
+                # check that bias is 0
+                if p.bias is not None:
+                    assert torch.allclose(p.bias, torch.tensor(0.0))
+
+            # check that bias is 0
+            if "b_" in name or "bias" in name:
+                assert torch.allclose(p, torch.tensor(0.0))
+
+            if "W_" in name:
+                assert p.mean().item() == pytest.approx(
+                    0, abs=0.01
+                ), f"Found a parameter that is not centred: {name}, {p.mean()}"
+                assert p.std().item() == pytest.approx(
+                    0.02, abs=0.02
+                ), f"Found a parameter that does not have std 0.02: {name}, {p.std()}"
+
+        # check that embedding weights are centred with std 0.02
+        for p in model.parameters():
+            if isinstance(p, nn.Embedding) or "embedding" in name:
+                assert torch.allclose(p.weight.mean(), torch.tensor(0.0))
+                assert torch.allclose(p.weight.std(), torch.tensor(0.02))
+
+        # assert that no parameters are instances of any classes
+        # except linear, embedding and layernorm
+        # will expand this list to ensure we catch everything that
+        # should be initialized with the above distributions
+        for name, p in model.named_parameters():
+            if (
+                not isinstance(p, nn.Linear)
+                and not isinstance(p, nn.Embedding)
+                and not isinstance(p, nn.LayerNorm)
+                and "embedding" not in name
+                and "W_" not in name
+                and "b_" not in name
+                and "bias" not in name
+                and "predictor" not in name
+            ):
+                if isinstance(p, nn.Parameter):
+                    print(name)
+                else:
+                    assert (
+                        False
+                    ), f"Found a parameter that is not an instance of nn.Linear, nn.Embedding or nn.LayerNorm: {name}"
+
+
 def test_get_time_embedding(transformer):
     max_timestep = transformer.environment_config.max_steps
     timesteps = torch.arange(1, 4).repeat(1, 2).unsqueeze(-1)
