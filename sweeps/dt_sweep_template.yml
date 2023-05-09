@@ -1,0 +1,98 @@
+# Path: sweeps/dt_sweep_template.yml
+program: run_decision_transformer.py
+method: bayes
+metric:
+  name: test/loss
+  goal: minimize
+parameters:
+  # General Hyperparameters
+  wandb_project_name:
+    values: ["DecisionTransformerInterpretability"]
+  trajectory_path:
+    values: ["trajectories/MiniGrid-MemoryS7FixedStart-v0-Checkpoint11.gz"]
+  exp_name:
+    values: ["MiniGrid-MemoryS7FixedStart-v0"]
+  track:
+    values: [True]
+  # Transformer Architectures
+  d_model:
+    distribution: categorical
+    values:
+    - 128
+    - 256
+  n_heads:
+    distribution: categorical
+    values:
+    - 4
+    - 8
+  d_mlp:
+    distribution: categorical
+    values:
+    - 128
+    - 256
+  n_layers:
+    distribution: categorical
+    values:
+    - 2
+    - 3
+  activation_fn:
+    values: ["relu", "gelu"]
+  state_embedding:
+    values: ["grid"]
+  layer_norm:
+    values: ["LN", None]
+  n_ctx:
+    value: 26
+  # Training Hyperparameters
+  learning_rate:
+    distribution: categorical
+    values: [0.0001, 0.0005, 0.001]
+  batch_size:
+    distribution: categorical
+    values: [64, 128, 256]
+  train_epochs:
+    values: [10]
+  pct_traj:
+    value: 1
+  weight_decay:
+    distribution: categorical
+    values: [0.3, 0.2, 0.1]
+  seed:
+    distribution: int_uniform
+    min: 1
+    max: 5
+  prob_go_from_end:
+    distribution: uniform
+    min: 0.0
+    max: 0.2
+  scheduler:
+    values: ["CosineAnnealingWarmup"]
+  warm_up_steps:
+    distribution: int_uniform
+    min: 1000
+    max: 5000
+  # Test/Eval Hyperparameters
+  test_epochs:
+    value: 1
+  test_frequency:
+    value: 1
+  eval_frequency:
+    value: 1
+  eval_episodes:
+    value: 5
+  # initial rtg will default to 0 and 1.
+  eval_max_time_steps:
+    value: 50
+  eval_num_envs:
+    value: 16
+
+command:
+    - python
+    - -m
+    - src.run_decision_transformer
+    - ${args_no_boolean_flags}
+    - "--initial_rtg"
+    - "0"
+    - "--initial_rtg"
+    - "1"
+    - "--convert_to_one_hot"
