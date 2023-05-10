@@ -6,7 +6,7 @@ from .analysis import get_residual_decomp
 from .environment import get_action_preds
 from .visualizations import (
     plot_action_preds,
-    plot_single_residual_stream_contributions,
+    plot_logit_diff,
     plot_single_residual_stream_contributions_comparison,
 )
 

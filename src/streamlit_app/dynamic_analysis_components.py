@@ -18,7 +18,7 @@ from .constants import (
 from .utils import fancy_histogram, fancy_imshow
 from .visualizations import (
     plot_attention_pattern_single,
-    plot_single_residual_stream_contributions,
+    plot_logit_diff,
 )
 
 
@@ -66,10 +66,75 @@ def show_residual_stream_contributions_single(dt, cache, logit_dir):
     with st.expander(
         "Show Residual Stream Contributions at current Reward-to-Go"
     ):
-        residual_decomp = get_residual_decomp(dt, cache, logit_dir)
+        layertab, componenttab, headtab = st.tabs(
+            ["Layer", "Component", "Head"]
+        )
 
-        # this plot assumes you only have a single dim
-        plot_single_residual_stream_contributions(residual_decomp)
+        with layertab:
+            tab1, tab2 = st.tabs(["Layerwise", "Accumulated"])
+            with tab1:
+                results, labels = cache.decompose_resid(
+                    apply_ln=True, return_labels=True
+                )
+                attribution = results[:, 0, -1] @ logit_dir
+                fig = px.line(
+                    attribution.detach(),
+                    title="Logit Difference From Residual Stream",
+                    labels={"index": "Layer", "value": "Logit Difference"},
+                )
+                fig.update_layout(
+                    hovermode="x unified",
+                    xaxis_tickvals=labels,
+                    showlegend=False,
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+            with tab2:
+                results, labels = cache.accumulated_resid(
+                    apply_ln=True, return_labels=True
+                )
+                attribution = results[:, 0, -1] @ logit_dir
+                fig = px.line(
+                    attribution.detach(),
+                    title="Logit Difference From Accumulated Residual Stream",
+                    labels={"index": "Layer", "value": "Logit Difference"},
+                )
+                fig.update_layout(
+                    hovermode="x unified",
+                    xaxis_tickvals=labels,
+                    showlegend=False,
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+        with componenttab:
+            result, labels = cache.get_full_resid_decomposition(
+                apply_ln=True, return_labels=True, expand_neurons=False
+            )
+
+            attribution = result[:, 0, -1] @ logit_dir
+
+            plot_logit_diff(attribution, labels)
+
+        with headtab:
+            result, labels = cache.stack_head_results(
+                apply_ln=True, return_labels=True
+            )
+            heads = dt.transformer_config.n_heads
+            attribution = result[:, 0, -1] @ logit_dir
+            k = t.topk(attribution, max(5, dt.transformer_config.n_heads))
+            attribution = attribution.reshape(-1, heads)
+            fig = px.imshow(
+                attribution.detach(),
+                color_continuous_midpoint=0,
+                color_continuous_scale="RdBu",
+                title="Logit Difference From Each Head",
+                labels={"x": "Head", "y": "Layer"},
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+            st.write(
+                f"Top 5 Heads: {', '.join([f'{labels[k.indices[i]]}: {round(k.values[i].item(), 3)}' for i in range(5)])}"
+            )
 
     return
 
