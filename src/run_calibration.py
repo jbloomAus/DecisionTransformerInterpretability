@@ -14,6 +14,7 @@ from src.decision_transformer.calibration import (
 )
 from src.decision_transformer.utils import load_decision_transformer
 from src.environments.environments import make_env
+from src.environments.registration import register_envs
 
 logging.basicConfig(level=logging.INFO)
 
@@ -23,6 +24,8 @@ def runner(args):
 
     logger.info(f"Loading model from {args.model_path}")
     logger.info(f"Using environment {args.env_id}")
+
+    register_envs()
 
     dt = load_decision_transformer(args.model_path)
     env_func = make_env(
