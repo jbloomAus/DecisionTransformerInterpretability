@@ -11,6 +11,7 @@ from src.streamlit_app.components import (
     render_trajectory_details,
     reset_button,
     reset_env_dt,
+    model_info,
 )
 from src.streamlit_app.content import (
     analysis_help,
@@ -206,6 +207,7 @@ with st.sidebar:
 
 record_keypresses()
 
+model_info()
 help_page()
 analysis_help()
 reference_tables()
