@@ -1,4 +1,5 @@
 import torch
+import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 import uuid
@@ -101,3 +102,35 @@ def reset_env_dt():
         del st.session_state.env
     if "dt" in st.session_state:
         del st.session_state.dt
+
+
+def model_info():
+    """
+    A module which shows information about the current model.
+
+    """
+    dt = st.session_state.dt
+
+    with st.expander("Model Info"):
+        if st.checkbox("Show Transformer Config"):
+            st.write(f"Model Type: {dt.model_type}")
+            # convert into pandas df
+            transformer_config = dt.transformer_config.__dict__
+            transformer_config = {
+                k: [v] for k, v in transformer_config.items()
+            }
+            transformer_config = pd.DataFrame(transformer_config)
+            st.write(transformer_config)
+            # for k, v in dt.transformer_config.__dict__.items():
+            #     st.write(f"{k}: {v}")
+
+        if "model_summary" in st.session_state:
+            if st.checkbox("Show Model Summary"):
+                st.write(
+                    "```" + str(st.session_state.model_summary) + "```",
+                    unsafe_allow_html=True,
+                )
+        else:
+            st.warn(
+                "No model summary available. Please run a trajectory take an action."
+            )

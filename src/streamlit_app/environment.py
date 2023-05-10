@@ -1,16 +1,9 @@
-import math
-
 import json
-import gymnasium as gym
-import minigrid
 import streamlit as st
-import torch as t
+import torch
+from torchinfo import summary
 
 from src.config import EnvironmentConfig
-from src.models.trajectory_transformer import (
-    DecisionTransformer,
-    CloneTransformer,
-)
 
 from src.decision_transformer.utils import (
     load_decision_transformer,
@@ -22,7 +15,7 @@ from src.environments.environments import make_env
 @st.cache(allow_output_mutation=True)
 def get_env_and_dt(model_path):
     # we need to one if the env was one hot encoded. Some tech debt here.
-    state_dict = t.load(model_path)
+    state_dict = torch.load(model_path)
 
     env_config = state_dict["environment_config"]
     env_config = EnvironmentConfig(**json.loads(env_config))
@@ -71,11 +64,17 @@ def get_action_preds(dt):
     rtg = rtg[:, -max_len:] if rtg.shape[1] > max_len else rtg
 
     if dt.time_embedding_type == "linear":
-        timesteps = timesteps.to(dtype=t.float32)
+        timesteps = timesteps.to(dtype=torch.float32)
     else:
-        timesteps = timesteps.to(dtype=t.long)
+        timesteps = timesteps.to(dtype=torch.long)
 
     tokens = dt.to_tokens(obs, actions, rtg, timesteps)
+
+    if actions is not None:
+        st.session_state.model_summary = summary(
+            dt.transformer, input_data=tokens
+        )
+
     x, cache = dt.transformer.run_with_cache(tokens, remove_batch_dim=False)
 
     state_preds, action_preds, reward_preds = dt.get_logits(
@@ -91,46 +90,46 @@ def respond_to_action(env, action, initial_rtg):
             "The agent has just made a game ending move. Please reset the environment."
         )
     # append to session state
-    st.session_state.obs = t.cat(
+    st.session_state.obs = torch.cat(
         [
             st.session_state.obs,
-            t.tensor(new_obs["image"]).unsqueeze(0).unsqueeze(0),
+            torch.tensor(new_obs["image"]).unsqueeze(0).unsqueeze(0),
         ],
         dim=1,
     )
 
     # store the rendered image
-    st.session_state.rendered_obs = t.cat(
+    st.session_state.rendered_obs = torch.cat(
         [
             st.session_state.rendered_obs,
-            t.from_numpy(env.render()).unsqueeze(0),
+            torch.from_numpy(env.render()).unsqueeze(0),
         ],
         dim=0,
     )
 
     if st.session_state.a is None:
-        st.session_state.a = t.tensor([action]).unsqueeze(0).unsqueeze(0)
+        st.session_state.a = torch.tensor([action]).unsqueeze(0).unsqueeze(0)
 
-    st.session_state.a = t.cat(
-        [st.session_state.a, t.tensor([action]).unsqueeze(0).unsqueeze(0)],
+    st.session_state.a = torch.cat(
+        [st.session_state.a, torch.tensor([action]).unsqueeze(0).unsqueeze(0)],
         dim=1,
     )
-    st.session_state.reward = t.cat(
+    st.session_state.reward = torch.cat(
         [
             st.session_state.reward,
-            t.tensor([reward]).unsqueeze(0).unsqueeze(0),
+            torch.tensor([reward]).unsqueeze(0).unsqueeze(0),
         ],
         dim=1,
     )
 
     rtg = initial_rtg - st.session_state.reward.sum()
 
-    st.session_state.rtg = t.cat(
-        [st.session_state.rtg, t.tensor([rtg]).unsqueeze(0).unsqueeze(0)],
+    st.session_state.rtg = torch.cat(
+        [st.session_state.rtg, torch.tensor([rtg]).unsqueeze(0).unsqueeze(0)],
         dim=1,
     )
     time = st.session_state.timesteps[-1][-1] + 1
-    st.session_state.timesteps = t.cat(
+    st.session_state.timesteps = torch.cat(
         [
             st.session_state.timesteps,
             time.clone().detach().unsqueeze(0).unsqueeze(0),
