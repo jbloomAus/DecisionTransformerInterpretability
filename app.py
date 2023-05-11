@@ -3,7 +3,11 @@ import time
 import streamlit as st
 import plotly.express as px
 
-from src.streamlit_app.causal_analysis_components import show_ablation
+from src.streamlit_app.causal_analysis_components import (
+    show_ablation,
+    show_activation_patching,
+)
+
 from src.streamlit_app.components import (
     hyperpar_side_bar,
     record_keypresses,
@@ -81,6 +85,7 @@ action_id_to_string = {v: k for k, v in action_string_to_id.items()}
 
 # st.session_state.max_len = 1
 env, dt = initialize_playground(selected_model_path, initial_rtg)
+st.session_state.env = env
 x, cache, tokens = render_game_screen(dt, env)
 record_keypresses()
 
@@ -135,7 +140,9 @@ with st.sidebar:
             "Observation View",
         ],
     )
-    causal_analyses = st.multiselect("Select Causal Analyses", ["Ablation"])
+    causal_analyses = st.multiselect(
+        "Select Causal Analyses", ["Ablation", "Activation Patching"]
+    )
 analyses = dynamic_analyses + static_analyses + causal_analyses
 
 with st.sidebar:
@@ -156,6 +163,8 @@ if "OV Circuit" in analyses:
 
 if "Ablation" in analyses:
     show_ablation(dt, logit_dir=logit_dir, original_cache=cache)
+if "Activation Patching" in analyses:
+    show_activation_patching(dt, logit_dir=logit_dir, original_cache=cache)
 
 if "Show RTG Scan" in analyses:
     show_rtg_scan(dt, logit_dir=logit_dir)

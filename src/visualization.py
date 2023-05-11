@@ -1,9 +1,11 @@
+import gymnasium as gym
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import torch
 from minigrid.core.constants import IDX_TO_OBJECT
+from src.environments.utils import reverse_one_hot
 
 
 def find_agent(observation):
@@ -247,3 +249,14 @@ def plot_param_stats(df):
     fig_mean.show()
     fig_log_std.show()
     fig_norm.show()
+
+
+# used by streamlit app
+def preview_state_update(
+    env: gym.Env,
+    obs: torch.Tensor,
+):
+    obs = obs.clone()
+    obs = reverse_one_hot(observation=obs)
+    image = render_minigrid_observation(env, obs)
+    return image

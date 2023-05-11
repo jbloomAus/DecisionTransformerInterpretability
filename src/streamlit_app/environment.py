@@ -102,9 +102,10 @@ def get_tokens_from_app_state(dt, previous_step=False):
 
 def get_modified_tokens_from_app_state(
     dt,
+    corrupt_obs: Optional[torch.Tensor] = None,
     all_rtg: Optional[float] = None,
     specific_rtg: Optional[float] = None,
-    action: Optional[int] = None,
+    new_action: Optional[int] = None,
     position: Optional[int] = None,
 ):
     obs, actions, rtg, timesteps = preprocess_inputs(
@@ -112,7 +113,8 @@ def get_modified_tokens_from_app_state(
     )
 
     previous_tokens = dt.to_tokens(obs, actions, rtg, timesteps)
-    rtg = rtg.clone()
+    rtg = rtg.clone()  # don't accidentally modify the session state.
+    obs = obs.clone()  # don't accidentally modify the session state.
     # now do interventions
     if all_rtg is not None:
         rtg_dif = rtg[0] - all_rtg
@@ -136,15 +138,21 @@ def get_modified_tokens_from_app_state(
 
         tokens = dt.to_tokens(obs, actions, new_rtg, timesteps)
 
-    elif actions is not None:
+    elif new_action is not None:
         assert position is not None
         new_actions = actions.clone()
-        new_actions[0][position] = action
+        new_actions[0][position] = new_action
 
         tokens = dt.to_tokens(obs, new_actions, rtg, timesteps)
 
         st.write(actions.squeeze(-1))
         st.write(new_actions.squeeze(-1))
+
+    elif obs is not None:
+        assert position is not None
+        new_obs = obs.clone()
+        new_obs[0][position] = corrupt_obs
+        tokens = dt.to_tokens(new_obs, actions, rtg, timesteps)
 
     # assert at least some of the tokens are different
     assert not torch.all(

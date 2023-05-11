@@ -10,9 +10,11 @@ from .environment import (
     get_action_preds_from_tokens,
     get_action_preds_from_app_state,
 )
-from .constants import IDX_TO_ACTION
+from .constants import IDX_TO_ACTION, IDX_TO_OBJECT
+from src.visualization import preview_state_update
 
 ACTION_TO_IDX = {v: k for k, v in IDX_TO_ACTION.items()}
+OBJECT_TO_IDX = {v: k for k, v in IDX_TO_OBJECT.items()}
 
 from .visualizations import (
     plot_action_preds,
@@ -139,7 +141,7 @@ def show_activation_patching(dt, logit_dir, original_cache):
                 dt, all_rtg=min_rtg
             )
 
-        if path_patch_by == "Action":
+        elif path_patch_by == "Action":
             action = st.selectbox("Choose an action", IDX_TO_ACTION.values())
             action_idx = ACTION_TO_IDX[action]
             position = st.slider(
@@ -150,7 +152,84 @@ def show_activation_patching(dt, logit_dir, original_cache):
             )
             # at this point I can set the corrupted tokens.
             corrupted_tokens = get_modified_tokens_from_app_state(
-                dt, action=action_idx, position=position
+                dt, new_action=action_idx, position=position
+            )
+
+        elif path_patch_by == "State":
+            assert (
+                dt.environment_config.env_id
+                == "MiniGrid-MemoryS7FixedStart-v0"
+            ), "State patching only implemented for MiniGrid-MemoryS7FixedStart-v0"
+
+            # Let's construct this as a series (starting with one)
+            # of changes to any previous state.
+
+            a, b, c, d, f = st.columns(5)
+
+            with a:
+                current_len = st.session_state.current_len
+                max_len = st.session_state.max_len
+
+                if current_len == 1:
+                    st.write("No previous states to modify. Timestep = 1")
+                    timestep_to_modify = max_len - 1
+                else:
+                    timestep_to_modify = st.selectbox(
+                        "Timestep",
+                        range(current_len - max_len - 1, 0),
+                        format_func=lambda x: st.session_state.labels[1::3][x],
+                    )
+            with b:
+                x_position_to_update = st.selectbox(
+                    "X Position (Rel to Agent)",
+                    range(8),
+                    format_func=lambda x: f"{x-3}",
+                    index=2,
+                )
+            with c:
+                y_position_to_update = st.selectbox(
+                    "Y Position (Rel to Agent)",
+                    range(8),
+                    format_func=lambda x: f"{6-x}",
+                    index=6,
+                )
+            with d:
+                object_to_update = st.selectbox(
+                    "Select an object",
+                    list(IDX_TO_OBJECT.keys()),
+                    index=OBJECT_TO_IDX["key"],
+                    format_func=IDX_TO_OBJECT.get,
+                )
+            with f:
+                show_update_tick = st.checkbox("Show state update")
+            env = st.session_state.env
+            obs = st.session_state.obs[0][timestep_to_modify].clone()
+
+            corrupt_obs = obs.detach().clone()
+            corrupt_obs[
+                x_position_to_update,
+                y_position_to_update,
+                : len(OBJECT_TO_IDX),
+            ] = 0
+            corrupt_obs[
+                x_position_to_update, y_position_to_update, object_to_update
+            ] = 1
+
+            if show_update_tick:
+                clean_col, corrupt_col = st.columns(2)
+                with clean_col:
+                    st.write("Clean")
+                    image = preview_state_update(env, obs)
+                    fig = px.imshow(image)
+                    st.plotly_chart(fig, use_container_width=True)
+                with corrupt_col:
+                    st.write("Corrupted")
+                    image = preview_state_update(env, corrupt_obs)
+                    fig = px.imshow(image)
+                    st.plotly_chart(fig, use_container_width=True)
+
+            corrupted_tokens = get_modified_tokens_from_app_state(
+                dt, corrupt_obs=corrupt_obs, position=timestep_to_modify
             )
 
         else:
