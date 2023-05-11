@@ -2,6 +2,7 @@ import plotly.express as px
 import streamlit as st
 import torch as t
 from fancy_einsum import einsum
+import einops
 
 from .constants import (
     IDX_TO_ACTION,
@@ -27,47 +28,37 @@ def show_qk_circuit(dt):
     with st.expander("show QK circuit"):
         st.write(
             """
-            Usually the QK circuit uses the embedding twice but since we are interested in Atten to
+            Usually the QK circuit uses the embedding twice but we have 3 different embeddings so 6 different directed combinations/permutations of 2. 
             """
         )
         st.latex(
             r"""
-            QK_{circuit} = W_{E(state)}^T W_Q^T W_K W_{E(RTG)}
+            QK_{circuit} = W_{E(i)}^T W_Q^T W_K W_{E(j)} \text{ for } i,j \in \{rtg, state\, \text{or} \, action\}
             """
         )
 
-        W_E_rtg = dt.reward_embedding[0].weight
-        W_E_state = dt.state_embedding.weight
-        W_Q = dt.transformer.blocks[0].attn.W_Q
-        W_K = dt.transformer.blocks[0].attn.W_K
-
-        W_QK = einsum(
-            "head d_mod_Q d_head, head d_mod_K d_head -> head d_mod_Q d_mod_K",
-            W_Q,
-            W_K,
-        )
-        # st.write(W_QK.shape)
-
-        # W_QK_full = W_E_rtg.T @ W_QK @ W_E_state
-        W_QK_full = W_E_state.T @ W_QK @ W_E_rtg
+        # let's start with state based ones. These are most important because they produce actions!
 
         n_heads = dt.transformer_config.n_heads
         height, width, channels = dt.environment_config.observation_space[
             "image"
         ].shape
-        W_QK_full_reshaped = W_QK_full.reshape(
-            n_heads, 1, channels, height, width
-        )
+        layer_selection, head_selection, other_selection = st.columns(3)
 
-        selection_columns = st.columns(2)
+        with layer_selection:
+            layer = st.selectbox(
+                "Select Layer",
+                options=list(range(dt.transformer_config.n_layers)),
+            )
 
-        with selection_columns[0]:
+        with head_selection:
             heads = st.multiselect(
                 "Select Heads",
                 options=list(range(n_heads)),
                 key="head qk",
                 default=[0],
             )
+
         if channels == 3:
 
             def format_func(x):
@@ -76,7 +67,7 @@ def show_qk_circuit(dt):
         else:
             format_func = twenty_idx_format_func
 
-        with selection_columns[1]:
+        with other_selection:
             selected_channels = st.multiselect(
                 "Select Observation Channels",
                 options=list(range(channels)),
@@ -85,25 +76,69 @@ def show_qk_circuit(dt):
                 default=[0, 1, 2],
             )
 
-        columns = st.columns(len(selected_channels))
-        for i, channel in enumerate(selected_channels):
-            with columns[i]:
-                if channels == 3:
-                    st.write(three_channel_schema[channel])
-                elif channels == 20:
-                    st.write(twenty_idx_format_func(channel))
+        state_state_tab, state_rtg_tab, state_action_tab = st.tabs(
+            [
+                "QK(state, state)",
+                "QK(state, rtg)",
+                "QK(state, action)",
+            ]
+        )
 
-        for head in heads:
-            st.write("Head", head)
+        W_E_rtg = dt.reward_embedding[0].weight
+        W_E_state = dt.state_embedding.weight
+        W_Q = dt.transformer.blocks[layer].attn.W_Q
+        W_K = dt.transformer.blocks[layer].attn.W_K
+
+        W_QK = einsum(
+            "head d_mod_Q d_head, head d_mod_K d_head -> head d_mod_Q d_mod_K",
+            W_Q,
+            W_K,
+        )
+
+        with state_state_tab:
+            W_QK_full = W_E_state.T @ W_QK @ W_E_state
+            st.write(W_QK_full.shape)
+
+            W_QK_full_reshaped = einops.rearrange(
+                W_QK_full,
+                "b (h w c) (h1 w1 c1) -> b h w c h1 w1 c1",
+                h=7,
+                w=7,
+                c=20,
+                h1=7,
+                w1=7,
+                c1=20,
+            )
+            st.write(W_QK_full_reshaped.shape)
+
+        with state_rtg_tab:
+            # st.write(W_QK.shape)
+            # W_QK_full = W_E_rtg.T @ W_QK @ W_E_state
+            W_QK_full = W_E_state.T @ W_QK @ W_E_rtg
+
+            W_QK_full_reshaped = W_QK_full.reshape(
+                n_heads, 1, channels, height, width
+            )
+
             columns = st.columns(len(selected_channels))
             for i, channel in enumerate(selected_channels):
                 with columns[i]:
-                    fancy_imshow(
-                        W_QK_full_reshaped[head, 0, channel]
-                        .T.detach()
-                        .numpy(),
-                        color_continuous_midpoint=0,
-                    )
+                    if channels == 3:
+                        st.write(three_channel_schema[channel])
+                    elif channels == 20:
+                        st.write(twenty_idx_format_func(channel))
+
+            for head in heads:
+                st.write("Head", head)
+                columns = st.columns(len(selected_channels))
+                for i, channel in enumerate(selected_channels):
+                    with columns[i]:
+                        fancy_imshow(
+                            W_QK_full_reshaped[head, 0, channel]
+                            .T.detach()
+                            .numpy(),
+                            color_continuous_midpoint=0,
+                        )
 
 
 def show_ov_circuit(dt):
