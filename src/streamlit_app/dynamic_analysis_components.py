@@ -368,9 +368,7 @@ def show_rtg_scan(dt, logit_dir):
             no_actions=False,
         )
 
-        logit_tab, decomp_tab, attn_tab = st.tabs(
-            ["Logit Scan", "Decomposition", "Attention Scan"]
-        )
+        logit_tab, decomp_tab = st.tabs(["Logit Scan", "Decomposition"])
 
         with logit_tab:
             fig = plot_logit_scan(rtg, action_preds)
@@ -385,26 +383,6 @@ def show_rtg_scan(dt, logit_dir):
             st.plotly_chart(fig2, use_container_width=True)
             if cluster:
                 st.write("I know this is a bit janky, will fix later.")
-
-        with attn_tab:
-            columns = st.columns(2)
-            with columns[0]:
-                attention_pattern = cache["attn_scores", 0, "attn"]
-                layer = st.selectbox(
-                    "Layer", list(range(dt.transformer_config.n_layers))
-                )
-            with columns[1]:
-                head = st.selectbox(
-                    "Head", list(range(attention_pattern.shape[1]))
-                )
-
-            fig = px.line(
-                x=t.linspace(min_rtg, max_rtg, RTG_SCAN_BATCH_SIZE),
-                y=attention_pattern[:, head, 1, 0],
-                title=f"Attention State to RTG for Layer {layer} Head {head}",
-                labels={"x": "RTG", "y": "Attention"},
-            )
-            st.plotly_chart(fig, use_container_width=True)
 
 
 # Observation View
