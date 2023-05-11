@@ -139,15 +139,17 @@ def show_residual_stream_contributions_single(dt, cache, logit_dir):
     return
 
 
-def show_rtg_scan(dt, logit_dir):
-    with st.expander("Scan Reward-to-Go and Show Residual Contributions"):
-        batch_size = 1028
-        if st.session_state.allow_extrapolation:
-            min_value = -10
-            max_value = 10
-        else:
-            min_value = -1
-            max_value = 1
+def rtg_scan_configuration_ui(dt):
+    cola, colb = st.columns(2)
+
+    if st.session_state.allow_extrapolation:
+        min_value = -10
+        max_value = 10
+    else:
+        min_value = -1
+        max_value = 1
+
+    with cola:
         rtg_range = st.slider(
             "RTG Range",
             min_value=min_value,
@@ -157,44 +159,14 @@ def show_rtg_scan(dt, logit_dir):
         )
         min_rtg = rtg_range[0]
         max_rtg = rtg_range[1]
-        max_len = get_max_len_from_model_type(dt.model_type, dt.n_ctx)
 
+    with colb:
+        max_len = get_max_len_from_model_type(dt.model_type, dt.n_ctx)
         if "timestep_adjustment" in st.session_state:
             timesteps = (
                 st.session_state.timesteps[:, -max_len:]
                 + st.session_state.timestep_adjustment
             )
-
-        obs = st.session_state.obs[:, -max_len:].repeat(batch_size, 1, 1, 1, 1)
-        actions = st.session_state.a[:, -max_len:].repeat(batch_size, 1, 1)
-        if obs.shape[1] == 1:
-            actions = None
-        rtg = st.session_state.rtg[:, -max_len:].repeat(batch_size, 1, 1)
-        timesteps = (
-            st.session_state.timesteps[:, -max_len:].repeat(batch_size, 1, 1)
-            + st.session_state.timestep_adjustment
-        )
-        rtg = (
-            t.linspace(min_rtg, max_rtg, batch_size)
-            .unsqueeze(-1)
-            .unsqueeze(-1)
-            .repeat(1, obs.shape[1], 1)
-        )
-
-        # duplicate truncation code
-        obs = obs[:, -max_len:] if obs.shape[1] > max_len else obs
-        if actions is not None:
-            actions = (
-                actions[:, -(obs.shape[1] - 1) :]
-                if (actions.shape[1] > 1 and max_len > 1)
-                else None
-            )
-        timesteps = (
-            timesteps[:, -max_len:]
-            if timesteps.shape[1] > max_len
-            else timesteps
-        )
-        rtg = rtg[:, -max_len:] if rtg.shape[1] > max_len else rtg
 
         if st.checkbox("add timestep noise"):
             # we want to add random integers in the range of a slider to the the timestep, the min/max on slider should be the max timesteps
@@ -216,139 +188,194 @@ def show_rtg_scan(dt, logit_dir):
                 st.info(
                     "Timestep noise only works when we have more than one timestep."
                 )
+    return min_rtg, max_rtg, max_len, timesteps
 
-        if dt.time_embedding_type == "linear":
-            timesteps = timesteps.to(t.float32)
-        else:
-            timesteps = timesteps.to(t.long)
 
-        # print out shape of each
-        tokens = dt.to_tokens(obs, actions, rtg, timesteps)
+def prepare_rtg_scan_tokens(dt, min_rtg, max_rtg, max_len, timesteps):
+    batch_size = 1028
+    obs = st.session_state.obs[:, -max_len:].repeat(batch_size, 1, 1, 1, 1)
+    actions = st.session_state.a[:, -max_len:].repeat(batch_size, 1, 1)
+    rtg = st.session_state.rtg[:, -max_len:].repeat(batch_size, 1, 1)
+    timesteps = (
+        st.session_state.timesteps[:, -max_len:].repeat(batch_size, 1, 1)
+        + st.session_state.timestep_adjustment
+    )
+    rtg = (
+        t.linspace(min_rtg, max_rtg, batch_size)
+        .unsqueeze(-1)
+        .unsqueeze(-1)
+        .repeat(1, obs.shape[1], 1)
+    )
+
+    # duplicate truncation code
+    obs = obs[:, -max_len:] if obs.shape[1] > max_len else obs
+    if actions is not None:
+        actions = (
+            actions[:, -(obs.shape[1] - 1) :]
+            if (actions.shape[1] > 1 and max_len > 1)
+            else None
+        )
+    timesteps = (
+        timesteps[:, -max_len:] if timesteps.shape[1] > max_len else timesteps
+    )
+    rtg = rtg[:, -max_len:] if rtg.shape[1] > max_len else rtg
+
+    if dt.time_embedding_type == "linear":
+        timesteps = timesteps.to(t.float32)
+    else:
+        timesteps = timesteps.to(t.long)
+
+    # print out shape of each
+    tokens = dt.to_tokens(obs, actions, rtg, timesteps)
+    return rtg, tokens
+
+
+def plot_logit_scan(rtg, action_preds):
+    preds_over_rtg = {
+        "RTG": rtg[:, 0, 0].detach().cpu().numpy(),
+        "Left": action_preds[:, 0, 0].detach().cpu().numpy(),
+        "Right": action_preds[:, 0, 1].detach().cpu().numpy(),
+        "Forward": action_preds[:, 0, 2].detach().cpu().numpy(),
+    }
+
+    if action_preds.shape[-1] == 7:
+        preds_over_rtg["Pickup"] = action_preds[:, 0, 3].detach().cpu().numpy()
+        preds_over_rtg["Drop"] = action_preds[:, 0, 4].detach().cpu().numpy()
+        preds_over_rtg["Toggle"] = action_preds[:, 0, 5].detach().cpu().numpy()
+        preds_over_rtg["Done"] = action_preds[:, 0, 6].detach().cpu().numpy()
+
+    df = pd.DataFrame(preds_over_rtg)
+
+    # draw a line graph with left,right forward over RTG
+    if action_preds.shape[-1] == 7:
+        fig = px.line(
+            df,
+            x="RTG",
+            y=[
+                "Left",
+                "Right",
+                "Forward",
+                "Pickup",
+                "Drop",
+                "Toggle",
+                "Done",
+            ],
+            title="Action Prediction vs RTG",
+        )
+    else:
+        fig = px.line(
+            df,
+            x="RTG",
+            y=["Left", "Right", "Forward"],
+            title="Action Prediction vs RTG",
+        )
+
+    fig.update_layout(
+        xaxis_title="RTG",
+        yaxis_title="Action Prediction",
+        legend_title="",
+    )
+    # add vertical dotted lines at RTG = -1, RTG = 0, RTG = 1
+    fig.add_vline(x=-1, line_dash="dot", line_width=1, line_color="white")
+    fig.add_vline(x=0, line_dash="dot", line_width=1, line_color="white")
+    fig.add_vline(x=1, line_dash="dot", line_width=1, line_color="white")
+
+    return fig
+
+
+def plot_decomp_scan(dt, rtg, x, cache, logit_dir):
+    total_dir = x[:, -1, :] @ logit_dir
+
+    # Now let's do the inner product with the logit dir of the components.
+    decomp = get_residual_decomp(
+        dt, cache, logit_dir, include_attention_bias=True
+    )
+
+    df = pd.DataFrame(decomp)
+    df["RTG"] = rtg[:, -1].squeeze(1).detach().cpu().numpy()
+    df["Total Dir"] = total_dir.detach().cpu().numpy()
+
+    assert (
+        total_dir.squeeze(0).detach() - df[list(decomp.keys())].sum(axis=1)
+    ).mean() < 1e-3, "total dir is not accurate - average difference: {}".format(
+        (
+            total_dir.squeeze(0).detach() - df[list(decomp.keys())].sum(axis=1)
+        ).mean()
+    )
+
+    # find all columns with "Attention Bias" in them and remove them from the df
+    df = df[[col for col in df.columns if "Attention Bias" not in col]]
+    # also remove them from decomp
+    decomp = {k: v for k, v in decomp.items() if "Attention Bias" not in k}
+    # remove
+
+    # make a multiselect to choose the decomp keys to compare
+    decomp_keys = st.multiselect(
+        "Choose components to compare",
+        list(decomp.keys()) + ["Total Dir"],
+        default=list(decomp.keys()) + ["Total Dir"],
+    )
+
+    fig = px.line(
+        df,
+        x="RTG",
+        y=decomp_keys,
+        title="Residual Stream Contributions in Directional Analysis",
+    )
+
+    fig.add_vline(x=-1, line_dash="dot", line_width=1, line_color="white")
+    fig.add_vline(x=0, line_dash="dot", line_width=1, line_color="white")
+    fig.add_vline(x=1, line_dash="dot", line_width=1, line_color="white")
+
+    # add a little more margin to the top
+    fig.update_layout(margin=dict(t=50))
+
+    fig2 = px.imshow(
+        df[
+            set(list(decomp.keys()) + ["Total Dir"])
+            - {"Positional Embedding", "Attention Bias Layer 0"}
+        ].corr(),
+        color_continuous_midpoint=0,
+        title="Correlation between RTG and Residual Stream Components",
+        color_continuous_scale="RdBu",
+    )
+
+    return fig, fig2
+
+
+def plot_decomp_corr(df, decomp):
+    st.plotly_chart(
+        use_container_width=True,
+    )
+
+
+def show_rtg_scan(dt, logit_dir):
+    with st.expander("Scan Reward-to-Go and Show Residual Contributions"):
+        min_rtg, max_rtg, max_len, timesteps = rtg_scan_configuration_ui(dt)
+        rtg, tokens = prepare_rtg_scan_tokens(
+            dt, min_rtg, max_rtg, max_len, timesteps
+        )
         x, cache = dt.transformer.run_with_cache(
             tokens, remove_batch_dim=False
         )
         state_preds, action_preds, reward_preds = dt.get_logits(
-            x,
-            batch_size=batch_size,
-            seq_length=obs.shape[1],
-            no_actions=actions is None,
+            x, batch_size=1028, seq_length=max_len, no_actions=False
         )
 
-        preds_over_rtg = {
-            "RTG": rtg[:, 0, 0].detach().cpu().numpy(),
-            "Left": action_preds[:, 0, 0].detach().cpu().numpy(),
-            "Right": action_preds[:, 0, 1].detach().cpu().numpy(),
-            "Forward": action_preds[:, 0, 2].detach().cpu().numpy(),
-        }
-
-        if action_preds.shape[-1] == 7:
-            preds_over_rtg["Pickup"] = (
-                action_preds[:, 0, 3].detach().cpu().numpy()
-            )
-            preds_over_rtg["Drop"] = (
-                action_preds[:, 0, 4].detach().cpu().numpy()
-            )
-            preds_over_rtg["Toggle"] = (
-                action_preds[:, 0, 5].detach().cpu().numpy()
-            )
-            preds_over_rtg["Done"] = (
-                action_preds[:, 0, 6].detach().cpu().numpy()
-            )
-
-        df = pd.DataFrame(preds_over_rtg)
-
-        # draw a line graph with left,right forward over RTG
-        if action_preds.shape[-1] == 7:
-            fig = px.line(
-                df,
-                x="RTG",
-                y=[
-                    "Left",
-                    "Right",
-                    "Forward",
-                    "Pickup",
-                    "Drop",
-                    "Toggle",
-                    "Done",
-                ],
-                title="Action Prediction vs RTG",
-            )
-        else:
-            fig = px.line(
-                df,
-                x="RTG",
-                y=["Left", "Right", "Forward"],
-                title="Action Prediction vs RTG",
-            )
-
-        fig.update_layout(
-            xaxis_title="RTG",
-            yaxis_title="Action Prediction",
-            legend_title="",
+        logit_tab, decomp_tab, attn_tab = st.tabs(
+            ["Logit Scan", "Decomposition", "Attention Scan"]
         )
-        # add vertical dotted lines at RTG = -1, RTG = 0, RTG = 1
-        fig.add_vline(x=-1, line_dash="dot", line_width=1, line_color="white")
-        fig.add_vline(x=0, line_dash="dot", line_width=1, line_color="white")
-        fig.add_vline(x=1, line_dash="dot", line_width=1, line_color="white")
 
-        if st.checkbox("Show Logit Scan"):
+        with logit_tab:
+            fig = plot_logit_scan(rtg, action_preds)
             st.plotly_chart(fig, use_container_width=True)
 
-        total_dir = x[:, -1, :] @ logit_dir
-
-        # Now let's do the inner product with the logit dir of the components.
-        decomp = get_residual_decomp(
-            dt, cache, logit_dir, include_attention_bias=True
-        )
-
-        df = pd.DataFrame(decomp)
-        df["RTG"] = rtg[:, -1].squeeze(1).detach().cpu().numpy()
-        df["Total Dir"] = total_dir.detach().cpu().numpy()
-
-        assert (
-            total_dir.squeeze(0).detach() - df[list(decomp.keys())].sum(axis=1)
-        ).mean() < 1e-3, "total dir is not accurate - average difference: {}".format(
-            (
-                total_dir.squeeze(0).detach()
-                - df[list(decomp.keys())].sum(axis=1)
-            ).mean()
-        )
-
-        # find all columns with "Attention Bias" in them and remove them from the df
-        df = df[[col for col in df.columns if "Attention Bias" not in col]]
-        # also remove them from decomp
-        decomp = {k: v for k, v in decomp.items() if "Attention Bias" not in k}
-        # remove
-
-        if st.checkbox("Show component contributions"):
-            # make a multiselect to choose the decomp keys to compare
-            decomp_keys = st.multiselect(
-                "Choose components to compare",
-                list(decomp.keys()) + ["Total Dir"],
-                default=list(decomp.keys()) + ["Total Dir"],
-            )
-
-            fig = px.line(
-                df,
-                x="RTG",
-                y=decomp_keys,
-                title="Residual Stream Contributions in Directional Analysis",
-            )
-
-            fig.add_vline(
-                x=-1, line_dash="dot", line_width=1, line_color="white"
-            )
-            fig.add_vline(
-                x=0, line_dash="dot", line_width=1, line_color="white"
-            )
-            fig.add_vline(
-                x=1, line_dash="dot", line_width=1, line_color="white"
-            )
-
-            # add a little more margin to the top
+        with decomp_tab:
+            fig, fig2 = plot_decomp_scan(dt, rtg, x, cache, logit_dir)
             st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig2, use_container_width=True)
 
-        if st.checkbox("Show Attention Scan"):
+        with attn_tab:
             columns = st.columns(2)
             with columns[0]:
                 attention_pattern = cache["attn_scores", 0, "attn"]
@@ -361,26 +388,12 @@ def show_rtg_scan(dt, logit_dir):
                 )
 
             fig = px.line(
-                x=t.linspace(min_rtg, max_rtg, batch_size),
+                x=t.linspace(min_rtg, max_rtg, 1028),
                 y=attention_pattern[:, head, 1, 0],
                 title=f"Attention State to RTG for Layer {layer} Head {head}",
                 labels={"x": "RTG", "y": "Attention"},
             )
             st.plotly_chart(fig, use_container_width=True)
-
-        if st.checkbox("Show Correlation"):
-            st.plotly_chart(
-                px.imshow(
-                    df[
-                        set(list(decomp.keys()) + ["Total Dir"])
-                        - {"Positional Embedding", "Attention Bias Layer 0"}
-                    ].corr(),
-                    color_continuous_midpoint=0,
-                    title="Correlation between RTG and Residual Stream Components",
-                    color_continuous_scale="RdBu",
-                ),
-                use_container_width=True,
-            )
 
 
 def render_observation_view(dt, tokens, logit_dir):
