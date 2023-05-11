@@ -249,17 +249,22 @@ def show_activation_patching(dt, logit_dir, original_cache):
         if st.checkbox("show corrupted action predictions"):
             plot_action_preds(corrupt_preds)
 
+        st.write("Clean Logit Diff: ", clean_logit_dif.item())
+        st.write("Corrupted Logit Diff: ", corrupted_logit_dif.item())
+
         (
             residual_stream_tab,
             residual_stream_by_block_tab,
             head_all_positions_tab,
             head_all_positions_by_component_tab,
+            head_by_component_and_position_tab,
         ) = st.tabs(
             [
                 "Residual Stream",
                 "Residual Stream via Attn/MLP",
                 "Head All Positions",
                 "Head by Component (All Positions)",
+                "Head by Component and Position",
             ]
         )
 
@@ -387,6 +392,41 @@ def show_activation_patching(dt, logit_dir, original_cache):
                 fig.layout.annotations[i]["text"] = facet_label
 
             st.plotly_chart(fig, use_container_width=True)
+
+        with head_by_component_and_position_tab:
+            if st.checkbox("Calculate!"):
+                patch = patching.get_act_patch_attn_head_by_pos_every(
+                    dt.transformer,
+                    corrupted_tokens=corrupted_tokens,
+                    clean_cache=original_cache,
+                    metric=partial(
+                        logit_diff_recovery_metric,
+                        logit_dir=logit_dir,
+                        clean_logit_dif=clean_logit_dif,
+                        corrupted_logit_dif=corrupted_logit_dif,
+                    ),
+                )
+
+                st.write(patch.shape)
+
+                fig = px.imshow(
+                    patch,
+                    color_continuous_midpoint=0.0,
+                    color_continuous_scale="RdBu",
+                    facet_col=0,
+                    facet_col_wrap=2,
+                    animation_frame=2,
+                    title="Activation Patching Per Head (All Pos)",
+                    labels={"x": "Head", "y": "Layer"},
+                )
+
+                facet_labels = ["Output", "Query", "Key", "Value", "Pattern"]
+                for i, facet_label in enumerate(facet_labels):
+                    fig.layout.annotations[i]["text"] = facet_label
+
+                slider_labels = st.session_state.labels
+                st.write(slider_labels)
+                st.plotly_chart(fig, use_container_width=True)
 
     return
 

@@ -106,7 +106,7 @@ def generic_activation_patch(
             else corrupted_tokens.shape[-2],
             "head_index": model.cfg.n_heads,
         }
-        print("corrupted token shape", corrupted_tokens.shape)
+
         max_axis_range["src_pos"] = max_axis_range["pos"]
         max_axis_range["dest_pos"] = max_axis_range["pos"]
         max_axis_range["head"] = max_axis_range["head_index"]

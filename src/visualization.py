@@ -245,10 +245,7 @@ def plot_param_stats(df):
         line=dict(color="red", width=2, dash="dash"),
     )
 
-    # Show both plots
-    fig_mean.show()
-    fig_log_std.show()
-    fig_norm.show()
+    return fig_mean, fig_log_std, fig_norm
 
 
 # used by streamlit app
