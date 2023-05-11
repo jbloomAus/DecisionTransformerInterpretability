@@ -19,7 +19,10 @@ from .utils import fancy_histogram, fancy_imshow
 from .visualizations import (
     plot_attention_pattern_single,
     plot_logit_diff,
+    plot_dendrogram_heatmap,
 )
+
+RTG_SCAN_BATCH_SIZE = 256
 
 
 def show_attention_pattern(dt, cache):
@@ -195,7 +198,7 @@ def rtg_scan_configuration_ui(dt):
 
 
 def prepare_rtg_scan_tokens(dt, min_rtg, max_rtg, max_len, timesteps):
-    batch_size = 1028
+    batch_size = RTG_SCAN_BATCH_SIZE
     obs = st.session_state.obs[:, -max_len:].repeat(batch_size, 1, 1, 1, 1)
     actions = st.session_state.a[:, -max_len:].repeat(batch_size, 1, 1)
     rtg = st.session_state.rtg[:, -max_len:].repeat(batch_size, 1, 1)
@@ -286,43 +289,31 @@ def plot_logit_scan(rtg, action_preds):
     return fig
 
 
-def plot_decomp_scan(dt, rtg, x, cache, logit_dir):
-    total_dir = x[:, -1, :] @ logit_dir
+def get_decomp_scan(rtg, cache, logit_dir, decomp_level):
+    if decomp_level == "Reduced":
+        results, labels = cache.decompose_resid(
+            apply_ln=True, return_labels=True
+        )
+    elif decomp_level == "Full":
+        results, labels = cache.get_full_resid_decomposition(
+            apply_ln=True,
+            return_labels=True,
+            expand_neurons=False,  # if you don't set this, you'll crash your browser.
+        )
 
-    # Now let's do the inner product with the logit dir of the components.
-    decomp = get_residual_decomp(
-        dt, cache, logit_dir, include_attention_bias=True
-    )
+    st.write(results.shape)
+    attribution = results[:, :, -1, :] @ logit_dir
 
-    df = pd.DataFrame(decomp)
-    df["RTG"] = rtg[:, -1].squeeze(1).detach().cpu().numpy()
-    df["Total Dir"] = total_dir.detach().cpu().numpy()
+    df = pd.DataFrame(attribution.T.detach().cpu().numpy(), columns=labels)
+    df.index = rtg[:, -1].squeeze(1).detach().cpu().numpy()
 
-    assert (
-        total_dir.squeeze(0).detach() - df[list(decomp.keys())].sum(axis=1)
-    ).mean() < 1e-3, "total dir is not accurate - average difference: {}".format(
-        (
-            total_dir.squeeze(0).detach() - df[list(decomp.keys())].sum(axis=1)
-        ).mean()
-    )
+    return df
 
-    # find all columns with "Attention Bias" in them and remove them from the df
-    df = df[[col for col in df.columns if "Attention Bias" not in col]]
-    # also remove them from decomp
-    decomp = {k: v for k, v in decomp.items() if "Attention Bias" not in k}
-    # remove
 
-    # make a multiselect to choose the decomp keys to compare
-    decomp_keys = st.multiselect(
-        "Choose components to compare",
-        list(decomp.keys()) + ["Total Dir"],
-        default=list(decomp.keys()) + ["Total Dir"],
-    )
-
+def plot_decomp_scan_line(df):
     fig = px.line(
         df,
-        x="RTG",
-        y=decomp_keys,
+        labels={"index": "RTG", "value": "Logit Difference"},
         title="Residual Stream Contributions in Directional Analysis",
     )
 
@@ -330,20 +321,35 @@ def plot_decomp_scan(dt, rtg, x, cache, logit_dir):
     fig.add_vline(x=0, line_dash="dot", line_width=1, line_color="white")
     fig.add_vline(x=1, line_dash="dot", line_width=1, line_color="white")
 
-    # add a little more margin to the top
+    # # add a little more margin to the top
     fig.update_layout(margin=dict(t=50))
 
-    fig2 = px.imshow(
-        df[
-            set(list(decomp.keys()) + ["Total Dir"])
-            - {"Positional Embedding", "Attention Bias Layer 0"}
-        ].corr(),
-        color_continuous_midpoint=0,
-        title="Correlation between RTG and Residual Stream Components",
-        color_continuous_scale="RdBu",
-    )
+    return fig
 
-    return fig, fig2
+
+def plot_decomp_scan_corr(df, cluster=False):
+    if not cluster:
+        fig2 = px.imshow(
+            df.corr(),
+            color_continuous_midpoint=0,
+            title="Correlation between RTG and Residual Stream Components",
+            color_continuous_scale="RdBu",
+        )
+
+    else:
+        fig2 = plot_dendrogram_heatmap(df.corr())
+
+    return fig2
+
+
+def decomp_configuration_ui():
+    st.write("Please note that the full decomposition is slow to compute")
+    cola, colb = st.columns(2)
+    with cola:
+        decomp_level = st.selectbox("Decomposition Level", ["Reduced", "Full"])
+    with colb:
+        cluster = st.checkbox("Cluster", value=False)
+    return decomp_level, cluster
 
 
 def show_rtg_scan(dt, logit_dir):
@@ -356,7 +362,10 @@ def show_rtg_scan(dt, logit_dir):
             tokens, remove_batch_dim=False
         )
         _, action_preds, _ = dt.get_logits(
-            x, batch_size=1028, seq_length=max_len, no_actions=False
+            x,
+            batch_size=RTG_SCAN_BATCH_SIZE,
+            seq_length=max_len,
+            no_actions=False,
         )
 
         logit_tab, decomp_tab, attn_tab = st.tabs(
@@ -368,9 +377,14 @@ def show_rtg_scan(dt, logit_dir):
             st.plotly_chart(fig, use_container_width=True)
 
         with decomp_tab:
-            fig, fig2 = plot_decomp_scan(dt, rtg, x, cache, logit_dir)
+            decomp_level, cluster = decomp_configuration_ui()
+            df = get_decomp_scan(rtg, cache, logit_dir, decomp_level)
+            fig = plot_decomp_scan_line(df)
             st.plotly_chart(fig, use_container_width=True)
+            fig2 = plot_decomp_scan_corr(df, cluster)
             st.plotly_chart(fig2, use_container_width=True)
+            if cluster:
+                st.write("I know this is a bit janky, will fix later.")
 
         with attn_tab:
             columns = st.columns(2)
@@ -385,7 +399,7 @@ def show_rtg_scan(dt, logit_dir):
                 )
 
             fig = px.line(
-                x=t.linspace(min_rtg, max_rtg, 1028),
+                x=t.linspace(min_rtg, max_rtg, RTG_SCAN_BATCH_SIZE),
                 y=attention_pattern[:, head, 1, 0],
                 title=f"Attention State to RTG for Layer {layer} Head {head}",
                 labels={"x": "RTG", "y": "Attention"},
