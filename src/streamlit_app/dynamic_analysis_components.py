@@ -84,8 +84,10 @@ def show_residual_stream_contributions_single(dt, cache, logit_dir):
                 )
                 fig.update_layout(
                     hovermode="x unified",
-                    xaxis_tickvals=labels,
                     showlegend=False,
+                    xaxis_tickvals=list(range(len(labels))),
+                    xaxis_ticktext=labels,
+                    xaxis_tickangle=45,
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
@@ -101,8 +103,10 @@ def show_residual_stream_contributions_single(dt, cache, logit_dir):
                 )
                 fig.update_layout(
                     hovermode="x unified",
-                    xaxis_tickvals=labels,
                     showlegend=False,
+                    xaxis_tickvals=list(range(len(labels))),
+                    xaxis_ticktext=labels,
+                    xaxis_tickangle=45,
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
@@ -139,6 +143,7 @@ def show_residual_stream_contributions_single(dt, cache, logit_dir):
     return
 
 
+# RTG Scan Utilities
 def rtg_scan_configuration_ui(dt):
     cola, colb = st.columns(2)
 
@@ -343,12 +348,6 @@ def plot_decomp_scan(dt, rtg, x, cache, logit_dir):
     return fig, fig2
 
 
-def plot_decomp_corr(df, decomp):
-    st.plotly_chart(
-        use_container_width=True,
-    )
-
-
 def show_rtg_scan(dt, logit_dir):
     with st.expander("Scan Reward-to-Go and Show Residual Contributions"):
         min_rtg, max_rtg, max_len, timesteps = rtg_scan_configuration_ui(dt)
@@ -358,7 +357,7 @@ def show_rtg_scan(dt, logit_dir):
         x, cache = dt.transformer.run_with_cache(
             tokens, remove_batch_dim=False
         )
-        state_preds, action_preds, reward_preds = dt.get_logits(
+        _, action_preds, _ = dt.get_logits(
             x, batch_size=1028, seq_length=max_len, no_actions=False
         )
 
@@ -396,6 +395,7 @@ def show_rtg_scan(dt, logit_dir):
             st.plotly_chart(fig, use_container_width=True)
 
 
+# Observation View
 def render_observation_view(dt, tokens, logit_dir):
     last_obs = st.session_state.obs[0][-1]
 
