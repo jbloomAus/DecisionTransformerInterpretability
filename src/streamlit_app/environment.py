@@ -104,6 +104,7 @@ def get_modified_tokens_from_app_state(
     dt,
     all_rtg: Optional[float] = None,
     specific_rtg: Optional[float] = None,
+    action: Optional[int] = None,
     position: Optional[int] = None,
 ):
     obs, actions, rtg, timesteps = preprocess_inputs(
@@ -134,6 +135,16 @@ def get_modified_tokens_from_app_state(
         st.write(new_rtg.squeeze(-1))
 
         tokens = dt.to_tokens(obs, actions, new_rtg, timesteps)
+
+    elif actions is not None:
+        assert position is not None
+        new_actions = actions.clone()
+        new_actions[0][position] = action
+
+        tokens = dt.to_tokens(obs, new_actions, rtg, timesteps)
+
+        st.write(actions.squeeze(-1))
+        st.write(new_actions.squeeze(-1))
 
     # assert at least some of the tokens are different
     assert not torch.all(

@@ -10,6 +10,9 @@ from .environment import (
     get_action_preds_from_tokens,
     get_action_preds_from_app_state,
 )
+from .constants import IDX_TO_ACTION
+
+ACTION_TO_IDX = {v: k for k, v in IDX_TO_ACTION.items()}
 
 from .visualizations import (
     plot_action_preds,
@@ -103,7 +106,7 @@ def show_activation_patching(dt, logit_dir, original_cache):
     token_labels = st.session_state.labels
     with st.expander("Activation Patching"):
         path_patch_by = st.selectbox(
-            "Patch by", ["All RTG", "Specific RTG", "Time", "Action", "State"]
+            "Patch by", ["All RTG", "Specific RTG", "Action", "State"]
         )
 
         if path_patch_by == "Specific RTG":
@@ -116,7 +119,7 @@ def show_activation_patching(dt, logit_dir, original_cache):
             position = st.slider(
                 "Position",
                 min_value=0,
-                max_value=st.session_state.max_len - 1,
+                max_value=st.session_state.max_len - 2,
                 value=0,
             )
             # at this point I can set the corrupted tokens.
@@ -134,6 +137,20 @@ def show_activation_patching(dt, logit_dir, original_cache):
             # at this point I can set the corrupted tokens.
             corrupted_tokens = get_modified_tokens_from_app_state(
                 dt, all_rtg=min_rtg
+            )
+
+        if path_patch_by == "Action":
+            action = st.selectbox("Choose an action", IDX_TO_ACTION.values())
+            action_idx = ACTION_TO_IDX[action]
+            position = st.slider(
+                "Position",
+                min_value=0,
+                max_value=st.session_state.max_len - 2,
+                value=0,
+            )
+            # at this point I can set the corrupted tokens.
+            corrupted_tokens = get_modified_tokens_from_app_state(
+                dt, action=action_idx, position=position
             )
 
         else:
