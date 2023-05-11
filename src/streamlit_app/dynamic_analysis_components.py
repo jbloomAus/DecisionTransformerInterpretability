@@ -114,9 +114,7 @@ def show_residual_stream_contributions_single(dt, cache, logit_dir):
             result, labels = cache.get_full_resid_decomposition(
                 apply_ln=True, return_labels=True, expand_neurons=False
             )
-
             attribution = result[:, 0, -1] @ logit_dir
-
             plot_logit_diff(attribution, labels)
 
         with headtab:
