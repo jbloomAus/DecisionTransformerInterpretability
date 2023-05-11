@@ -171,13 +171,14 @@ def show_activation_patching(dt, logit_dir, original_cache):
                 max_len = st.session_state.max_len
 
                 if current_len == 1:
-                    st.write("No previous states to modify. Timestep = 1")
+                    st.write("Can only modify current _state timestep = 1")
                     timestep_to_modify = max_len - 1
                 else:
                     timestep_to_modify = st.selectbox(
                         "Timestep",
-                        range(current_len - max_len - 1, 0),
+                        range(max_len),
                         format_func=lambda x: st.session_state.labels[1::3][x],
+                        index=max(0, max_len - current_len),
                     )
             with b:
                 x_position_to_update = st.selectbox(
@@ -203,7 +204,8 @@ def show_activation_patching(dt, logit_dir, original_cache):
             with f:
                 show_update_tick = st.checkbox("Show state update")
             env = st.session_state.env
-            obs = st.session_state.obs[0][timestep_to_modify].clone()
+            obs = st.session_state.obs[0][-max_len:].clone()
+            obs = obs[timestep_to_modify].clone()
 
             corrupt_obs = obs.detach().clone()
             corrupt_obs[
