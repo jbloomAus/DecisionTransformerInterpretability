@@ -4,7 +4,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 import uuid
 
-from .environment import get_action_preds
+from .environment import get_action_preds_from_app_state
 from .utils import read_index_html
 from .visualizations import plot_action_preds, render_env
 
@@ -15,7 +15,7 @@ def render_game_screen(dt, env):
         st.write(
             f"Reward Objective: {round(st.session_state.rtg[0][-1].item(),2)}"
         )
-        action_preds, x, cache, tokens = get_action_preds(dt)
+        action_preds, x, cache, tokens = get_action_preds_from_app_state(dt)
         plot_action_preds(action_preds)
     with columns[1]:
         current_time = (
@@ -131,6 +131,6 @@ def model_info():
                     unsafe_allow_html=True,
                 )
         else:
-            st.warn(
+            st.warning(
                 "No model summary available. Please run a trajectory take an action."
             )

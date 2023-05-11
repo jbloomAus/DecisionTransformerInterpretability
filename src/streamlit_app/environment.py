@@ -2,6 +2,8 @@ import json
 import streamlit as st
 import torch
 from torchinfo import summary
+from typing import Optional
+import pandas as pd
 
 from src.config import EnvironmentConfig
 
@@ -31,24 +33,38 @@ def get_env_and_dt(model_path):
     return env, dt
 
 
-def get_action_preds(dt):
-    # so we can ignore older models when making updates
+def get_state_history(previous_step=False):
+    if previous_step:
+        return st.session_state.previous_step_history
+    return {
+        "dt": st.session_state.dt,
+        "obs": st.session_state.obs,
+        "rtg": st.session_state.rtg,
+        "actions": st.session_state.a,
+        "timesteps": st.session_state.timesteps,
+        "timestep_adjustment": st.session_state.timestep_adjustment,
+    }
 
+
+def preprocess_inputs(
+    dt,
+    obs,
+    rtg,
+    actions,
+    timesteps,
+    timestep_adjustment: Optional[None] = None,
+):
     max_len = get_max_len_from_model_type(
         dt.model_type,
         dt.transformer_config.n_ctx,
     )
 
-    timesteps = st.session_state.timesteps[:, -max_len:]
+    timesteps = timesteps[:, -max_len:]
     timesteps = (
-        timesteps + st.session_state.timestep_adjustment
-        if "timestep_adjustment" in st.session_state
+        timesteps + timestep_adjustment
+        if timestep_adjustment is not None
         else timesteps
     )
-
-    obs = st.session_state.obs
-    actions = st.session_state.a
-    rtg = st.session_state.rtg
 
     # truncations:
     obs = obs[:, -max_len:] if obs.shape[1] > max_len else obs
@@ -68,22 +84,95 @@ def get_action_preds(dt):
     else:
         timesteps = timesteps.to(dtype=torch.long)
 
+    return obs, actions, rtg, timesteps
+
+
+def get_tokens_from_app_state(dt, previous_step=False):
+    obs, actions, rtg, timesteps = preprocess_inputs(
+        **get_state_history(previous_step=previous_step),
+    )
     tokens = dt.to_tokens(obs, actions, rtg, timesteps)
 
     if actions is not None:
         st.session_state.model_summary = summary(
             dt.transformer, input_data=tokens
         )
+    return tokens
 
+
+def get_modified_tokens_from_app_state(
+    dt,
+    all_rtg: Optional[float] = None,
+    specific_rtg: Optional[float] = None,
+    position: Optional[int] = None,
+):
+    obs, actions, rtg, timesteps = preprocess_inputs(
+        **get_state_history(previous_step=True),
+    )
+
+    previous_tokens = dt.to_tokens(obs, actions, rtg, timesteps)
+    rtg = rtg.clone()
+    # now do interventions
+    if all_rtg is not None:
+        rtg_dif = rtg[0] - all_rtg
+        new_rtg = rtg - rtg_dif
+
+        st.write(rtg.squeeze(-1))
+        st.write(new_rtg.squeeze(-1))
+        tokens = dt.to_tokens(obs, actions, new_rtg, timesteps)
+
+    elif specific_rtg is not None:
+        assert position is not None
+        print("specific rtg", specific_rtg)
+        # make a table showing the rtg at each position before/after
+        # and then highlight the position that is being changed.
+
+        new_rtg = rtg.clone()
+        new_rtg[0][position] = specific_rtg
+
+        st.write(rtg.squeeze(-1))
+        st.write(new_rtg.squeeze(-1))
+
+        tokens = dt.to_tokens(obs, actions, new_rtg, timesteps)
+
+    # assert at least some of the tokens are different
+    assert not torch.all(
+        tokens == previous_tokens
+    ), "corrupted tokens are the same!"
+    return tokens
+
+
+def get_action_preds_from_tokens(dt, tokens):
     x, cache = dt.transformer.run_with_cache(tokens, remove_batch_dim=False)
 
     state_preds, action_preds, reward_preds = dt.get_logits(
-        x, batch_size=1, seq_length=obs.shape[1], no_actions=actions is None
+        x,
+        batch_size=1,
+        seq_length=st.session_state.max_len,
+        no_actions=False,  # we always pad now.
+    )
+    return action_preds, x, cache, tokens
+
+
+def get_action_preds_from_app_state(dt):
+    # so we can ignore older models when making updates
+    tokens = get_tokens_from_app_state(dt)
+    x, cache = dt.transformer.run_with_cache(tokens, remove_batch_dim=False)
+
+    state_preds, action_preds, reward_preds = dt.get_logits(
+        x,
+        batch_size=1,
+        seq_length=st.session_state.max_len,
+        no_actions=False,  # we always pad now.
     )
     return action_preds, x, cache, tokens
 
 
 def respond_to_action(env, action, initial_rtg):
+    # prior to updating state, store previous inputs for
+    # causal analysis
+    st.session_state.previous_step_history = get_state_history()
+
     new_obs, reward, done, trunc, info = env.step(action)
     if done:
         st.error(
@@ -136,6 +225,7 @@ def respond_to_action(env, action, initial_rtg):
         ],
         dim=1,
     )
+    st.session_state.current_len += 1
 
 
 def get_action_from_user(env, initial_rtg):

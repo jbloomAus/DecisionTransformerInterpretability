@@ -44,8 +44,19 @@ def initialize_playground(model_path, initial_rtg):
         st.session_state.rtg = rtg
         st.session_state.a = actions
         st.session_state.timesteps = timesteps
+        st.session_state.current_len = 1
         st.session_state.dt = dt
 
+        # in order to run causal analysis on first step.
+        # need these details to be stored in session state
+        st.session_state.previous_step_history = {
+            "dt": st.session_state.dt,
+            "obs": st.session_state.obs,
+            "rtg": st.session_state.rtg,
+            "actions": st.session_state.a,
+            "timesteps": st.session_state.timesteps,
+            "timestep_adjustment": st.session_state.timestep_adjustment,
+        }
     else:
         env = st.session_state.env
         dt = st.session_state.dt
