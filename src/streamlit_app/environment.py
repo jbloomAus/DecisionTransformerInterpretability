@@ -107,7 +107,7 @@ def get_modified_tokens_from_app_state(
     position: Optional[int] = None,
 ):
     obs, actions, rtg, timesteps = preprocess_inputs(
-        **get_state_history(previous_step=True),
+        **get_state_history(previous_step=False),
     )
 
     previous_tokens = dt.to_tokens(obs, actions, rtg, timesteps)
@@ -268,3 +268,19 @@ def get_action_from_user(env, initial_rtg):
     elif done_button:
         action = 6
         respond_to_action(env, action, initial_rtg)
+
+
+def get_token_labels():
+    n_timesteps = st.session_state.dt.n_ctx - 2  # assume dt
+
+    n = n_timesteps // 3 + 1
+    labels = []
+
+    for i in range(1, n + 1):
+        labels.append("R" + str(i))
+        labels.append("S" + str(i))
+        labels.append("A" + str(i))
+
+    labels.pop()  # remove the last A
+
+    return labels

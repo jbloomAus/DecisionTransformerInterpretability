@@ -5,7 +5,7 @@ from src.decision_transformer.utils import (
     get_max_len_from_model_type,
     initialize_padding_inputs,
 )
-from .environment import get_env_and_dt, get_action_from_user
+from .environment import get_env_and_dt, get_action_from_user, get_token_labels
 
 action_string_to_id = {
     "left": 0,
@@ -46,6 +46,7 @@ def initialize_playground(model_path, initial_rtg):
         st.session_state.timesteps = timesteps
         st.session_state.current_len = 1
         st.session_state.dt = dt
+        st.session_state.labels = get_token_labels()
 
         # in order to run causal analysis on first step.
         # need these details to be stored in session state

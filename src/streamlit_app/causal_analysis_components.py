@@ -100,6 +100,7 @@ def get_ablation_function(ablate_to_mean, head_to_ablate, component="HEAD"):
 
 # Activation Patching
 def show_activation_patching(dt, logit_dir, original_cache):
+    token_labels = st.session_state.labels
     with st.expander("Activation Patching"):
         path_patch_by = st.selectbox(
             "Patch by", ["All RTG", "Specific RTG", "Time", "Action", "State"]
@@ -138,37 +139,33 @@ def show_activation_patching(dt, logit_dir, original_cache):
         else:
             st.warning("Not implemented yet")
 
-        st.write("Not implemented yet")
+        # # look at current state and do a forward pass
+        clean_tokens = get_tokens_from_app_state(dt, previous_step=False)
+        clean_preds, clean_x, _, _ = get_action_preds_from_tokens(
+            dt, clean_tokens
+        )
+        clean_logit_dif = clean_x[0, -1] @ logit_dir
+        corrupt_preds, corrupt_x, _, _ = get_action_preds_from_tokens(
+            dt, corrupted_tokens
+        )
+        corrupted_logit_dif = corrupt_x[0, -1] @ logit_dir
+
+        if st.checkbox("show corrupted action predictions"):
+            plot_action_preds(corrupt_preds)
+
         (
             residual_stream_tab,
             residual_stream_by_block_tab,
-            head_tab,
-            head_by_comp,
+            head_all_positions_tab,
+            head_all_positions_by_component_tab,
         ) = st.tabs(
             [
                 "Residual Stream",
                 "Residual Stream via Attn/MLP",
-                "Head",
-                "Head via Q,K,O,K,Pattern",
+                "Head All Positions",
+                "Head by Component (All Positions)",
             ]
         )
-
-        # # look at current state and do a forward pass
-        clean_tokens = get_tokens_from_app_state(dt, previous_step=True)
-        (
-            clean_action_preds,
-            clean_x,
-            clean_cache,
-            _,
-        ) = get_action_preds_from_tokens(dt, clean_tokens)
-        clean_logit_dif = clean_x[0, -1] @ logit_dir
-        (
-            corrupted_action_preds,
-            corrupt_x,
-            corrupted_cache,
-            _,
-        ) = get_action_preds_from_tokens(dt, corrupted_tokens)
-        corrupted_logit_dif = corrupt_x[0, -1] @ logit_dir
 
         with residual_stream_tab:
             # let's gate until we have a sense for run time.
@@ -179,8 +176,8 @@ def show_activation_patching(dt, logit_dir, original_cache):
                 patching_metric=partial(
                     logit_diff_recovery_metric,
                     logit_dir=logit_dir,
-                    clean_logit_diff=clean_logit_dif,
-                    corrupted_logit_diff=corrupted_logit_dif,
+                    clean_logit_dif=clean_logit_dif,
+                    corrupted_logit_dif=corrupted_logit_dif,
                 ),
             )
 
@@ -188,15 +185,118 @@ def show_activation_patching(dt, logit_dir, original_cache):
                 patch,
                 color_continuous_midpoint=0.0,
                 color_continuous_scale="RdBu",
-                title="Residual Stream Contributions",
+                title="Logit Difference From Patched Residual Stream",
+                labels={"x": "Sequence Position", "y": "Layer"},
             )
+
+            # set xticks to labels
+            fig.update_xaxes(
+                tickmode="array",
+                tickvals=list(range(len(token_labels))),
+                ticktext=token_labels,
+            )
+
             st.plotly_chart(fig)
+
+        with residual_stream_by_block_tab:
+            # let's gate until we have a sense for run time.
+            patch = patching.get_act_patch_block_every(
+                dt.transformer,
+                corrupted_tokens=corrupted_tokens,
+                clean_cache=original_cache,
+                metric=partial(
+                    logit_diff_recovery_metric,
+                    logit_dir=logit_dir,
+                    clean_logit_dif=clean_logit_dif,
+                    corrupted_logit_dif=corrupted_logit_dif,
+                ),
+            )
+
+            fig = px.imshow(
+                patch,
+                color_continuous_midpoint=0.0,
+                color_continuous_scale="RdBu",
+                facet_col=0,
+                facet_col_wrap=1,
+                title="Logit Difference From Patched Residual Stream",
+                labels={"x": "Sequence Position", "y": "Layer"},
+            )
+
+            # set xticks to labels
+            fig.update_xaxes(
+                tickmode="array",
+                tickvals=list(range(len(token_labels))),
+                ticktext=token_labels,
+            )
+
+            fig.layout.annotations[2]["text"] = "Residual Stream"
+            fig.layout.annotations[1]["text"] = "Attention"
+            fig.layout.annotations[0]["text"] = "MLP"
+            st.plotly_chart(fig)
+
+        with head_all_positions_tab:
+            patch = patching.get_act_patch_attn_head_out_all_pos(
+                dt.transformer,
+                corrupted_tokens=corrupted_tokens,
+                clean_cache=original_cache,
+                patching_metric=partial(
+                    logit_diff_recovery_metric,
+                    logit_dir=logit_dir,
+                    clean_logit_dif=clean_logit_dif,
+                    corrupted_logit_dif=corrupted_logit_dif,
+                ),
+            )
+
+            fig = px.imshow(
+                patch,
+                color_continuous_midpoint=0.0,
+                color_continuous_scale="RdBu",
+                title="Logit Difference From Patched Attn Head Output",
+                labels={"x": "Head", "y": "Layer"},
+            )
+
+            fig.update_xaxes(
+                tickmode="array",
+                tickvals=list(range(patch.shape[-1])),
+            )
+
+            st.plotly_chart(fig)
+
+        with head_all_positions_by_component_tab:
+            patch = patching.get_act_patch_attn_head_all_pos_every(
+                dt.transformer,
+                corrupted_tokens=corrupted_tokens,
+                clean_cache=original_cache,
+                metric=partial(
+                    logit_diff_recovery_metric,
+                    logit_dir=logit_dir,
+                    clean_logit_dif=clean_logit_dif,
+                    corrupted_logit_dif=corrupted_logit_dif,
+                ),
+            )
+
+            st.write(patch.shape)
+            fig = px.imshow(
+                patch,
+                color_continuous_midpoint=0.0,
+                color_continuous_scale="RdBu",
+                facet_col=0,
+                facet_col_wrap=2,
+                title="Activation Patching Per Head (All Pos)",
+                labels={"x": "Head", "y": "Layer"},
+            )
+
+            facet_labels = ["Output", "Query", "Key", "Value", "Pattern"]
+            for i, facet_label in enumerate(facet_labels):
+                fig.layout.annotations[i]["text"] = facet_label
+
+            st.plotly_chart(fig, use_container_width=True)
 
     return
 
 
 def logit_diff_recovery_metric(
-    logits, logit_dir, clean_logit_diff, corrupted_logit_diff
+    logits, logit_dir, clean_logit_dif, corrupted_logit_dif
 ):
     """
     Linear function of logit diff, calibrated so that it equals 0 when performance is
@@ -204,7 +304,7 @@ def logit_diff_recovery_metric(
     """
 
     patched_logit_diff = logits[0, -1] @ logit_dir
-    result = (patched_logit_diff - corrupted_logit_diff) / (
-        clean_logit_diff - corrupted_logit_diff
+    result = (patched_logit_diff - corrupted_logit_dif) / (
+        clean_logit_dif - corrupted_logit_dif
     )
     return result

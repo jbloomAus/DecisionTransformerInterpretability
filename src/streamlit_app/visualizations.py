@@ -58,23 +58,15 @@ def plot_action_preds(action_preds):
 def plot_attention_pattern_single(
     cache, layer, softmax=True, specific_heads: List = None
 ):
-    n_tokens = st.session_state.dt.n_ctx - 1
-
-    n = n_tokens // 3 - 1
-    labels = []
-
-    for i in range(1, n + 1):
-        labels.append("R" + str(i))
-        labels.append("S" + str(i))
-        labels.append("A" + str(i))
-
-    labels.pop()  # remove the last A
-
+    labels = st.session_state.labels
     if softmax:
         if cache["pattern", layer, "attn"].shape[0] == 1:
             attention_pattern = cache["pattern", layer, "attn"][0]
             if specific_heads is not None:
                 attention_pattern = attention_pattern[specific_heads]
+
+            st.write(attention_pattern.shape)
+            st.write(len(labels))
             result = cv.attention.attention_patterns(
                 attention=attention_pattern, tokens=labels
             )
