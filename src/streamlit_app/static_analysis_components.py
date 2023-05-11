@@ -2,7 +2,6 @@ import plotly.express as px
 import streamlit as st
 import torch as t
 from fancy_einsum import einsum
-from minigrid.core.constants import IDX_TO_COLOR, IDX_TO_OBJECT, STATE_TO_IDX
 
 from .constants import (
     IDX_TO_ACTION,
@@ -11,6 +10,17 @@ from .constants import (
     twenty_idx_format_func,
 )
 from .utils import fancy_histogram, fancy_imshow
+from src.visualization import get_param_stats, plot_param_stats
+
+
+def show_param_statistics(dt):
+    with st.expander("Show Parameter Statistics"):
+        df = get_param_stats(dt)
+        fig_mean, fig_log_std, fig_norm = plot_param_stats(df)
+
+        st.plotly_chart(fig_mean, use_container_width=True)
+        st.plotly_chart(fig_log_std, use_container_width=True)
+        st.plotly_chart(fig_norm, use_container_width=True)
 
 
 def show_qk_circuit(dt):

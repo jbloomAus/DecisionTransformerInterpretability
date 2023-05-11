@@ -34,6 +34,7 @@ from src.streamlit_app.static_analysis_components import (
     show_qk_circuit,
     show_rtg_embeddings,
     show_time_embeddings,
+    show_param_statistics,
 )
 from src.streamlit_app.visualizations import action_string_to_id
 
@@ -129,7 +130,13 @@ with st.sidebar:
     st.subheader("Analysis Selection")
     static_analyses = st.multiselect(
         "Select Static Analyses",
-        ["RTG Embeddings", "Time Embeddings", "OV Circuit", "QK Circuit"],
+        [
+            "RTG Embeddings",
+            "Time Embeddings",
+            "OV Circuit",
+            "QK Circuit",
+            "Parameter Distributions",
+        ],
     )
     dynamic_analyses = st.multiselect(
         "Select Dynamic Analyses",
@@ -152,6 +159,8 @@ with st.sidebar:
 if len(analyses) == 0:
     st.warning("Please select at least one analysis.")
 
+if "Parameter Distributions" in analyses:
+    show_param_statistics(dt)
 if "RTG Embeddings" in analyses:
     show_rtg_embeddings(dt, logit_dir)
 if "Time Embeddings" in analyses:
