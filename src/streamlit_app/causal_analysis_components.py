@@ -11,7 +11,7 @@ from .environment import (
     get_action_preds_from_app_state,
 )
 from .constants import IDX_TO_ACTION, IDX_TO_OBJECT
-from src.visualization import preview_state_update
+from src.visualization import get_rendered_obs
 
 ACTION_TO_IDX = {v: k for k, v in IDX_TO_ACTION.items()}
 OBJECT_TO_IDX = {v: k for k, v in IDX_TO_OBJECT.items()}
@@ -221,12 +221,12 @@ def show_activation_patching(dt, logit_dir, original_cache):
                 clean_col, corrupt_col = st.columns(2)
                 with clean_col:
                     st.write("Clean")
-                    image = preview_state_update(env, obs)
+                    image = get_rendered_obs(env, obs)
                     fig = px.imshow(image)
                     st.plotly_chart(fig, use_container_width=True)
                 with corrupt_col:
                     st.write("Corrupted")
-                    image = preview_state_update(env, corrupt_obs)
+                    image = get_rendered_obs(env, corrupt_obs)
                     fig = px.imshow(image)
                     st.plotly_chart(fig, use_container_width=True)
 

@@ -1,12 +1,15 @@
 import torch
 import pandas as pd
+import numpy as np
 import streamlit as st
 import streamlit.components.v1 as components
+import plotly.express as px
 import uuid
 
 from .environment import get_action_preds_from_app_state
 from .utils import read_index_html
 from .visualizations import plot_action_preds, render_env
+from src.visualization import get_rendered_obs
 
 
 def render_game_screen(dt, env):
@@ -133,4 +136,44 @@ def model_info():
         else:
             st.warning(
                 "No model summary available. Please run a trajectory take an action."
+            )
+
+
+def show_history():
+    with st.expander("Show history"):
+        rendered_obss = st.session_state.rendered_obs
+        trajectory_length = rendered_obss.shape[0]
+
+        state_tab, obs_tab = st.tabs(["World State", "Agent POV"])
+
+        # st.write(
+        #     {i : st.session_state.labels[1::3][i] for i in range(trajectory_length)}
+        #     )
+        mapping = {i: i for i in list(range(trajectory_length))}
+        for i in range(st.session_state.max_len, 0, -1):
+            mapping[trajectory_length - i] = st.session_state.labels[1::3][
+                i - 1
+            ]
+
+        st.write("Use this mapping to match these frames to tokens")
+        st.write(mapping)
+
+        with state_tab:
+            st.plotly_chart(
+                px.imshow(rendered_obss[:, :, :, :], animation_frame=0),
+                use_container_width=True,
+            )
+
+        with obs_tab:
+            env = st.session_state.env
+            pov_obs = [
+                st.session_state.obs[0][-i - 1]
+                for i in range(trajectory_length)
+            ][::-1]
+            env = st.session_state.env
+            pov_obs = [get_rendered_obs(env, obs) for obs in pov_obs]
+            pov_obs = np.stack(pov_obs)
+            st.plotly_chart(
+                px.imshow(pov_obs[:, :, :, :], animation_frame=0),
+                use_container_width=True,
             )

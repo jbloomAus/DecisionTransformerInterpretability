@@ -1,8 +1,12 @@
+import einops
+import pandas as pd
 import plotly.express as px
 import streamlit as st
+import torch
 import torch as t
 from fancy_einsum import einsum
-import einops
+
+from src.visualization import get_param_stats, plot_param_stats
 
 from .constants import (
     IDX_TO_ACTION,
@@ -11,7 +15,6 @@ from .constants import (
     twenty_idx_format_func,
 )
 from .utils import fancy_histogram, fancy_imshow
-from src.visualization import get_param_stats, plot_param_stats
 
 
 def show_param_statistics(dt):
@@ -331,3 +334,143 @@ def show_rtg_embeddings(dt, logit_dir):
                 annotation_text="Initial RTG",
             )
         st.plotly_chart(fig, use_container_width=True)
+
+
+def show_dim_reduction(dt):
+    with st.expander("Show SVD Decomposition"):
+        st.write(
+            """
+            This analysis is heavily based on the [post](https://www.lesswrong.com/posts/mkbGjzxD8d8XqKHzA/the-singular-value-decompositions-of-transformer-weight#Our_SVD_projection_method) by Conjecture on this topic. 
+            """
+        )
+
+        st.warning("I'm not convinced yet that my implementation is correct.")
+
+        n_layers = dt.transformer_config.n_layers
+        d_head = dt.transformer_config.d_head
+        n_actions = dt.action_predictor.weight.shape[0]
+
+        svd_tab, eig_tab = st.tabs(["SVD", "Eig"])
+
+        with eig_tab:
+            st.write("Not implemented yet")
+
+        with svd_tab:
+            qk_tab, ov_tab = st.tabs(["QK", "OV"])
+
+            with qk_tab:
+                # stack the heads
+                W_Q = torch.stack(
+                    [block.attn.W_Q for block in dt.transformer.blocks]
+                )
+                W_K = torch.stack(
+                    [block.attn.W_K for block in dt.transformer.blocks]
+                )
+
+                st.write(W_Q.shape)
+                st.write(W_K.shape)
+
+                # Embedding Values
+                W_E_state = dt.state_embedding.weight
+                W_E_action = dt.action_embedding[0].weight
+                W_E_rtg = dt.reward_embedding[0].weight
+
+                st.write(W_E_state.shape)
+                st.write(W_E_action.shape)
+                st.write(W_E_rtg.shape)
+
+                # inner QK circuits.
+                W_QK = torch.einsum("lhmd,lhdn->lhmn", W_Q, W_K)
+
+                st.write(W_QK.shape)
+
+                U, S, V = torch.linalg.svd(W_QK)
+
+            with ov_tab:
+                # stack the heads
+                W_V = torch.stack(
+                    [block.attn.W_V for block in dt.transformer.blocks]
+                )
+                W_0 = torch.stack(
+                    [block.attn.W_O for block in dt.transformer.blocks]
+                )
+
+                # inner OV circuits.
+                W_OV = torch.einsum("lhmd,lhdn->lhmn", W_V, W_0)
+
+                # Unembedding Values
+                W_U = dt.action_predictor.weight
+
+                U, S, V = torch.linalg.svd(W_OV)
+
+                # shape d_action, d_mod
+                activations = einsum("l h d1 d2, a d2 -> l h d1 a", V, W_U)
+
+                # torch.Size([3, 8, 7, 256])
+                # Now we want to select a head/layer and plot the imshow of the activations
+                # only for the first n activations
+                layer_selection, head_selection, k_selection = st.columns(3)
+
+                with layer_selection:
+                    layer = st.selectbox(
+                        "Select Layer",
+                        options=list(range(dt.transformer_config.n_layers)),
+                    )
+
+                with head_selection:
+                    head = st.selectbox(
+                        "Select Head",
+                        options=list(range(dt.transformer_config.n_heads)),
+                    )
+                with k_selection:
+                    k = st.slider(
+                        "Select K",
+                        min_value=3,
+                        max_value=n_actions,
+                        value=3,
+                        step=1,
+                    )
+
+                head_v_projections = activations[
+                    layer, head, :d_head, :
+                ].detach()
+                # st.write(head_v_projections.shape)
+                # get top k activations per column
+                topk_values, topk_indices = torch.topk(
+                    head_v_projections, k, dim=1
+                )
+
+                # put indices into a heat map then replace with the IDX_TO_ACTION string
+                df = pd.DataFrame(topk_indices.T.detach().numpy())
+                fig = px.imshow(topk_values.T)
+                fig = fig.update_traces(
+                    text=df.applymap(lambda x: IDX_TO_ACTION[x]).values,
+                    texttemplate="%{text}",
+                    hovertemplate=None,
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+                # fig = px.imshow(
+                #     head_v_projections.T,
+                #     labels={'y': 'Action', 'x': 'Activation'})
+                # st.plotly_chart(fig, use_container_width=True)
+
+                # now I want to plot the SVD decay for each S.
+                # Let's create labels for each S.
+                labels = [
+                    f"L{i}H{j}"
+                    for i in range(0, dt.transformer_config.n_layers)
+                    for j in range(dt.transformer_config.n_heads)
+                ]
+                S = einops.rearrange(S, "l h s -> (l h) s")
+
+                df = pd.DataFrame(S.T.detach().numpy(), columns=labels)
+                fig = px.line(
+                    df,
+                    range_x=[0, d_head + 10],
+                    labels={"index": "Singular Value", "value": "Value"},
+                    title="Singular Value by OV Circuit",
+                )
+                # add a vertical white dotted line at x = d_head
+                fig.add_vline(x=d_head, line_dash="dash", line_color="white")
+                st.plotly_chart(fig, use_container_width=True)

@@ -16,6 +16,7 @@ from src.streamlit_app.components import (
     reset_button,
     reset_env_dt,
     model_info,
+    show_history,
 )
 from src.streamlit_app.content import (
     analysis_help,
@@ -35,6 +36,7 @@ from src.streamlit_app.static_analysis_components import (
     show_rtg_embeddings,
     show_time_embeddings,
     show_param_statistics,
+    show_dim_reduction,
 )
 from src.streamlit_app.visualizations import action_string_to_id
 
@@ -136,6 +138,7 @@ with st.sidebar:
             "OV Circuit",
             "QK Circuit",
             "Parameter Distributions",
+            "Dimensionality Reduction",
         ],
     )
     dynamic_analyses = st.multiselect(
@@ -161,6 +164,9 @@ if len(analyses) == 0:
 
 if "Parameter Distributions" in analyses:
     show_param_statistics(dt)
+if "Dimensionality Reduction" in analyses:
+    show_dim_reduction(dt)
+
 if "RTG Embeddings" in analyses:
     show_rtg_embeddings(dt, logit_dir)
 if "Time Embeddings" in analyses:
@@ -185,34 +191,8 @@ if "Observation View" in analyses:
     render_observation_view(dt, tokens, logit_dir)
 
 
-st.markdown("""---""")
+show_history()
 
-with st.expander("Show history"):
-    rendered_obss = st.session_state.rendered_obs
-    trajectory_length = rendered_obss.shape[0]
-
-    historic_actions = st.session_state.a[0, -trajectory_length:].flatten()
-
-    if trajectory_length > 1:
-        right_adjustment = 1 + st.session_state.max_len - trajectory_length
-
-        state_number = st.slider(
-            "State Number",
-            min_value=right_adjustment,
-            max_value=right_adjustment + trajectory_length - 1,
-            step=1,
-            format="State Number: %d",
-        )
-
-        i = state_number - right_adjustment
-        action_name_func = (
-            lambda a: "None" if a == 7 else action_id_to_string[a]
-        )
-        st.write(f"A{i}:", action_name_func(historic_actions[i].item()))
-        st.write(f"A{i+1}:", action_name_func(historic_actions[i + 1].item()))
-        st.plotly_chart(px.imshow(rendered_obss[i, :, :, :]))
-    else:
-        st.warning("No history to show")
 
 st.markdown("""---""")
 
