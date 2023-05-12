@@ -4,7 +4,9 @@ import plotly.express as px
 import streamlit as st
 import torch
 import torch as t
+import numpy as np
 from fancy_einsum import einsum
+import uuid
 
 from src.visualization import get_param_stats, plot_param_stats
 
@@ -336,8 +338,102 @@ def show_rtg_embeddings(dt, logit_dir):
         st.plotly_chart(fig, use_container_width=True)
 
 
+def show_composition_scores(dt):
+    with st.expander("Show Composition Scores"):
+        st.markdown(
+            "Composition Score calculations per [Mathematical Frameworks for Transformer Circuits](https://transformer-circuits.pub/2021/framework/index.html#:~:text=The%20above%20diagram%20shows%20Q%2D%2C%20K%2D%2C%20and%20V%2DComposition)"
+        )
+
+        q_scores = dt.transformer.all_composition_scores("Q")
+        k_scores = dt.transformer.all_composition_scores("K")
+        v_scores = dt.transformer.all_composition_scores("V")
+
+        # experimenting with ways of speeding this up
+        # v, i = torch.topk(q_scores.flatten(), 3)
+        # st.write(np.array(np.unravel_index(i.numpy(), q_scores.shape)).T)
+        # st.write(v)
+
+        # fig = px.histogram(q_scores.flatten().detach().numpy(), title="Q-Composition Scores")
+        # st.plotly_chart(fig, use_container_width=True)
+        q_tab, k_tab, v_tab = st.tabs(["Q", "K", "OV"])
+        with q_tab:
+            a, b = st.columns(2)
+            with a:
+                layer = st.selectbox(
+                    "Select Layer",
+                    options=list(range(dt.transformer_config.n_layers)),
+                    key="q_layer",
+                )
+            with b:
+                head = st.selectbox(
+                    "Select Head",
+                    options=list(range(dt.transformer_config.n_heads)),
+                    key="q_head",
+                )
+
+            fig = px.imshow(
+                q_scores[layer][head].detach().numpy(),
+                title=f"Q-Composition Scores for {head} at Layer {layer}",
+                labels={"x": "Head", "y": "Layer"},
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+        with k_tab:
+            a, b = st.columns(2)
+            with a:
+                layer = st.selectbox(
+                    "Select Layer",
+                    options=list(range(dt.transformer_config.n_layers)),
+                    key="k_layer",
+                )
+            with b:
+                head = st.selectbox(
+                    "Select Head",
+                    options=list(range(dt.transformer_config.n_heads)),
+                    key="k_head",
+                )
+
+            fig = px.imshow(
+                k_scores[layer][head].detach().numpy(),
+                title=f"K-Composition Scores for {head} at Layer {layer}",
+                labels={"x": "Head", "y": "Layer"},
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+        with v_tab:
+            a, b = st.columns(2)
+            with a:
+                layer = st.selectbox(
+                    "Select Layer",
+                    options=list(range(dt.transformer_config.n_layers)),
+                    key="v_layer",
+                )
+            with b:
+                head = st.selectbox(
+                    "Select Head",
+                    options=list(range(dt.transformer_config.n_heads)),
+                    key="v_head",
+                )
+
+            fig = px.imshow(
+                v_scores[layer][head].detach().numpy(),
+                title=f"V-Composition Scores for {head} at Layer {layer}",
+                labels={"x": "Head", "y": "Layer"},
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+        st.write(
+            """
+            How much does the query, key or value vector of a second layer head read in information from a given first layer head? 
+            """
+        )
+
+
 def show_dim_reduction(dt):
-    with st.expander("Show SVD Decomposition"):
+    with st.expander("Show Dimensionality Reduction Decomposition"):
         st.write(
             """
             This analysis is heavily based on the [post](https://www.lesswrong.com/posts/mkbGjzxD8d8XqKHzA/the-singular-value-decompositions-of-transformer-weight#Our_SVD_projection_method) by Conjecture on this topic. 
@@ -366,25 +462,19 @@ def show_dim_reduction(dt):
                 W_K = torch.stack(
                     [block.attn.W_K for block in dt.transformer.blocks]
                 )
-
-                st.write(W_Q.shape)
-                st.write(W_K.shape)
-
-                # Embedding Values
-                W_E_state = dt.state_embedding.weight
-                W_E_action = dt.action_embedding[0].weight
-                W_E_rtg = dt.reward_embedding[0].weight
-
-                st.write(W_E_state.shape)
-                st.write(W_E_action.shape)
-                st.write(W_E_rtg.shape)
-
                 # inner QK circuits.
-                W_QK = torch.einsum("lhmd,lhdn->lhmn", W_Q, W_K)
-
-                st.write(W_QK.shape)
+                W_QK = einsum(
+                    "layer head d_model1 d_head, layer head d_model2 d_head -> layer head d_model1 d_model2",
+                    W_Q,
+                    W_K,
+                )
 
                 U, S, V = torch.linalg.svd(W_QK)
+
+                layer, head, k = layer_head_k_selector_ui(dt, key="qk")
+                emb1, emb2 = embedding_matrix_selection_ui(dt)
+
+                plot_svd_by_head_layer(dt, S)
 
             with ov_tab:
                 # stack the heads
@@ -404,32 +494,12 @@ def show_dim_reduction(dt):
                 U, S, V = torch.linalg.svd(W_OV)
 
                 # shape d_action, d_mod
-                activations = einsum("l h d1 d2, a d2 -> l h d1 a", V, W_U)
+                activations = einsum("l h d1 d2, a d1 -> l h d2 a", V, W_U)
 
                 # torch.Size([3, 8, 7, 256])
                 # Now we want to select a head/layer and plot the imshow of the activations
                 # only for the first n activations
-                layer_selection, head_selection, k_selection = st.columns(3)
-
-                with layer_selection:
-                    layer = st.selectbox(
-                        "Select Layer",
-                        options=list(range(dt.transformer_config.n_layers)),
-                    )
-
-                with head_selection:
-                    head = st.selectbox(
-                        "Select Head",
-                        options=list(range(dt.transformer_config.n_heads)),
-                    )
-                with k_selection:
-                    k = st.slider(
-                        "Select K",
-                        min_value=3,
-                        max_value=n_actions,
-                        value=3,
-                        step=1,
-                    )
+                layer, head, k = layer_head_k_selector_ui(dt, key="ov")
 
                 head_v_projections = activations[
                     layer, head, :d_head, :
@@ -457,20 +527,96 @@ def show_dim_reduction(dt):
 
                 # now I want to plot the SVD decay for each S.
                 # Let's create labels for each S.
-                labels = [
-                    f"L{i}H{j}"
-                    for i in range(0, dt.transformer_config.n_layers)
-                    for j in range(dt.transformer_config.n_heads)
-                ]
-                S = einops.rearrange(S, "l h s -> (l h) s")
 
-                df = pd.DataFrame(S.T.detach().numpy(), columns=labels)
-                fig = px.line(
-                    df,
-                    range_x=[0, d_head + 10],
-                    labels={"index": "Singular Value", "value": "Value"},
-                    title="Singular Value by OV Circuit",
-                )
-                # add a vertical white dotted line at x = d_head
-                fig.add_vline(x=d_head, line_dash="dash", line_color="white")
-                st.plotly_chart(fig, use_container_width=True)
+                plot_svd_by_head_layer(dt, S)
+
+
+def plot_svd_by_head_layer(dt, S):
+    d_head = dt.transformer_config.d_head
+    labels = [
+        f"L{i}H{j}"
+        for i in range(0, dt.transformer_config.n_layers)
+        for j in range(dt.transformer_config.n_heads)
+    ]
+    S = einops.rearrange(S, "l h s -> (l h) s")
+
+    df = pd.DataFrame(S.T.detach().numpy(), columns=labels)
+    fig = px.line(
+        df,
+        range_x=[0, d_head + 10],
+        labels={"index": "Singular Value", "value": "Value"},
+        title="Singular Value by OV Circuit",
+        log_y=True,
+    )
+    # add a vertical white dotted line at x = d_head
+    fig.add_vline(x=d_head, line_dash="dash", line_color="white")
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def layer_head_k_selector_ui(dt, key=""):
+    n_actions = dt.action_predictor.weight.shape[0]
+    layer_selection, head_selection, k_selection = st.columns(3)
+
+    with layer_selection:
+        layer = st.selectbox(
+            "Select Layer",
+            options=list(range(dt.transformer_config.n_layers)),
+            key="layer" + key,
+        )
+
+    with head_selection:
+        head = st.selectbox(
+            "Select Head",
+            options=list(range(dt.transformer_config.n_heads)),
+            key="head" + key,
+        )
+    with k_selection:
+        if n_actions > 3:
+            k = st.slider(
+                "Select K",
+                min_value=3,
+                max_value=n_actions,
+                value=3,
+                step=1,
+                key="k" + key,
+            )
+        else:
+            k = 3
+
+    return layer, head, k
+
+
+def embedding_matrix_selection_ui(dt):
+    embedding_matrix_selection = st.columns(2)
+    with embedding_matrix_selection[0]:
+        embedding_matrix_1 = st.selectbox(
+            "Select Q Embedding Matrix",
+            options=["State", "Action", "RTG"],
+            key=uuid.uuid4(),
+        )
+    with embedding_matrix_selection[1]:
+        embedding_matrix_2 = st.selectbox(
+            "Select K Embedding Matrix",
+            options=["State", "Action", "RTG"],
+            key=uuid.uuid4(),
+        )
+
+    W_E_state = dt.state_embedding.weight
+    W_E_action = dt.action_embedding[0].weight
+    W_E_rtg = dt.reward_embedding[0].weight
+
+    if embedding_matrix_1 == "State":
+        embedding_matrix_1 = W_E_state
+    elif embedding_matrix_1 == "Action":
+        embedding_matrix_1 = W_E_action
+    elif embedding_matrix_1 == "RTG":
+        embedding_matrix_1 = W_E_rtg
+
+    if embedding_matrix_2 == "State":
+        embedding_matrix_2 = W_E_state
+    elif embedding_matrix_2 == "Action":
+        embedding_matrix_2 = W_E_action
+    elif embedding_matrix_2 == "RTG":
+        embedding_matrix_2 = W_E_rtg
+
+    return embedding_matrix_1, embedding_matrix_2
