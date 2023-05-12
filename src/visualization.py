@@ -249,11 +249,12 @@ def plot_param_stats(df):
 
 
 # used by streamlit app
-def preview_state_update(
+def get_rendered_obs(
     env: gym.Env,
     obs: torch.Tensor,
 ):
     obs = obs.clone()
-    obs = reverse_one_hot(observation=obs)
+    if obs.shape[-1] == 20:
+        obs = reverse_one_hot(observation=obs)
     image = render_minigrid_observation(env, obs)
     return image
