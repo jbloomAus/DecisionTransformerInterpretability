@@ -1,28 +1,36 @@
-import streamlit as st
-import plotly.express as px
-from torchtyping import TensorType as TT
-from transformer_lens.hook_points import HookPoint
 from functools import partial
+from typing import Callable, Dict
+
+import plotly.express as px
+import streamlit as st
+import torch
+from torch import Tensor
+from torch.nn import Module
+from torchtyping import TensorType as TT
+from tqdm import tqdm
+from transformer_lens.hook_points import HookPoint
+
+from src.visualization import get_rendered_obs
+
 from .analysis import get_residual_decomp
+from .constants import IDX_TO_ACTION, IDX_TO_OBJECT
 from .environment import (
+    get_action_preds_from_app_state,
+    get_action_preds_from_tokens,
     get_modified_tokens_from_app_state,
     get_tokens_from_app_state,
-    get_action_preds_from_tokens,
-    get_action_preds_from_app_state,
 )
-from .constants import IDX_TO_ACTION, IDX_TO_OBJECT
-from src.visualization import get_rendered_obs
 
 ACTION_TO_IDX = {v: k for k, v in IDX_TO_ACTION.items()}
 OBJECT_TO_IDX = {v: k for k, v in IDX_TO_OBJECT.items()}
+
+from src.streamlit_app.patch_transformer_lens import patching
 
 from .visualizations import (
     plot_action_preds,
     plot_logit_diff,
     plot_single_residual_stream_contributions_comparison,
 )
-
-from src.patch_transformer_lens import patching
 
 # Ablation
 
@@ -254,21 +262,45 @@ def show_activation_patching(dt, logit_dir, original_cache):
         st.write("Clean Logit Diff: ", clean_logit_dif.item())
         st.write("Corrupted Logit Diff: ", corrupted_logit_dif.item())
 
+        # easy section.
         (
+            dummy_tab,
             residual_stream_tab,
             residual_stream_by_block_tab,
             head_all_positions_tab,
             head_all_positions_by_component_tab,
-            head_by_component_and_position_tab,
+            minimize_tab,
         ) = st.tabs(
             [
-                "Residual Stream",
-                "Residual Stream via Attn/MLP",
+                "Help",
+                "Layer-Token",
+                "Layer-Token + Attn/MLP",
                 "Head All Positions",
-                "Head by Component (All Positions)",
-                "Head by Component and Position",
+                "Layer-Token-Head",
+                "Minimize",
             ]
         )
+
+        with dummy_tab:
+            st.write(
+                """
+                Welcome to Activation Patching! This is a tool for understanding how
+                the model's respond when we change the input tokens. 
+
+                You're mission, should you choose to accept it, is to generate hypotheses
+                about the algorithm being implemented by the transformer. 
+
+                Use different patching methods and different degrees of granularity to
+                refine your hypothesis. 
+                
+                Keep in mind that this method probably doesn't validate your hypothesis
+                unless you use something more advanced like path patching or causal
+                scrubbing. Happy patching!
+
+                *PS: These tabs automatically run everytime you change the input. 
+                If it crashes your browser, let me know. It shouldn't on these models.*
+                """
+            )
 
         with residual_stream_tab:
             # let's gate until we have a sense for run time.
@@ -395,8 +427,17 @@ def show_activation_patching(dt, logit_dir, original_cache):
 
             st.plotly_chart(fig, use_container_width=True)
 
+        with minimize_tab:
+            pass
+
+        # advanced section
+        (
+            head_by_component_and_position_tab,
+            mlp_patching,
+        ) = st.tabs(["Layer-Token-Head-Detail", "MLP - Neuron Detail"])
+
         with head_by_component_and_position_tab:
-            if st.checkbox("Calculate!"):
+            if st.checkbox("Run this slightly expensive compute"):
                 patch = patching.get_act_patch_attn_head_by_pos_every(
                     dt.transformer,
                     corrupted_tokens=corrupted_tokens,
@@ -408,8 +449,6 @@ def show_activation_patching(dt, logit_dir, original_cache):
                         corrupted_logit_dif=corrupted_logit_dif,
                     ),
                 )
-
-                st.write(patch.shape)
 
                 fig = px.imshow(
                     patch,
@@ -427,10 +466,45 @@ def show_activation_patching(dt, logit_dir, original_cache):
                     fig.layout.annotations[i]["text"] = facet_label
 
                 slider_labels = st.session_state.labels
-                st.write(slider_labels)
                 st.plotly_chart(fig, use_container_width=True)
+                st.write(slider_labels)
 
-    return
+        with mlp_patching:
+            with st.form("MLP Patching"):
+                b, c = st.columns(2)
+                with b:
+                    layer = st.selectbox(
+                        "Layer", list(range(dt.transformer_config.n_layers))
+                    )
+                with c:
+                    st.write(" ")
+                    st.write(" ")
+                    submitted = st.form_submit_button("Patch Neuron!")
+
+                if submitted:
+                    # let's gate until we have a sense for run time.
+                    patch = get_act_patch_mlp(
+                        dt.transformer,
+                        corrupted_tokens=corrupted_tokens,
+                        clean_cache=original_cache,
+                        metric=partial(
+                            logit_diff_recovery_metric,
+                            logit_dir=logit_dir,
+                            clean_logit_dif=clean_logit_dif,
+                            corrupted_logit_dif=corrupted_logit_dif,
+                        ),
+                        layer=layer,
+                    ).detach()
+
+                    fig = px.scatter(
+                        x=list(range(patch.shape[0])),
+                        y=patch,
+                        color=patch,
+                        title="Activation Patching Per Neuron",
+                        labels={"x": "Position", "y": "Metric"},
+                    )
+
+                    st.plotly_chart(fig, use_container_width=True)
 
 
 def logit_diff_recovery_metric(
@@ -446,3 +520,38 @@ def logit_diff_recovery_metric(
         clean_logit_dif - corrupted_logit_dif
     )
     return result
+
+
+# inspired by: https://clementneo.com/posts/2023/02/11/we-found-an-neuron
+def get_act_patch_mlp(
+    model: Module,
+    corrupted_tokens: Tensor,
+    clean_cache: Dict[str, Tensor],
+    metric: Callable[[Tensor], Tensor],
+    layer: int,
+) -> Tensor:
+    def patch_neuron_activation(
+        corrupted_mlp_act: Tensor, hook, neuron, clean_cache
+    ):
+        corrupted_mlp_act[:, :, neuron] = clean_cache[hook.name][:, :, neuron]
+        return corrupted_mlp_act
+
+    d_mlp = model.cfg.d_mlp
+    patched_neurons_normalized_improvement = torch.zeros(
+        d_mlp, device=corrupted_tokens.device, dtype=torch.float32
+    )
+
+    for neuron in tqdm(range(d_mlp)):
+        hook_name = f"blocks.{layer}.mlp.hook_post"
+        hook_fn = partial(
+            patch_neuron_activation, neuron=neuron, clean_cache=clean_cache
+        )
+        patched_neuron_logits = model.run_with_hooks(
+            corrupted_tokens,
+            fwd_hooks=[(hook_name, hook_fn)],
+            return_type="logits",
+        )
+        patched_neuron_metric = metric(patched_neuron_logits)
+        patched_neurons_normalized_improvement[neuron] = patched_neuron_metric
+
+    return patched_neurons_normalized_improvement
