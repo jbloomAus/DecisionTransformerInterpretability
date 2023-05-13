@@ -61,3 +61,6 @@ positional-encodings[torch]==6.0.1
 
 # model summaries
 torchinfo==1.7.2
+
+# dendrograms
+scipy==1.10.1
