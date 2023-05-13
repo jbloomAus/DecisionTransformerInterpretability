@@ -22,7 +22,7 @@ from .visualizations import (
     plot_single_residual_stream_contributions_comparison,
 )
 
-from src.streamlit_app.patch_transformer_lens import patching
+from src.patch_transformer_lens import patching
 
 # Ablation
 

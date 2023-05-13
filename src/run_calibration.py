@@ -7,7 +7,6 @@ import warnings
 import numpy as np
 import torch as t
 
-from src.config import EnvironmentConfig
 from src.decision_transformer.calibration import (
     calibration_statistics,
     plot_calibration_statistics,

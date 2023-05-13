@@ -115,7 +115,9 @@ def model_info():
     dt = st.session_state.dt
 
     with st.expander("Model Info"):
-        if st.checkbox("Show Transformer Config"):
+        config_tab, model_tab = st.tabs(["Config", "Model"])
+
+        with config_tab:
             st.write(f"Model Type: {dt.model_type}")
             # convert into pandas df
             transformer_config = dt.transformer_config.__dict__
@@ -128,7 +130,8 @@ def model_info():
             #     st.write(f"{k}: {v}")
 
         if "model_summary" in st.session_state:
-            if st.checkbox("Show Model Summary"):
+            with model_tab:
+                st.write("Only summarizes the transformer.")
                 st.write(
                     "```" + str(st.session_state.model_summary) + "```",
                     unsafe_allow_html=True,

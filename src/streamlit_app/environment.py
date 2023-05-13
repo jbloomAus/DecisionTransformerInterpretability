@@ -25,7 +25,9 @@ def get_env_and_dt(model_path):
     env = make_env(env_config, seed=4200, idx=0, run_name="dev")
     env = env()
 
-    dt = load_decision_transformer(model_path, env)
+    dt = load_decision_transformer(
+        model_path, env, tlens_weight_processing=True
+    )
     if not hasattr(dt, "n_ctx"):
         dt.n_ctx = dt.transformer_config.n_ctx
     if not hasattr(dt, "time_embedding_type"):

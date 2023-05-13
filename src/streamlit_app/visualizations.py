@@ -26,6 +26,9 @@ def plot_action_preds(action_preds):
     # softmax
     action_preds = np.exp(action_preds) / np.sum(np.exp(action_preds), axis=0)
 
+    # get the entropy of the action preds
+    entropy = -np.sum(action_preds * np.log(action_preds), axis=0)
+
     n_actions = len(action_preds)
     action_preds = pd.DataFrame(
         action_preds, index=list(action_id_to_string.values())[:n_actions]
@@ -53,6 +56,7 @@ def plot_action_preds(action_preds):
     )
 
     st.plotly_chart(fig, use_container_width=True)
+    st.write("Current Entropy: ", str(round(entropy, 3)))
 
 
 def plot_attention_pattern_single(

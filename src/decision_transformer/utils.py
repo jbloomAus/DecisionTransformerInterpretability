@@ -1,17 +1,21 @@
 import argparse
 import json
-from typing import Optional, Any
+import math
+import types
+from typing import Any, Optional
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import math
 import torch.optim.lr_scheduler as lr_scheduler
 
 from src.config import EnvironmentConfig, TransformerModelConfig
 from src.models.trajectory_transformer import (
     CloneTransformer,
     DecisionTransformer,
+)
+from src.patch_transformer_lens.hooked_transformer_methods import (
+    fold_layer_norm,
 )
 
 
@@ -92,7 +96,9 @@ def parse_args():
 
 
 # TODO Support loading Clone Transformers
-def load_decision_transformer(model_path, env=None) -> DecisionTransformer:
+def load_decision_transformer(
+    model_path, env=None, tlens_weight_processing=False
+) -> DecisionTransformer:
     """ """
 
     model_info = torch.load(model_path)
@@ -111,6 +117,104 @@ def load_decision_transformer(model_path, env=None) -> DecisionTransformer:
     )
 
     model.load_state_dict(state_dict)
+
+    # we'll need these later
+    if model.transformer_config.layer_norm == "LN":
+        ln_final_b = state_dict["transformer.ln_final.b"]
+        ln_final_w = state_dict["transformer.ln_final.w"]
+
+    if tlens_weight_processing:
+        # get the model.transformer state_dict
+        state_dict = model.transformer.state_dict()
+
+        # # monkey patch!
+        model.transformer.fold_layer_norm = types.MethodType(
+            fold_layer_norm, model.transformer
+        )
+
+        # do some folding of anything ln_final feeds into before delete ln_final in patched ln_fold code.
+
+        # use the patched method to fold the layer norm and do other stuff.
+
+        # the state dict must come from teh origina model with ln
+        # but the recieving model needs to have LN_Pre.
+
+        if model.model_type == "decision_transformer":
+            if model.transformer_config.layer_norm == "LN":
+                model.transformer_config.layer_norm = "LNPre"
+                model.transformer = (
+                    model.initialize_easy_transformer()
+                )  # reinitallize it to not use LN
+                # monkey patch
+                model.transformer.fold_layer_norm = types.MethodType(
+                    fold_layer_norm, model.transformer
+                )
+
+        # Not currently supporting Clone Transformers in app.
+        # elif model.model_type == "clone_transformer":
+        #     model.transformer = CloneTransformer(environment_config, transformer_config)
+
+        # load and process state dict, expects a new instantiation with LNPre
+        model.transformer.load_and_process_state_dict(
+            state_dict=state_dict,
+            fold_ln=True,
+            center_writing_weights=False,
+            fold_value_biases=True,
+            center_unembed=False,
+        )
+
+        # this should work but I'm not done unless I also fold ln_final into the last layers / anything
+        # that uses the model output.
+        if model.transformer_config.layer_norm == "LNPre":
+            new_action_predictor_weight = (
+                model.action_predictor.weight * ln_final_w[:, None].T
+            )
+            new_action_predictor_bias = model.action_predictor.bias + (
+                (model.action_predictor.weight * ln_final_b[:, None].T).sum(
+                    dim=-1
+                )
+            )
+
+            new_state_predictor_weight = (
+                model.state_predictor.weight * ln_final_w[:, None].T
+            )
+            new_state_predictor_bias = model.state_predictor.bias + (
+                (model.state_predictor.weight * ln_final_b[:, None].T).sum(
+                    dim=-1
+                )
+            )
+
+            new_reward_predictor_weight = (
+                model.reward_predictor.weight * ln_final_w[:, None].T
+            )
+            new_reward_predictor_bias = model.reward_predictor.bias + (
+                (model.reward_predictor.weight * ln_final_b[:, None].T).sum(
+                    dim=-1
+                )
+            )
+
+            # load these in
+            model.action_predictor.load_state_dict(
+                {
+                    "weight": new_action_predictor_weight,
+                    "bias": new_action_predictor_bias,
+                }
+            )
+
+            model.state_predictor.load_state_dict(
+                {
+                    "weight": new_state_predictor_weight,
+                    "bias": new_state_predictor_bias,
+                }
+            )
+
+            model.reward_predictor.load_state_dict(
+                {
+                    "weight": new_reward_predictor_weight,
+                    "bias": new_reward_predictor_bias,
+                }
+            )
+
     return model
 
 

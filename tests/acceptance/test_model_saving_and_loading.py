@@ -1,6 +1,7 @@
 import json
 import os
 
+import gymnasium as gym
 import pytest
 import torch
 
@@ -44,9 +45,9 @@ def run_config() -> RunConfig:
 def environment_config() -> EnvironmentConfig:
     environment_config = EnvironmentConfig(
         env_id="MiniGrid-Dynamic-Obstacles-8x8-v0",
-        view_size=3,
+        view_size=7,
         max_steps=300,
-        one_hot_obs=True,
+        one_hot_obs=False,
         fully_observed=False,
         render_mode="rgb_array",
         capture_video=True,
@@ -84,7 +85,7 @@ def transformer_config() -> TransformerModelConfig:
         n_heads=4,
         d_mlp=256,
         n_layers=2,
-        n_ctx=2,
+        n_ctx=5,
         layer_norm=None,
         state_embedding_type="grid",
         time_embedding_type="embedding",
@@ -143,6 +144,111 @@ def test_load_decision_transformer(
 
     assert new_model.transformer_config == transformer_config
     assert new_model.environment_config == environment_config
+
+
+def test_load_decision_transformer_with_processing(
+    transformer_config,
+    offline_config,
+    environment_config,
+    cleanup_test_results,
+):
+    transformer_config.layer_norm = "LN"
+    model = DecisionTransformer(
+        environment_config=environment_config,
+        transformer_config=transformer_config,
+    )
+
+    # in order to ensure that this test works, perturb the weights of the model (specifically, the ln_final weights)
+    # and then check that the weights are corrected when the model is loaded.
+    # use torch init on ln_final w and b
+    torch.nn.init.normal_(model.transformer.ln_final.w, mean=0.0, std=1.0)
+    torch.nn.init.normal_(model.transformer.ln_final.b, mean=0.0, std=1.0)
+    # also do blocks.0.ln1.w for blocks 0 and 1 and b
+    torch.nn.init.normal_(model.transformer.blocks[0].ln1.w, mean=0.0, std=1.0)
+    torch.nn.init.normal_(model.transformer.blocks[0].ln1.b, mean=0.0, std=1.0)
+    torch.nn.init.normal_(model.transformer.blocks[1].ln1.w, mean=0.0, std=1.0)
+    torch.nn.init.normal_(model.transformer.blocks[1].ln1.b, mean=0.0, std=1.0)
+
+    path = "tmp/model_data.pt"
+    store_transformer_model(
+        path=path,
+        model=model,
+        offline_config=offline_config,
+    )
+
+    new_model = load_decision_transformer(path, tlens_weight_processing=True)
+
+    transformer_config.layer_norm = "LNPre"  # we expect this to change.
+    assert new_model.transformer_config == transformer_config
+    assert new_model.environment_config == environment_config
+
+    # the state dicts should diverge now make it hard to compare them.
+    # what might work is to test that the forward pass produces the same results.
+    # yet again I wish I had a convenience method for generating inputs.
+    env = gym.make("MiniGrid-Empty-8x8-v0")
+    obs, _ = env.reset()
+    states = torch.tensor([obs["image"], obs["image"]]).unsqueeze(
+        0
+    )  # add block, add batch
+    actions = (
+        torch.tensor([0]).unsqueeze(0).unsqueeze(0)
+    )  # add block, add batch
+    rewards = torch.tensor([[0], [0]]).unsqueeze(0)  # add block, add batch
+    timesteps = torch.tensor([[0], [1]]).unsqueeze(0)  # add block, add batch
+
+    _, action_preds_original, _ = model.forward(
+        states=states, actions=actions, rtgs=rewards, timesteps=timesteps
+    )
+
+    _, action_preds_new, _ = new_model.forward(
+        states=states, actions=actions, rtgs=rewards, timesteps=timesteps
+    )
+
+    assert torch.allclose(action_preds_original, action_preds_new)
+    assert not model.state_dict().keys() == new_model.state_dict().keys()
+    # assert_state_dicts_are_equal(new_model.state_dict(), model.state_dict())
+
+    # these shouldn't be the same.
+    old_reward_predictor_weight = model.reward_predictor.weight
+    new_reward_predictor_weight = new_model.reward_predictor.weight
+    assert not torch.allclose(
+        old_reward_predictor_weight, new_reward_predictor_weight
+    )
+
+    ln_final_b = model.transformer.ln_final.b
+    ln_final_w = model.transformer.ln_final.w
+
+    # state_dict[f"unembed.W_U"] = (
+    #     state_dict[f"unembed.W_U"] * state_dict[f"ln_final.w"][:, None]
+    # )
+    expected_reward_predictor_weight = (
+        old_reward_predictor_weight * ln_final_w[:, None].T
+    )
+
+    #     state_dict[f"unembed.b_U"] = state_dict[f"unembed.b_U"] + (
+    #         state_dict[f"unembed.W_U"] * state_dict[f"ln_final.b"][:, None]
+    #     ).sum(dim=-2)
+    #     del state_dict[f"ln_final.b"]
+    expected_reward_predictor_bias = model.reward_predictor.bias + (
+        (old_reward_predictor_weight * ln_final_b[:, None].T).sum(dim=-1)
+    )
+
+    assert not torch.allclose(ln_final_b, torch.zeros_like(ln_final_b))
+    assert not torch.allclose(ln_final_w, torch.ones_like(ln_final_w))
+    assert torch.allclose(
+        expected_reward_predictor_weight, new_reward_predictor_weight
+    )
+    assert torch.allclose(
+        expected_reward_predictor_bias, new_model.reward_predictor.bias
+    )
+
+    # # Center the weights that read in from the LayerNormPre
+    # state_dict[f"unembed.W_U"] -= einops.reduce(
+    #     state_dict[f"unembed.W_U"],
+    #     "d_model d_vocab -> 1 d_vocab",
+    #     "mean")
+
+    # del state_dict[f"ln_final.w"]
 
 
 def assert_state_dicts_are_equal(dict1, dict2):

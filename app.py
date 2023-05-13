@@ -37,6 +37,7 @@ from src.streamlit_app.static_analysis_components import (
     show_time_embeddings,
     show_param_statistics,
     show_dim_reduction,
+    show_composition_scores,
 )
 from src.streamlit_app.visualizations import action_string_to_id
 
@@ -139,6 +140,7 @@ with st.sidebar:
             "QK Circuit",
             "Parameter Distributions",
             "Dimensionality Reduction",
+            "Composition Scores",
         ],
     )
     dynamic_analyses = st.multiselect(
@@ -166,7 +168,8 @@ if "Parameter Distributions" in analyses:
     show_param_statistics(dt)
 if "Dimensionality Reduction" in analyses:
     show_dim_reduction(dt)
-
+if "Composition Scores" in analyses:
+    show_composition_scores(dt)
 if "RTG Embeddings" in analyses:
     show_rtg_embeddings(dt, logit_dir)
 if "Time Embeddings" in analyses:
