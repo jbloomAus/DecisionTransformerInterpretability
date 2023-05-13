@@ -156,23 +156,11 @@ def show_ov_circuit(dt):
             """
         )
 
-        W_U = dt.action_predictor.weight
-        W_O = dt.transformer.blocks[0].attn.W_O
-        W_V = dt.transformer.blocks[0].attn.W_V
-        W_E = dt.state_embedding.weight
-        W_OV = W_V @ W_O
-
-        # st.plotly_chart(px.imshow(W_OV.detach().numpy(), facet_col=0), use_container_width=True)
-        OV_circuit_full = W_E.T @ W_OV @ W_U.T
-
         height, width, channels = dt.environment_config.observation_space[
             "image"
         ].shape
-        n_actions = W_U.shape[0]
+        n_actions = dt.environment_config.action_space.n
         n_heads = dt.transformer_config.n_heads
-        OV_circuit_full_reshaped = OV_circuit_full.reshape(
-            n_heads, channels, height, width, n_actions
-        )
 
         if channels == 3:
 
@@ -182,8 +170,14 @@ def show_ov_circuit(dt):
         else:
             format_func = twenty_idx_format_func
 
-        selection_columns = st.columns(3)
+        selection_columns = st.columns(4)
         with selection_columns[0]:
+            layer = st.selectbox(
+                "Select Layer",
+                options=list(range(dt.transformer_config.n_layers)),
+            )
+
+        with selection_columns[1]:
             heads = st.multiselect(
                 "Select Heads",
                 options=list(range(n_heads)),
@@ -191,7 +185,7 @@ def show_ov_circuit(dt):
                 default=[0],
             )
 
-        with selection_columns[1]:
+        with selection_columns[2]:
             selected_channels = st.multiselect(
                 "Select Observation Channels",
                 options=list(range(channels)),
@@ -200,7 +194,7 @@ def show_ov_circuit(dt):
                 default=[0, 1, 2],
             )
 
-        with selection_columns[2]:
+        with selection_columns[3]:
             selected_actions = st.multiselect(
                 "Select Actions",
                 options=list(range(n_actions)),
@@ -208,6 +202,18 @@ def show_ov_circuit(dt):
                 format_func=lambda x: IDX_TO_ACTION[x],
                 default=[0, 1, 2],
             )
+
+        W_U = dt.action_predictor.weight
+        W_O = dt.transformer.blocks[layer].attn.W_O
+        W_V = dt.transformer.blocks[layer].attn.W_V
+        W_E = dt.state_embedding.weight
+        W_OV = W_V @ W_O
+
+        # st.plotly_chart(px.imshow(W_OV.detach().numpy(), facet_col=0), use_container_width=True)
+        OV_circuit_full = W_E.T @ W_OV @ W_U.T
+        OV_circuit_full_reshaped = OV_circuit_full.reshape(
+            n_heads, channels, height, width, n_actions
+        )
 
         columns = st.columns(len(selected_channels))
         for i, channel in enumerate(selected_channels):
@@ -233,109 +239,463 @@ def show_ov_circuit(dt):
                         )
 
 
-def show_time_embeddings(dt, logit_dir):
-    with st.expander("Show Time Embeddings"):
-        if dt.time_embedding_type == "linear":
-            time_steps = t.arange(100).unsqueeze(0).unsqueeze(-1).to(t.float32)
-            time_embeddings = dt.get_time_embeddings(time_steps).squeeze(0)
-        else:
-            time_embeddings = dt.time_embedding.weight
+def show_congruence(dt):
+    with st.expander("Show Congruence"):
+        (
+            position_tab,
+            time_tab,
+            w_out_tab,
+            mlp_in_tab,
+            mlp_out_tab,
+        ) = st.tabs(["Position", "Time", "W_O", "MLP_in", "MLP_out"])
 
-        max_timestep = st.slider(
-            "Max timestep",
-            min_value=1,
-            max_value=time_embeddings.shape[0] - 1,
-            value=time_embeddings.shape[0] - 1,
+    with position_tab:
+        st.write(
+            """
+            We expect position not to have significant congruence with the output logits because
+            if it was valuable information, it would be syntactically processed by the transformer and
+            not used semantically.
+            
+            Nevertheless, this tab answers the question: "How much does the position embedding contribute directly
+            to the output logits?"
+            """
         )
-        time_embeddings = time_embeddings[: max_timestep + 1]
-        dot_prod = time_embeddings @ logit_dir
-        dot_prod = dot_prod.detach()
 
-        show_initial = st.checkbox("Show initial time embedding", value=True)
-        fig = px.line(dot_prod)
-        fig.update_layout(
-            title="Time Embedding Dot Product",
-            xaxis_title="Time Step",
-            yaxis_title="Dot Product",
-            legend_title="",
+        position_action_mapping = (
+            dt.transformer.W_pos @ dt.action_predictor.weight.T
         )
-        # remove legend
-        fig.update_layout(showlegend=False)
-        if show_initial:
-            fig.add_vline(
-                x=st.session_state.timesteps[0][-1].item()
-                + st.session_state.timestep_adjustment,
-                line_dash="dash",
-                line_color="red",
-                annotation_text="Current timestep",
-            )
+        fig = px.imshow(
+            position_action_mapping.T.detach().numpy(),
+            labels={"x": "Position", "y": "Action"},
+        )
         st.plotly_chart(fig, use_container_width=True)
 
-        def calc_cosine_similarity_matrix(matrix: t.Tensor) -> t.Tensor:
-            # Check if the input matrix is square
-            # assert matrix.shape[0] == matrix.shape[1], "The input matrix must be square."
-
-            # Normalize the column vectors
-            norms = t.norm(
-                matrix, dim=0
-            )  # Compute the norms of the column vectors
-            normalized_matrix = (
-                matrix / norms
-            )  # Normalize the column vectors by dividing each element by the corresponding norm
-
-            # Compute the cosine similarity matrix using matrix multiplication
-            return t.matmul(normalized_matrix.t(), normalized_matrix)
-
-        similarity_matrix = calc_cosine_similarity_matrix(time_embeddings.T)
-        st.plotly_chart(px.imshow(similarity_matrix.detach().numpy()))
-
-
-def show_rtg_embeddings(dt, logit_dir):
-    with st.expander("Show RTG Embeddings"):
-        batch_size = 1028
-        if st.session_state.allow_extrapolation:
-            min_value = -10
-            max_value = 10
-        else:
-            min_value = -1
-            max_value = 1
-        rtg_range = st.slider(
-            "RTG Range",
-            min_value=min_value,
-            max_value=max_value,
-            value=(-1, 1),
-            step=1,
+    with time_tab:
+        st.write(
+            """
+            Like position, we expect time not to have significant congruence with the output logits because
+            syntactic processing is likely not hugely important in grid world tasks. However, unlike position,
+            it's more plausible in general that it could be important especially if the model is using it to
+            memorize behaviors.
+            """
         )
 
-        min_rtg = rtg_range[0]
-        max_rtg = rtg_range[1]
-
-        rtg_range = t.linspace(min_rtg, max_rtg, 100).unsqueeze(-1)
-
-        rtg_embeddings = dt.reward_embedding(rtg_range).squeeze(0)
-
-        dot_prod = rtg_embeddings @ logit_dir
-        dot_prod = dot_prod.detach()
-
-        show_initial = st.checkbox("Show initial RTG embedding", value=True)
-
-        fig = px.line(x=rtg_range.squeeze(1).detach().numpy(), y=dot_prod)
-        fig.update_layout(
-            title="RTG Embedding Dot Product",
-            xaxis_title="RTG",
-            yaxis_title="Dot Product",
-            legend_title="",
+        time_action_mapping = (
+            dt.time_embedding.weight[:50, :] @ dt.action_predictor.weight.T
         )
-        # remove legend
-        fig.update_layout(showlegend=False)
-        if show_initial:
-            fig.add_vline(
-                x=st.session_state.rtg[0][0].item(),
-                line_dash="dash",
-                line_color="red",
-                annotation_text="Initial RTG",
-            )
+        fig = px.imshow(
+            time_action_mapping.T.detach().numpy(),
+            labels={"x": "Time", "y": "Action"},
+        )
+
         st.plotly_chart(fig, use_container_width=True)
+
+    with w_out_tab:
+        W_0 = torch.stack([block.attn.W_O for block in dt.transformer.blocks])
+
+        W_0_congruence = W_0 @ dt.action_predictor.weight.T
+        W_0_congruence = W_0_congruence.permute(0, 1, 3, 2)
+        W_0_congruence = W_0_congruence.detach()
+
+        W_0_congruence_2d = W_0_congruence.reshape(-1)
+        df = pd.DataFrame(W_0_congruence_2d.numpy(), columns=["value"])
+        layers, heads, actions, dims = W_0_congruence.shape
+        indices = pd.MultiIndex.from_tuples(
+            [
+                (i, j, k, l)
+                for i in range(layers)
+                for j in range(heads)
+                for k in range(actions)
+                for l in range(dims)
+            ],
+            names=["layer", "head", "action", "dimension"],
+        )
+        df.index = indices
+        df.reset_index(inplace=True)
+        # ensure action is interpreted as a categorical variable
+        df["action"] = df["action"].map(IDX_TO_ACTION)
+
+        # sort by action
+        df = df.sort_values(by="layer")
+        fig = px.scatter(
+            df,
+            x=df.index,
+            y="value",
+            color="action",
+            hover_data=["layer", "head", "action", "dimension", "value"],
+        )
+
+        # update x axis to hide the tick labels, and remove the label
+        fig.update_xaxes(showticklabels=False, title=None)
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    with mlp_in_tab:
+        MLP_in = torch.stack(
+            [block.mlp.W_in for block in dt.transformer.blocks]
+        )
+
+        state_tab, action_tab, rtg_tab = st.tabs(["State", "Action", "RTG"])
+
+        with state_tab:
+            state_in = dt.state_embedding.weight
+            MLP_in_state_congruence = MLP_in.permute(0, 2, 1) @ state_in
+            MLP_in_state_congruence = MLP_in_state_congruence.reshape(
+                MLP_in_state_congruence.shape[0:2]
+                + dt.environment_config.observation_space["image"].shape
+            )
+            MLP_in_state_congruence = MLP_in_state_congruence.permute(
+                0, 2, 3, 4, 1
+            )
+            MLP_in_state_congruence = MLP_in_state_congruence.detach()
+
+            MLP_in_state_congruence_2d = MLP_in_state_congruence.reshape(-1)
+            df = pd.DataFrame(
+                MLP_in_state_congruence_2d.numpy(), columns=["value"]
+            )
+            (
+                layers,
+                height,
+                width,
+                channels,
+                dims,
+            ) = MLP_in_state_congruence.shape
+            indices = pd.MultiIndex.from_tuples(
+                [
+                    (i, j, k, l, m)
+                    for i in range(layers)
+                    for j in range(height)
+                    for k in range(width)
+                    for l in range(channels)
+                    for m in range(dims)
+                ],
+                names=["layer", "height", "width", "channel", "dimension"],
+            )
+            df.index = indices
+            df.reset_index(inplace=True)
+            # ensure action is interpreted as a categorical variable
+
+            if channels == 3:
+                df["channel"] = df["channel"].map(IDX_TO_STATE)
+            elif channels == 20:
+                df["channel"] = df["channel"].map(twenty_idx_format_func)
+
+            # before we filterm store the top 40 rows by value
+            top_40 = df.sort_values(by="value", ascending=False).head(40)
+            # and the bottom 40
+            bottom_40 = df.sort_values(by="value", ascending=True).head(40)
+
+            a, b = st.columns(2)
+            with a:
+                # create a multiselect to choose the channels of interest
+                format_func = (
+                    lambda x: three_channel_schema[x]
+                    if channels == 3
+                    else twenty_idx_format_func(x)
+                )
+                selected_channels = st.multiselect(
+                    "Select Observation Channels",
+                    options=list(range(channels)),
+                    format_func=format_func,
+                    key="channels mlp_in",
+                    default=list(range(17)) if channels == 20 else [0, 1, 2],
+                )
+                mapped_channels = [
+                    format_func(channel) for channel in selected_channels
+                ]
+                df = df[df["channel"].isin(mapped_channels)]
+
+            df = df.sort_values(by="channel")
+            df.reset_index(inplace=True, drop=True)
+
+            with b:
+                aggregation_level = st.selectbox(
+                    "Aggregation Level",
+                    options=["X-Y-Channel", "Neuron"],
+                    key="aggregation level",
+                )
+                if aggregation_level == "X-Y-Channel":
+                    # st.write(df)
+                    df = df.groupby(
+                        ["layer", "height", "width", "channel"]
+                    ).std()
+                    df = df.sort_values(by="channel")
+                    df.reset_index(inplace=True)
+                    fig = px.scatter(
+                        df,
+                        x=df.index,
+                        y="value",
+                        color="channel",
+                        # facet_col="layer",
+                        hover_data=[
+                            "layer",
+                            "height",
+                            "width",
+                            "channel",
+                            "value",
+                        ],
+                        labels={"value": "Std. of Congruence"},
+                    )
+
+                    # update x axis to hide the tick labels, and remove the label
+                    fig.update_xaxes(showticklabels=False, title=None)
+
+                else:
+                    # sort
+                    df = df.sort_values(
+                        by=["height", "width"], ascending=False
+                    )
+
+                    fig = px.scatter(
+                        df,
+                        x=df.index,
+                        y="value",
+                        color="channel",
+                        # facet_col="layer",
+                        hover_data=[
+                            "layer",
+                            "height",
+                            "width",
+                            "channel",
+                            "dimension",
+                            "value",
+                        ],
+                        labels={"value": "Congruence"},
+                    )
+
+                    # update x axis to hide the tick labels, and remove the label
+                    fig.update_xaxes(showticklabels=False, title=None)
+
+            st.plotly_chart(fig, use_container_width=True)
+
+            # # group values by height/widt
+
+            # # now show the top 40 and bottom 40
+            # st.write("Top 40")
+            # st.write(top_40)
+
+            # st.write("Bottom 40")
+            # st.write(bottom_40)
+
+        with action_tab:
+            action_in = dt.action_embedding[0].weight
+            MLP_in_action_congruence = MLP_in.permute(0, 2, 1) @ action_in.T
+
+            MLP_in_action_congruence = MLP_in_action_congruence.permute(
+                0, 2, 1
+            )
+            MLP_in_action_congruence = MLP_in_action_congruence.detach()
+
+            MLP_in_action_congruence_2d = MLP_in_action_congruence.reshape(-1)
+            df = pd.DataFrame(
+                MLP_in_action_congruence_2d.numpy(), columns=["value"]
+            )
+            layers, actions, dims = MLP_in_action_congruence.shape
+            indices = pd.MultiIndex.from_tuples(
+                [
+                    (i, k, l)
+                    for i in range(layers)
+                    for k in range(actions)
+                    for l in range(dims)
+                ],
+                names=["layer", "action", "dimension"],
+            )
+            df.index = indices
+            df.reset_index(inplace=True)
+            # ensure action is interpreted as a categorical variable
+            df["action"] = df["action"].map(IDX_TO_ACTION)
+
+            fig = px.scatter(
+                df,
+                x=df.index,
+                y="value",
+                color="action",
+                # facet_col="layer",
+                hover_data=["layer", "action", "dimension", "value"],
+                labels={"value": "Congruence"},
+            )
+
+            # update x axis to hide the tick labels, and remove the label
+            fig.update_xaxes(showticklabels=False, title=None)
+
+            st.plotly_chart(fig, use_container_width=True)
+
+        with rtg_tab:
+            rtg_in = dt.reward_embedding[0].weight
+            MLP_in_rtg_congruence = MLP_in.permute(0, 2, 1) @ rtg_in
+
+            # torch.Size([3, 256, 1])
+            MLP_in_rtg_congruence_2d = MLP_in_rtg_congruence.reshape(-1)
+            layers, dims = MLP_in_rtg_congruence.squeeze(-1).shape
+            indices = pd.MultiIndex.from_tuples(
+                [(i, l) for i in range(layers) for l in range(dims)],
+                names=["layer", "dimension"],
+            )
+            df = pd.DataFrame(
+                MLP_in_rtg_congruence_2d.detach().numpy(), columns=["value"]
+            )
+            df.index = indices
+            df.reset_index(inplace=True)
+            df["layer"] = df["layer"].astype("category")
+            fig = px.scatter(
+                df,
+                x=df.index,
+                y="value",
+                color="layer",
+                hover_data=["layer", "dimension", "value"],
+                labels={"value": "Congruence"},
+            )
+
+            # update x axis to hide the tick labels, and remove the label
+            fig.update_xaxes(showticklabels=False, title=None)
+
+            st.plotly_chart(fig, use_container_width=True)
+
+    with mlp_out_tab:
+        MLP_out = torch.stack(
+            [block.mlp.W_out for block in dt.transformer.blocks]
+        )
+
+        MLP_out_congruence = MLP_out @ dt.action_predictor.weight.T
+        MLP_out_congruence = MLP_out_congruence.permute(0, 2, 1)
+        MLP_out_congruence = MLP_out_congruence.detach()
+
+        MLP_out_congruence_2d = MLP_out_congruence.reshape(-1)
+        df = pd.DataFrame(MLP_out_congruence_2d.numpy(), columns=["value"])
+        layers, actions, dims = MLP_out_congruence.shape
+        indices = pd.MultiIndex.from_tuples(
+            [
+                (i, k, l)
+                for i in range(layers)
+                for k in range(actions)
+                for l in range(dims)
+            ],
+            names=["layer", "action", "dimension"],
+        )
+        df.index = indices
+        df.reset_index(inplace=True)
+        # ensure action is interpreted as a categorical variable
+        df["action"] = df["action"].map(IDX_TO_ACTION)
+
+        fig = px.scatter(
+            df,
+            x=df.index,
+            y="value",
+            color="action",
+            # facet_col="layer",
+            hover_data=["layer", "action", "dimension", "value"],
+            labels={"value": "Congruence"},
+        )
+
+        # update x axis to hide the tick labels, and remove the label
+        fig.update_xaxes(showticklabels=False, title=None)
+
+        st.plotly_chart(fig, use_container_width=True)
+
+
+# def show_time_embeddings(dt, logit_dir):
+#     with st.expander("Show Time Embeddings"):
+#         if dt.time_embedding_type == "linear":
+#             time_steps = t.arange(100).unsqueeze(0).unsqueeze(-1).to(t.float32)
+#             time_embeddings = dt.get_time_embeddings(time_steps).squeeze(0)
+#         else:
+#             time_embeddings = dt.time_embedding.weight
+
+#         max_timestep = st.slider(
+#             "Max timestep",
+#             min_value=1,
+#             max_value=time_embeddings.shape[0] - 1,
+#             value=time_embeddings.shape[0] - 1,
+#         )
+#         time_embeddings = time_embeddings[: max_timestep + 1]
+#         dot_prod = time_embeddings @ logit_dir
+#         dot_prod = dot_prod.detach()
+
+#         show_initial = st.checkbox("Show initial time embedding", value=True)
+#         fig = px.line(dot_prod)
+#         fig.update_layout(
+#             title="Time Embedding Dot Product",
+#             xaxis_title="Time Step",
+#             yaxis_title="Dot Product",
+#             legend_title="",
+#         )
+#         # remove legend
+#         fig.update_layout(showlegend=False)
+#         if show_initial:
+#             fig.add_vline(
+#                 x=st.session_state.timesteps[0][-1].item()
+#                 + st.session_state.timestep_adjustment,
+#                 line_dash="dash",
+#                 line_color="red",
+#                 annotation_text="Current timestep",
+#             )
+#         st.plotly_chart(fig, use_container_width=True)
+
+#         def calc_cosine_similarity_matrix(matrix: t.Tensor) -> t.Tensor:
+#             # Check if the input matrix is square
+#             # assert matrix.shape[0] == matrix.shape[1], "The input matrix must be square."
+
+#             # Normalize the column vectors
+#             norms = t.norm(
+#                 matrix, dim=0
+#             )  # Compute the norms of the column vectors
+#             normalized_matrix = (
+#                 matrix / norms
+#             )  # Normalize the column vectors by dividing each element by the corresponding norm
+
+#             # Compute the cosine similarity matrix using matrix multiplication
+#             return t.matmul(normalized_matrix.t(), normalized_matrix)
+
+#         similarity_matrix = calc_cosine_similarity_matrix(time_embeddings.T)
+#         st.plotly_chart(px.imshow(similarity_matrix.detach().numpy()))
+
+
+# def show_rtg_embeddings(dt, logit_dir):
+#     with st.expander("Show RTG Embeddings"):
+#         batch_size = 1028
+#         if st.session_state.allow_extrapolation:
+#             min_value = -10
+#             max_value = 10
+#         else:
+#             min_value = -1
+#             max_value = 1
+#         rtg_range = st.slider(
+#             "RTG Range",
+#             min_value=min_value,
+#             max_value=max_value,
+#             value=(-1, 1),
+#             step=1,
+#         )
+
+#         min_rtg = rtg_range[0]
+#         max_rtg = rtg_range[1]
+
+#         rtg_range = t.linspace(min_rtg, max_rtg, 100).unsqueeze(-1)
+
+#         rtg_embeddings = dt.reward_embedding(rtg_range).squeeze(0)
+
+#         dot_prod = rtg_embeddings @ logit_dir
+#         dot_prod = dot_prod.detach()
+
+#         show_initial = st.checkbox("Show initial RTG embedding", value=True)
+
+#         fig = px.line(x=rtg_range.squeeze(1).detach().numpy(), y=dot_prod)
+#         fig.update_layout(
+#             title="RTG Embedding Dot Product",
+#             xaxis_title="RTG",
+#             yaxis_title="Dot Product",
+#             legend_title="",
+#         )
+#         # remove legend
+#         fig.update_layout(showlegend=False)
+#         if show_initial:
+#             fig.add_vline(
+#                 x=st.session_state.rtg[0][0].item(),
+#                 line_dash="dash",
+#                 line_color="red",
+#                 annotation_text="Initial RTG",
+#             )
+#         st.plotly_chart(fig, use_container_width=True)
 
 
 def show_composition_scores(dt):

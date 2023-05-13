@@ -33,8 +33,7 @@ from src.streamlit_app.setup import initialize_playground
 from src.streamlit_app.static_analysis_components import (
     show_ov_circuit,
     show_qk_circuit,
-    show_rtg_embeddings,
-    show_time_embeddings,
+    show_congruence,
     show_param_statistics,
     show_dim_reduction,
     show_composition_scores,
@@ -134,8 +133,7 @@ with st.sidebar:
     static_analyses = st.multiselect(
         "Select Static Analyses",
         [
-            "RTG Embeddings",
-            "Time Embeddings",
+            "Congruence",
             "OV Circuit",
             "QK Circuit",
             "Parameter Distributions",
@@ -170,10 +168,9 @@ if "Dimensionality Reduction" in analyses:
     show_dim_reduction(dt)
 if "Composition Scores" in analyses:
     show_composition_scores(dt)
-if "RTG Embeddings" in analyses:
-    show_rtg_embeddings(dt, logit_dir)
-if "Time Embeddings" in analyses:
-    show_time_embeddings(dt, logit_dir)
+if "Congruence" in analyses:
+    show_congruence(dt)
+
 if "QK Circuit" in analyses:
     show_qk_circuit(dt)
 if "OV Circuit" in analyses:
