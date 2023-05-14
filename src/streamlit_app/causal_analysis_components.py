@@ -651,7 +651,13 @@ def show_algebraic_value_editing(dt, logit_dir, original_cache):
 
         act_original = original_cache[name]
         act_corrupted = corrupted_cache[name]
-        act_diff = act_corrupted - act_original
+
+        # theoretically, act_add and act_sub could be a very different situation.
+        # but I don't have an easy way to construct that now. So I'm just going to
+        # assume we want to semantically retarget the current frame.
+        act_sub = act_original
+        act_add = act_corrupted
+        act_diff = act_add - act_sub
 
         def ave_hook(resid_pre, hook):
             if resid_pre.shape[1] == 1:
