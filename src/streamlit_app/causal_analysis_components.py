@@ -12,6 +12,8 @@ from transformer_lens.hook_points import HookPoint
 
 from src.visualization import get_rendered_obs
 
+from .visualizations import plot_logit_scan
+
 from .analysis import get_residual_decomp
 from .constants import IDX_TO_ACTION, IDX_TO_OBJECT
 from .environment import (
@@ -32,9 +34,11 @@ from .visualizations import (
     plot_single_residual_stream_contributions_comparison,
 )
 
+
+BATCH_SIZE = 128
+
+
 # Ablation
-
-
 def show_ablation(dt, logit_dir, original_cache):
     with st.expander("Ablation Experiment"):
         # make a streamlit form for choosing a component to ablate
@@ -112,139 +116,145 @@ def get_ablation_function(ablate_to_mean, head_to_ablate, component="HEAD"):
 
 
 # Activation Patching
+
+
+def get_corrupted_tokens(dt):
+    path_patch_by = st.selectbox(
+        "Patch by", ["State", "All RTG", "Specific RTG", "Action"]
+    )
+
+    if path_patch_by == "Specific RTG":
+        min_rtg = st.slider(
+            "Corrupted RTG",
+            min_value=0.0,
+            max_value=st.session_state.rtg[0][0].item(),
+            value=0.0,
+        )
+        position = st.slider(
+            "Position",
+            min_value=0,
+            max_value=st.session_state.max_len - 2,
+            value=0,
+        )
+        # at this point I can set the corrupted tokens.
+        corrupted_tokens = get_modified_tokens_from_app_state(
+            dt, specific_rtg=min_rtg, position=position
+        )
+
+    elif path_patch_by == "All RTG":
+        min_rtg = st.slider(
+            "Corrupted RTG",
+            min_value=0.0,
+            max_value=st.session_state.rtg[0][0].item() - 0.01,
+            value=0.0,
+        )
+        # at this point I can set the corrupted tokens.
+        corrupted_tokens = get_modified_tokens_from_app_state(
+            dt, all_rtg=min_rtg
+        )
+
+    elif path_patch_by == "Action":
+        action = st.selectbox("Choose an action", IDX_TO_ACTION.values())
+        action_idx = ACTION_TO_IDX[action]
+        position = st.slider(
+            "Position",
+            min_value=0,
+            max_value=st.session_state.max_len - 2,
+            value=0,
+        )
+        # at this point I can set the corrupted tokens.
+        corrupted_tokens = get_modified_tokens_from_app_state(
+            dt, new_action=action_idx, position=position
+        )
+
+    elif path_patch_by == "State":
+        assert (
+            dt.environment_config.env_id == "MiniGrid-MemoryS7FixedStart-v0"
+        ), "State patching only implemented for MiniGrid-MemoryS7FixedStart-v0"
+
+        # Let's construct this as a series (starting with one)
+        # of changes to any previous state.
+
+        a, b, c, d, f = st.columns(5)
+
+        with a:
+            current_len = st.session_state.current_len
+            max_len = st.session_state.max_len
+
+            if current_len == 1:
+                st.write("Can only modify current _state timestep = 1")
+                timestep_to_modify = max_len - 1
+            else:
+                timestep_to_modify = st.selectbox(
+                    "Timestep",
+                    range(max_len),
+                    format_func=lambda x: st.session_state.labels[1::3][x],
+                    index=max(0, max_len - current_len),
+                )
+        with b:
+            x_position_to_update = st.selectbox(
+                "X Position (Rel to Agent)",
+                range(8),
+                format_func=lambda x: f"{x-3}",
+                index=2,
+            )
+        with c:
+            y_position_to_update = st.selectbox(
+                "Y Position (Rel to Agent)",
+                range(8),
+                format_func=lambda x: f"{6-x}",
+                index=6,
+            )
+        with d:
+            object_to_update = st.selectbox(
+                "Select an object",
+                list(IDX_TO_OBJECT.keys()),
+                index=OBJECT_TO_IDX["key"],
+                format_func=IDX_TO_OBJECT.get,
+            )
+        with f:
+            show_update_tick = st.checkbox("Show state update")
+        env = st.session_state.env
+        obs = st.session_state.obs[0][-max_len:].clone()
+        obs = obs[timestep_to_modify].clone()
+
+        corrupt_obs = obs.detach().clone()
+        corrupt_obs[
+            x_position_to_update,
+            y_position_to_update,
+            : len(OBJECT_TO_IDX),
+        ] = 0
+        corrupt_obs[
+            x_position_to_update, y_position_to_update, object_to_update
+        ] = 1
+
+        if show_update_tick:
+            clean_col, corrupt_col = st.columns(2)
+            with clean_col:
+                st.write("Clean")
+                image = get_rendered_obs(env, obs)
+                fig = px.imshow(image)
+                st.plotly_chart(fig, use_container_width=True)
+            with corrupt_col:
+                st.write("Corrupted")
+                image = get_rendered_obs(env, corrupt_obs)
+                fig = px.imshow(image)
+                st.plotly_chart(fig, use_container_width=True)
+
+        corrupted_tokens = get_modified_tokens_from_app_state(
+            dt, corrupt_obs=corrupt_obs, position=timestep_to_modify
+        )
+
+    else:
+        st.warning("Not implemented yet")
+
+    return corrupted_tokens
+
+
 def show_activation_patching(dt, logit_dir, original_cache):
     token_labels = st.session_state.labels
     with st.expander("Activation Patching"):
-        path_patch_by = st.selectbox(
-            "Patch by", ["All RTG", "Specific RTG", "Action", "State"]
-        )
-
-        if path_patch_by == "Specific RTG":
-            min_rtg = st.slider(
-                "Corrupted RTG",
-                min_value=0.0,
-                max_value=st.session_state.rtg[0][0].item(),
-                value=0.0,
-            )
-            position = st.slider(
-                "Position",
-                min_value=0,
-                max_value=st.session_state.max_len - 2,
-                value=0,
-            )
-            # at this point I can set the corrupted tokens.
-            corrupted_tokens = get_modified_tokens_from_app_state(
-                dt, specific_rtg=min_rtg, position=position
-            )
-
-        elif path_patch_by == "All RTG":
-            min_rtg = st.slider(
-                "Corrupted RTG",
-                min_value=0.0,
-                max_value=st.session_state.rtg[0][0].item() - 0.01,
-                value=0.0,
-            )
-            # at this point I can set the corrupted tokens.
-            corrupted_tokens = get_modified_tokens_from_app_state(
-                dt, all_rtg=min_rtg
-            )
-
-        elif path_patch_by == "Action":
-            action = st.selectbox("Choose an action", IDX_TO_ACTION.values())
-            action_idx = ACTION_TO_IDX[action]
-            position = st.slider(
-                "Position",
-                min_value=0,
-                max_value=st.session_state.max_len - 2,
-                value=0,
-            )
-            # at this point I can set the corrupted tokens.
-            corrupted_tokens = get_modified_tokens_from_app_state(
-                dt, new_action=action_idx, position=position
-            )
-
-        elif path_patch_by == "State":
-            assert (
-                dt.environment_config.env_id
-                == "MiniGrid-MemoryS7FixedStart-v0"
-            ), "State patching only implemented for MiniGrid-MemoryS7FixedStart-v0"
-
-            # Let's construct this as a series (starting with one)
-            # of changes to any previous state.
-
-            a, b, c, d, f = st.columns(5)
-
-            with a:
-                current_len = st.session_state.current_len
-                max_len = st.session_state.max_len
-
-                if current_len == 1:
-                    st.write("Can only modify current _state timestep = 1")
-                    timestep_to_modify = max_len - 1
-                else:
-                    timestep_to_modify = st.selectbox(
-                        "Timestep",
-                        range(max_len),
-                        format_func=lambda x: st.session_state.labels[1::3][x],
-                        index=max(0, max_len - current_len),
-                    )
-            with b:
-                x_position_to_update = st.selectbox(
-                    "X Position (Rel to Agent)",
-                    range(8),
-                    format_func=lambda x: f"{x-3}",
-                    index=2,
-                )
-            with c:
-                y_position_to_update = st.selectbox(
-                    "Y Position (Rel to Agent)",
-                    range(8),
-                    format_func=lambda x: f"{6-x}",
-                    index=6,
-                )
-            with d:
-                object_to_update = st.selectbox(
-                    "Select an object",
-                    list(IDX_TO_OBJECT.keys()),
-                    index=OBJECT_TO_IDX["key"],
-                    format_func=IDX_TO_OBJECT.get,
-                )
-            with f:
-                show_update_tick = st.checkbox("Show state update")
-            env = st.session_state.env
-            obs = st.session_state.obs[0][-max_len:].clone()
-            obs = obs[timestep_to_modify].clone()
-
-            corrupt_obs = obs.detach().clone()
-            corrupt_obs[
-                x_position_to_update,
-                y_position_to_update,
-                : len(OBJECT_TO_IDX),
-            ] = 0
-            corrupt_obs[
-                x_position_to_update, y_position_to_update, object_to_update
-            ] = 1
-
-            if show_update_tick:
-                clean_col, corrupt_col = st.columns(2)
-                with clean_col:
-                    st.write("Clean")
-                    image = get_rendered_obs(env, obs)
-                    fig = px.imshow(image)
-                    st.plotly_chart(fig, use_container_width=True)
-                with corrupt_col:
-                    st.write("Corrupted")
-                    image = get_rendered_obs(env, corrupt_obs)
-                    fig = px.imshow(image)
-                    st.plotly_chart(fig, use_container_width=True)
-
-            corrupted_tokens = get_modified_tokens_from_app_state(
-                dt, corrupt_obs=corrupt_obs, position=timestep_to_modify
-            )
-
-        else:
-            st.warning("Not implemented yet")
-
+        corrupted_tokens = get_corrupted_tokens(dt)
         # # look at current state and do a forward pass
         clean_tokens = get_tokens_from_app_state(dt, previous_step=False)
         clean_preds, clean_x, _, _ = get_action_preds_from_tokens(
@@ -555,3 +565,111 @@ def get_act_patch_mlp(
         patched_neurons_normalized_improvement[neuron] = patched_neuron_metric
 
     return patched_neurons_normalized_improvement
+
+
+# AVEC!
+# based on: https://www.lesswrong.com/posts/5spBue2z2tw4JuDCx/steering-gpt-2-xl-by-adding-an-activation-vector#Evidence_of_generalization
+# I think of it as reverse activation patching.
+# We're going to try to find a vector that, when added to the activations,
+# will make the model predict a certain action.
+def show_algebraic_value_editing(dt, logit_dir, original_cache):
+    with st.expander("Algebraic Value Editing"):
+        # 1. Create a corrupted forward pass using the same essential logic as activation
+        # patching.
+        corrupted_tokens = get_corrupted_tokens(dt)
+        (
+            corrupted_preds,
+            corrupted_x,
+            corrupted_cache,
+            _,
+        ) = get_action_preds_from_tokens(dt, corrupted_tokens)
+
+        # 2. Select where you want to insert the vector in the forward pass
+        # and where you want to do a scan or not.
+        a, b, c = st.columns([5, 1, 5])
+        with a:
+            layer = st.selectbox(
+                "Layer", list(range(dt.transformer_config.n_layers))
+            )
+            name = f"blocks.{layer}.hook_resid_pre"
+
+        with c:
+            coeff_min, coeff_max = st.slider(
+                "Coefficient",
+                min_value=-10.0,
+                max_value=10.0,
+                value=[-10.0, 10.0],
+            )
+
+            # make coeff a vector from min to max of length batch size
+            coeff = (
+                torch.linspace(coeff_min, coeff_max, BATCH_SIZE)
+                .unsqueeze(1)
+                .unsqueeze(2)
+                .to(corrupted_tokens.device)
+            )
+
+        # 3. Run a scan or single forward pass of the original model to get the
+        # activations using a hook to insert the chosen value vector.
+
+        act_original = original_cache[name]
+        act_corrupted = corrupted_cache[name]
+        act_diff = act_corrupted - act_original
+
+        def ave_hook(resid_pre, hook):
+            if resid_pre.shape[1] == 1:
+                return  # caching in model.generate for new tokens
+
+            # We only add to the prompt (first call), not the generated tokens.
+            # ppos, apos = resid_pre.shape[1], act_diff.shape[1]
+            # assert apos <= ppos, f"More mod tokens ({apos}) then prompt tokens ({ppos})!"
+            modulated_act_diff = coeff * act_diff
+
+            # add to the beginning (position-wise) of the activations
+            resid_pre[:, :, :] += coeff * act_diff
+
+        editing_hooks = [(f"blocks.{layer}.hook_resid_pre", ave_hook)]
+
+        clean_tokens = get_tokens_from_app_state(dt, previous_step=False)
+        clean_tokens = clean_tokens.repeat(BATCH_SIZE, 1, 1)
+
+        with dt.transformer.hooks(fwd_hooks=editing_hooks):
+            avec_x, avec_cache = dt.transformer.run_with_cache(
+                clean_tokens, remove_batch_dim=False
+            )
+
+            _, action_preds, _ = dt.get_logits(
+                avec_x,
+                batch_size=BATCH_SIZE,
+                seq_length=st.session_state.max_len,
+                no_actions=False,
+            )
+
+        logit_tab, decomp_tab = st.tabs(["Logit Scan", "Decomposition"])
+
+        with logit_tab:
+            fig = plot_logit_scan(coeff, action_preds, scan_name="Coefficient")
+            st.plotly_chart(fig, use_container_width=True)
+
+        from .components import (
+            decomp_configuration_ui,
+            get_decomp_scan,
+            plot_decomp_scan_line,
+            plot_decomp_scan_corr,
+        )
+
+        with decomp_tab:
+            decomp_level, cluster = decomp_configuration_ui()
+            df = get_decomp_scan(coeff, avec_cache, logit_dir, decomp_level)
+            fig = plot_decomp_scan_line(df, "Coefficient")
+            st.plotly_chart(fig, use_container_width=True)
+            fig2 = plot_decomp_scan_corr(df, cluster, "Coefficient")
+            st.plotly_chart(fig2, use_container_width=True)
+            if cluster:
+                st.write("I know this is a bit janky, will fix later.")
+
+        st.write(
+            """
+            Read more on this technique [here](https://www.lesswrong.com/posts/5spBue2z2tw4JuDCx/steering-gpt-2-xl-by-adding-an-activation-vector#Evidence_of_generalization)
+            """
+        )

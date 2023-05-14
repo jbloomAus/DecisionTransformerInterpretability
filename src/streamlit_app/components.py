@@ -8,7 +8,11 @@ import uuid
 
 from .environment import get_action_preds_from_app_state
 from .utils import read_index_html
-from .visualizations import plot_action_preds, render_env
+from .visualizations import (
+    plot_action_preds,
+    render_env,
+    plot_dendrogram_heatmap,
+)
 from src.visualization import get_rendered_obs
 
 
@@ -180,3 +184,66 @@ def show_history():
                 px.imshow(pov_obs[:, :, :, :], animation_frame=0),
                 use_container_width=True,
             )
+
+
+# When doing decompositions, want these variables
+def decomp_configuration_ui():
+    st.write("Please note that the full decomposition is slow to compute")
+    cola, colb = st.columns(2)
+    with cola:
+        decomp_level = st.selectbox("Decomposition Level", ["Reduced", "Full"])
+    with colb:
+        cluster = st.checkbox("Cluster", value=False)
+    return decomp_level, cluster
+
+
+def get_decomp_scan(rtg, cache, logit_dir, decomp_level):
+    if decomp_level == "Reduced":
+        results, labels = cache.decompose_resid(
+            apply_ln=True, return_labels=True
+        )
+    elif decomp_level == "Full":
+        results, labels = cache.get_full_resid_decomposition(
+            apply_ln=True,
+            return_labels=True,
+            expand_neurons=False,  # if you don't set this, you'll crash your browser.
+        )
+
+    attribution = results[:, :, -1, :] @ logit_dir
+
+    df = pd.DataFrame(attribution.T.detach().cpu().numpy(), columns=labels)
+    df.index = rtg[:, -1].squeeze(1).detach().cpu().numpy()
+
+    return df
+
+
+def plot_decomp_scan_line(df, x="RTG"):
+    fig = px.line(
+        df,
+        labels={"index": x, "value": "Logit Difference"},
+        title="Residual Stream Contributions in Directional Analysis",
+    )
+
+    fig.add_vline(x=-1, line_dash="dot", line_width=1, line_color="white")
+    fig.add_vline(x=0, line_dash="dot", line_width=1, line_color="white")
+    fig.add_vline(x=1, line_dash="dot", line_width=1, line_color="white")
+
+    # # add a little more margin to the top
+    fig.update_layout(margin=dict(t=50))
+
+    return fig
+
+
+def plot_decomp_scan_corr(df, cluster=False, x="RTG"):
+    if not cluster:
+        fig2 = px.imshow(
+            df.corr(),
+            color_continuous_midpoint=0,
+            title=f"Correlation between {x} and Residual Stream Components",
+            color_continuous_scale="RdBu",
+        )
+
+    else:
+        fig2 = plot_dendrogram_heatmap(df.corr())
+
+    return fig2

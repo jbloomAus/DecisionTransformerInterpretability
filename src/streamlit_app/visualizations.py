@@ -273,3 +273,64 @@ def plot_dendrogram_heatmap(
 
     # Plot!
     return fig
+
+
+def plot_logit_scan(scan_values, action_preds, position=-1, scan_name="RTG"):
+    preds_over_rtg = {
+        scan_name: scan_values[:, position, 0].detach().cpu().numpy(),
+        "Left": action_preds[:, position, 0].detach().cpu().numpy(),
+        "Right": action_preds[:, position, 1].detach().cpu().numpy(),
+        "Forward": action_preds[:, position, 2].detach().cpu().numpy(),
+    }
+
+    if action_preds.shape[-1] == 7:
+        preds_over_rtg["Pickup"] = (
+            action_preds[:, position, 3].detach().cpu().numpy()
+        )
+        preds_over_rtg["Drop"] = (
+            action_preds[:, position, 4].detach().cpu().numpy()
+        )
+        preds_over_rtg["Toggle"] = (
+            action_preds[:, position, 5].detach().cpu().numpy()
+        )
+        preds_over_rtg["Done"] = (
+            action_preds[:, position, 6].detach().cpu().numpy()
+        )
+
+    df = pd.DataFrame(preds_over_rtg)
+
+    # draw a line graph with left,right forward over RTG
+    if action_preds.shape[-1] == 7:
+        fig = px.line(
+            df,
+            x=scan_name,
+            y=[
+                "Left",
+                "Right",
+                "Forward",
+                "Pickup",
+                "Drop",
+                "Toggle",
+                "Done",
+            ],
+            title="Action Prediction vs RTG",
+        )
+    else:
+        fig = px.line(
+            df,
+            x="RTG",
+            y=["Left", "Right", "Forward"],
+            title="Action Prediction vs RTG",
+        )
+
+    fig.update_layout(
+        xaxis_title="RTG",
+        yaxis_title="Action Prediction",
+        legend_title="",
+    )
+    # add vertical dotted lines at RTG = -1, RTG = 0, RTG = 1
+    # fig.add_vline(x=-1, line_dash="dot", line_width=1, line_color="white")
+    # fig.add_vline(x=0, line_dash="dot", line_width=1, line_color="white")
+    # fig.add_vline(x=1, line_dash="dot", line_width=1, line_color="white")
+
+    return fig

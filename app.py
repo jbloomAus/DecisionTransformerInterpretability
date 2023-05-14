@@ -6,6 +6,7 @@ import plotly.express as px
 from src.streamlit_app.causal_analysis_components import (
     show_ablation,
     show_activation_patching,
+    show_algebraic_value_editing,
 )
 
 from src.streamlit_app.components import (
@@ -151,7 +152,8 @@ with st.sidebar:
         ],
     )
     causal_analyses = st.multiselect(
-        "Select Causal Analyses", ["Ablation", "Activation Patching"]
+        "Select Causal Analyses",
+        ["Ablation", "Activation Patching", "Algebraic Value Editing"],
     )
 analyses = dynamic_analyses + static_analyses + causal_analyses
 
@@ -180,6 +182,8 @@ if "Ablation" in analyses:
     show_ablation(dt, logit_dir=logit_dir, original_cache=cache)
 if "Activation Patching" in analyses:
     show_activation_patching(dt, logit_dir=logit_dir, original_cache=cache)
+if "Algebraic Value Editing" in analyses:
+    show_algebraic_value_editing(dt, logit_dir=logit_dir, original_cache=cache)
 
 if "Show RTG Scan" in analyses:
     show_rtg_scan(dt, logit_dir=logit_dir)

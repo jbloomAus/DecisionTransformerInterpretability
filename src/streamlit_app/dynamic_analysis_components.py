@@ -20,6 +20,14 @@ from .visualizations import (
     plot_attention_pattern_single,
     plot_logit_diff,
     plot_dendrogram_heatmap,
+    plot_logit_scan,
+)
+
+from .components import (
+    decomp_configuration_ui,
+    get_decomp_scan,
+    plot_decomp_scan_line,
+    plot_decomp_scan_corr,
 )
 
 RTG_SCAN_BATCH_SIZE = 256
@@ -234,122 +242,6 @@ def prepare_rtg_scan_tokens(dt, min_rtg, max_rtg, max_len, timesteps):
     # print out shape of each
     tokens = dt.to_tokens(obs, actions, rtg, timesteps)
     return rtg, tokens
-
-
-def plot_logit_scan(rtg, action_preds):
-    preds_over_rtg = {
-        "RTG": rtg[:, 0, 0].detach().cpu().numpy(),
-        "Left": action_preds[:, 0, 0].detach().cpu().numpy(),
-        "Right": action_preds[:, 0, 1].detach().cpu().numpy(),
-        "Forward": action_preds[:, 0, 2].detach().cpu().numpy(),
-    }
-
-    if action_preds.shape[-1] == 7:
-        preds_over_rtg["Pickup"] = action_preds[:, 0, 3].detach().cpu().numpy()
-        preds_over_rtg["Drop"] = action_preds[:, 0, 4].detach().cpu().numpy()
-        preds_over_rtg["Toggle"] = action_preds[:, 0, 5].detach().cpu().numpy()
-        preds_over_rtg["Done"] = action_preds[:, 0, 6].detach().cpu().numpy()
-
-    df = pd.DataFrame(preds_over_rtg)
-
-    # draw a line graph with left,right forward over RTG
-    if action_preds.shape[-1] == 7:
-        fig = px.line(
-            df,
-            x="RTG",
-            y=[
-                "Left",
-                "Right",
-                "Forward",
-                "Pickup",
-                "Drop",
-                "Toggle",
-                "Done",
-            ],
-            title="Action Prediction vs RTG",
-        )
-    else:
-        fig = px.line(
-            df,
-            x="RTG",
-            y=["Left", "Right", "Forward"],
-            title="Action Prediction vs RTG",
-        )
-
-    fig.update_layout(
-        xaxis_title="RTG",
-        yaxis_title="Action Prediction",
-        legend_title="",
-    )
-    # add vertical dotted lines at RTG = -1, RTG = 0, RTG = 1
-    fig.add_vline(x=-1, line_dash="dot", line_width=1, line_color="white")
-    fig.add_vline(x=0, line_dash="dot", line_width=1, line_color="white")
-    fig.add_vline(x=1, line_dash="dot", line_width=1, line_color="white")
-
-    return fig
-
-
-def get_decomp_scan(rtg, cache, logit_dir, decomp_level):
-    if decomp_level == "Reduced":
-        results, labels = cache.decompose_resid(
-            apply_ln=True, return_labels=True
-        )
-    elif decomp_level == "Full":
-        results, labels = cache.get_full_resid_decomposition(
-            apply_ln=True,
-            return_labels=True,
-            expand_neurons=False,  # if you don't set this, you'll crash your browser.
-        )
-
-    st.write(results.shape)
-    attribution = results[:, :, -1, :] @ logit_dir
-
-    df = pd.DataFrame(attribution.T.detach().cpu().numpy(), columns=labels)
-    df.index = rtg[:, -1].squeeze(1).detach().cpu().numpy()
-
-    return df
-
-
-def plot_decomp_scan_line(df):
-    fig = px.line(
-        df,
-        labels={"index": "RTG", "value": "Logit Difference"},
-        title="Residual Stream Contributions in Directional Analysis",
-    )
-
-    fig.add_vline(x=-1, line_dash="dot", line_width=1, line_color="white")
-    fig.add_vline(x=0, line_dash="dot", line_width=1, line_color="white")
-    fig.add_vline(x=1, line_dash="dot", line_width=1, line_color="white")
-
-    # # add a little more margin to the top
-    fig.update_layout(margin=dict(t=50))
-
-    return fig
-
-
-def plot_decomp_scan_corr(df, cluster=False):
-    if not cluster:
-        fig2 = px.imshow(
-            df.corr(),
-            color_continuous_midpoint=0,
-            title="Correlation between RTG and Residual Stream Components",
-            color_continuous_scale="RdBu",
-        )
-
-    else:
-        fig2 = plot_dendrogram_heatmap(df.corr())
-
-    return fig2
-
-
-def decomp_configuration_ui():
-    st.write("Please note that the full decomposition is slow to compute")
-    cola, colb = st.columns(2)
-    with cola:
-        decomp_level = st.selectbox("Decomposition Level", ["Reduced", "Full"])
-    with colb:
-        cluster = st.checkbox("Cluster", value=False)
-    return decomp_level, cluster
 
 
 def show_rtg_scan(dt, logit_dir):
