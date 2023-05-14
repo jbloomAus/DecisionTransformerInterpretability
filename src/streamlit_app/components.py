@@ -187,13 +187,17 @@ def show_history():
 
 
 # When doing decompositions, want these variables
-def decomp_configuration_ui():
+def decomp_configuration_ui(key=""):
     st.write("Please note that the full decomposition is slow to compute")
     cola, colb = st.columns(2)
     with cola:
-        decomp_level = st.selectbox("Decomposition Level", ["Reduced", "Full"])
+        decomp_level = st.selectbox(
+            "Decomposition Level",
+            ["Reduced", "Full"],
+            key=key + "decomp_level",
+        )
     with colb:
-        cluster = st.checkbox("Cluster", value=False)
+        cluster = st.checkbox("Cluster", value=False, key=key + "cluster")
     return decomp_level, cluster
 
 

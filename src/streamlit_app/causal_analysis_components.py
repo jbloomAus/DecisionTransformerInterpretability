@@ -124,9 +124,11 @@ def get_ablation_function(ablate_to_mean, head_to_ablate, component="HEAD"):
 # Activation Patching
 
 
-def get_corrupted_tokens(dt):
+def get_corrupted_tokens(dt, key=""):
     path_patch_by = st.selectbox(
-        "Patch by", ["State", "All RTG", "Specific RTG", "Action"]
+        "Patch by",
+        ["State", "All RTG", "Specific RTG", "Action"],
+        key=key + "patch_by_selector",
     )
 
     if path_patch_by == "Specific RTG":
@@ -135,12 +137,14 @@ def get_corrupted_tokens(dt):
             min_value=0.0,
             max_value=st.session_state.rtg[0][0].item(),
             value=0.0,
+            key=key + "rtg_slider",
         )
         position = st.slider(
             "Position",
             min_value=0,
             max_value=st.session_state.max_len - 2,
             value=0,
+            key=key + "position_slider",
         )
         # at this point I can set the corrupted tokens.
         corrupted_tokens = get_modified_tokens_from_app_state(
@@ -153,6 +157,7 @@ def get_corrupted_tokens(dt):
             min_value=0.0,
             max_value=st.session_state.rtg[0][0].item() - 0.01,
             value=0.0,
+            key=key + "rtg_slider",
         )
         # at this point I can set the corrupted tokens.
         corrupted_tokens = get_modified_tokens_from_app_state(
@@ -167,6 +172,7 @@ def get_corrupted_tokens(dt):
             min_value=0,
             max_value=st.session_state.max_len - 2,
             value=0,
+            key=key + "action_selector",
         )
         # at this point I can set the corrupted tokens.
         corrupted_tokens = get_modified_tokens_from_app_state(
@@ -196,6 +202,7 @@ def get_corrupted_tokens(dt):
                     range(max_len),
                     format_func=lambda x: st.session_state.labels[1::3][x],
                     index=max(0, max_len - current_len),
+                    key=key + "timestep_selector",
                 )
         with b:
             x_position_to_update = st.selectbox(
@@ -203,6 +210,7 @@ def get_corrupted_tokens(dt):
                 range(8),
                 format_func=lambda x: f"{x-3}",
                 index=2,
+                key=key + "x_position_selector",
             )
         with c:
             y_position_to_update = st.selectbox(
@@ -210,6 +218,7 @@ def get_corrupted_tokens(dt):
                 range(8),
                 format_func=lambda x: f"{6-x}",
                 index=6,
+                key=key + "y_position_selector",
             )
         with d:
             object_to_update = st.selectbox(
@@ -217,9 +226,12 @@ def get_corrupted_tokens(dt):
                 list(IDX_TO_OBJECT.keys()),
                 index=OBJECT_TO_IDX["key"],
                 format_func=IDX_TO_OBJECT.get,
+                key=key + "object_selector",
             )
         with f:
-            show_update_tick = st.checkbox("Show state update")
+            show_update_tick = st.checkbox(
+                "Show state update", key=key + "show_update_tick"
+            )
         env = st.session_state.env
         obs = st.session_state.obs[0][-max_len:].clone()
         obs = obs[timestep_to_modify].clone()
@@ -260,7 +272,7 @@ def get_corrupted_tokens(dt):
 def show_activation_patching(dt, logit_dir, original_cache):
     token_labels = st.session_state.labels
     with st.expander("Activation Patching"):
-        corrupted_tokens = get_corrupted_tokens(dt)
+        corrupted_tokens = get_corrupted_tokens(dt, key="act_patch")
         # # look at current state and do a forward pass
         clean_tokens = get_tokens_from_app_state(dt, previous_step=False)
         clean_preds, clean_x, _, _ = get_action_preds_from_tokens(
@@ -601,7 +613,7 @@ def show_algebraic_value_editing(dt, logit_dir, original_cache):
 
         # 1. Create a corrupted forward pass using the same essential logic as activation
         # patching.
-        corrupted_tokens = get_corrupted_tokens(dt)
+        corrupted_tokens = get_corrupted_tokens(dt, key="avec")
         (
             corrupted_preds,
             corrupted_x,
@@ -677,7 +689,7 @@ def show_algebraic_value_editing(dt, logit_dir, original_cache):
             st.plotly_chart(fig, use_container_width=True)
 
         with decomp_tab:
-            decomp_level, cluster = decomp_configuration_ui()
+            decomp_level, cluster = decomp_configuration_ui(key="avec")
             df = get_decomp_scan(coeff, avec_cache, logit_dir, decomp_level)
             fig = plot_decomp_scan_line(df, "Coefficient")
             st.plotly_chart(fig, use_container_width=True)
