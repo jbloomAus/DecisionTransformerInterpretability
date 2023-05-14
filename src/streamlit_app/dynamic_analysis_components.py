@@ -19,7 +19,7 @@ from .utils import fancy_histogram, fancy_imshow
 from .visualizations import (
     plot_attention_pattern_single,
     plot_logit_diff,
-    plot_dendrogram_heatmap,
+    plot_heatmap,
     plot_logit_scan,
 )
 

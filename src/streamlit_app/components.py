@@ -11,7 +11,7 @@ from .utils import read_index_html
 from .visualizations import (
     plot_action_preds,
     render_env,
-    plot_dendrogram_heatmap,
+    plot_heatmap,
 )
 from src.visualization import get_rendered_obs
 
@@ -244,6 +244,6 @@ def plot_decomp_scan_corr(df, cluster=False, x="RTG"):
         )
 
     else:
-        fig2 = plot_dendrogram_heatmap(df.corr())
+        fig2 = plot_heatmap(df.corr())
 
     return fig2

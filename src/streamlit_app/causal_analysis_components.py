@@ -34,6 +34,12 @@ from .visualizations import (
     plot_single_residual_stream_contributions_comparison,
 )
 
+from .components import (
+    decomp_configuration_ui,
+    get_decomp_scan,
+    plot_decomp_scan_line,
+    plot_decomp_scan_corr,
+)
 
 BATCH_SIZE = 128
 
@@ -574,6 +580,25 @@ def get_act_patch_mlp(
 # will make the model predict a certain action.
 def show_algebraic_value_editing(dt, logit_dir, original_cache):
     with st.expander("Algebraic Value Editing"):
+        st.write(
+            """
+            
+            This technique uses the content of the activations in one forward pass to steer the model in another forward pass.
+            
+            In order to implement this in the most natural way, 
+            I have reuse the activation patching interface.
+
+            1. Select a token modification method, specify your updated tokens
+            2. Select the layer at which you would like to insert your activations
+            3. Select the coefficient of amplification range you want (to scale the vector.)
+            
+            You can then see the effect this has on the current logit distribution, 
+            and the effect this has on the projections of transformer components
+            into the logit direction.
+            
+            """
+        )
+
         # 1. Create a corrupted forward pass using the same essential logic as activation
         # patching.
         corrupted_tokens = get_corrupted_tokens(dt)
@@ -650,13 +675,6 @@ def show_algebraic_value_editing(dt, logit_dir, original_cache):
         with logit_tab:
             fig = plot_logit_scan(coeff, action_preds, scan_name="Coefficient")
             st.plotly_chart(fig, use_container_width=True)
-
-        from .components import (
-            decomp_configuration_ui,
-            get_decomp_scan,
-            plot_decomp_scan_line,
-            plot_decomp_scan_corr,
-        )
 
         with decomp_tab:
             decomp_level, cluster = decomp_configuration_ui()
