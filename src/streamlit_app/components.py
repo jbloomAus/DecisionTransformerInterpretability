@@ -25,9 +25,7 @@ def render_game_screen(dt, env):
         action_preds, x, cache, tokens = get_action_preds_from_app_state(dt)
         plot_action_preds(action_preds)
     with columns[1]:
-        current_time = (
-            st.session_state.timesteps - st.session_state.timestep_adjustment
-        )
+        current_time = st.session_state.timesteps
         st.write(f"Current Time: {int(current_time[0][-1].item())}")
         fig = render_env(env)
         st.pyplot(fig)
@@ -38,24 +36,13 @@ def render_game_screen(dt, env):
 def hyperpar_side_bar():
     with st.sidebar:
         st.subheader("Hyperparameters")
-        allow_extrapolation = st.checkbox("Allow extrapolation")
-        st.session_state.allow_extrapolation = allow_extrapolation
-        if allow_extrapolation:
-            initial_rtg = st.slider(
-                "Initial RTG",
-                min_value=-10.0,
-                max_value=10.0,
-                value=0.91,
-                step=0.01,
-            )
-        else:
-            initial_rtg = st.slider(
-                "Initial RTG",
-                min_value=-1.0,
-                max_value=1.0,
-                value=0.9,
-                step=0.01,
-            )
+        initial_rtg = st.slider(
+            "Initial RTG",
+            min_value=-1.0,
+            max_value=1.0,
+            value=0.9,
+            step=0.01,
+        )
         if "rtg" in st.session_state:
             # get cumulative reward
             cumulative_reward = st.session_state.reward.cumsum(dim=1)
@@ -63,15 +50,6 @@ def hyperpar_side_bar():
                 (1, cumulative_reward.shape[1], 1), dtype=torch.float
             )  # no reward yet
             st.session_state.rtg = rtg - cumulative_reward
-
-        timestep_adjustment = st.slider(
-            "Timestep Adjustment",
-            min_value=-100.0,
-            max_value=100.0,
-            value=0.0,
-            step=1.0,
-        )
-        st.session_state.timestep_adjustment = timestep_adjustment
 
     return initial_rtg
 
@@ -193,15 +171,19 @@ def decomp_configuration_ui(key=""):
     with cola:
         decomp_level = st.selectbox(
             "Decomposition Level",
-            ["Reduced", "Full"],
+            ["Reduced", "Full", "MLP"],
             key=key + "decomp_level",
         )
     with colb:
         cluster = st.checkbox("Cluster", value=False, key=key + "cluster")
-    return decomp_level, cluster
+        normalize = st.checkbox(
+            "Normalize", value=False, key=key + "normalize"
+        )
+
+    return decomp_level, cluster, normalize
 
 
-def get_decomp_scan(rtg, cache, logit_dir, decomp_level):
+def get_decomp_scan(rtg, cache, logit_dir, decomp_level, normalize=False):
     if decomp_level == "Reduced":
         results, labels = cache.decompose_resid(
             apply_ln=True, return_labels=True
@@ -212,11 +194,21 @@ def get_decomp_scan(rtg, cache, logit_dir, decomp_level):
             return_labels=True,
             expand_neurons=False,  # if you don't set this, you'll crash your browser.
         )
+    elif decomp_level == "MLP":
+        results, labels = cache.get_full_resid_decomposition(
+            apply_ln=True, return_labels=True, expand_neurons=True
+        )
 
     attribution = results[:, :, -1, :] @ logit_dir
 
     df = pd.DataFrame(attribution.T.detach().cpu().numpy(), columns=labels)
     df.index = rtg[:, -1].squeeze(1).detach().cpu().numpy()
+
+    if normalize:
+        # divide each column by its max:
+        df = df / df.abs().max()
+        # center around zero
+        df = df - df.mean()
 
     return df
 

@@ -444,10 +444,13 @@ def show_activation_patching(dt, logit_dir, original_cache):
                 color_continuous_midpoint=0.0,
                 color_continuous_scale="RdBu",
                 facet_col=0,
-                facet_col_wrap=2,
                 title="Activation Patching Per Head (All Pos)",
                 labels={"x": "Head", "y": "Layer"},
             )
+
+            # remove ticks,
+            fig.update_xaxes(showticklabels=False, showgrid=False, ticks="")
+            fig.update_yaxes(showticklabels=False, showgrid=False, ticks="")
 
             facet_labels = ["Output", "Query", "Key", "Value", "Pattern"]
             for i, facet_label in enumerate(facet_labels):
@@ -482,13 +485,18 @@ def show_activation_patching(dt, logit_dir, original_cache):
                     patch,
                     color_continuous_midpoint=0.0,
                     color_continuous_scale="RdBu",
-                    facet_col=0,
-                    facet_col_wrap=2,
                     animation_frame=2,
+                    facet_col=0,
                     title="Activation Patching Per Head (All Pos)",
                     labels={"x": "Head", "y": "Layer"},
                 )
-
+                # remove ticks,
+                fig.update_xaxes(
+                    showticklabels=False, showgrid=False, ticks=""
+                )
+                fig.update_yaxes(
+                    showticklabels=False, showgrid=False, ticks=""
+                )
                 facet_labels = ["Output", "Query", "Key", "Value", "Pattern"]
                 for i, facet_label in enumerate(facet_labels):
                     fig.layout.annotations[i]["text"] = facet_label
@@ -633,9 +641,9 @@ def show_algebraic_value_editing(dt, logit_dir, original_cache):
         with c:
             coeff_min, coeff_max = st.slider(
                 "Coefficient",
-                min_value=-10.0,
-                max_value=10.0,
-                value=[-10.0, 10.0],
+                min_value=-1.0,
+                max_value=1.0,
+                value=[-1.0, 1.0],
             )
 
             # make coeff a vector from min to max of length batch size
@@ -691,15 +699,21 @@ def show_algebraic_value_editing(dt, logit_dir, original_cache):
         logit_tab, decomp_tab = st.tabs(["Logit Scan", "Decomposition"])
 
         with logit_tab:
-            fig = plot_logit_scan(coeff, action_preds, scan_name="Coefficient")
+            fig = plot_logit_scan(
+                coeff, action_preds, scan_name="Injection Coefficient"
+            )
             st.plotly_chart(fig, use_container_width=True)
 
         with decomp_tab:
-            decomp_level, cluster = decomp_configuration_ui(key="avec")
-            df = get_decomp_scan(coeff, avec_cache, logit_dir, decomp_level)
-            fig = plot_decomp_scan_line(df, "Coefficient")
+            decomp_level, cluster, normalize = decomp_configuration_ui(
+                key="avec"
+            )
+            df = get_decomp_scan(
+                coeff, avec_cache, logit_dir, decomp_level, normalize=normalize
+            )
+            fig = plot_decomp_scan_line(df, "Injection Coefficient")
             st.plotly_chart(fig, use_container_width=True)
-            fig2 = plot_decomp_scan_corr(df, cluster, "Coefficient")
+            fig2 = plot_decomp_scan_corr(df, cluster, "Injection Coefficient")
             st.plotly_chart(fig2, use_container_width=True)
             if cluster:
                 st.write("I know this is a bit janky, will fix later.")

@@ -44,29 +44,16 @@ def get_state_history(previous_step=False):
         "rtg": st.session_state.rtg,
         "actions": st.session_state.a,
         "timesteps": st.session_state.timesteps,
-        "timestep_adjustment": st.session_state.timestep_adjustment,
     }
 
 
-def preprocess_inputs(
-    dt,
-    obs,
-    rtg,
-    actions,
-    timesteps,
-    timestep_adjustment: Optional[None] = None,
-):
+def preprocess_inputs(dt, obs, rtg, actions, timesteps):
     max_len = get_max_len_from_model_type(
         dt.model_type,
         dt.transformer_config.n_ctx,
     )
 
     timesteps = timesteps[:, -max_len:]
-    timesteps = (
-        timesteps + timestep_adjustment
-        if timestep_adjustment is not None
-        else timesteps
-    )
 
     # truncations:
     obs = obs[:, -max_len:] if obs.shape[1] > max_len else obs

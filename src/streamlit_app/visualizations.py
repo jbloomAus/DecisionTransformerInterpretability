@@ -184,7 +184,13 @@ def plot_heatmap(
         df,
         color_continuous_midpoint=color_continuous_midpoint,
         color_continuous_scale=color_continuous_scale,
+        height=600,
+        width=600,
     )
+
+    # remove ticks and colorbar, rotate labels and make sure every one is shown
+    fig.update_xaxes(showgrid=False, ticks="", tickangle=45)
+    fig.update_yaxes(showgrid=False, ticks="", tickangle=0)
 
     return fig
 
@@ -227,7 +233,7 @@ def plot_logit_scan(scan_values, action_preds, position=-1, scan_name="RTG"):
                 "Toggle",
                 "Done",
             ],
-            title="Action Prediction vs RTG",
+            title="Action Prediction vs " + scan_name,
         )
     else:
         fig = px.line(
@@ -238,7 +244,7 @@ def plot_logit_scan(scan_values, action_preds, position=-1, scan_name="RTG"):
         )
 
     fig.update_layout(
-        xaxis_title="RTG",
+        xaxis_title=scan_name,
         yaxis_title="Action Prediction",
         legend_title="",
     )

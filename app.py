@@ -27,7 +27,7 @@ from src.streamlit_app.content import (
 from src.streamlit_app.dynamic_analysis_components import (
     render_observation_view,
     show_attention_pattern,
-    show_residual_stream_contributions_single,
+    show_attributions,
     show_rtg_scan,
 )
 from src.streamlit_app.setup import initialize_playground
@@ -94,8 +94,8 @@ x, cache, tokens = render_game_screen(dt, env)
 record_keypresses()
 
 with st.sidebar:
-    st.subheader("Directional Analysis")
-    comparing = st.checkbox("comparing directions", value=True)
+    st.subheader("Attribution  Configuration")
+    comparing = st.checkbox("Logit Difference", value=True)
     if comparing:
         positive_action_direction = st.selectbox(
             "Positive Action Direction",
@@ -119,7 +119,6 @@ with st.sidebar:
             - dt.action_predictor.weight[negative_action_direction]
         )
     else:
-        st.warning("Single Logit Analysis may be misleading.")
         selected_action_direction = st.selectbox(
             "Selected Action Direction",
             ["left", "right", "forward", "pickup", "drop", "toggle", "done"],
@@ -146,7 +145,7 @@ with st.sidebar:
         "Select Dynamic Analyses",
         [
             "Show RTG Scan",
-            "Residual Stream Contributions",
+            "Attributions",
             "Attention Pattern",
             "Observation View",
         ],
@@ -187,8 +186,8 @@ if "Algebraic Value Editing" in analyses:
 
 if "Show RTG Scan" in analyses:
     show_rtg_scan(dt, logit_dir=logit_dir)
-if "Residual Stream Contributions" in analyses:
-    show_residual_stream_contributions_single(dt, cache, logit_dir=logit_dir)
+if "Attributions" in analyses:
+    show_attributions(dt, cache, logit_dir=logit_dir)
 if "Attention Pattern" in analyses:
     show_attention_pattern(dt, cache)
 if "Observation View" in analyses:

@@ -56,7 +56,6 @@ def initialize_playground(model_path, initial_rtg):
             "rtg": st.session_state.rtg,
             "actions": st.session_state.a,
             "timesteps": st.session_state.timesteps,
-            "timestep_adjustment": st.session_state.timestep_adjustment,
         }
     else:
         env = st.session_state.env

@@ -623,8 +623,7 @@ def show_congruence(dt):
 #         fig.update_layout(showlegend=False)
 #         if show_initial:
 #             fig.add_vline(
-#                 x=st.session_state.timesteps[0][-1].item()
-#                 + st.session_state.timestep_adjustment,
+#                 x=st.session_state.timesteps[0][-1].item(),
 #                 line_dash="dash",
 #                 line_color="red",
 #                 annotation_text="Current timestep",
@@ -708,82 +707,56 @@ def show_composition_scores(dt):
         k_scores = dt.transformer.all_composition_scores("K")
         v_scores = dt.transformer.all_composition_scores("V")
 
-        # experimenting with ways of speeding this up
-        # v, i = torch.topk(q_scores.flatten(), 3)
-        # st.write(np.array(np.unravel_index(i.numpy(), q_scores.shape)).T)
-        # st.write(v)
+        dims = ["L1", "H1", "L2", "H2"]
 
-        # fig = px.histogram(q_scores.flatten().detach().numpy(), title="Q-Composition Scores")
-        # st.plotly_chart(fig, use_container_width=True)
-        q_tab, k_tab, v_tab = st.tabs(["Q", "K", "OV"])
-        with q_tab:
-            a, b = st.columns(2)
-            with a:
-                layer = st.selectbox(
-                    "Select Layer",
-                    options=list(range(dt.transformer_config.n_layers)),
-                    key="q_layer",
-                )
-            with b:
-                head = st.selectbox(
-                    "Select Head",
-                    options=list(range(dt.transformer_config.n_heads)),
-                    key="q_head",
-                )
+        q_scores_df = tensor_to_long_data_frame(q_scores, dims)
+        q_scores_df["Type"] = "Q"
 
-            fig = px.imshow(
-                q_scores[layer][head].detach().numpy(),
-                title=f"Q-Composition Scores for {head} at Layer {layer}",
-                labels={"x": "Head", "y": "Layer"},
-            )
+        k_scores_df = tensor_to_long_data_frame(k_scores, dims)
+        k_scores_df["Type"] = "K"
 
-            st.plotly_chart(fig, use_container_width=True)
+        v_scores_df = tensor_to_long_data_frame(v_scores, dims)
+        v_scores_df["Type"] = "V"
 
-        with k_tab:
-            a, b = st.columns(2)
-            with a:
-                layer = st.selectbox(
-                    "Select Layer",
-                    options=list(range(dt.transformer_config.n_layers)),
-                    key="k_layer",
-                )
-            with b:
-                head = st.selectbox(
-                    "Select Head",
-                    options=list(range(dt.transformer_config.n_heads)),
-                    key="k_head",
-                )
+        all_scores_df = pd.concat([q_scores_df, k_scores_df, v_scores_df])
 
-            fig = px.imshow(
-                k_scores[layer][head].detach().numpy(),
-                title=f"K-Composition Scores for {head} at Layer {layer}",
-                labels={"x": "Head", "y": "Layer"},
-            )
+        # filter any scores where L2 <= L1
+        all_scores_df = all_scores_df[
+            all_scores_df["L2"] > all_scores_df["L1"]
+        ]
 
-            st.plotly_chart(fig, use_container_width=True)
+        # concate L1 and H1 to L1H1 and call it "origin"
+        all_scores_df["Origin"] = (
+            "L"
+            + all_scores_df["L1"].astype(str)
+            + "H"
+            + all_scores_df["H1"].astype(str)
+        )
 
-        with v_tab:
-            a, b = st.columns(2)
-            with a:
-                layer = st.selectbox(
-                    "Select Layer",
-                    options=list(range(dt.transformer_config.n_layers)),
-                    key="v_layer",
-                )
-            with b:
-                head = st.selectbox(
-                    "Select Head",
-                    options=list(range(dt.transformer_config.n_heads)),
-                    key="v_head",
-                )
+        # concate L2 and H2 to L2H2 and call it "destination"
+        all_scores_df["Destination"] = (
+            "L"
+            + all_scores_df["L2"].astype(str)
+            + "H"
+            + all_scores_df["H2"].astype(str)
+        )
 
-            fig = px.imshow(
-                v_scores[layer][head].detach().numpy(),
-                title=f"V-Composition Scores for {head} at Layer {layer}",
-                labels={"x": "Head", "y": "Layer"},
-            )
+        # sort by type and rewrite the index
+        all_scores_df = all_scores_df.sort_values(by="Type")
+        all_scores_df.reset_index(inplace=True, drop=True)
 
-            st.plotly_chart(fig, use_container_width=True)
+        fig = px.scatter(
+            all_scores_df,
+            x=all_scores_df.index,
+            y="Score",
+            color="Type",
+            hover_data=["Origin", "Destination", "Score", "Type"],
+            labels={"value": "Congruence"},
+        )
+
+        # update x axis to hide the tick labels, and remove the label
+        fig.update_xaxes(showticklabels=False, title=None)
+        st.plotly_chart(fig, use_container_width=True)
 
         st.write(
             """
@@ -980,3 +953,20 @@ def embedding_matrix_selection_ui(dt):
         embedding_matrix_2 = W_E_rtg
 
     return embedding_matrix_1, embedding_matrix_2
+
+
+def tensor_to_long_data_frame(tensor_result, dimension_names):
+    assert len(tensor_result.shape) == len(
+        dimension_names
+    ), "The number of dimension names must match the number of dimensions in the tensor"
+
+    tensor_2d = tensor_result.reshape(-1)
+    df = pd.DataFrame(tensor_2d.detach().numpy(), columns=["Score"])
+
+    indices = pd.MultiIndex.from_tuples(
+        list(np.ndindex(tensor_result.shape)),
+        names=dimension_names,
+    )
+    df.index = indices
+    df.reset_index(inplace=True)
+    return df

@@ -153,13 +153,8 @@ def show_attributions(dt, cache, logit_dir):
 # RTG Scan Utilities
 def rtg_scan_configuration_ui(dt):
     cola, colb = st.columns(2)
-
-    if st.session_state.allow_extrapolation:
-        min_value = -10
-        max_value = 10
-    else:
-        min_value = -1
-        max_value = 1
+    min_value = -1
+    max_value = 1
 
     with cola:
         rtg_range = st.slider(
@@ -174,11 +169,7 @@ def rtg_scan_configuration_ui(dt):
 
     with colb:
         max_len = get_max_len_from_model_type(dt.model_type, dt.n_ctx)
-        if "timestep_adjustment" in st.session_state:
-            timesteps = (
-                st.session_state.timesteps[:, -max_len:]
-                + st.session_state.timestep_adjustment
-            )
+        timesteps = st.session_state.timesteps[:, -max_len:]
 
         if st.checkbox("add timestep noise"):
             # we want to add random integers in the range of a slider to the the timestep, the min/max on slider should be the max timesteps
@@ -208,9 +199,8 @@ def prepare_rtg_scan_tokens(dt, min_rtg, max_rtg, max_len, timesteps):
     obs = st.session_state.obs[:, -max_len:].repeat(batch_size, 1, 1, 1, 1)
     actions = st.session_state.a[:, -max_len:].repeat(batch_size, 1, 1)
     rtg = st.session_state.rtg[:, -max_len:].repeat(batch_size, 1, 1)
-    timesteps = (
-        st.session_state.timesteps[:, -max_len:].repeat(batch_size, 1, 1)
-        + st.session_state.timestep_adjustment
+    timesteps = st.session_state.timesteps[:, -max_len:].repeat(
+        batch_size, 1, 1
     )
     rtg = (
         t.linspace(min_rtg, max_rtg, batch_size)
@@ -265,8 +255,10 @@ def show_rtg_scan(dt, logit_dir):
             st.plotly_chart(fig, use_container_width=True)
 
         with decomp_tab:
-            decomp_level, cluster = decomp_configuration_ui()
-            df = get_decomp_scan(rtg, cache, logit_dir, decomp_level)
+            decomp_level, cluster, normalize = decomp_configuration_ui()
+            df = get_decomp_scan(
+                rtg, cache, logit_dir, decomp_level, normalize=normalize
+            )
             fig = plot_decomp_scan_line(df)
             st.plotly_chart(fig, use_container_width=True)
             fig2 = plot_decomp_scan_corr(df, cluster)
