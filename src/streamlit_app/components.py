@@ -234,15 +234,6 @@ def plot_decomp_scan_line(df, x="RTG"):
 
 
 def plot_decomp_scan_corr(df, cluster=False, x="RTG"):
-    if not cluster:
-        fig2 = px.imshow(
-            df.corr(),
-            color_continuous_midpoint=0,
-            title=f"Correlation between {x} and Residual Stream Components",
-            color_continuous_scale="RdBu",
-        )
-
-    else:
-        fig2 = plot_heatmap(df.corr())
+    fig2 = plot_heatmap(df.corr(), cluster=cluster)
 
     return fig2

@@ -46,9 +46,19 @@ def show_attention_pattern(dt, cache):
             A=\operatorname{softmax}\left(x^T W_Q^T W_K x\right)
             """
         )
-        n_heads = dt.transformer_config.n_heads
-        n_layers = dt.transformer_config.n_layers
-        softmax = st.checkbox("softmax", value=True)
+
+        visualize_attention_pattern(dt, cache)
+
+
+def visualize_attention_pattern(dt, cache):
+    n_layers = dt.transformer_config.n_layers
+    n_heads = dt.transformer_config.n_heads
+
+    (
+        a,
+        b,
+    ) = st.columns(2)
+    with a:
         heads = st.multiselect(
             "Select Heads",
             options=list(range(n_heads)),
@@ -56,21 +66,25 @@ def show_attention_pattern(dt, cache):
             key="heads attention",
         )
 
-        if n_layers == 1:
-            plot_attention_pattern_single(
-                cache, 0, softmax=softmax, specific_heads=heads
-            )
-        else:
-            layer = st.slider(
-                "Layer",
-                min_value=0,
-                max_value=n_layers - 1,
-                value=0,
-                step=1,
-            )
-            plot_attention_pattern_single(
-                cache, layer, softmax=softmax, specific_heads=heads
-            )
+        layer = st.selectbox(
+            "Layer",
+            options=list(range(n_layers)),
+        )
+    with b:
+        score_or_softmax = st.selectbox(
+            "Score or Softmax",
+            options=["Score", "Softmax"],
+        )
+        softmax = score_or_softmax == "Score"
+
+        method = st.selectbox(
+            "Select plotting method",
+            options=["Plotly", "CircuitsVis"],
+        )
+
+    plot_attention_pattern_single(
+        cache, layer, softmax=softmax, specific_heads=heads, method=method
+    )
 
 
 def show_attributions(dt, cache, logit_dir):

@@ -60,9 +60,56 @@ def plot_action_preds(action_preds):
 
 
 def plot_attention_pattern_single(
-    cache, layer, softmax=True, specific_heads: List = None
+    cache, layer, softmax=True, specific_heads: List = None, method="Plotly"
 ):
     labels = st.session_state.labels
+
+    if method == "Plotly":
+        attention_pattern = cache["pattern", layer, "attn"][0]
+        attention_pattern = attention_pattern[specific_heads]
+
+        head_tabs = st.tabs([f"L{layer}H{head}" for head in specific_heads])
+        for head in range(len(specific_heads)):
+            with head_tabs[head]:
+                df = pd.DataFrame(
+                    attention_pattern[head], index=labels, columns=labels
+                )
+                fig = px.imshow(
+                    df,
+                    color_continuous_midpoint=0,
+                    color_continuous_scale="RdBu",
+                    height=600,
+                    width=600,
+                )
+
+                # remove ticks and colorbar, rotate labels and make sure every one is shown, reduce font size
+                fig.update_xaxes(
+                    showgrid=False,
+                    ticks="",
+                    tickmode="linear",
+                    automargin=True,
+                    ticktext=labels,
+                )
+
+                fig.update_yaxes(
+                    showgrid=False,
+                    ticks="",
+                    tickangle=0,
+                    tickmode="linear",
+                    automargin=True,
+                    tickvals=np.arange(len(labels)),
+                    ticktext=labels,
+                )
+
+                # use labels as tick text
+                fig.update_xaxes(ticktext=labels)
+                fig.update_yaxes(ticktext=labels)
+
+                st.plotly_chart(fig, use_container_width=True)
+
+        return
+
+    # this is very cursed. I'm sorry.
     if softmax:
         if cache["pattern", layer, "attn"].shape[0] == 1:
             attention_pattern = cache["pattern", layer, "attn"][0]
@@ -89,8 +136,6 @@ def plot_attention_pattern_single(
                 attention=attention_pattern, tokens=labels
             )
             components.html(str(result), width=500, height=800)
-        else:
-            st.write("Not implemented yet")
 
 
 def render_env(env):
@@ -166,19 +211,23 @@ from scipy.cluster import hierarchy
 
 
 def plot_heatmap(
-    df, color_continuous_midpoint=0, color_continuous_scale="RdBu"
+    df,
+    color_continuous_midpoint=0,
+    color_continuous_scale="RdBu",
+    cluster=True,
 ):
     # Convert dataframe to numpy array
     data_array = df.to_numpy()
-    linkage = hierarchy.linkage(data_array)
-    dendrogram = hierarchy.dendrogram(
-        linkage, no_plot=True, color_threshold=-np.inf
-    )
-    reordered_ind = dendrogram["leaves"]
 
-    # reorder df by ind
-    df = df.iloc[reordered_ind, reordered_ind]
-    data_array = df.to_numpy()
+    if cluster:
+        linkage = hierarchy.linkage(data_array)
+        dendrogram = hierarchy.dendrogram(
+            linkage, no_plot=True, color_threshold=-np.inf
+        )
+        reordered_ind = dendrogram["leaves"]
+        # reorder df by ind
+        df = df.iloc[reordered_ind, reordered_ind]
+        data_array = df.to_numpy()
 
     fig = px.imshow(
         df,
