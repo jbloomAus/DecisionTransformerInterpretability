@@ -19,9 +19,7 @@ from src.visualization import get_rendered_obs
 def render_game_screen(dt, env):
     columns = st.columns(2)
     with columns[0]:
-        st.write(
-            f"Reward Objective: {round(st.session_state.rtg[0][-1].item(),2)}"
-        )
+        st.write(f"Current RTG: {round(st.session_state.rtg[0][-1].item(),2)}")
         action_preds, x, cache, tokens = get_action_preds_from_app_state(dt)
         plot_action_preds(action_preds)
     with columns[1]:
