@@ -287,9 +287,13 @@ def show_activation_patching(dt, logit_dir, original_cache):
         if st.checkbox("show corrupted action predictions"):
             plot_action_preds(corrupt_preds)
 
-        st.write("Clean Logit Diff: ", clean_logit_dif.item())
-        st.write("Corrupted Logit Diff: ", corrupted_logit_dif.item())
-
+        # rewrite previous line but with nicer formatting
+        st.write(
+            "Clean Logit Diff: ",
+            f"{clean_logit_dif.item():.3f}",
+            " Corrupted Logit Diff: ",
+            f"{corrupted_logit_dif.item():.3f}",
+        )
         # easy section.
         (
             dummy_tab,
@@ -667,18 +671,7 @@ def show_algebraic_value_editing(dt, logit_dir, original_cache):
         act_add = act_corrupted
         act_diff = act_add - act_sub
 
-        def ave_hook(resid_pre, hook):
-            if resid_pre.shape[1] == 1:
-                return  # caching in model.generate for new tokens
-
-            # We only add to the prompt (first call), not the generated tokens.
-            # ppos, apos = resid_pre.shape[1], act_diff.shape[1]
-            # assert apos <= ppos, f"More mod tokens ({apos}) then prompt tokens ({ppos})!"
-            modulated_act_diff = coeff * act_diff
-
-            # add to the beginning (position-wise) of the activations
-            resid_pre[:, :, :] += coeff * act_diff
-
+        ave_hook = get_ave_hook("resid_pre", coeff, act_diff)
         editing_hooks = [(f"blocks.{layer}.hook_resid_pre", ave_hook)]
 
         clean_tokens = get_tokens_from_app_state(dt, previous_step=False)
@@ -723,3 +716,28 @@ def show_algebraic_value_editing(dt, logit_dir, original_cache):
             Read more on this technique [here](https://www.lesswrong.com/posts/5spBue2z2tw4JuDCx/steering-gpt-2-xl-by-adding-an-activation-vector#Evidence_of_generalization)
             """
         )
+
+
+def get_ave_hook(component, coeff: Tensor, act_diff: Tensor, **kwargs):
+    """
+    Things I might want to hook:
+    - resid_pre
+
+
+    """
+
+    if component == "resid_pre":
+
+        def ave_hook(resid_pre, hook):
+            if resid_pre.shape[1] == 1:
+                return  # caching in model.generate for new tokens
+
+            # We only add to the prompt (first call), not the generated tokens.
+            # ppos, apos = resid_pre.shape[1], act_diff.shape[1]
+            # assert apos <= ppos, f"More mod tokens ({apos}) then prompt tokens ({ppos})!"
+            modulated_act_diff = coeff * act_diff
+
+            # add to the beginning (position-wise) of the activations
+            resid_pre[:, :, :] += coeff * act_diff
+
+    return ave_hook
