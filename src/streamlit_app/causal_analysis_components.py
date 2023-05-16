@@ -359,7 +359,7 @@ def show_activation_patching(dt, logit_dir, original_cache):
                 ticktext=token_labels,
             )
 
-            st.plotly_chart(fig)
+            st.plotly_chart(fig, use_container_width=True)
 
         with residual_stream_by_block_tab:
             # let's gate until we have a sense for run time.
@@ -395,7 +395,7 @@ def show_activation_patching(dt, logit_dir, original_cache):
             fig.layout.annotations[2]["text"] = "Residual Stream"
             fig.layout.annotations[1]["text"] = "Attention"
             fig.layout.annotations[0]["text"] = "MLP"
-            st.plotly_chart(fig)
+            st.plotly_chart(fig, use_container_width=True)
 
         with head_all_positions_tab:
             patch = patching.get_act_patch_attn_head_out_all_pos(
@@ -423,7 +423,7 @@ def show_activation_patching(dt, logit_dir, original_cache):
                 tickvals=list(range(patch.shape[-1])),
             )
 
-            st.plotly_chart(fig)
+            st.plotly_chart(fig, use_container_width=True)
 
         with head_all_positions_by_component_tab:
             patch = patching.get_act_patch_attn_head_all_pos_every(

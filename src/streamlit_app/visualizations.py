@@ -188,9 +188,21 @@ def plot_heatmap(
         width=600,
     )
 
-    # remove ticks and colorbar, rotate labels and make sure every one is shown
-    fig.update_xaxes(showgrid=False, ticks="", tickangle=45)
-    fig.update_yaxes(showgrid=False, ticks="", tickangle=0)
+    # remove ticks and colorbar, rotate labels and make sure every one is shown, reduce font size
+    fig.update_xaxes(
+        showgrid=False,
+        ticks="",
+        tickangle=45,
+        tickmode="linear",
+        automargin=True,
+    )
+    fig.update_yaxes(
+        showgrid=False,
+        ticks="",
+        tickangle=0,
+        tickmode="linear",
+        automargin=True,
+    )
 
     return fig
 

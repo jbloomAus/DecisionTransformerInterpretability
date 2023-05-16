@@ -220,9 +220,14 @@ def plot_decomp_scan_line(df, x="RTG"):
         title="Residual Stream Contributions in Directional Analysis",
     )
 
-    fig.add_vline(x=-1, line_dash="dot", line_width=1, line_color="white")
-    fig.add_vline(x=0, line_dash="dot", line_width=1, line_color="white")
-    fig.add_vline(x=1, line_dash="dot", line_width=1, line_color="white")
+    if df.index.min() < -1:
+        fig.add_vline(x=-1, line_dash="dot", line_width=1, line_color="white")
+
+    if df.index.min() < 0:
+        fig.add_vline(x=0, line_dash="dot", line_width=1, line_color="white")
+
+    if df.index.max() > 1:
+        fig.add_vline(x=1, line_dash="dot", line_width=1, line_color="white")
 
     # # add a little more margin to the top
     fig.update_layout(margin=dict(t=50))
