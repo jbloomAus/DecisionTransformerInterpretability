@@ -1,12 +1,18 @@
+import uuid
+
 import einops
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+import streamlit.components.v1 as components
 import torch
 import torch as t
-import numpy as np
 from fancy_einsum import einsum
-import uuid
+
+# create a pyvis network
+from pyvis.network import Network
+import networkx as nx
 
 from src.visualization import get_param_stats, plot_param_stats
 
@@ -757,6 +763,102 @@ def show_composition_scores(dt):
         # update x axis to hide the tick labels, and remove the label
         fig.update_xaxes(showticklabels=False, title=None)
         st.plotly_chart(fig, use_container_width=True)
+
+        topn_tab, search_tab, network_tab = st.tabs(
+            ["Top N", "Search", "Network"]
+        )
+
+        with topn_tab:
+            # let user choose n
+            n = st.slider("Top N", value=10, min_value=10, max_value=100)
+
+            # now sort them by Score and return the top 10 scores
+            top_n = all_scores_df.sort_values(
+                by="Score", ascending=False
+            ).head(n)
+            # round the score value and show as string
+            top_n["Score"] = top_n["Score"].apply(lambda x: f"{x:.2f}")
+            # remove L1, L2, H1, H2
+            top_n = top_n.drop(columns=["L1", "L2", "H1", "H2"])
+            st.write("Top 10 Scores")
+            st.write(top_n)
+
+        with search_tab:
+            # add a search box so you can find a specific score
+            search = st.text_input("Search for a score", value="")
+            if search:
+                # filter the df by the search term
+                search_df = all_scores_df[
+                    all_scores_df["Origin"].str.contains(search)
+                    | all_scores_df["Destination"].str.contains(search)
+                ]
+                # sort by score
+                search_df = search_df.sort_values(by="Score", ascending=False)
+                # round the score value and show as string
+                search_df["Score"] = search_df["Score"].apply(
+                    lambda x: f"{x:.2f}"
+                )
+                # remove L1, L2, H1, H2
+                search_df = search_df.drop(columns=["L1", "L2", "H1", "H2"])
+                st.write("Search Results")
+                st.write(search_df)
+
+        with network_tab:
+            cutoff = st.slider(
+                "Cutoff",
+                value=0.15,
+                min_value=0.0,
+                max_value=max(all_scores_df["Score"]),
+            )
+
+            # use network x to create a graph
+            # then pass it to pyvis.
+            filtered_df = all_scores_df[all_scores_df["Score"] > cutoff]
+            # set color based on type, use nice color scheme
+            filtered_df["color"] = filtered_df["Type"].apply(
+                lambda x: "#FFD700 "
+                if x == "Q"
+                else "#00FFFF"
+                if x == "K"
+                else "#8A2BE2"
+            )
+            filtered_df["weight"] = filtered_df["Score"].apply(
+                lambda x: x * 10
+            )
+            filtered_df["title"] = filtered_df["Score"].apply(
+                lambda x: f"{x:.2f}"
+            )
+            graph = nx.from_pandas_edgelist(
+                filtered_df,
+                source="Origin",
+                target="Destination",
+                edge_attr=["Score", "Type", "color"],
+            )
+
+            net = Network(notebook=True, bgcolor="#0E1117", font_color="white")
+            net.from_nx(graph)
+
+            # write it to disk as a html
+            net.write_html("composition_scores.html")
+
+            # show it in streamlit
+            HtmlFile = open("composition_scores.html", "r", encoding="utf-8")
+            source_code = HtmlFile.read()
+
+            # render using iframe
+            components.html(source_code, height=500, width=700)
+
+            # underneath, write the edge list table nicely
+            st.write("Edge List")
+            # process edge list
+            filtered_df = filtered_df.drop(
+                columns=["L1", "L2", "H1", "H2", "color"]
+            )
+            filtered_df["Score"] = filtered_df["Score"].apply(
+                lambda x: f"{x:.2f}"
+            )
+
+            st.write(filtered_df)
 
         st.write(
             """

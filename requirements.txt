@@ -64,3 +64,7 @@ torchinfo==1.7.2
 
 # dendrograms
 scipy==1.10.1
+
+# network graphs
+networkx==3.1
+pyvis==0.3.2
