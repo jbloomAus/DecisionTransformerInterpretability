@@ -48,108 +48,141 @@ def show_qk_circuit(dt):
             """
         )
 
-        # let's start with state based ones. These are most important because they produce actions!
+        st.write(
+            "This component is currently in active development. For now we are only showing the Q (State) to K (RTG) visualizations"
+        )
 
-        n_heads = dt.transformer_config.n_heads
+        # state_state_tab, state_rtg_tab, state_action_tab
+        # state_rtg_tab = st.tabs(
+        #     [
+        #         #"QK(state, state)",
+        #         "QK(state, rtg)",
+        #         #"QK(state, action)",
+        #     ]
+        # )
+
+        # with state_state_tab:
+        #     W_QK_full = W_E_state.T @ W_QK @ W_E_state
+        #     st.write(W_QK_full.shape)
+
+        #     W_QK_full_reshaped = einops.rearrange(
+        #         W_QK_full,
+        #         "b (h w c) (h1 w1 c1) -> b h w c h1 w1 c1",
+        #         h=7,
+        #         w=7,
+        #         c=20,
+        #         h1=7,
+        #         w1=7,
+        #         c1=20,
+        #     )
+        #     st.write(W_QK_full_reshaped.shape)
+
+        st.header("QK(state, rtg)")
+
         height, width, channels = dt.environment_config.observation_space[
             "image"
         ].shape
-        layer_selection, head_selection, other_selection = st.columns(3)
+        n_heads = dt.transformer_config.n_heads
+        layers = dt.transformer_config.n_layers
 
-        with layer_selection:
-            layer = st.selectbox(
-                "Select Layer",
-                options=list(range(dt.transformer_config.n_layers)),
-            )
-
-        with head_selection:
-            heads = st.multiselect(
-                "Select Heads",
-                options=list(range(n_heads)),
-                key="head qk",
-                default=[0],
-            )
-
-        if channels == 3:
-
-            def format_func(x):
-                return three_channel_schema[x]
-
-        else:
-            format_func = twenty_idx_format_func
-
-        with other_selection:
-            selected_channels = st.multiselect(
-                "Select Observation Channels",
-                options=list(range(channels)),
-                format_func=format_func,
-                key="channels qk",
-                default=[0, 1, 2],
-            )
-
-        state_state_tab, state_rtg_tab, state_action_tab = st.tabs(
-            [
-                "QK(state, state)",
-                "QK(state, rtg)",
-                "QK(state, action)",
-            ]
-        )
-
-        W_E_rtg = dt.reward_embedding[0].weight
-        W_E_state = dt.state_embedding.weight
-        W_Q = dt.transformer.blocks[layer].attn.W_Q
-        W_K = dt.transformer.blocks[layer].attn.W_K
-
+        # stack the heads
+        W_Q = torch.stack([block.attn.W_Q for block in dt.transformer.blocks])
+        W_K = torch.stack([block.attn.W_K for block in dt.transformer.blocks])
+        # inner QK circuits.
         W_QK = einsum(
-            "head d_mod_Q d_head, head d_mod_K d_head -> head d_mod_Q d_mod_K",
+            "layer head d_model1 d_head, layer head d_model2 d_head -> layer head d_model1 d_model2",
             W_Q,
             W_K,
         )
 
-        with state_state_tab:
-            W_QK_full = W_E_state.T @ W_QK @ W_E_state
-            st.write(W_QK_full.shape)
+        # # Calculate everything
+        W_E_rtg = dt.reward_embedding[0].weight
+        W_E_state = dt.state_embedding.weight
 
-            W_QK_full_reshaped = einops.rearrange(
-                W_QK_full,
-                "b (h w c) (h1 w1 c1) -> b h w c h1 w1 c1",
-                h=7,
-                w=7,
-                c=20,
-                h1=7,
-                w1=7,
-                c1=20,
-            )
-            st.write(W_QK_full_reshaped.shape)
+        # st.write(W_QK.shape)
+        W_QK_full = W_E_state.T @ W_QK @ W_E_rtg
 
-        with state_rtg_tab:
-            # st.write(W_QK.shape)
-            # W_QK_full = W_E_rtg.T @ W_QK @ W_E_state
-            W_QK_full = W_E_state.T @ W_QK @ W_E_rtg
+        W_QK_full_reshaped = W_QK_full.reshape(
+            layers, n_heads, channels, height, width
+        )
 
-            W_QK_full_reshaped = W_QK_full.reshape(
-                n_heads, 1, channels, height, width
+        if st.checkbox("Show all values"):
+            all_scores_df = tensor_to_long_data_frame(
+                W_QK_full_reshaped,
+                dimension_names=["Layer", "Head", "Channel", "X", "Y"],
             )
 
+            # sort by layer, head, action
+            all_scores_df = all_scores_df.sort_values(by=["Layer", "Head"])
+
+            # reset index
+            all_scores_df = all_scores_df.reset_index(drop=True)
+            # channel is categorical
+            all_scores_df["Channel"] = all_scores_df["Channel"].astype(
+                "category"
+            )
+            # order by channe then reset index
+            all_scores_df = all_scores_df.sort_values(
+                by=["Channel", "Layer", "Head"]
+            )
+            all_scores_df.reset_index(inplace=True, drop=True)
+            # map indices to channel names
+            all_scores_df["Channel"] = all_scores_df["Channel"].map(
+                twenty_idx_format_func
+            )
+            # make a strip plot
+            fig = px.scatter(
+                all_scores_df,
+                x=all_scores_df.index,
+                y="Score",
+                color="Channel",
+                hover_data=["Layer", "Head", "Channel", "X", "Y"],
+                labels={"value": "Congruence"},
+            )
+
+            # update x axis to hide the tick labels, and remove the label
+            fig.update_xaxes(showticklabels=False, title=None)
+            st.plotly_chart(fig, use_container_width=True)
+
+        layer, heads, selected_channels = layer_head_channel_selector(
+            dt, key="srtg"
+        )
+        abs_max_val = W_QK_full_reshaped.abs().max().item()
+        abs_max_val = st.slider(
+            "Max Absolute Value Color",
+            min_value=abs_max_val / 10,
+            max_value=abs_max_val,
+            value=abs_max_val,
+        )
+        columns = st.columns(len(selected_channels))
+        for i, channel in enumerate(selected_channels):
+            with columns[i]:
+                if channels == 3:
+                    st.write(three_channel_schema[channel])
+                elif channels == 20:
+                    st.write(twenty_idx_format_func(channel))
+
+        for head in heads:
+            st.write("Head", head)
             columns = st.columns(len(selected_channels))
             for i, channel in enumerate(selected_channels):
                 with columns[i]:
-                    if channels == 3:
-                        st.write(three_channel_schema[channel])
-                    elif channels == 20:
-                        st.write(twenty_idx_format_func(channel))
-
-            for head in heads:
-                st.write("Head", head)
-                columns = st.columns(len(selected_channels))
-                for i, channel in enumerate(selected_channels):
-                    with columns[i]:
-                        fancy_imshow(
-                            W_QK_full_reshaped[head, 0, channel]
-                            .T.detach()
-                            .numpy(),
-                            color_continuous_midpoint=0,
-                        )
+                    fig = px.imshow(
+                        W_QK_full_reshaped[layer, head, channel]
+                        .T.detach()
+                        .numpy(),
+                        color_continuous_midpoint=0,
+                        color_continuous_scale="RdBu",
+                        range_color=[-abs_max_val, abs_max_val],
+                    )
+                    fig.update_layout(
+                        coloraxis_showscale=False,
+                        margin=dict(l=0, r=0, t=0, b=0),
+                    )
+                    fig.update_layout(height=180, width=400)
+                    st.plotly_chart(
+                        fig, use_container_width=True, autosize=True
+                    )
 
 
 def show_ov_circuit(dt):
@@ -1228,3 +1261,45 @@ def tensor_to_long_data_frame(tensor_result, dimension_names):
     df.index = indices
     df.reset_index(inplace=True)
     return df
+
+
+def layer_head_channel_selector(dt, key=""):
+    n_heads = dt.transformer_config.n_heads
+    height, width, channels = dt.environment_config.observation_space[
+        "image"
+    ].shape
+    layer_selection, head_selection, other_selection = st.columns(3)
+
+    with layer_selection:
+        layer = st.selectbox(
+            "Select Layer",
+            options=list(range(dt.transformer_config.n_layers)),
+            key="layer" + key,
+        )
+
+    with head_selection:
+        heads = st.multiselect(
+            "Select Heads",
+            options=list(range(n_heads)),
+            key="head qk" + key,
+            default=[0],
+        )
+
+    if channels == 3:
+
+        def format_func(x):
+            return three_channel_schema[x]
+
+    else:
+        format_func = twenty_idx_format_func
+
+    with other_selection:
+        selected_channels = st.multiselect(
+            "Select Observation Channels",
+            options=list(range(channels)),
+            format_func=format_func,
+            key="channels qk" + key,
+            default=[0, 1, 2],
+        )
+
+    return layer, heads, selected_channels
