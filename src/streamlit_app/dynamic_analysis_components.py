@@ -75,7 +75,7 @@ def visualize_attention_pattern(dt, cache):
             "Score or Softmax",
             options=["Score", "Softmax"],
         )
-        softmax = score_or_softmax == "Score"
+        softmax = score_or_softmax == "Softmax"
 
         method = st.selectbox(
             "Select plotting method",
@@ -277,8 +277,6 @@ def show_rtg_scan(dt, logit_dir):
             st.plotly_chart(fig, use_container_width=True)
             fig2 = plot_decomp_scan_corr(df, cluster)
             st.plotly_chart(fig2, use_container_width=True)
-            if cluster:
-                st.write("I know this is a bit janky, will fix later.")
 
 
 # Observation View
