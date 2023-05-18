@@ -67,7 +67,6 @@ def plot_attention_pattern_single(
     if method == "Plotly":
         if softmax:
             attention_pattern = cache["pattern", layer, "attn"][0]
-            color_range = [0, 1]
             col_arg = {"color_continuous_midpoint": 0}
         else:
             attention_pattern = cache["attn_scores", layer, "attn"][0]
