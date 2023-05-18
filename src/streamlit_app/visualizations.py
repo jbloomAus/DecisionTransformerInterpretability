@@ -65,7 +65,14 @@ def plot_attention_pattern_single(
     labels = st.session_state.labels
 
     if method == "Plotly":
-        attention_pattern = cache["pattern", layer, "attn"][0]
+        if softmax:
+            attention_pattern = cache["pattern", layer, "attn"][0]
+            color_range = [0, 1]
+            col_arg = {"color_continuous_midpoint": 0}
+        else:
+            attention_pattern = cache["attn_scores", layer, "attn"][0]
+            # -attention_pattern.max().item(),-attention_pattern.max().item(),
+            col_arg = {"range_color": [-20, 20]}
         attention_pattern = attention_pattern[specific_heads]
 
         head_tabs = st.tabs([f"L{layer}H{head}" for head in specific_heads])
@@ -76,10 +83,12 @@ def plot_attention_pattern_single(
                 )
                 fig = px.imshow(
                     df,
-                    color_continuous_midpoint=0,
+                    # color_continuous_midpoint=0,
                     color_continuous_scale="RdBu",
                     height=600,
                     width=600,
+                    # range_color=color_range,
+                    **col_arg,
                 )
 
                 # remove ticks and colorbar, rotate labels and make sure every one is shown, reduce font size
