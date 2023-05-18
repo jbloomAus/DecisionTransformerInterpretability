@@ -52,14 +52,13 @@ def show_qk_circuit(dt):
             "This component is currently in active development. For now we are only showing the Q (State) to K (RTG) visualizations"
         )
 
-        # state_state_tab, state_rtg_tab, state_action_tab
-        # state_rtg_tab = st.tabs(
-        #     [
-        #         #"QK(state, state)",
-        #         "QK(state, rtg)",
-        #         #"QK(state, action)",
-        #     ]
-        # )
+        state_state_tab, state_rtg_tab = st.tabs(
+            [
+                "QK(state, state)",
+                "QK(state, rtg)",
+                # "QK(state, action)",
+            ]
+        )
 
         # with state_state_tab:
         #     W_QK_full = W_E_state.T @ W_QK @ W_E_state
@@ -77,8 +76,6 @@ def show_qk_circuit(dt):
         #     )
         #     st.write(W_QK_full_reshaped.shape)
 
-        st.header("QK(state, rtg)")
-
         height, width, channels = dt.environment_config.observation_space[
             "image"
         ].shape
@@ -95,94 +92,291 @@ def show_qk_circuit(dt):
             W_K,
         )
 
-        # # Calculate everything
         W_E_rtg = dt.reward_embedding[0].weight
         W_E_state = dt.state_embedding.weight
+        with state_state_tab:
+            st.write(
+                """
+                State->State attention is made up of 980*980 coefficients representing each channel\
+                and position attending in the key matched up with every channel and position in the\
+                query. In order to make this more tractable, let's do two things:
 
-        # st.write(W_QK.shape)
-        W_QK_full = W_E_state.T @ W_QK @ W_E_rtg
+                1. only work on one head at a time.
+                2. aggregate first accross channels and then pick only key-query
+                    channel combinations that seem important.
+                """
+            )
 
-        W_QK_full_reshaped = W_QK_full.reshape(
-            layers, n_heads, channels, height, width
-        )
+            a, b, c = st.columns(3)
+            with a:
+                layer = st.selectbox("Select a layer", list(range(layers)))
+            with b:
+                head = st.selectbox("Select a layer", list(range(n_heads)))
+            with c:
+                show_std_channel_channel = st.checkbox(
+                    "Show std of coefficient by query-key channel"
+                )
 
-        if st.checkbox("Show all values"):
+            W_QK_full = W_E_state.T @ W_QK[layer, head] @ W_E_state
+
+            W_QK_full_reshaped = W_QK_full.reshape(
+                channels, height, width, channels, height, width
+            )
+
             all_scores_df = tensor_to_long_data_frame(
                 W_QK_full_reshaped,
-                dimension_names=["Layer", "Head", "Channel", "X", "Y"],
+                dimension_names=[
+                    "Channel-Q",
+                    "X-Q",
+                    "Y-Q",
+                    "Channel-K",
+                    "X-K",
+                    "Y-K",
+                ],
             )
 
-            # sort by layer, head, action
-            all_scores_df = all_scores_df.sort_values(by=["Layer", "Head"])
-
-            # reset index
-            all_scores_df = all_scores_df.reset_index(drop=True)
-            # channel is categorical
-            all_scores_df["Channel"] = all_scores_df["Channel"].astype(
-                "category"
-            )
             # order by channe then reset index
             all_scores_df = all_scores_df.sort_values(
-                by=["Channel", "Layer", "Head"]
+                by=["Channel-Q", "Channel-K"],
             )
-            all_scores_df.reset_index(inplace=True, drop=True)
-            # map indices to channel names
-            all_scores_df["Channel"] = all_scores_df["Channel"].map(
+
+            # aggregate by channels
+            all_scores_df = (
+                all_scores_df.groupby(["Channel-Q", "Channel-K"])
+                .std()
+                .reset_index()
+            )
+
+            all_scores_df["Channel-K"] = all_scores_df["Channel-K"].map(
                 twenty_idx_format_func
             )
-            # make a strip plot
-            fig = px.scatter(
-                all_scores_df,
-                x=all_scores_df.index,
-                y="Score",
-                color="Channel",
-                hover_data=["Layer", "Head", "Channel", "X", "Y"],
-                labels={"value": "Congruence"},
+
+            all_scores_df["Channel-Q"] = all_scores_df["Channel-Q"].map(
+                twenty_idx_format_func
             )
 
-            # update x axis to hide the tick labels, and remove the label
-            fig.update_xaxes(showticklabels=False, title=None)
-            st.plotly_chart(fig, use_container_width=True)
+            channel_names = [twenty_idx_format_func(i) for i in range(20)]
+            if show_std_channel_channel:
+                channel_channel_attn_coeff_std = torch.tensor(
+                    all_scores_df.Score
+                ).reshape(20, 20)
 
-        layer, heads, selected_channels = layer_head_channel_selector(
-            dt, key="srtg"
-        )
-        abs_max_val = W_QK_full_reshaped.abs().max().item()
-        abs_max_val = st.slider(
-            "Max Absolute Value Color",
-            min_value=abs_max_val / 10,
-            max_value=abs_max_val,
-            value=abs_max_val,
-        )
-        columns = st.columns(len(selected_channels))
-        for i, channel in enumerate(selected_channels):
-            with columns[i]:
-                if channels == 3:
-                    st.write(three_channel_schema[channel])
-                elif channels == 20:
-                    st.write(twenty_idx_format_func(channel))
+                df = pd.DataFrame(
+                    channel_channel_attn_coeff_std,
+                    index=channel_names,
+                    columns=channel_names,
+                )
+                fig = px.imshow(
+                    df,
+                    color_continuous_midpoint=0,
+                    color_continuous_scale="RdBu",
+                )
 
-        for head in heads:
-            st.write("Head", head)
+                # xticks and yticks are the channel values
+                fig.update_xaxes(
+                    showgrid=False,
+                    ticks="",
+                    tickmode="linear",
+                    automargin=True,
+                    ticktext=channel_names,
+                )
+
+                fig.update_yaxes(
+                    showgrid=False,
+                    ticks="",
+                    tickangle=0,
+                    tickmode="linear",
+                    automargin=True,
+                    tickvals=np.arange(len(channel_names)),
+                    ticktext=channel_names,
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+
+                st.write(
+                    "These charts remind me a lot of a kth rank approximation to a matrix."
+                )
+
+            a, b, c = st.columns(3)
+            with a:
+                query_channel = st.selectbox(
+                    "Query Channel",
+                    list(range(20)),
+                    index=5,
+                    format_func=twenty_idx_format_func,
+                )
+            with b:
+                key_channel = st.selectbox(
+                    "Key Channel",
+                    list(range(20)),
+                    index=6,
+                    format_func=twenty_idx_format_func,
+                )
+            with c:
+                show_query_filter = st.checkbox("Show Query filter?")
+
+            st.write(
+                """
+                In order to make this much easier/faster, I've configured the current final state\
+                to get the 'active' position in query channel and then we'll sum all the corresponding\
+                maps in query values. The result shows us a map of the key channel states which the\
+                current state should attend to.
+                """
+            )
+
+            st.write(st.session_state.obs[0, -1, :, :, query_channel].shape)
+            query_filter = st.session_state.obs[0, -1, :, :, query_channel].T
+            query_filter = query_filter.to(torch.bool)
+
+            if show_query_filter:
+                fig = px.imshow(query_filter)
+                st.plotly_chart(fig)
+
+            key_map = W_QK_full_reshaped[
+                query_channel, :, :, key_channel, :, :
+            ]
+            key_map = key_map * query_filter.T[:, :, None, None]
+            key_map = key_map.sum(dim=(0, 1)).T.detach()
+
+            fig = px.imshow(
+                key_map,
+                color_continuous_midpoint=0,
+                color_continuous_scale="RdBu",
+            )
+            st.plotly_chart(fig)
+
+            st.write(
+                """
+                The intensity of a color here, represents how much the query
+                will attend more to a state who's key state for that 
+                channel at that position is firing. 
+
+                Note that for now the color range isn't normalized which is not great.
+
+                Last step: We can use channel activation on any given prior state to get a filter,
+                apply it to the map and see how much this channel-query, key-query
+                contribute to the attention from the current position to the previous position.
+
+                To do: Validate this works by generating the key filter map as well and showing the 
+                selected attention contributing terms.
+                """
+            )
+
+            # indexes = list(range(len(st.session_state.labels)))[1::3]
+            # index_to_label = {i:st.session_state.labels[i] for i in indexes}
+            # key_pos = st.selectbox(
+            #     "Select a previous state",
+            #     indexes,
+            #     format_func=index_to_label.get)
+
+            # query_filter = st.session_state.obs[0,-1, :,:,query_channel].T
+
+            # previous_pos = st.selectbox()
+
+            # we can the use the can
+
+            # # make a strip plot
+            # fig = px.scatter(
+            #     all_scores_df,
+            #     x=all_scores_df.index,
+            #     y="Score",
+            #     # facet_col="Channel-Q",
+            #     color="Channel-K",
+            #     hover_data=["Channel-Q", "Channel-K"],
+            #     labels={"value": "Congruence", "Score":"Std of Score in Channel-Channel Group"},
+            # )
+
+            # # update x axis to hide the tick labels, and remove the label
+            # fig.update_xaxes(showticklabels=False, title=None)
+            # st.plotly_chart(fig, use_container_width=True)
+
+            # st.write("Use the above graph to work out which channels to K ")
+
+        with state_rtg_tab:
+            # st.write(W_QK.shape)
+            W_QK_full = W_E_state.T @ W_QK @ W_E_rtg
+
+            W_QK_full_reshaped = W_QK_full.reshape(
+                layers, n_heads, channels, height, width
+            )
+
+            if st.checkbox("Show all values"):
+                all_scores_df = tensor_to_long_data_frame(
+                    W_QK_full_reshaped,
+                    dimension_names=["Layer", "Head", "Channel", "X", "Y"],
+                )
+
+                # sort by layer, head, action
+                all_scores_df = all_scores_df.sort_values(by=["Layer", "Head"])
+
+                # reset index
+                all_scores_df = all_scores_df.reset_index(drop=True)
+                # channel is categorical
+                all_scores_df["Channel"] = all_scores_df["Channel"].astype(
+                    "category"
+                )
+                # order by channe then reset index
+                all_scores_df = all_scores_df.sort_values(
+                    by=["Channel", "Layer", "Head"]
+                )
+                all_scores_df.reset_index(inplace=True, drop=True)
+                # map indices to channel names
+                all_scores_df["Channel"] = all_scores_df["Channel"].map(
+                    twenty_idx_format_func
+                )
+                # make a strip plot
+                fig = px.scatter(
+                    all_scores_df,
+                    x=all_scores_df.index,
+                    y="Score",
+                    color="Channel",
+                    hover_data=["Layer", "Head", "Channel", "X", "Y"],
+                    labels={"value": "Congruence"},
+                )
+
+                # update x axis to hide the tick labels, and remove the label
+                fig.update_xaxes(showticklabels=False, title=None)
+                st.plotly_chart(fig, use_container_width=True)
+
+            layer, heads, selected_channels = layer_head_channel_selector(
+                dt, key="srtg"
+            )
+            abs_max_val = W_QK_full_reshaped.abs().max().item()
+            abs_max_val = st.slider(
+                "Max Absolute Value Color",
+                min_value=abs_max_val / 10,
+                max_value=abs_max_val,
+                value=abs_max_val,
+            )
             columns = st.columns(len(selected_channels))
             for i, channel in enumerate(selected_channels):
                 with columns[i]:
-                    fig = px.imshow(
-                        W_QK_full_reshaped[layer, head, channel]
-                        .T.detach()
-                        .numpy(),
-                        color_continuous_midpoint=0,
-                        color_continuous_scale="RdBu",
-                        range_color=[-abs_max_val, abs_max_val],
-                    )
-                    fig.update_layout(
-                        coloraxis_showscale=False,
-                        margin=dict(l=0, r=0, t=0, b=0),
-                    )
-                    fig.update_layout(height=180, width=400)
-                    st.plotly_chart(
-                        fig, use_container_width=True, autosize=True
-                    )
+                    if channels == 3:
+                        st.write(three_channel_schema[channel])
+                    elif channels == 20:
+                        st.write(twenty_idx_format_func(channel))
+
+            for head in heads:
+                st.write("Head", head)
+                columns = st.columns(len(selected_channels))
+                for i, channel in enumerate(selected_channels):
+                    with columns[i]:
+                        fig = px.imshow(
+                            W_QK_full_reshaped[layer, head, channel]
+                            .T.detach()
+                            .numpy(),
+                            color_continuous_midpoint=0,
+                            color_continuous_scale="RdBu",
+                            range_color=[-abs_max_val, abs_max_val],
+                        )
+                        fig.update_layout(
+                            coloraxis_showscale=False,
+                            margin=dict(l=0, r=0, t=0, b=0),
+                        )
+                        fig.update_layout(height=180, width=400)
+                        st.plotly_chart(
+                            fig, use_container_width=True, autosize=True
+                        )
 
 
 def show_ov_circuit(dt):
