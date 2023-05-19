@@ -157,9 +157,7 @@ with st.sidebar:
             "Attention Pattern",
             "Observation View",
         ]
-        + ["GatedMLP"]
-        if dt.transformer_config.gated_mlp
-        else [],
+        + (["GatedMLP"] if dt.transformer_config.gated_mlp else []),
     )
     causal_analyses = st.multiselect(
         "Select Causal Analyses",
