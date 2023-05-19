@@ -1,6 +1,7 @@
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+import torch
 import torch as t
 from einops import rearrange
 from fancy_einsum import einsum
@@ -15,7 +16,7 @@ from .constants import (
     three_channel_schema,
     twenty_idx_format_func,
 )
-from .utils import fancy_histogram, fancy_imshow
+from .utils import fancy_histogram, fancy_imshow, tensor_to_long_data_frame
 from .visualizations import (
     plot_attention_pattern_single,
     plot_logit_diff,
@@ -430,3 +431,120 @@ def project_weights_onto_dir(weights, dir):
     return t.einsum(
         "d, d h w -> h w", dir, weights.reshape(128, 7, 7)
     ).detach()
+
+
+# Gated MLP
+
+
+def show_gated_mlp_dynamic(dt, cache):
+    with st.expander("Gated MLP"):
+        n_layers = dt.transformer_config.n_layers
+        n_heads = dt.transformer_config.n_heads
+
+        # want to start by visualizing the mlp activations
+        # stack acts/eights
+        a_pre = t.stack(
+            [
+                cache[f"blocks.{layer}.mlp.hook_pre"]
+                for layer in range(n_layers)
+            ]
+        )
+        a_pre = dt.transformer.blocks[0].mlp.act_fn(a_pre)
+        W_Gate = t.stack([block.mlp.W_gate for block in dt.transformer.blocks])
+        W_in = t.stack([block.mlp.W_in for block in dt.transformer.blocks])
+        W_0 = torch.stack([block.mlp.W_out for block in dt.transformer.blocks])
+
+        # we know two things
+        # 1. what is being gated.
+        # 2. for each thing being gated, what the output is.
+        # this means we can look at the out congruence by gating!
+        # it's a map to the meaning of the each vector in W_O!
+
+        gating_tab, congruence_tab, gating_by_conguence_tab = st.tabs(
+            ["Gating", "Conguence", "Gating by Congruence"]
+        )
+
+        with gating_tab:
+            df = tensor_to_long_data_frame(
+                a_pre[:, 0, -1], ["Layer", "Neuron"]
+            )
+            df["Neuron"] = df["Layer"].map(lambda x: f"L{x}") + df[
+                "Neuron"
+            ].map(lambda x: f"N{x}")
+            df["Layer"] = df["Layer"].astype("category")
+            fig = px.scatter(
+                df,
+                x=df.index,
+                y="Score",
+                color="Layer",
+                hover_data=["Layer", "Neuron"],
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+        with congruence_tab:
+            # now I want congruence with embed simultaneously.
+            W_0_congruence = W_0 @ dt.action_predictor.weight.T
+            st.write(W_0_congruence.shape)
+            df_congruence = tensor_to_long_data_frame(
+                W_0_congruence, ["Layer", "Neuron", "Action"]
+            )
+            # ensure action is interpreted as a categorical variable
+            df_congruence["Action"] = df_congruence["Action"].map(
+                IDX_TO_ACTION
+            )
+
+            # sort by action
+            df_congruence = df_congruence.sort_values(by="Layer")
+            fig = px.scatter(
+                df_congruence,
+                x=df_congruence.index,
+                y="Score",
+                color="Action",
+                hover_data=["Layer", "Action", "Neuron", "Score"],
+            )
+
+            # update x axis to hide the tick labels, and remove the label
+            fig.update_xaxes(showticklabels=False, title=None)
+
+            st.plotly_chart(fig, use_container_width=True)
+
+        with gating_by_conguence_tab:
+            df_grouped = df_congruence.groupby(["Layer", "Neuron"]).apply(
+                lambda x: x.loc[x["Score"].idxmax()]
+            )
+
+            # Reset the index of the grouped DataFrame
+            df_grouped = df_grouped.reset_index(drop=True)
+
+            # Rename the "Action" column to "Highest_Score_Action"
+            df_grouped.rename(
+                columns={"Action": "CongruentAction"}, inplace=True
+            )
+            # df_grouped["Layer"] = df_congruence['Layer'].astype('category')
+            df_grouped["Neuron"] = df_grouped["Layer"].map(
+                lambda x: f"L{x}"
+            ) + df_grouped["Neuron"].map(lambda x: f"N{x}")
+            df = df.merge(df_grouped, on=["Layer", "Neuron"])
+            df.rename(
+                columns={
+                    "Score_x": "GatingEffect",
+                    "Score_y": "MaxCongruence",
+                },
+                inplace=True,
+            )
+
+            fig = px.scatter(
+                df,
+                x=df.index,
+                y="GatingEffect",
+                color="CongruentAction",
+                # opacity="MaxCongruence",
+                hover_data=["Layer", "Neuron", "CongruentAction"],
+            )
+            # update x axis to hide the tick labels, and remove the label
+            fig.update_xaxes(showticklabels=False, title=None)
+            st.plotly_chart(fig, use_container_width=True)
+
+            fig = px.box(df, color="CongruentAction", y="GatingEffect")
+            st.plotly_chart(fig, use_container_width=True)
