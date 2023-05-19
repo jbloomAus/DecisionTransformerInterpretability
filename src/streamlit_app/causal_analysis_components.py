@@ -917,10 +917,10 @@ def show_path_patching(dt, logit_dir, clean_cache):
             layers = list(range(dt.transformer_config.n_layers))
             heads = list(range(dt.transformer_config.n_heads))
 
-            a, b = st.columns(2)
+            a, b, c = st.columns(3)
             with a:
                 composition_type = st.selectbox(
-                    "Select Composition Type", ["v", "k", "q"]
+                    "Select Receiver Head Component", ["v", "k", "q"]
                 )
             head_options = [
                 (layer, head, composition_type)
@@ -928,15 +928,23 @@ def show_path_patching(dt, logit_dir, clean_cache):
                 for head in heads
             ]
 
+            mlp_options = [(layer, "mlp_out") for layer in layers]
+
             with b:
                 heads_selected = st.multiselect(
                     label="Select Reciever Heads",
                     options=head_options,
                     format_func=lambda x: f"L{x[0]}H{x[1]}",
-                    default=head_options[-1],
+                    default=[],
                 )
 
-            st.write(heads_selected)
+            with c:
+                mlp_selected = st.multiselect(
+                    label="Select Receiver MLP",
+                    options=mlp_options,
+                    format_func=lambda x: f"L{x[0]}",
+                    default=mlp_options[-1],
+                )
 
             path_patch_head_every = 1 - path_patch(
                 dt.transformer,
@@ -945,7 +953,7 @@ def show_path_patching(dt, logit_dir, clean_cache):
                 clean_cache=clean_cache,
                 corrupted_cache=corrupted_cache,
                 patching_metric=logit_diff_metric,
-                receiver_components=heads_selected,
+                receiver_components=heads_selected + mlp_selected,
                 receiver_seq_pos="all",
                 sender_components="z",
                 sender_seq_pos="all",

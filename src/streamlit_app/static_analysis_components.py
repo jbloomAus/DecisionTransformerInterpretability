@@ -1140,10 +1140,6 @@ def show_dim_reduction(dt):
 
         st.warning("I'm not convinced yet that my implementation is correct.")
 
-        n_layers = dt.transformer_config.n_layers
-        d_head = dt.transformer_config.d_head
-        n_actions = dt.action_predictor.weight.shape[0]
-
         svd_tab, eig_tab = st.tabs(["SVD", "Eig"])
 
         with eig_tab:
@@ -1204,10 +1200,9 @@ def show_dim_reduction(dt):
                     # torch.Size([3, 8, 7, 256])
                     # Now we want to select a head/layer and plot the imshow of the activations
                     # only for the first n activations
-                    with b:
-                        layer, head, k, dims = layer_head_k_selector_ui(
-                            dt, key="ov"
-                        )
+                    layer, head, k, dims = layer_head_k_selector_ui(
+                        dt, key="ov"
+                    )
 
                     head_v_projections = activations[
                         layer, head, :dims, :
@@ -1248,12 +1243,11 @@ def show_dim_reduction(dt):
                     plot_svd_by_head_layer(dt, S)
 
                 if congruence_with == "MLP_in":
-                    with b:
-                        right_svd_vectors = st.slider(
-                            "Number of Singular Directions",
-                            min_value=10,
-                            max_value=dt.transformer_config.d_head,
-                        )
+                    right_svd_vectors = st.slider(
+                        "Number of Singular Directions",
+                        min_value=10,
+                        max_value=dt.transformer_config.d_head,
+                    )
 
                     MLP_in = torch.stack(
                         [block.mlp.W_in for block in dt.transformer.blocks]

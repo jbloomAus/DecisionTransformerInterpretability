@@ -9,10 +9,21 @@ And check out the Activation Patching in TransformerLens Demo notebook for a dem
 
 from __future__ import annotations
 import torch
-from typing import Optional, Union, Dict, Callable, Sequence, Optional, Tuple
+from typing import (
+    Optional,
+    Union,
+    Dict,
+    Callable,
+    Sequence,
+    Optional,
+    Tuple,
+    List,
+)
 from typing_extensions import Literal
+import numpy as np
 
 from transformer_lens import HookedTransformer, ActivationCache
+from transformer_lens.hook_points import HookPoint
 import transformer_lens.utils as utils
 import pandas as pd
 import itertools
@@ -714,3 +725,407 @@ def get_act_patch_block_every(
         get_act_patch_mlp_out(model, corrupted_tokens, clean_cache, metric)
     )
     return torch.stack(act_patch_results, dim=0)
+
+
+# Path Patching work by Callum McDougal.
+# Sent to me for evaluation/Feedback.
+# I'm going to test it out in app which will make it easy for me to
+# see what it's practically like to use / if the interface is good enough.
+
+
+def hook_fn_patch_generic(
+    clean_activation: Float[torch.Tensor, "batch seq_pos ..."],  # noqa: F722
+    hook: HookPoint,
+    patching_cache: ActivationCache,
+    seq_pos: Union[int, List[int]] = None,
+) -> Float[torch.Tensor, "batch seq_pos ..."]:  # noqa: F722
+    """
+    Function which patches the entire activation (possibly at a subset of sequence positions).
+
+    This is useful in step 3 of path patching, if our receiver components are not specific to a head.
+    It's also useful in step 2 of path patching, because we might want to patch the entire activation.
+    """
+    if seq_pos is None:
+        seq_pos = list(range(clean_activation.shape[1]))
+    clean_activation[:, seq_pos] = patching_cache[hook.name][:, seq_pos]
+    return clean_activation
+
+
+def hook_fn_patch_head_vector(
+    clean_activation: Float[
+        torch.Tensor, "batch pos head_index d_head"  # noqa: F722
+    ],
+    hook: HookPoint,
+    patching_cache: ActivationCache,
+    heads_to_patch: List[Union[int, Tuple[int, int]]],
+    seq_pos: Union[int, List[int]] = None,
+) -> Float[torch.Tensor, "batch pos head_index d_head"]:  # noqa: F722
+    """
+    Function which patches the activation vector at specific heads (possibly also at a subset of sequence positions).
+
+    If `heads_to_patch` is list of ints, these are interpreted as heads in the current layer
+    If `heads_to_patch` is list of tuples, these are interpreted as (layer, head) pairs
+
+    This is useful in step 3 of path patching, if our receiver components are specific to a head.
+    """
+    batch = list(range(clean_activation.shape[0]))
+    if seq_pos is None:
+        seq_pos = list(range(clean_activation.shape[1]))
+    heads_to_patch = (
+        heads_to_patch
+        if isinstance(heads_to_patch[0], int)
+        else [head for layer, head in heads_to_patch if layer == hook.layer()]
+    )
+    idx = np.ix_(batch, seq_pos, heads_to_patch)
+    clean_activation[idx] = patching_cache[hook.name][idx]
+    return clean_activation
+
+
+# def hook_fn_patch_or_freeze_head_vector(
+#     head_vector: Float[torch.Tensor, "batch pos head_index d_head"],
+#     hook: HookPoint,
+#     patching_cache: ActivationCache,
+#     freezing_cache: ActivationCache,
+#     heads_to_patch: List[Tuple[int, int]],
+#     seq_pos: Union[int, List[int]] = None,
+# ) -> Float[torch.Tensor, "batch pos head_index d_head"]:
+#     '''
+#     head_vector:
+#         this can be q, k or v
+
+#     heads_to_patch: list of (layer, head) tuples
+#         we patch (i.e. set to patching cache value) all heads in `heads_to_patch`
+#         we freeze (i.e. set to freezing cache value) all heads not in this list
+
+#     This is useful in step 2 of path patching, because we'll have to patch some heads and freeze others.
+#     '''
+#     # Setting using ..., otherwise changing head_vector will edit cache value too
+#     if seq_pos is None: seq_pos = list(range(clean_activation.shape[1]))
+#     heads_to_patch_in_this_layer = [head for layer, head in heads_to_patch if layer == hook.layer()]
+#     head_vector[:] = freezing_cache[hook.name][:]
+#     head_vector[:, seq_pos, heads_to_patch_in_this_layer] = patching_cache[hook.name][:, seq_pos, heads_to_patch_in_this_layer]
+#     return head_vector
+
+
+def path_patch(
+    model: HookedTransformer,
+    corrupted_tokens: Int[torch.Tensor, "batch pos"],  # noqa: F722
+    clean_tokens: Int[torch.Tensor, "batch pos"],  # noqa: F722
+    patching_metric: Callable,
+    corrupted_cache: Optional[ActivationCache] = None,
+    clean_cache: Optional[ActivationCache] = None,
+    sender_components: Union[str, List[str]] = "z",
+    sender_seq_pos: Literal["each", "all"] = "each",
+    receiver_components: List[Tuple] = [],
+    receiver_seq_pos: Union[Literal["all"], int, List[int]] = "all",
+    verbose: bool = False,
+):
+    """
+    This function supports a variety of path patching methods.
+
+    Path patching from (sender components -> receiver components) involves the following algorithm:
+        (1) Gather all activations on clean and corrupted distributions.
+        (2) Run model on clean with sender components patched from corrupted and all other components frozen. Cache the receiver components.
+        (3) Run model on clean with receiver components patched from previously cached values.
+
+    Result of this algorithm: the model behaves like it does on the clean distribution, but with every direct path from sender -> receiver
+    patched (where we define a direct path as one which doesn't go through any other attention heads, only MLPs or skip connections).
+
+
+    Arguments:
+
+        receiver_components: List[Tuple]
+            This contains all the receiver components. Accepted syntax for receiver components is:
+                (layer: int, head: int)                  -> patch all inputs to that head
+                (layer: int, head: int, input_type: str) -> patch a specific input to that head (input_type can be "q", "k", "v", "pattern")
+                (layer, activation_name: str)            -> patch at a specific activation (e.g. could be "resid_pre", "attn_out", "mlp_out")
+
+        receiver_seq_pos: Union[Literal["all"], int]
+            "all"          -> then we patch the receiver at all sequence positions
+            int, List[int] -> patch the receiver at only those sequence positions
+
+        sender_components: Union[str, List[str]]
+            Special one:
+                "all_blocks" -> result has shape (3, layer), because we're patching at every block (resid_pre, attn_out, mlp_out) in every layer
+            If neither of these:
+                Then this is assumed to be a component name (e.g. "resid_pre" or "attn_out" or "z") or list of component names
+                And we iterate through all these component names when we patch senders
+                Result will have shape (n_components, layer)
+                Note that if "z" is included in this list, this means "by individual head", so this adds 12 to n_components (if you want to patch all
+                heads at once then use "attn_out")
+
+        sender_seq_pos: Literal["each", "all"]
+            If "each", then we patch each position separately (this can be computationally expensive!)
+            If "all", then we patch all positions at once
+
+
+    With the flexibility that all these 4 arguments provide, we can reproduce most of the activation patching methods defined via partial functions above. To give examples,
+    if we had receiver_components = [(-1, "resid_post")] and receiver_seq_pos = "all" then this is equiv to activation patching, and we have the following equivalences:
+
+        get_act_patch_resid_pre; returns (layer, seq_pos)
+            sender_components = "resid_pre"
+            sender_seq_pos = "each"
+
+        get_act_patch_block_every; returns (blocks=3, layer, seq_pos)
+            sender_components = "all_blocks"
+            sender_seq_pos = "each"
+
+        get_act_patch_attn_head_out_all_pos; returns (layer, head)
+            sender_components = "z"
+            sender_seq_pos = "all"
+
+    The answer will always be a tensor of between 1 and 4 dimensions.
+    Note the hierarchy of dimension orders in the final answer:
+        blocks > layer > head > seq_pos
+
+
+    Things which haven't been added but maybe should be:
+        patching on individual neurons in MLPs
+    """
+    assert (
+        len(receiver_components) > 0
+    ), "Must specify at least one receiver component"
+    assert sender_components in [
+        "resid_pre",
+        "resid_mid",
+        "resid_post",
+        "mlp_out",
+        "attn_out",
+        "z",
+        "all_blocks",
+    ], f"Invalid sender_components '{sender_components}'"
+    batch, seq_len = corrupted_tokens.shape[0], corrupted_tokens.shape[1]
+
+    model.reset_hooks()
+
+    # ========== Step 1 ==========
+    # Gather activations on clean and corrupted distributions (we only need attn heads)
+    z_name_filter = lambda name: name.endswith("z")
+    if corrupted_cache is None:
+        # corrupted cache might be used in a hard to predict way so just get the whole thing cause it's easier
+        _, corrupted_cache = model.run_with_cache(
+            corrupted_tokens,
+            # names_filter=lambda name: name.endswith("z"),
+            return_type=None,
+        )
+    if clean_cache is None:
+        # clean_cache is only ever used for freezing heads
+        _, clean_cache = model.run_with_cache(
+            clean_tokens, names_filter=z_name_filter, return_type=None
+        )
+
+    # ========== Step 3 preprocessing ==========
+    # Process receiver_components, converting them into a form we can use to perform path patching
+
+    # We want a list of hooks for doing patching on the receiver components. This list should have `patching_cache` as a free arg
+    # which we'll set later using partial (because this will be the cache we get from step 2).
+
+    # Figure out which sequence positions we're patching
+    if receiver_seq_pos == "all":
+        receiver_seq_pos = None
+    elif isinstance(receiver_seq_pos, int):
+        receiver_seq_pos = [receiver_seq_pos]
+    # Create list to store all hooks (this is a bit messy because sometimes we patch at individual heads)
+    receiver_hook_names_and_fns = []
+    receiver_heads_to_patch = {"v": [], "q": [], "k": []}
+    for receiver_component in receiver_components:
+        # Each component should be (layer, head), or (layer, head, input_type), or (layer, activation_name)
+        layer, *component_details = receiver_component
+        if layer < 0:
+            layer = model.cfg.n_layers + layer
+        if isinstance(component_details[0], str):
+            # case (layer, activation_name)
+            activation_name = component_details[0]
+            receiver_hook_names_and_fns.append(
+                (
+                    utils.get_act_name(activation_name, layer),
+                    partial(hook_fn_patch_generic, seq_pos=receiver_seq_pos),
+                )
+            )
+        elif isinstance(component_details[0], int):
+            if len(component_details) == 1:
+                # case (layer, head)
+                head = component_details[0]
+                for input_type in "qkv":
+                    receiver_heads_to_patch[input_type].append((layer, head))
+            elif len(component_details) == 2:
+                # case (layer, head, input_type)
+                head, input_type = component_details
+                assert input_type in [
+                    "q",
+                    "k",
+                    "v",
+                    "pattern",
+                ], f"Invalid receiver_component '{receiver_component}'"
+                if input_type == "pattern":
+                    for input_type in "qk":
+                        receiver_heads_to_patch[input_type].append(
+                            (layer, head)
+                        )
+                else:
+                    receiver_heads_to_patch[input_type].append((layer, head))
+            else:
+                raise ValueError(
+                    f"Invalid receiver_component '{receiver_component}'"
+                )
+        else:
+            raise ValueError(
+                f"Invalid receiver_component '{receiver_component}'"
+            )
+    # This is where we deal with the patching for head inputs, based on the `receiver_heads_to_patch` dict we just built
+    for input_type, heads_list in receiver_heads_to_patch.items():
+        layers_containing_receiver_heads = list(
+            set([layer for layer, head in heads_list])
+        )
+        for layer in layers_containing_receiver_heads:
+            receiver_hook_names_and_fns.append(
+                (
+                    utils.get_act_name(input_type, layer),
+                    partial(
+                        hook_fn_patch_head_vector,
+                        heads_to_patch=heads_list,
+                        seq_pos=receiver_seq_pos,
+                    ),
+                )
+            )
+    # Lastly, get all the hook names in a list (so we can create a names filter when we cache during step 2)
+    receiver_hook_names = [
+        hook_name for hook_name, hook_fn in receiver_hook_names_and_fns
+    ]
+    receiver_hook_names_filter = lambda name: name in receiver_hook_names
+
+    # ========== Step 2 preprocessing ==========
+    # Process sender_components, converting them into a form we can use to perform path patching
+
+    # We want a list of "head freezing hooks" and "component patching hooks". During step 2, for each possible sender component in the
+    # latter list, we'll be patching this sender component, and freezing all heads which aren't sender components. It's also useful at
+    # this stage to figure out what the shape of our final output will be, and the names of the dimensions.
+
+    # Figure out which sequence positions we're patching
+    if sender_seq_pos == "all":
+        sender_seq_pos_list = [[i for i in range(seq_len)]]
+    elif sender_seq_pos == "each":
+        sender_seq_pos_list = [[i] for i in range(seq_len)]
+    else:
+        raise ValueError(f"Invalid sender_seq_pos value '{sender_seq_pos}'")
+    # Dictionary to store "head freezing hooks" and "component patching hooks"
+    sender_hooks = {
+        "freezing": [
+            (
+                z_name_filter,
+                partial(hook_fn_patch_generic, patching_cache=clean_cache),
+            )
+        ],
+        "patching": [],
+    }
+    # Convert our sender components into a list of activation names
+    if isinstance(sender_components, str):
+        sender_components = [sender_components]
+    sender_components_list = []
+    for sender_component in sender_components:
+        if sender_component == "all_blocks":
+            sender_components_list.extend(["resid_pre", "attn_out", "mlp_out"])
+        elif sender_component == "z":
+            sender_components_list.extend(
+                [f"L.{head}" for head in range(model.cfg.n_heads)]
+            )
+        else:
+            sender_components_list.append(sender_component)
+    # Iterate through this list, and append to sender_hooks["patching"] for each one
+    # (we need to deal with "z" separately, because this indicates we're patching by head rather than just one component per layer)
+    for sender_component in sender_components_list:
+        if "." in sender_component:
+            activation_name = "z"
+            head = int(sender_component.split(".")[-1])
+            hook_fn = partial(
+                hook_fn_patch_head_vector,
+                patching_cache=corrupted_cache,
+                heads_to_patch=[head],
+            )
+        else:
+            activation_name = sender_component
+            hook_fn = partial(
+                hook_fn_patch_generic, patching_cache=corrupted_cache
+            )
+        for layer, seq_pos in itertools.product(
+            range(model.cfg.n_layers), sender_seq_pos_list
+        ):
+            sender_hooks["patching"].append(
+                (
+                    utils.get_act_name(activation_name, layer),
+                    partial(hook_fn, seq_pos=seq_pos),
+                )
+            )
+    # Define a list to store results, and the shape we'll eventually get it into (also get dimension descriptions for printing)
+    results = []
+    results_shape = [model.cfg.n_layers]
+    results_shape_desc = ["layers"]
+    if len(sender_components_list) > 1:
+        results_shape.insert(0, len(sender_components_list))
+        results_shape_desc.insert(0, "/".join(sender_components))
+    if sender_seq_pos == "each":
+        results_shape.append(seq_len)
+        results_shape_desc.append("sequence positions")
+
+    # This loop is where we do the actual patching algorithm (steps 2 and 3)
+    for i, sender_hook_patching in tqdm(
+        list(enumerate(sender_hooks["patching"]))
+    ):
+        # ========== Step 2 ==========
+        # Run on clean distribution, with sender component patched from corrupted, every non-sender head frozen
+
+        for hook_name, hook_fn in sender_hooks["freezing"] + [
+            sender_hook_patching
+        ]:
+            model.add_hook(hook_name, hook_fn)  # , level=1)
+
+        _, temp_cache = model.run_with_cache(
+            clean_tokens,
+            names_filter=receiver_hook_names_filter,
+            return_type=None,
+        )
+        model.reset_hooks()
+        assert set(temp_cache.keys()) == set(receiver_hook_names)
+
+        # ========== Step 3 ==========
+        # Run on clean distribution, patching in the receiver components from the results of step 2
+
+        temp_receiver_hook_names_and_fns = [
+            (hook_name, partial(hook_fn, patching_cache=temp_cache))
+            for (hook_name, hook_fn) in receiver_hook_names_and_fns
+        ]
+        # print(temp_receiver_hook_names_and_fns)
+        patched_logits = model.run_with_hooks(
+            clean_tokens,
+            fwd_hooks=temp_receiver_hook_names_and_fns,
+            return_type="logits",
+        )
+
+        # Store the results
+        results.append(patching_metric(patched_logits).item())
+        model.reset_hooks()
+
+    # Get the results as a tensor, and reshape it appropriately (also get dimension descriptions for printing)
+    results = (
+        torch.tensor(results, dtype=torch.float32)
+        .reshape(results_shape)
+        .squeeze()
+    )
+
+    # Shape of results?
+    # If 3D, we want (component, layer, seq_pos) or (layer, head, seq_pos)
+    # If 2D, we want (layer, head) or (component, layer)
+    # If 1D, we want (layer)
+    # So we just need to swap the first 2 dimensions if we have (head, layer) and actually want (layer, head)
+    if (results.ndim >= 2) and (sender_components == ["z"]):
+        results = results.transpose(0, 1)
+        results_shape_desc[0], results_shape_desc[1] = (
+            results_shape_desc[1],
+            results_shape_desc[0],
+        )
+
+    if verbose:
+        print(f"Shape of results: {results.shape}")
+        print(f"Dimensions are: {results_shape_desc}")
+
+    return results
