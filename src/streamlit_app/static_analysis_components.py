@@ -7,8 +7,9 @@ import plotly.express as px
 import streamlit as st
 import streamlit.components.v1 as components
 import torch
-import torch as t
 from fancy_einsum import einsum
+from .utils import tensor_to_long_data_frame
+from .components import create_search_component
 
 # create a pyvis network
 from pyvis.network import Network
@@ -965,110 +966,6 @@ def show_congruence(dt):
         st.plotly_chart(fig, use_container_width=True)
 
 
-# def show_time_embeddings(dt, logit_dir):
-#     with st.expander("Show Time Embeddings"):
-#         if dt.time_embedding_type == "linear":
-#             time_steps = t.arange(100).unsqueeze(0).unsqueeze(-1).to(t.float32)
-#             time_embeddings = dt.get_time_embeddings(time_steps).squeeze(0)
-#         else:
-#             time_embeddings = dt.time_embedding.weight
-
-#         max_timestep = st.slider(
-#             "Max timestep",
-#             min_value=1,
-#             max_value=time_embeddings.shape[0] - 1,
-#             value=time_embeddings.shape[0] - 1,
-#         )
-#         time_embeddings = time_embeddings[: max_timestep + 1]
-#         dot_prod = time_embeddings @ logit_dir
-#         dot_prod = dot_prod.detach()
-
-#         show_initial = st.checkbox("Show initial time embedding", value=True)
-#         fig = px.line(dot_prod)
-#         fig.update_layout(
-#             title="Time Embedding Dot Product",
-#             xaxis_title="Time Step",
-#             yaxis_title="Dot Product",
-#             legend_title="",
-#         )
-#         # remove legend
-#         fig.update_layout(showlegend=False)
-#         if show_initial:
-#             fig.add_vline(
-#                 x=st.session_state.timesteps[0][-1].item(),
-#                 line_dash="dash",
-#                 line_color="red",
-#                 annotation_text="Current timestep",
-#             )
-#         st.plotly_chart(fig, use_container_width=True)
-
-#         def calc_cosine_similarity_matrix(matrix: t.Tensor) -> t.Tensor:
-#             # Check if the input matrix is square
-#             # assert matrix.shape[0] == matrix.shape[1], "The input matrix must be square."
-
-#             # Normalize the column vectors
-#             norms = t.norm(
-#                 matrix, dim=0
-#             )  # Compute the norms of the column vectors
-#             normalized_matrix = (
-#                 matrix / norms
-#             )  # Normalize the column vectors by dividing each element by the corresponding norm
-
-#             # Compute the cosine similarity matrix using matrix multiplication
-#             return t.matmul(normalized_matrix.t(), normalized_matrix)
-
-#         similarity_matrix = calc_cosine_similarity_matrix(time_embeddings.T)
-#         st.plotly_chart(px.imshow(similarity_matrix.detach().numpy()))
-
-
-# def show_rtg_embeddings(dt, logit_dir):
-#     with st.expander("Show RTG Embeddings"):
-#         batch_size = 1028
-#         if st.session_state.allow_extrapolation:
-#             min_value = -10
-#             max_value = 10
-#         else:
-#             min_value = -1
-#             max_value = 1
-#         rtg_range = st.slider(
-#             "RTG Range",
-#             min_value=min_value,
-#             max_value=max_value,
-#             value=(-1, 1),
-#             step=1,
-#         )
-
-#         min_rtg = rtg_range[0]
-#         max_rtg = rtg_range[1]
-
-#         rtg_range = t.linspace(min_rtg, max_rtg, 100).unsqueeze(-1)
-
-#         rtg_embeddings = dt.reward_embedding(rtg_range).squeeze(0)
-
-#         dot_prod = rtg_embeddings @ logit_dir
-#         dot_prod = dot_prod.detach()
-
-#         show_initial = st.checkbox("Show initial RTG embedding", value=True)
-
-#         fig = px.line(x=rtg_range.squeeze(1).detach().numpy(), y=dot_prod)
-#         fig.update_layout(
-#             title="RTG Embedding Dot Product",
-#             xaxis_title="RTG",
-#             yaxis_title="Dot Product",
-#             legend_title="",
-#         )
-#         # remove legend
-#         fig.update_layout(showlegend=False)
-#         if show_initial:
-#             fig.add_vline(
-#                 x=st.session_state.rtg[0][0].item(),
-#                 line_dash="dash",
-#                 line_color="red",
-#                 annotation_text="Initial RTG",
-#             )
-#         st.plotly_chart(fig, use_container_width=True)
-
-
 def show_composition_scores(dt):
     with st.expander("Show Composition Scores"):
         st.markdown(
@@ -1294,48 +1191,140 @@ def show_dim_reduction(dt):
 
                 U, S, V = torch.linalg.svd(W_OV)
 
-                # shape d_action, d_mod
-                activations = einsum("l h d1 d2, a d1 -> l h d2 a", V, W_U)
+                a, b = st.columns(2)
+                with a:
+                    congruence_with = st.selectbox(
+                        "What should we project onto?", ["W_U", "MLP_in"]
+                    )
 
-                # torch.Size([3, 8, 7, 256])
-                # Now we want to select a head/layer and plot the imshow of the activations
-                # only for the first n activations
-                layer, head, k, dims = layer_head_k_selector_ui(dt, key="ov")
+                if congruence_with == "W_U":
+                    # shape d_action, d_mod
+                    activations = einsum("l h d1 d2, a d1 -> l h d2 a", V, W_U)
 
-                head_v_projections = activations[
-                    layer, head, :dims, :
-                ].detach()
-                # st.write(head_v_projections.shape)
-                # get top k activations per column
-                topk_values, topk_indices = torch.topk(
-                    head_v_projections, k, dim=1
-                )
+                    # torch.Size([3, 8, 7, 256])
+                    # Now we want to select a head/layer and plot the imshow of the activations
+                    # only for the first n activations
+                    with b:
+                        layer, head, k, dims = layer_head_k_selector_ui(
+                            dt, key="ov"
+                        )
 
-                # put indices into a heat map then replace with the IDX_TO_ACTION string
-                df = pd.DataFrame(topk_indices.T.detach().numpy())
-                fig = px.imshow(
-                    topk_values.T,
-                    color_continuous_midpoint=0,
-                    color_continuous_scale="RdBu",
-                    labels={"y": "Output Token Rank", "x": "Singular vector"},
-                )
+                    head_v_projections = activations[
+                        layer, head, :dims, :
+                    ].detach()
+                    # st.write(head_v_projections.shape)
+                    # get top k activations per column
+                    topk_values, topk_indices = torch.topk(
+                        head_v_projections, k, dim=1
+                    )
 
-                fig = fig.update_traces(
-                    text=df.applymap(lambda x: IDX_TO_ACTION[x]).values,
-                    texttemplate="%{text}",
-                    hovertemplate=None,
-                )
-                st.plotly_chart(fig, use_container_width=True)
+                    # put indices into a heat map then replace with the IDX_TO_ACTION string
+                    df = pd.DataFrame(topk_indices.T.detach().numpy())
+                    fig = px.imshow(
+                        topk_values.T,
+                        color_continuous_midpoint=0,
+                        color_continuous_scale="RdBu",
+                        labels={
+                            "y": "Output Token Rank",
+                            "x": "Singular vector",
+                        },
+                    )
 
-                # fig = px.imshow(
-                #     head_v_projections.T,
-                #     labels={'y': 'Action', 'x': 'Activation'})
-                # st.plotly_chart(fig, use_container_width=True)
+                    fig = fig.update_traces(
+                        text=df.applymap(lambda x: IDX_TO_ACTION[x]).values,
+                        texttemplate="%{text}",
+                        hovertemplate=None,
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
 
-                # now I want to plot the SVD decay for each S.
-                # Let's create labels for each S.
+                    # fig = px.imshow(
+                    #     head_v_projections.T,
+                    #     labels={'y': 'Action', 'x': 'Activation'})
+                    # st.plotly_chart(fig, use_container_width=True)
 
-                plot_svd_by_head_layer(dt, S)
+                    # now I want to plot the SVD decay for each S.
+                    # Let's create labels for each S.
+
+                    plot_svd_by_head_layer(dt, S)
+
+                if congruence_with == "MLP_in":
+                    with b:
+                        right_svd_vectors = st.slider(
+                            "Number of Singular Directions",
+                            min_value=10,
+                            max_value=dt.transformer_config.d_head,
+                        )
+
+                    MLP_in = torch.stack(
+                        [block.mlp.W_in for block in dt.transformer.blocks]
+                    )
+                    V = V[:, :, :right_svd_vectors, :]
+                    activations = einsum(
+                        "l1 h1 d_head_in d_head_ext, l2 d_head_ext d_mlp_out -> l2 l1 h1 d_head_in d_mlp_out",
+                        V,
+                        MLP_in,
+                    )
+
+                    activations = tensor_to_long_data_frame(
+                        activations,
+                        [
+                            "mlp_layer",
+                            "head_layer",
+                            "Head",
+                            "Singular Direction",
+                            "Neuron",
+                        ],
+                    )
+
+                    # remove rows where mlp_layer < head_layer
+                    activations = activations[
+                        activations["mlp_layer"] >= activations["head_layer"]
+                    ]
+
+                    activations["head_layer"] = activations["head_layer"].map(
+                        lambda x: f"L{x}"
+                    )
+                    activations["Head"] = activations["Head"].map(
+                        lambda x: f"H{x}"
+                    )
+                    activations["Head"] = (
+                        activations["head_layer"] + activations["Head"]
+                    )
+
+                    activations["mlp_layer"] = activations["mlp_layer"].map(
+                        lambda x: f"L{x}"
+                    )
+                    activations["Neuron"] = activations["Neuron"].map(
+                        lambda x: f"N{x}"
+                    )
+                    activations["Neuron"] = (
+                        activations["mlp_layer"] + activations["Neuron"]
+                    )
+
+                    # drop head head_layer, mlp_layer, head_out_dim
+                    activations.drop(["head_layer", "mlp_layer"], axis=1)
+
+                    activations = activations.sort_values(
+                        ["Head", "Singular Direction", "Neuron", "Score"]
+                    )
+                    activations.reset_index(drop=True, inplace=True)
+                    fig = px.scatter(
+                        activations,
+                        x=activations.index,
+                        color="Head",
+                        y="Score",
+                        hover_data=["Head", "Neuron", "Singular Direction"],
+                        labels={"Score": "Congruence"},
+                        render_mode="webgl",
+                    )
+
+                    st.plotly_chart(fig, use_container_width=True)
+
+                    # add search box
+                    create_search_component(
+                        activations,
+                        "Head Out Singular Value Projections onto MLP",
+                    )
 
 
 def plot_svd_by_head_layer(dt, S):
@@ -1440,23 +1429,6 @@ def embedding_matrix_selection_ui(dt):
     return embedding_matrix_1, embedding_matrix_2
 
 
-def tensor_to_long_data_frame(tensor_result, dimension_names):
-    assert len(tensor_result.shape) == len(
-        dimension_names
-    ), "The number of dimension names must match the number of dimensions in the tensor"
-
-    tensor_2d = tensor_result.reshape(-1)
-    df = pd.DataFrame(tensor_2d.detach().numpy(), columns=["Score"])
-
-    indices = pd.MultiIndex.from_tuples(
-        list(np.ndindex(tensor_result.shape)),
-        names=dimension_names,
-    )
-    df.index = indices
-    df.reset_index(inplace=True)
-    return df
-
-
 def layer_head_channel_selector(dt, key=""):
     n_heads = dt.transformer_config.n_heads
     height, width, channels = dt.environment_config.observation_space[
@@ -1497,3 +1469,107 @@ def layer_head_channel_selector(dt, key=""):
         )
 
     return layer, heads, selected_channels
+
+
+# def show_time_embeddings(dt, logit_dir):
+#     with st.expander("Show Time Embeddings"):
+#         if dt.time_embedding_type == "linear":
+#             time_steps = t.arange(100).unsqueeze(0).unsqueeze(-1).to(t.float32)
+#             time_embeddings = dt.get_time_embeddings(time_steps).squeeze(0)
+#         else:
+#             time_embeddings = dt.time_embedding.weight
+
+#         max_timestep = st.slider(
+#             "Max timestep",
+#             min_value=1,
+#             max_value=time_embeddings.shape[0] - 1,
+#             value=time_embeddings.shape[0] - 1,
+#         )
+#         time_embeddings = time_embeddings[: max_timestep + 1]
+#         dot_prod = time_embeddings @ logit_dir
+#         dot_prod = dot_prod.detach()
+
+#         show_initial = st.checkbox("Show initial time embedding", value=True)
+#         fig = px.line(dot_prod)
+#         fig.update_layout(
+#             title="Time Embedding Dot Product",
+#             xaxis_title="Time Step",
+#             yaxis_title="Dot Product",
+#             legend_title="",
+#         )
+#         # remove legend
+#         fig.update_layout(showlegend=False)
+#         if show_initial:
+#             fig.add_vline(
+#                 x=st.session_state.timesteps[0][-1].item(),
+#                 line_dash="dash",
+#                 line_color="red",
+#                 annotation_text="Current timestep",
+#             )
+#         st.plotly_chart(fig, use_container_width=True)
+
+#         def calc_cosine_similarity_matrix(matrix: t.Tensor) -> t.Tensor:
+#             # Check if the input matrix is square
+#             # assert matrix.shape[0] == matrix.shape[1], "The input matrix must be square."
+
+#             # Normalize the column vectors
+#             norms = t.norm(
+#                 matrix, dim=0
+#             )  # Compute the norms of the column vectors
+#             normalized_matrix = (
+#                 matrix / norms
+#             )  # Normalize the column vectors by dividing each element by the corresponding norm
+
+#             # Compute the cosine similarity matrix using matrix multiplication
+#             return t.matmul(normalized_matrix.t(), normalized_matrix)
+
+#         similarity_matrix = calc_cosine_similarity_matrix(time_embeddings.T)
+#         st.plotly_chart(px.imshow(similarity_matrix.detach().numpy()))
+
+
+# def show_rtg_embeddings(dt, logit_dir):
+#     with st.expander("Show RTG Embeddings"):
+#         batch_size = 1028
+#         if st.session_state.allow_extrapolation:
+#             min_value = -10
+#             max_value = 10
+#         else:
+#             min_value = -1
+#             max_value = 1
+#         rtg_range = st.slider(
+#             "RTG Range",
+#             min_value=min_value,
+#             max_value=max_value,
+#             value=(-1, 1),
+#             step=1,
+#         )
+
+#         min_rtg = rtg_range[0]
+#         max_rtg = rtg_range[1]
+
+#         rtg_range = t.linspace(min_rtg, max_rtg, 100).unsqueeze(-1)
+
+#         rtg_embeddings = dt.reward_embedding(rtg_range).squeeze(0)
+
+#         dot_prod = rtg_embeddings @ logit_dir
+#         dot_prod = dot_prod.detach()
+
+#         show_initial = st.checkbox("Show initial RTG embedding", value=True)
+
+#         fig = px.line(x=rtg_range.squeeze(1).detach().numpy(), y=dot_prod)
+#         fig.update_layout(
+#             title="RTG Embedding Dot Product",
+#             xaxis_title="RTG",
+#             yaxis_title="Dot Product",
+#             legend_title="",
+#         )
+#         # remove legend
+#         fig.update_layout(showlegend=False)
+#         if show_initial:
+#             fig.add_vline(
+#                 x=st.session_state.rtg[0][0].item(),
+#                 line_dash="dash",
+#                 line_color="red",
+#                 annotation_text="Initial RTG",
+#             )
+#         st.plotly_chart(fig, use_container_width=True)

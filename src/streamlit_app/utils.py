@@ -1,6 +1,8 @@
 import plotly.express as px
 import streamlit as st
 import os
+import pandas as pd
+import numpy as np
 
 
 def read_index_html():
@@ -34,3 +36,20 @@ def list_models(path):
             if file.endswith(".pt"):
                 model_list.append(os.path.join(root, file))
     return model_list
+
+
+def tensor_to_long_data_frame(tensor_result, dimension_names):
+    assert len(tensor_result.shape) == len(
+        dimension_names
+    ), "The number of dimension names must match the number of dimensions in the tensor"
+
+    tensor_2d = tensor_result.reshape(-1)
+    df = pd.DataFrame(tensor_2d.detach().numpy(), columns=["Score"])
+
+    indices = pd.MultiIndex.from_tuples(
+        list(np.ndindex(tensor_result.shape)),
+        names=dimension_names,
+    )
+    df.index = indices
+    df.reset_index(inplace=True)
+    return df

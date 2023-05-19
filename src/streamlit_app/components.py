@@ -237,3 +237,23 @@ def plot_decomp_scan_corr(df, cluster=False, x="RTG"):
     fig2 = plot_heatmap(df.corr(), cluster=cluster)
 
     return fig2
+
+
+# Searching data frames
+def search_dataframe(df: pd.DataFrame, query: str, top_n: int) -> pd.DataFrame:
+    df_str = df.astype(str).apply(lambda x: " ".join(x), axis=1)
+    mask = df_str.str.contains(query, case=False)
+    return df[mask].head(top_n)
+
+
+def create_search_component(df: pd.DataFrame, title: str, key=""):
+    # Define your search bar
+    query = st.text_input("Search " + title, key=key + "search")
+
+    if query:
+        # Call your function and print output
+        search_result = search_dataframe(df, query, 50)
+        if not search_result.empty:
+            st.dataframe(search_result)
+        else:
+            st.write("No results found.")

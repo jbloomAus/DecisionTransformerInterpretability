@@ -3,11 +3,7 @@ import time
 import streamlit as st
 import plotly.express as px
 
-from src.streamlit_app.causal_analysis_components import (
-    show_ablation,
-    show_activation_patching,
-    show_algebraic_value_editing,
-)
+from src.streamlit_app.setup import initialize_playground
 
 from src.streamlit_app.components import (
     hyperpar_side_bar,
@@ -19,18 +15,15 @@ from src.streamlit_app.components import (
     model_info,
     show_history,
 )
-from src.streamlit_app.content import (
-    analysis_help,
-    help_page,
-    reference_tables,
-)
+
+
 from src.streamlit_app.dynamic_analysis_components import (
     render_observation_view,
     show_attention_pattern,
     show_attributions,
     show_rtg_scan,
 )
-from src.streamlit_app.setup import initialize_playground
+
 from src.streamlit_app.static_analysis_components import (
     show_ov_circuit,
     show_qk_circuit,
@@ -39,6 +32,20 @@ from src.streamlit_app.static_analysis_components import (
     show_dim_reduction,
     show_composition_scores,
 )
+
+from src.streamlit_app.causal_analysis_components import (
+    show_ablation,
+    show_activation_patching,
+    show_algebraic_value_editing,
+    show_path_patching,
+)
+
+from src.streamlit_app.content import (
+    analysis_help,
+    help_page,
+    reference_tables,
+)
+
 from src.streamlit_app.visualizations import action_string_to_id
 
 from src.streamlit_app.model_index import model_index
@@ -152,7 +159,12 @@ with st.sidebar:
     )
     causal_analyses = st.multiselect(
         "Select Causal Analyses",
-        ["Ablation", "Activation Patching", "Algebraic Value Editing"],
+        [
+            "Ablation",
+            "Activation Patching",
+            "Path Patching",
+            "Algebraic Value Editing",
+        ],
     )
 analyses = dynamic_analyses + static_analyses + causal_analyses
 
@@ -181,6 +193,8 @@ if "Ablation" in analyses:
     show_ablation(dt, logit_dir=logit_dir, original_cache=cache)
 if "Activation Patching" in analyses:
     show_activation_patching(dt, logit_dir=logit_dir, original_cache=cache)
+if "Path Patching" in analyses:
+    show_path_patching(dt, logit_dir, clean_cache=cache)
 if "Algebraic Value Editing" in analyses:
     show_algebraic_value_editing(dt, logit_dir=logit_dir, original_cache=cache)
 

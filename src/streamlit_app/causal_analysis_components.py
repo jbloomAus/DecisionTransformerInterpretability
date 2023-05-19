@@ -26,7 +26,7 @@ from .environment import (
 ACTION_TO_IDX = {v: k for k, v in IDX_TO_ACTION.items()}
 OBJECT_TO_IDX = {v: k for k, v in IDX_TO_OBJECT.items()}
 
-from src.streamlit_app.patch_transformer_lens import patching
+from src.patch_transformer_lens import patching
 
 from .visualizations import (
     plot_action_preds,
@@ -597,7 +597,7 @@ def get_act_patch_mlp(
     return patched_neurons_normalized_improvement
 
 
-# AVEC!
+# Activation PAtch with Interpolation.
 # based on: https://www.lesswrong.com/posts/5spBue2z2tw4JuDCx/steering-gpt-2-xl-by-adding-an-activation-vector#Evidence_of_generalization
 # I think of it as reverse activation patching.
 # We're going to try to find a vector that, when added to the activations,
@@ -619,6 +619,10 @@ def show_algebraic_value_editing(dt, logit_dir, original_cache):
             You can then see the effect this has on the current logit distribution, 
             and the effect this has on the projections of transformer components
             into the logit direction.
+
+            Please note that:
+            - at coefficient = 0, you get the original forward pass.
+            - at coefficient = 1, you get the corrupted pass.
             
             """
         )
@@ -638,16 +642,18 @@ def show_algebraic_value_editing(dt, logit_dir, original_cache):
         a, b, c = st.columns([5, 1, 5])
         with a:
             layer = st.selectbox(
-                "Layer", list(range(dt.transformer_config.n_layers))
+                "Layer",
+                list(range(dt.transformer_config.n_layers)),
+                key="avec",
             )
             name = f"blocks.{layer}.hook_resid_pre"
 
         with c:
             coeff_min, coeff_max = st.slider(
                 "Coefficient",
-                min_value=-1.0,
-                max_value=1.0,
-                value=[-1.0, 1.0],
+                min_value=-2.0,
+                max_value=3.0,
+                value=[0.0, 1.0],
             )
 
             # make coeff a vector from min to max of length batch size
@@ -741,3 +747,232 @@ def get_ave_hook(component, coeff: Tensor, act_diff: Tensor, **kwargs):
             resid_pre[:, :, :] += coeff * act_diff
 
     return ave_hook
+
+
+# Path Patching using code from Callum McDougal.
+from src.patch_transformer_lens.patching import path_patch
+
+
+def show_path_patching(dt, logit_dir, clean_cache):
+    with st.expander("Path Patching"):
+        # 1. Create a corrupted forward pass using the same essential logic as activation
+        # patching.
+        corrupted_tokens = get_corrupted_tokens(dt, key="path_")
+        (
+            corrupted_preds,
+            corrupted_x,
+            corrupted_cache,
+            _,
+        ) = get_action_preds_from_tokens(dt, corrupted_tokens)
+
+        # get clean/corrupt forward passes done.
+        clean_tokens = get_tokens_from_app_state(dt, previous_step=False)
+        clean_preds, clean_x, _, _ = get_action_preds_from_tokens(
+            dt, clean_tokens
+        )
+        clean_logit_dif = clean_x[0, -1] @ logit_dir
+        corrupt_preds, corrupt_x, _, _ = get_action_preds_from_tokens(
+            dt, corrupted_tokens
+        )
+        corrupted_logit_dif = corrupt_x[0, -1] @ logit_dir
+
+        if st.checkbox("show corrupted action predictions", key="path"):
+            plot_action_preds(corrupt_preds)
+
+        # rewrite previous line but with nicer formatting
+        st.write(
+            "Clean Logit Diff: ",
+            f"{clean_logit_dif.item():.3f}",
+            " Corrupted Logit Diff: ",
+            f"{corrupted_logit_dif.item():.3f}",
+        )
+
+        logit_diff_metric = partial(
+            logit_diff_recovery_metric,
+            logit_dir=logit_dir,
+            clean_logit_dif=clean_logit_dif,
+            corrupted_logit_dif=corrupted_logit_dif,
+        )
+
+        (
+            help_tab,
+            path_patch_block_every_tab,
+            path_patch_head_every_tab,
+            design_your_own_tab,
+        ) = st.tabs(
+            [
+                "Help",
+                "Layer-Token + Attn/MLP",
+                "Head All Positions",
+                "Design You Own",
+            ]
+        )
+
+        with help_tab:
+            st.write(
+                """
+                Path patching is a more subtle variation on activation patching which involves 
+                specifying nodes in the computational graph and patching the edges between them 
+                but fixing everything else. This helps us see things like exactly how 
+                two heads compose. 
+                
+                Path patching from (sender components -> receiver components) involves the following algorithm:
+                    (1) Gather all activations on clean and corrupted distributions.
+                    (2) Run model on clean with sender components patched from corrupted and all other components frozen. Cache the receiver components.
+                    (3) Run model on clean with receiver components patched from previously cached values.
+
+                Result of this algorithm: the model behaves like it does on the clean distribution, but with every direct path from sender -> receiver
+                patched (where we define a direct path as one which doesn't go through any other attention heads, only MLPs or skip connections).
+                """
+            )
+
+        with path_patch_block_every_tab:
+            path_patch_block_every = 1 - path_patch(
+                dt.transformer,
+                clean_tokens=clean_tokens,
+                corrupted_tokens=corrupted_tokens,
+                clean_cache=clean_cache,
+                corrupted_cache=corrupted_cache,
+                patching_metric=logit_diff_metric,
+                receiver_components=[(-1, "resid_post")],
+                receiver_seq_pos="all",
+                sender_components="all_blocks",
+                sender_seq_pos="each",
+                verbose=True,
+            )
+
+            fig = px.imshow(
+                path_patch_block_every,
+                facet_col=0,
+                facet_col_wrap=1,
+                color_continuous_midpoint=0,
+                color_continuous_scale="RdBu",
+                title="Logit Difference From Patched Attn Head Output",
+                labels={"x": "Sequence Position", "y": "Layer"},
+            )
+
+            # set xticks to labels
+            token_labels = st.session_state.labels
+            fig.update_xaxes(
+                showgrid=False,
+                ticks="",
+                tickmode="linear",
+                automargin=True,
+                tickvals=list(range(len(token_labels))),
+                ticktext=token_labels,
+            )
+
+            fig.update_yaxes(
+                showgrid=False,
+                ticks="",
+                tickmode="linear",
+                automargin=True,
+            )
+            fig.layout.annotations[2]["text"] = "Residual Stream"
+            fig.layout.annotations[1]["text"] = "Attention"
+            fig.layout.annotations[0]["text"] = "MLP"
+            st.plotly_chart(fig, use_container_width=True)
+
+        with path_patch_head_every_tab:
+            path_patch_head_every = 1 - path_patch(
+                dt.transformer,
+                clean_tokens=clean_tokens,
+                corrupted_tokens=corrupted_tokens,
+                clean_cache=clean_cache,
+                corrupted_cache=corrupted_cache,
+                patching_metric=logit_diff_metric,
+                receiver_components=[(-1, "resid_post")],
+                receiver_seq_pos="all",
+                sender_components="z",
+                sender_seq_pos="all",
+                verbose=True,
+            )
+
+            fig = px.imshow(
+                path_patch_head_every,
+                color_continuous_midpoint=0,
+                color_continuous_scale="RdBu",
+                title="Logit Difference From Patched Attn Out (all pos)",
+                labels={"x": "Head", "y": "Layer"},
+            )
+
+            # set xticks to labels
+            fig.update_xaxes(
+                showgrid=False,
+                ticks="",
+                tickmode="linear",
+                automargin=True,
+            )
+
+            fig.update_yaxes(
+                showgrid=False,
+                ticks="",
+                tickmode="linear",
+                automargin=True,
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+        with design_your_own_tab:
+            layers = list(range(dt.transformer_config.n_layers))
+            heads = list(range(dt.transformer_config.n_heads))
+
+            a, b = st.columns(2)
+            with a:
+                composition_type = st.selectbox(
+                    "Select Composition Type", ["v", "k", "q"]
+                )
+            head_options = [
+                (layer, head, composition_type)
+                for layer in layers
+                for head in heads
+            ]
+
+            with b:
+                heads_selected = st.multiselect(
+                    label="Select Reciever Heads",
+                    options=head_options,
+                    format_func=lambda x: f"L{x[0]}H{x[1]}",
+                    default=head_options[-1],
+                )
+
+            st.write(heads_selected)
+
+            path_patch_head_every = 1 - path_patch(
+                dt.transformer,
+                clean_tokens=clean_tokens,
+                corrupted_tokens=corrupted_tokens,
+                clean_cache=clean_cache,
+                corrupted_cache=corrupted_cache,
+                patching_metric=logit_diff_metric,
+                receiver_components=heads_selected,
+                receiver_seq_pos="all",
+                sender_components="z",
+                sender_seq_pos="all",
+                verbose=True,
+            )
+
+            fig = px.imshow(
+                path_patch_head_every,
+                color_continuous_midpoint=0,
+                color_continuous_scale="RdBu",
+                title="Logit Difference From Patched Attn Out (all pos)",
+                labels={"x": "Head", "y": "Layer"},
+            )
+
+            # set xticks to labels
+            fig.update_xaxes(
+                showgrid=False,
+                ticks="",
+                tickmode="linear",
+                automargin=True,
+            )
+
+            fig.update_yaxes(
+                showgrid=False,
+                ticks="",
+                tickmode="linear",
+                automargin=True,
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
