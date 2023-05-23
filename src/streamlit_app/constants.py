@@ -23,3 +23,10 @@ def twenty_idx_format_func(idx):
         return IDX_TO_STATE[idx - 17]
     else:
         return idx
+
+
+SPARSE_CHANNEL_NAMES = [twenty_idx_format_func(i) for i in range(20)]
+
+POSITION_NAMES = [f"{i},{j}" for i in list(range(7)) for j in list(range(7))]
+
+ACTION_NAMES = list(IDX_TO_ACTION.values())

@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import torch
 from minigrid.core.constants import IDX_TO_OBJECT
 from src.environments.utils import reverse_one_hot
+import itertools
 
 
 def find_agent(observation):
@@ -54,7 +55,11 @@ def render_minigrid_observations(env, observations):
 
 
 # Plotting funcs for the embeddings
-def tensor_cosine_similarity_heatmap(tensor):
+def tensor_cosine_similarity_heatmap(
+    tensor,
+    labels=None,
+    index_labels=None,
+):
     # Normalize each row in the tensor
     row_norms = torch.norm(tensor, dim=1, keepdim=True)
     normalized_tensor = tensor / row_norms
@@ -66,14 +71,60 @@ def tensor_cosine_similarity_heatmap(tensor):
 
     # Convert the resulting tensor to a Pandas DataFrame
     df = pd.DataFrame(cosine_similarity_matrix.numpy())
+    import streamlit as st
+
+    # index labels are a list of lists used to add more detail to the df
+    if index_labels:
+        indices = list(itertools.product(*index_labels))
+        multi_index = pd.MultiIndex.from_tuples(
+            indices,
+            names=labels,  # use labels differently if we have index labels
+        )
+        if len(labels) == 3:
+            df.index = multi_index.to_series().apply(
+                lambda x: "{0}, ({1},{2})".format(*x)
+            )
+            df.columns = multi_index.to_series().apply(
+                lambda x: "{0}, ({1},{2})".format(*x)
+            )
+        else:
+            df.index = multi_index.to_series().apply(
+                lambda x: "({0},{1})".format(*x)
+            )
+            df.columns = multi_index.to_series().apply(
+                lambda x: "({0},{1})".format(*x)
+            )
 
     # Visualize the pairwise cosine similarity as a heatmap using Plotly Express
     fig = px.imshow(
         df,
-        color_continuous_scale="viridis",
+        color_continuous_scale="RdBu",
         title="Pairwise Cosine Similarity Heatmap",
+        color_continuous_midpoint=0.0,
+        labels={"color": "Cosine Similarity"},
     )
-    fig.show()
+    if labels and not index_labels:
+        fig.update_xaxes(
+            tickmode="array",
+            tickvals=list(range(len(labels))),
+            ticktext=labels,
+            showgrid=False,
+        )
+        fig.update_yaxes(
+            tickmode="array",
+            tickvals=list(range(len(labels))),
+            ticktext=labels,
+            showgrid=False,
+        )
+    if index_labels:
+        fig.update_xaxes(
+            visible=False,
+        )
+        fig.update_yaxes(
+            visible=False,
+        )
+
+    return fig
 
 
 def tensor_2d_embedding_similarity(tensor, x, y, mode="heatmap"):

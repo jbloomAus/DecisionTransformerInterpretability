@@ -26,6 +26,7 @@ from src.streamlit_app.dynamic_analysis_components import (
 )
 
 from src.streamlit_app.static_analysis_components import (
+    show_embeddings,
     show_ov_circuit,
     show_qk_circuit,
     show_congruence,
@@ -141,6 +142,7 @@ with st.sidebar:
     static_analyses = st.multiselect(
         "Select Static Analyses",
         [
+            "Embeddings",
             "Congruence",
             "OV Circuit",
             "QK Circuit",
@@ -177,7 +179,8 @@ with st.sidebar:
 if len(analyses) == 0:
     st.warning("Please select at least one analysis.")
 
-
+if "Embeddings" in analyses:
+    show_embeddings(dt)
 if "Ablation" in analyses:
     show_ablation(dt, logit_dir=logit_dir, original_cache=cache)
 if "Activation Patching" in analyses:

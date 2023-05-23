@@ -10,18 +10,28 @@ import torch
 from fancy_einsum import einsum
 from .utils import tensor_to_long_data_frame
 from .components import create_search_component
+import einops
+import itertools
 
 # create a pyvis network
 from pyvis.network import Network
 import networkx as nx
 
-from src.visualization import get_param_stats, plot_param_stats
+
+from src.visualization import (
+    get_param_stats,
+    plot_param_stats,
+    tensor_cosine_similarity_heatmap,
+)
 
 from .constants import (
     IDX_TO_ACTION,
     IDX_TO_STATE,
     three_channel_schema,
     twenty_idx_format_func,
+    SPARSE_CHANNEL_NAMES,
+    POSITION_NAMES,
+    ACTION_NAMES,
 )
 from .utils import fancy_histogram, fancy_imshow
 
@@ -34,6 +44,162 @@ def show_param_statistics(dt):
         st.plotly_chart(fig_mean, use_container_width=True)
         st.plotly_chart(fig_log_std, use_container_width=True)
         st.plotly_chart(fig_norm, use_container_width=True)
+
+
+def show_embeddings(dt):
+    with st.expander("Embeddings"):
+        all_index_labels = [
+            SPARSE_CHANNEL_NAMES,
+            list(range(7)),
+            list(range(7)),
+        ]
+        position_index_labels = [
+            list(range(7)),
+            list(range(7)),
+        ]
+
+        action_index_labels = [
+            [IDX_TO_ACTION[i] for i in range(7)],
+            [IDX_TO_ACTION[i] for i in range(7)],
+        ]
+
+        # all_embeddings_tab, svd_embeddings_tab = st.tabs(
+        #     ["Raw", "SVD"]
+        # )
+
+        # with all_embeddings_tab:
+        state_tab, in_action_tab, out_action_tab = st.tabs(
+            ["State", "In Action", "Out Action"]
+        )
+
+        with state_tab:
+            a, b = st.columns(2)
+            with a:
+                aggregation_group = st.selectbox(
+                    "Select aggregation method",
+                    ["None", "Channels", "Positions"],
+                )
+            with b:
+                if aggregation_group == "Channels":
+                    selected_positions = st.multiselect(
+                        "Filter Positions",
+                        options=list(range(len(POSITION_NAMES))),
+                        format_func=lambda x: POSITION_NAMES[x],
+                        key="position embedding",
+                        default=[5, 6],
+                    )
+
+                if aggregation_group == "Positions":
+                    selected_channels = st.multiselect(
+                        "Filter Positions",
+                        options=list(range(len(SPARSE_CHANNEL_NAMES))),
+                        format_func=lambda x: SPARSE_CHANNEL_NAMES[x],
+                        key="position embedding",
+                        default=[5, 6],
+                    )
+
+            embedding = dt.state_embedding.weight.detach().T
+
+            if aggregation_group == "None":
+                fig = tensor_cosine_similarity_heatmap(
+                    embedding,
+                    labels=("x", "y", "z"),
+                    index_labels=all_index_labels,
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+
+            if aggregation_group == "Channels":
+                image_shape = dt.environment_config.observation_space[
+                    "image"
+                ].shape
+
+                embedding = einops.rearrange(
+                    embedding,
+                    "(c x y) d -> x y c d",
+                    x=image_shape[0],
+                    y=image_shape[1],
+                    c=image_shape[-1],
+                )
+
+                if selected_positions:
+                    position_index_labels = list(
+                        itertools.product(*position_index_labels)
+                    )
+                    selected_rows = torch.tensor(
+                        [
+                            position_index_labels[i][0]
+                            for i in selected_positions
+                        ]
+                    )
+                    selected_cols = torch.tensor(
+                        [
+                            position_index_labels[i][1]
+                            for i in selected_positions
+                        ]
+                    )
+
+                    mask = torch.zeros(7, 7)
+                    mask[selected_rows, selected_cols] = 1
+
+                    if st.checkbox("Show mask"):
+                        st.plotly_chart(px.imshow(mask))
+
+                    embedding = embedding[mask.to(bool)]
+
+                    embedding = einops.reduce(embedding, "p c d -> c d", "sum")
+
+                else:
+                    embedding = einops.reduce(
+                        embedding, "x y c d -> c d", "sum"
+                    )
+
+                fig = tensor_cosine_similarity_heatmap(
+                    embedding, labels=SPARSE_CHANNEL_NAMES
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+            if aggregation_group == "Positions":
+                image_shape = dt.environment_config.observation_space[
+                    "image"
+                ].shape
+
+                embedding = einops.rearrange(
+                    embedding,
+                    "(c x y) d -> x y c d",
+                    x=image_shape[0],
+                    y=image_shape[1],
+                    c=image_shape[-1],
+                )
+
+                if selected_channels:
+                    embedding = embedding[:, :, selected_channels]
+                embedding = einops.reduce(
+                    embedding, "x y c d -> (x y) d", "sum"
+                )
+
+                fig = tensor_cosine_similarity_heatmap(
+                    embedding,
+                    labels=["x", "y"],
+                    index_labels=position_index_labels,
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+        with in_action_tab:
+            embedding = dt.action_embedding[0].weight.detach()
+            fig = tensor_cosine_similarity_heatmap(
+                embedding, labels=ACTION_NAMES
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+        with out_action_tab:
+            embedding = dt.action_predictor.weight.detach()
+            fig = tensor_cosine_similarity_heatmap(
+                embedding, labels=ACTION_NAMES
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
 
 
 def show_qk_circuit(dt):
