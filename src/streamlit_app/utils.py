@@ -3,6 +3,7 @@ import streamlit as st
 import os
 import pandas as pd
 import numpy as np
+import itertools
 
 
 def read_index_html():
@@ -53,3 +54,24 @@ def tensor_to_long_data_frame(tensor_result, dimension_names):
     df.index = indices
     df.reset_index(inplace=True)
     return df
+
+
+def get_row_names_from_index_labels(names, index_labels):
+    indices = list(itertools.product(*index_labels))
+    multi_index = pd.MultiIndex.from_tuples(
+        indices,
+        names=names,  # use labels differently if we have index labels
+    )
+    if len(names) == 3:
+        multi_index = multi_index.to_series().apply(
+            lambda x: "{0}, ({1},{2})".format(*x)
+        )
+
+    elif names == 2:
+        multi_index = multi_index.to_series().apply(
+            lambda x: "({0},{1})".format(*x)
+        )
+    else:
+        raise ("Index labels must be 2 or 3 dimensional")
+
+    return multi_index
