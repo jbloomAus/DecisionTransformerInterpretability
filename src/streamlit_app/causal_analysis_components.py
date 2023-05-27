@@ -759,8 +759,8 @@ def show_path_patching(dt, logit_dir, clean_cache):
         # patching.
         corrupted_tokens = get_corrupted_tokens(dt, key="path_")
         (
-            corrupted_preds,
-            corrupted_x,
+            corrupt_preds,
+            corrupt_x,
             corrupted_cache,
             _,
         ) = get_action_preds_from_tokens(dt, corrupted_tokens)
@@ -770,10 +770,8 @@ def show_path_patching(dt, logit_dir, clean_cache):
         clean_preds, clean_x, _, _ = get_action_preds_from_tokens(
             dt, clean_tokens
         )
+
         clean_logit_dif = clean_x[0, -1] @ logit_dir
-        corrupt_preds, corrupt_x, _, _ = get_action_preds_from_tokens(
-            dt, corrupted_tokens
-        )
         corrupted_logit_dif = corrupt_x[0, -1] @ logit_dir
 
         if st.checkbox("show corrupted action predictions", key="path"):
@@ -923,15 +921,8 @@ def show_path_patching(dt, logit_dir, clean_cache):
                 sender_component = st.selectbox(
                     "Select Sender Component",
                     options=[
-                        "resid_pre",
-                        "resid_mid",
-                        "resid_post",
-                        "mlp_out",
-                        "attn_out",
                         "z",
-                        "all_blocks",
                     ],
-                    index=5,
                 )
             with a:
                 composition_type = st.selectbox(
@@ -970,32 +961,35 @@ def show_path_patching(dt, logit_dir, clean_cache):
                 patching_metric=logit_diff_metric,
                 receiver_components=heads_selected + mlp_selected,
                 receiver_seq_pos="all",
-                sender_components="z",
+                sender_components=sender_component,
                 sender_seq_pos="all",
                 verbose=True,
             )
 
-            fig = px.imshow(
-                path_patch_head_every,
-                color_continuous_midpoint=0,
-                color_continuous_scale="RdBu",
-                title="Logit Difference From Patched Attn Out (all pos)",
-                labels={"x": "Head", "y": "Layer"},
-            )
+            if sender_component in ["z"]:
+                fig = px.imshow(
+                    path_patch_head_every,
+                    color_continuous_midpoint=0,
+                    color_continuous_scale="RdBu",
+                    title="Logit Difference From Patched Attn Out (all pos)",
+                    labels={"x": "Head", "y": "Layer"},
+                )
 
-            # set xticks to labels
-            fig.update_xaxes(
-                showgrid=False,
-                ticks="",
-                tickmode="linear",
-                automargin=True,
-            )
+                # set xticks to labels
+                fig.update_xaxes(
+                    showgrid=False,
+                    ticks="",
+                    tickmode="linear",
+                    automargin=True,
+                )
 
-            fig.update_yaxes(
-                showgrid=False,
-                ticks="",
-                tickmode="linear",
-                automargin=True,
-            )
+                fig.update_yaxes(
+                    showgrid=False,
+                    ticks="",
+                    tickmode="linear",
+                    automargin=True,
+                )
+                st.plotly_chart(fig, use_container_width=True)
 
-            st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.write("Not implemented yet")
