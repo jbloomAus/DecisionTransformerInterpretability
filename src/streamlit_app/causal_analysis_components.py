@@ -917,7 +917,22 @@ def show_path_patching(dt, logit_dir, clean_cache):
             layers = list(range(dt.transformer_config.n_layers))
             heads = list(range(dt.transformer_config.n_heads))
 
-            a, b, c = st.columns(3)
+            col, a, b, c = st.columns(4)
+
+            with col:
+                sender_component = st.selectbox(
+                    "Select Sender Component",
+                    options=[
+                        "resid_pre",
+                        "resid_mid",
+                        "resid_post",
+                        "mlp_out",
+                        "attn_out",
+                        "z",
+                        "all_blocks",
+                    ],
+                    index=5,
+                )
             with a:
                 composition_type = st.selectbox(
                     "Select Receiver Head Component", ["v", "k", "q"]
