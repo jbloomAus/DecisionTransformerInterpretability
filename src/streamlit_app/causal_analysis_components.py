@@ -47,35 +47,81 @@ BATCH_SIZE = 128
 # Ablation
 def show_ablation(dt, logit_dir, original_cache):
     with st.expander("Ablation Experiment"):
-        # make a streamlit form for choosing a component to ablate
+        # make a streamlit form for choosing a component to ablates
         n_layers = dt.transformer_config.n_layers
         n_heads = dt.transformer_config.n_heads
 
-        columns = st.columns(4)
-        with columns[0]:
-            layer = st.selectbox("Layer", list(range(n_layers)))
-        with columns[1]:
-            component = st.selectbox("Component", ["MLP", "HEAD"], index=1)
-        with columns[2]:
-            if component == "HEAD":
-                head = st.selectbox("Head", list(range(n_heads)))
-        with columns[3]:
-            ablate_to_mean = st.checkbox("Ablate to mean", value=True)
+        # make a list of all heads in all layers
+        heads = []
+        for layer in range(n_layers):
+            for head in range(n_heads):
+                heads.append((layer, head))
 
-        if component == "HEAD":
-            ablation_func = get_ablation_function(ablate_to_mean, head)
+        heads_to_ablate = st.multiselect(
+            "Select heads to ablate",
+            heads,
+            default=heads,
+            format_func=lambda x: f"L{x[0]}H{x[1]}",
+        )
+
+        mlps_to_ablate = st.multiselect(
+            "Select MLPs to ablate",
+            list(range(n_layers)),
+            default=list(range(n_layers)),
+            format_func=lambda x: f"MLP{x}",
+        )
+
+        ablate_to_mean = st.checkbox("Ablate to mean", value=True)
+
+        layers_in_heads_to_ablate = set(
+            [layer for layer, _ in heads_to_ablate]
+        )
+
+        for layer in layers_in_heads_to_ablate:
+            heads_in_layer_to_ablate = [
+                head for l, head in heads_to_ablate if l == layer
+            ]
+            ablation_func = get_ablation_function(
+                ablate_to_mean, heads_in_layer_to_ablate
+            )
             dt.transformer.blocks[layer].attn.hook_z.add_hook(ablation_func)
-        elif component == "MLP":
+        for layer in mlps_to_ablate:
             ablation_func = get_ablation_function(
                 ablate_to_mean, layer, component="MLP"
             )
             dt.transformer.blocks[layer].hook_mlp_out.add_hook(ablation_func)
 
-        action_preds, x, cache, tokens = get_action_preds_from_app_state(dt)
+        (
+            corrupt_action_preds,
+            corrupt_x,
+            cache,
+            tokens,
+        ) = get_action_preds_from_app_state(dt)
         dt.transformer.reset_hooks()
-        if st.checkbox("show action predictions"):
-            plot_action_preds(action_preds)
-        if st.checkbox("show counterfactual residual contributions"):
+
+        clean_tokens = get_tokens_from_app_state(dt, previous_step=False)
+        clean_preds, clean_x, _, _ = get_action_preds_from_tokens(
+            dt, clean_tokens
+        )
+
+        clean_logit_dif = clean_x[0, -1] @ logit_dir
+        corrupted_logit_dif = corrupt_x[0, -1] @ logit_dir
+
+        st.write(
+            "Clean Logit Diff: ",
+            f"{clean_logit_dif.item():.3f}",
+            " Corrupted Logit Diff: ",
+            f"{corrupted_logit_dif.item():.3f}",
+        )
+
+        prediction_tab, contribution_tab = st.tabs(
+            ["Prediction", "Attribution"]
+        )
+
+        with prediction_tab:
+            plot_action_preds(corrupt_action_preds)
+
+        with contribution_tab:
             original_residual_decomp = get_residual_decomp(
                 dt, original_cache, logit_dir
             )
@@ -86,10 +132,8 @@ def show_ablation(dt, logit_dir, original_cache):
                 original_residual_decomp, ablation_residual_decomp
             )
 
-    # then, render a single residual stream contribution with the ablation
 
-
-def get_ablation_function(ablate_to_mean, head_to_ablate, component="HEAD"):
+def get_ablation_function(ablate_to_mean, heads_to_ablate, component="HEAD"):
     def head_ablation_hook(
         value: TT["batch", "pos", "head_index", "d_head"],  # noqa: F821
         hook: HookPoint,
@@ -97,11 +141,11 @@ def get_ablation_function(ablate_to_mean, head_to_ablate, component="HEAD"):
         print(f"Shape of the value tensor: {value.shape}")
 
         if ablate_to_mean:
-            value[:, :, head_to_ablate, :] = value[
-                :, :, head_to_ablate, :
+            value[:, :, heads_to_ablate, :] = value[
+                :, :, heads_to_ablate, :
             ].mean(dim=2, keepdim=True)
         else:
-            value[:, :, head_to_ablate, :] = 0.0
+            value[:, :, heads_to_ablate, :] = 0.0
         return value
 
     def mlp_ablation_hook(
