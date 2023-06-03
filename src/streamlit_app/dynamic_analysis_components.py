@@ -60,31 +60,40 @@ def visualize_attention_pattern(dt, cache):
         b,
     ) = st.columns(2)
     with a:
-        heads = st.multiselect(
-            "Select Heads",
-            options=list(range(n_heads)),
-            default=list(range(n_heads)),
-            key="heads attention",
-        )
-
+        heads = list(range(n_heads))
         layer = st.selectbox(
             "Layer",
             options=list(range(n_layers)),
         )
-    with b:
         score_or_softmax = st.selectbox(
             "Score or Softmax",
             options=["Score", "Softmax"],
+            index=1,
         )
         softmax = score_or_softmax == "Softmax"
 
-        method = st.selectbox(
-            "Select plotting method",
-            options=["Plotly", "CircuitsVis"],
+    with b:
+        scale_by_value = st.selectbox(
+            "Scale by value",
+            options=[True, False],
+            index=0,
         )
 
+        if score_or_softmax != "Value Weighted Softmax":
+            method = st.selectbox(
+                "Select plotting method",
+                options=["Plotly", "CircuitsVis"],
+            )
+        else:
+            method = "Plotly"
+
     plot_attention_pattern_single(
-        cache, layer, softmax=softmax, specific_heads=heads, method=method
+        cache,
+        layer,
+        softmax=softmax,
+        specific_heads=heads,
+        method=method,
+        scale_by_value=scale_by_value,
     )
 
 
