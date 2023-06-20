@@ -54,12 +54,7 @@ def render_minigrid_observations(env, observations):
     )
 
 
-# Plotting funcs for the embeddings
-def tensor_cosine_similarity_heatmap(
-    tensor,
-    labels=None,
-    index_labels=None,
-):
+def get_cosine_sim_df(tensor):
     # Normalize each row in the tensor
     row_norms = torch.norm(tensor, dim=1, keepdim=True)
     normalized_tensor = tensor / row_norms
@@ -71,7 +66,16 @@ def tensor_cosine_similarity_heatmap(
 
     # Convert the resulting tensor to a Pandas DataFrame
     df = pd.DataFrame(cosine_similarity_matrix.numpy())
-    import streamlit as st
+    return df
+
+
+# Plotting funcs for the embeddings
+def tensor_cosine_similarity_heatmap(
+    tensor,
+    labels=None,
+    index_labels=None,
+):
+    df = get_cosine_sim_df(tensor)
 
     # index labels are a list of lists used to add more detail to the df
     if index_labels:

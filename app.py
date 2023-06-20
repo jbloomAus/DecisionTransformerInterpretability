@@ -26,6 +26,7 @@ from src.streamlit_app.dynamic_analysis_components import (
 )
 
 from src.streamlit_app.static_analysis_components import (
+    show_neuron_directions,
     show_embeddings,
     show_ov_circuit,
     show_qk_circuit,
@@ -143,6 +144,7 @@ with st.sidebar:
         "Select Static Analyses",
         [
             "Embeddings",
+            "Neuron Directions",
             "Congruence",
             "OV Circuit",
             "QK Circuit",
@@ -205,6 +207,8 @@ if "GatedMLP" in analyses:
 
 if "Parameter Distributions" in analyses:
     show_param_statistics(dt)
+if "Neuron Directions" in analyses:
+    show_neuron_directions(dt)
 if "Dimensionality Reduction" in analyses:
     show_dim_reduction(dt)
 if "Composition Scores" in analyses:
