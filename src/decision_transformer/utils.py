@@ -215,6 +215,10 @@ def load_decision_transformer(
                 }
             )
 
+            print(
+                "Ignore T-Lens warnings about folding layer norm into unembed, we just did it manually"
+            )
+
     return model
 
 
