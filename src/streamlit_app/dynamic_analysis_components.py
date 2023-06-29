@@ -1,3 +1,5 @@
+import re
+
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -10,6 +12,12 @@ from minigrid.core.constants import IDX_TO_COLOR, IDX_TO_OBJECT
 from src.decision_transformer.utils import get_max_len_from_model_type
 
 from .analysis import get_residual_decomp
+from .components import (
+    decomp_configuration_ui,
+    get_decomp_scan,
+    plot_decomp_scan_corr,
+    plot_decomp_scan_line,
+)
 from .constants import (
     IDX_TO_ACTION,
     IDX_TO_STATE,
@@ -19,16 +27,9 @@ from .constants import (
 from .utils import fancy_histogram, fancy_imshow, tensor_to_long_data_frame
 from .visualizations import (
     plot_attention_pattern_single,
-    plot_logit_diff,
     plot_heatmap,
+    plot_logit_diff,
     plot_logit_scan,
-)
-
-from .components import (
-    decomp_configuration_ui,
-    get_decomp_scan,
-    plot_decomp_scan_line,
-    plot_decomp_scan_corr,
 )
 
 RTG_SCAN_BATCH_SIZE = 256
@@ -99,8 +100,8 @@ def visualize_attention_pattern(dt, cache):
 
 def show_attributions(dt, cache, logit_dir):
     with st.expander("Show Attributions"):
-        layertab, componenttab, headtab = st.tabs(
-            ["Layer", "Component", "Head"]
+        layertab, componenttab, headtab, neurontab = st.tabs(
+            ["Layer", "Component", "Head", "Neuron"]
         )
 
         with layertab:
@@ -170,6 +171,52 @@ def show_attributions(dt, cache, logit_dir):
             st.write(
                 f"Top 5 Heads: {', '.join([f'{labels[k.indices[i]]}: {round(k.values[i].item(), 3)}' for i in range(5)])}"
             )
+
+        with neurontab:
+            result, labels = cache.get_full_resid_decomposition(
+                apply_ln=True, return_labels=True, expand_neurons=True
+            )
+            attribution = result[:, 0, -1] @ logit_dir
+
+            # use regex to look for the L {number} N {number} pattern in labels
+            neuron_attribution_mask = [
+                True if re.search(r"L\d+N\d+", label) else False
+                for label in labels
+            ]
+
+            attribution = attribution[neuron_attribution_mask]
+            labels = [
+                label for label in labels if re.search(r"L\d+N\d+", label)
+            ]
+
+            df = pd.DataFrame(
+                {
+                    "Neuron": labels,
+                    "Logit Difference": attribution.detach().numpy(),
+                }
+            )
+            df["Layer"] = df["Neuron"].apply(
+                lambda x: int(x.split("L")[1].split("N")[0])
+            )
+
+            layertabs = st.tabs(
+                ["L" + str(layer) for layer in df["Layer"].unique().tolist()]
+            )
+
+            for i, layer in enumerate(df["Layer"].unique().tolist()):
+                with layertabs[i]:
+                    fig = px.scatter(
+                        df[df["Layer"] == layer],
+                        x="Neuron",
+                        y="Logit Difference",
+                        hover_data=["Layer"],
+                        title="Logit Difference From Each Neuron",
+                        color="Logit Difference",
+                    )
+                    # color_continuous_scale="RdBu",
+                    # don't label xtick
+                    fig.update_xaxes(showticklabels=False)
+                    st.plotly_chart(fig, use_container_width=True)
 
     return
 
