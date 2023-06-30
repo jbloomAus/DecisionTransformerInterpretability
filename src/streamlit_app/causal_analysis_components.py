@@ -1,6 +1,8 @@
 from functools import partial
 from typing import Callable, Dict
 
+import re
+import pandas as pd
 import plotly.express as px
 import streamlit as st
 import torch
@@ -60,14 +62,14 @@ def show_ablation(dt, logit_dir, original_cache):
         heads_to_ablate = st.multiselect(
             "Select heads to ablate",
             heads,
-            default=heads,
+            default=[],
             format_func=lambda x: f"L{x[0]}H{x[1]}",
         )
 
         mlps_to_ablate = st.multiselect(
             "Select MLPs to ablate",
             list(range(n_layers)),
-            default=list(range(n_layers)),
+            default=[],
             format_func=lambda x: f"MLP{x}",
         )
 
@@ -81,6 +83,7 @@ def show_ablation(dt, logit_dir, original_cache):
             heads_in_layer_to_ablate = [
                 head for l, head in heads_to_ablate if l == layer
             ]
+
             ablation_func = get_ablation_function(
                 ablate_to_mean, heads_in_layer_to_ablate
             )
@@ -114,8 +117,8 @@ def show_ablation(dt, logit_dir, original_cache):
             f"{corrupted_logit_dif.item():.3f}",
         )
 
-        prediction_tab, contribution_tab = st.tabs(
-            ["Prediction", "Attribution"]
+        prediction_tab, contribution_tab, neuron_tab = st.tabs(
+            ["Prediction", "Attribution", "Neuron Activations"]
         )
 
         with prediction_tab:
@@ -131,6 +134,107 @@ def show_ablation(dt, logit_dir, original_cache):
             plot_single_residual_stream_contributions_comparison(
                 original_residual_decomp, ablation_residual_decomp
             )
+
+            heads = dt.transformer_config.n_heads
+
+            result, labels = original_cache.stack_head_results(
+                apply_ln=True, return_labels=True
+            )
+
+            original_attribution = result[:, 0, -1] @ logit_dir
+            original_attribution = original_attribution.reshape(-1, heads)
+
+            result, labels = cache.stack_head_results(
+                apply_ln=True, return_labels=True
+            )
+
+            attribution = result[:, 0, -1] @ logit_dir
+            attribution = attribution.reshape(-1, heads)
+
+            fig = px.imshow(
+                attribution.detach() - original_attribution.detach(),
+                color_continuous_midpoint=0,
+                color_continuous_scale="RdBu",
+                title="Change in Logit Difference From Each Head",
+                labels={"x": "Head", "y": "Layer"},
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+        with neuron_tab:
+            result, labels = original_cache.get_full_resid_decomposition(
+                apply_ln=True, return_labels=True, expand_neurons=True
+            )
+            original_attribution = result[:, 0, -1] @ logit_dir
+
+            result, labels = cache.get_full_resid_decomposition(
+                apply_ln=True, return_labels=True, expand_neurons=True
+            )
+            attribution = result[:, 0, -1] @ logit_dir
+
+            # # use regex to look for the L {number} N {number} pattern in labels
+            neuron_attribution_mask = [
+                True if re.search(r"L\d+N\d+", label) else False
+                for label in labels
+            ]
+
+            original_attribution = original_attribution[
+                neuron_attribution_mask
+            ]
+            attribution = attribution[neuron_attribution_mask]
+
+            labels = [
+                label for label in labels if re.search(r"L\d+N\d+", label)
+            ]
+
+            df = pd.DataFrame(
+                {
+                    "Neuron": labels,
+                    "Original Logit Difference": original_attribution.detach().numpy(),
+                    "Ablation Logit Difference": attribution.detach().numpy(),
+                    "Change in Logit Difference": (
+                        attribution - original_attribution
+                    )
+                    .detach()
+                    .numpy(),
+                }
+            )
+            df["Layer"] = df["Neuron"].apply(
+                lambda x: int(x.split("L")[1].split("N")[0])
+            )
+
+            layertabs = st.tabs(
+                ["L" + str(layer) for layer in df["Layer"].unique().tolist()]
+            )
+
+            for i, layer in enumerate(df["Layer"].unique().tolist()):
+                with layertabs[i]:
+                    fig = px.scatter(
+                        df,  # [df["Layer"] == layer],
+                        x="Neuron",
+                        y="Original Logit Difference",
+                        hover_data=["Layer"],
+                        title="Logit Difference From Each Neuron",
+                        color="Original Logit Difference",
+                    )
+                    # color_continuous_scale="RdBu",
+                    # don't label xtick
+                    fig.update_xaxes(showticklabels=False)
+                    st.plotly_chart(fig, use_container_width=True)
+
+                    fig = px.scatter(
+                        df[df["Layer"] == layer],
+                        x="Neuron",
+                        y="Change in Logit Difference",
+                        hover_data=["Layer"],
+                        title="Change in Logit Difference From Each Neuron",
+                        color="Change in Logit Difference",
+                        color_continuous_midpoint=0,
+                        color_continuous_scale="RdBu",
+                    )
+                    # color_continuous_scale="RdBu",
+                    # don't label xtick
+                    fig.update_xaxes(showticklabels=False)
+                    st.plotly_chart(fig, use_container_width=True)
 
 
 def get_ablation_function(ablate_to_mean, heads_to_ablate, component="HEAD"):
