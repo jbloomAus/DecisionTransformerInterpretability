@@ -37,7 +37,7 @@ def runner(args):
     d_mlp = transformer_config.d_mlp
     n_ctx = transformer_config.n_ctx
     n_layers = transformer_config.n_layers
-    max_timestep = dt.environment_config.max_steps
+    max_timestep = (50,)  # dt.environment_config.max_steps
 
     warnings.filterwarnings("ignore", category=UserWarning)
     statistics = calibration_statistics(
@@ -70,7 +70,7 @@ def runner(args):
 
     # format the output path according to the input path.
     args.output_path = f"figures/{args.model_path.split('/')[-1].split('.')[0]}_calibration.png"
-    fig.write_image(args.output_path)
+    fig.write_image(args.output_path, scale=3)
 
 
 if __name__ == "__main__":

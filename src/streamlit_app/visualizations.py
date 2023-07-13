@@ -1,11 +1,14 @@
 from typing import List
-import streamlit.components.v1 as components
+
+import torch
 import circuitsvis as cv
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+import streamlit.components.v1 as components
+from scipy.cluster import hierarchy
 
 action_string_to_id = {
     "left": 0,
@@ -60,11 +63,17 @@ def plot_action_preds(action_preds):
 
 
 def plot_attention_pattern_single(
-    cache, layer, softmax=True, specific_heads: List = None, method="Plotly"
+    cache,
+    layer,
+    softmax=True,
+    specific_heads: List = None,
+    method="Plotly",
+    scale_by_value=False,
 ):
     labels = st.session_state.labels
 
     if method == "Plotly":
+        attn_norm = torch.norm(cache[f"blocks.{layer}.attn.hook_v"], dim=-1)
         if softmax:
             attention_pattern = cache["pattern", layer, "attn"][0]
             col_arg = {"color_continuous_midpoint": 0}
@@ -74,6 +83,10 @@ def plot_attention_pattern_single(
             col_arg = {"range_color": [-20, 20]}
         attention_pattern = attention_pattern[specific_heads]
 
+        if scale_by_value:
+            attention_pattern = attention_pattern * attn_norm[0].T.unsqueeze(
+                -1
+            )
         head_tabs = st.tabs([f"L{layer}H{head}" for head in specific_heads])
         for head in range(len(specific_heads)):
             with head_tabs[head]:
@@ -213,9 +226,6 @@ def plot_single_residual_stream_contributions_comparison(
     fig.update_traces(texttemplate="%{text:.3f}", textposition="auto")
     fig.update_layout(uniformtext_minsize=8, uniformtext_mode="hide")
     st.plotly_chart(fig, use_container_width=True)
-
-
-from scipy.cluster import hierarchy
 
 
 def plot_heatmap(

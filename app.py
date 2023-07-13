@@ -22,9 +22,12 @@ from src.streamlit_app.dynamic_analysis_components import (
     show_attention_pattern,
     show_attributions,
     show_rtg_scan,
+    show_gated_mlp_dynamic,
 )
 
 from src.streamlit_app.static_analysis_components import (
+    show_neuron_directions,
+    show_embeddings,
     show_ov_circuit,
     show_qk_circuit,
     show_congruence,
@@ -140,6 +143,8 @@ with st.sidebar:
     static_analyses = st.multiselect(
         "Select Static Analyses",
         [
+            "Embeddings",
+            "Neuron Directions",
             "Congruence",
             "OV Circuit",
             "QK Circuit",
@@ -155,7 +160,8 @@ with st.sidebar:
             "Attributions",
             "Attention Pattern",
             "Observation View",
-        ],
+        ]
+        + (["GatedMLP"] if dt.transformer_config.gated_mlp else []),
     )
     causal_analyses = st.multiselect(
         "Select Causal Analyses",
@@ -175,20 +181,8 @@ with st.sidebar:
 if len(analyses) == 0:
     st.warning("Please select at least one analysis.")
 
-if "Parameter Distributions" in analyses:
-    show_param_statistics(dt)
-if "Dimensionality Reduction" in analyses:
-    show_dim_reduction(dt)
-if "Composition Scores" in analyses:
-    show_composition_scores(dt)
-if "Congruence" in analyses:
-    show_congruence(dt)
-
-if "QK Circuit" in analyses:
-    show_qk_circuit(dt)
-if "OV Circuit" in analyses:
-    show_ov_circuit(dt)
-
+if "Embeddings" in analyses:
+    show_embeddings(dt)
 if "Ablation" in analyses:
     show_ablation(dt, logit_dir=logit_dir, original_cache=cache)
 if "Activation Patching" in analyses:
@@ -207,6 +201,25 @@ if "Attention Pattern" in analyses:
 if "Observation View" in analyses:
     render_observation_view(dt, tokens, logit_dir)
 
+if "GatedMLP" in analyses:
+    show_gated_mlp_dynamic(dt, cache)
+
+
+if "Parameter Distributions" in analyses:
+    show_param_statistics(dt)
+if "Neuron Directions" in analyses:
+    show_neuron_directions(dt)
+if "Dimensionality Reduction" in analyses:
+    show_dim_reduction(dt)
+if "Composition Scores" in analyses:
+    show_composition_scores(dt)
+if "Congruence" in analyses:
+    show_congruence(dt)
+
+if "QK Circuit" in analyses:
+    show_qk_circuit(dt)
+if "OV Circuit" in analyses:
+    show_ov_circuit(dt)
 
 show_history()
 

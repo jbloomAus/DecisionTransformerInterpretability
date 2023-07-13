@@ -115,7 +115,7 @@ def get_modified_tokens_from_app_state(
 
     elif specific_rtg is not None:
         assert position is not None
-        print("specific rtg", specific_rtg)
+        # print("specific rtg", specific_rtg)
         # make a table showing the rtg at each position before/after
         # and then highlight the position that is being changed.
 

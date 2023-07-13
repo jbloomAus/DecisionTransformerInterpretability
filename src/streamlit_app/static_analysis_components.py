@@ -8,22 +8,36 @@ import streamlit as st
 import streamlit.components.v1 as components
 import torch
 from fancy_einsum import einsum
-from .utils import tensor_to_long_data_frame
+from .utils import tensor_to_long_data_frame, get_row_names_from_index_labels
 from .components import create_search_component
+import einops
+import itertools
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 
 # create a pyvis network
 from pyvis.network import Network
 import networkx as nx
 
-from src.visualization import get_param_stats, plot_param_stats
+
+from src.visualization import (
+    get_param_stats,
+    plot_param_stats,
+    tensor_cosine_similarity_heatmap,
+    get_cosine_sim_df,
+)
 
 from .constants import (
     IDX_TO_ACTION,
     IDX_TO_STATE,
     three_channel_schema,
     twenty_idx_format_func,
+    SPARSE_CHANNEL_NAMES,
+    POSITION_NAMES,
+    ACTION_NAMES,
 )
-from .utils import fancy_histogram, fancy_imshow
+from .visualizations import plot_heatmap
 
 
 def show_param_statistics(dt):
@@ -34,6 +48,310 @@ def show_param_statistics(dt):
         st.plotly_chart(fig_mean, use_container_width=True)
         st.plotly_chart(fig_log_std, use_container_width=True)
         st.plotly_chart(fig_norm, use_container_width=True)
+
+
+def show_embeddings(dt):
+    with st.expander("Embeddings"):
+        all_index_labels = [
+            SPARSE_CHANNEL_NAMES,
+            list(range(7)),
+            list(range(7)),
+        ]
+        position_index_labels = [
+            list(range(7)),
+            list(range(7)),
+        ]
+
+        singe_action_index_labels = [IDX_TO_ACTION[i] for i in range(7)]
+
+        both_action_index_labels = [
+            [IDX_TO_ACTION[i] for i in range(7)],
+            [IDX_TO_ACTION[i] for i in range(7)],
+        ]
+
+        all_embeddings_tab, pca_tab = st.tabs(["Raw", "PCA"])
+
+        with all_embeddings_tab:
+            state_tab, in_action_tab, out_action_tab = st.tabs(
+                ["State", "In Action", "Out Action"]
+            )
+
+            with state_tab:
+                a, b = st.columns(2)
+                with a:
+                    aggregation_group = st.selectbox(
+                        "Select aggregation method",
+                        ["None", "Channels", "Positions"],
+                    )
+                with b:
+                    if aggregation_group == "Channels":
+                        selected_positions = st.multiselect(
+                            "Filter Positions",
+                            options=list(range(len(POSITION_NAMES))),
+                            format_func=lambda x: POSITION_NAMES[x],
+                            key="position embedding",
+                            default=[5, 6],
+                        )
+
+                    if aggregation_group == "Positions":
+                        selected_channels = st.multiselect(
+                            "Filter Positions",
+                            options=list(range(len(SPARSE_CHANNEL_NAMES))),
+                            format_func=lambda x: SPARSE_CHANNEL_NAMES[x],
+                            key="position embedding",
+                            default=[5, 6],
+                        )
+
+                embedding = dt.state_embedding.weight.detach().T
+
+                if aggregation_group == "None":
+                    fig = tensor_cosine_similarity_heatmap(
+                        embedding,
+                        labels=("x", "y", "z"),
+                        index_labels=all_index_labels,
+                    )
+
+                    st.plotly_chart(fig, use_container_width=True)
+
+                if aggregation_group == "Channels":
+                    image_shape = dt.environment_config.observation_space[
+                        "image"
+                    ].shape
+
+                    embedding = einops.rearrange(
+                        embedding,
+                        "(c x y) d -> x y c d",
+                        x=image_shape[0],
+                        y=image_shape[1],
+                        c=image_shape[-1],
+                    )
+
+                    if selected_positions:
+                        position_index_labels = list(
+                            itertools.product(*position_index_labels)
+                        )
+                        selected_rows = torch.tensor(
+                            [
+                                position_index_labels[i][0]
+                                for i in selected_positions
+                            ]
+                        )
+                        selected_cols = torch.tensor(
+                            [
+                                position_index_labels[i][1]
+                                for i in selected_positions
+                            ]
+                        )
+
+                        mask = torch.zeros(7, 7)
+                        mask[selected_rows, selected_cols] = 1
+
+                        if st.checkbox("Show mask"):
+                            st.plotly_chart(px.imshow(mask))
+
+                        embedding = embedding[mask.to(bool)]
+
+                        embedding = einops.reduce(
+                            embedding, "p c d -> c d", "sum"
+                        )
+
+                    else:
+                        embedding = einops.reduce(
+                            embedding, "x y c d -> c d", "sum"
+                        )
+
+                    fig = tensor_cosine_similarity_heatmap(
+                        embedding, labels=SPARSE_CHANNEL_NAMES
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+
+                if aggregation_group == "Positions":
+                    image_shape = dt.environment_config.observation_space[
+                        "image"
+                    ].shape
+
+                    embedding = einops.rearrange(
+                        embedding,
+                        "(c x y) d -> x y c d",
+                        x=image_shape[0],
+                        y=image_shape[1],
+                        c=image_shape[-1],
+                    )
+
+                    if selected_channels:
+                        embedding = embedding[:, :, selected_channels]
+                    embedding = einops.reduce(
+                        embedding, "x y c d -> (x y) d", "sum"
+                    )
+
+                    fig = tensor_cosine_similarity_heatmap(
+                        embedding,
+                        labels=["x", "y"],
+                        index_labels=position_index_labels,
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+
+            with in_action_tab:
+                embedding = dt.action_embedding[0].weight.detach()
+                fig = tensor_cosine_similarity_heatmap(
+                    embedding, labels=ACTION_NAMES
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+
+            with out_action_tab:
+                embedding = dt.action_predictor.weight.detach()
+                fig = tensor_cosine_similarity_heatmap(
+                    embedding, labels=ACTION_NAMES
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+
+        with pca_tab:
+            state_tab, in_action_tab, out_action_tab = st.tabs(
+                ["State", "In Action", "Out Action"]
+            )
+
+            with state_tab:
+                embedding = dt.state_embedding.weight.detach().T
+
+                with st.spinner("Performing PCA..."):
+                    # Normalize the data
+                    normalized_embedding = StandardScaler().fit_transform(
+                        embedding
+                    )
+
+                    # Perform PCA
+                    pca = PCA(n_components=2)
+                    pca_results = pca.fit_transform(normalized_embedding)
+
+                    # st.write(pca_results)
+                    # Create a dataframe for the results
+                    pca_df = pd.DataFrame(
+                        data=pca_results,
+                        index=get_row_names_from_index_labels(
+                            ["State", "x", "y"], all_index_labels
+                        ),
+                        columns=["PC1", "PC2"],
+                    )
+                    pca_df.reset_index(inplace=True, names="State")
+                    pca_df["Channel"] = pca_df["State"].apply(
+                        lambda x: x.split(",")[0]
+                    )
+
+                # Create the plot
+                fig = px.scatter(
+                    pca_df,
+                    x="PC1",
+                    y="PC2",
+                    title="PCA on Embeddings",
+                    hover_data=["State", "PC1", "PC2"],
+                    color="Channel",
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+
+            with in_action_tab:
+                embedding = dt.action_embedding[0].weight.detach()
+
+                with st.spinner("Performing PCA..."):
+                    # Normalize the data
+                    normalized_embedding = StandardScaler().fit_transform(
+                        embedding
+                    )
+
+                    # Perform PCA
+                    pca = PCA(n_components=2)
+                    pca_results = pca.fit_transform(normalized_embedding)
+
+                    # st.write(pca_results)
+                    # Create a dataframe for the results
+                    pca_df = pd.DataFrame(
+                        data=pca_results,
+                        index=singe_action_index_labels + ["Null"],
+                        columns=["PC1", "PC2"],
+                    )
+                    pca_df.reset_index(inplace=True, names="Action")
+
+                # Create the plot
+                fig = px.scatter(
+                    pca_df,
+                    x="PC1",
+                    y="PC2",
+                    title="PCA on Embeddings",
+                    hover_data=["Action", "PC1", "PC2"],
+                    color="Action",
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+
+            with out_action_tab:
+                embedding = dt.action_predictor.weight.detach()
+
+                with st.spinner("Performing PCA..."):
+                    # Normalize the data
+                    normalized_embedding = StandardScaler().fit_transform(
+                        embedding
+                    )
+
+                    # Perform PCA
+                    pca = PCA(n_components=2)
+                    pca_results = pca.fit_transform(normalized_embedding)
+
+                    # st.write(pca_results)
+                    # Create a dataframe for the results
+                    pca_df = pd.DataFrame(
+                        data=pca_results,
+                        index=singe_action_index_labels,
+                        columns=["PC1", "PC2"],
+                    )
+                    pca_df.reset_index(inplace=True, names="Action")
+
+                # Create the plot
+                fig = px.scatter(
+                    pca_df,
+                    x="PC1",
+                    y="PC2",
+                    title="PCA on Embeddings",
+                    hover_data=["Action", "PC1", "PC2"],
+                    color="Action",
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+
+
+def show_neuron_directions(dt):
+    MLP_in = torch.stack(
+        [block.mlp.W_in for block in dt.transformer.blocks]
+    ).detach()
+
+    MLP_out = torch.stack(
+        [block.mlp.W_out for block in dt.transformer.blocks]
+    ).detach()
+
+    layers = dt.transformer_config.n_layers
+
+    with st.expander("Show Neuron In / Out Directions"):
+        in_tab, out_tab = st.tabs(["In", "Out"])
+
+        with in_tab:
+            tabs = st.tabs(["MLP" + str(layer) for layer in range(layers)])
+            for i, tab in enumerate(tabs):
+                with tab:
+                    df = get_cosine_sim_df(MLP_in[i])
+                    fig = plot_heatmap(df, cluster=False)
+                    st.plotly_chart(fig, use_container_width=True)
+
+        with out_tab:
+            tabs = st.tabs(["MLP" + str(layer) for layer in range(layers)])
+            for i, tab in enumerate(tabs):
+                with tab:
+                    df = get_cosine_sim_df(MLP_out[i])
+                    fig = plot_heatmap(df, cluster=False)
+                    st.plotly_chart(fig, use_container_width=True)
+    # dt.transformer.
+
+    return
 
 
 def show_qk_circuit(dt):
@@ -112,7 +430,7 @@ def show_qk_circuit(dt):
             with a:
                 layer = st.selectbox("Select a layer", list(range(layers)))
             with b:
-                head = st.selectbox("Select a layer", list(range(n_heads)))
+                head = st.selectbox("Select a head", list(range(n_heads)))
             with c:
                 show_std_channel_channel = st.checkbox(
                     "Show std of coefficient by query-key channel"
@@ -707,57 +1025,36 @@ def show_congruence(dt):
         MLP_in = torch.stack(
             [block.mlp.W_in for block in dt.transformer.blocks]
         )
-
+        # MLP_in = MLP_in / (torch.norm(MLP_in, dim=-1, keepdim=True) + 1e-8)
         state_tab, action_tab, rtg_tab = st.tabs(["State", "Action", "RTG"])
 
         with state_tab:
             state_in = dt.state_embedding.weight
+
+            # state_in_normalized = state_in / (torch.norm(state_in, dim=-1, keepdim=True) + 1e-8)
+
             MLP_in_state_congruence = MLP_in.permute(0, 2, 1) @ state_in
+
             MLP_in_state_congruence = MLP_in_state_congruence.reshape(
-                MLP_in_state_congruence.shape[0:2]
-                + dt.environment_config.observation_space["image"].shape
+                MLP_in_state_congruence.shape[0:2] + (20, 7, 7)
             )
+
             MLP_in_state_congruence = MLP_in_state_congruence.permute(
                 0, 2, 3, 4, 1
             )
+
             MLP_in_state_congruence = MLP_in_state_congruence.detach()
 
-            MLP_in_state_congruence_2d = MLP_in_state_congruence.reshape(-1)
-            df = pd.DataFrame(
-                MLP_in_state_congruence_2d.numpy(), columns=["value"]
+            df = tensor_to_long_data_frame(
+                MLP_in_state_congruence,
+                ["layer", "channel", "height", "width", "dimension"],
             )
-            (
-                layers,
-                height,
-                width,
-                channels,
-                dims,
-            ) = MLP_in_state_congruence.shape
-            indices = pd.MultiIndex.from_tuples(
-                [
-                    (i, j, k, l, m)
-                    for i in range(layers)
-                    for j in range(height)
-                    for k in range(width)
-                    for l in range(channels)
-                    for m in range(dims)
-                ],
-                names=["layer", "height", "width", "channel", "dimension"],
-            )
-            df.index = indices
-            df.reset_index(inplace=True)
-            # ensure action is interpreted as a categorical variable
 
+            channels = MLP_in_state_congruence.shape[1]
             if channels == 3:
                 df["channel"] = df["channel"].map(IDX_TO_STATE)
             elif channels == 20:
                 df["channel"] = df["channel"].map(twenty_idx_format_func)
-
-            # before we filterm store the top 40 rows by value
-            top_40 = df.sort_values(by="value", ascending=False).head(40)
-            # and the bottom 40
-            bottom_40 = df.sort_values(by="value", ascending=True).head(40)
-
             a, b = st.columns(2)
             with a:
                 # create a multiselect to choose the channels of interest
@@ -773,71 +1070,39 @@ def show_congruence(dt):
                     key="channels mlp_in",
                     default=list(range(17)) if channels == 20 else [0, 1, 2],
                 )
+
                 mapped_channels = [
                     format_func(channel) for channel in selected_channels
                 ]
                 df = df[df["channel"].isin(mapped_channels)]
 
-            df = df.sort_values(by="channel")
+            df = df.sort_values(by=["layer", "channel"])
+
+            # df = df.sort_values(
+            #     by=["layer"], ascending=True,
+            # )
             df.reset_index(inplace=True, drop=True)
 
-            with b:
-                aggregation_level = st.selectbox(
-                    "Aggregation Level",
-                    options=["X-Y-Channel", "Neuron"],
-                    key="aggregation level",
-                )
-                if aggregation_level == "X-Y-Channel":
-                    # st.write(df)
-                    df = df.groupby(
-                        ["layer", "height", "width", "channel"]
-                    ).std()
-                    df = df.sort_values(by="channel")
-                    df.reset_index(inplace=True)
-                    fig = px.scatter(
-                        df,
-                        x=df.index,
-                        y="value",
-                        color="channel",
-                        # facet_col="layer",
-                        hover_data=[
-                            "layer",
-                            "height",
-                            "width",
-                            "channel",
-                            "value",
-                        ],
-                        labels={"value": "Std. of Congruence"},
-                    )
+            fig = px.scatter(
+                df,
+                x=df.index,
+                y="Score",
+                color="channel",
+                # facet_col="layer",
+                opacity=0.5,
+                hover_data=[
+                    "layer",
+                    "height",
+                    "width",
+                    "channel",
+                    "dimension",
+                    "Score",
+                ],
+                labels={"Score": "Congruence"},
+            )
 
-                    # update x axis to hide the tick labels, and remove the label
-                    fig.update_xaxes(showticklabels=False, title=None)
-
-                else:
-                    # sort
-                    df = df.sort_values(
-                        by=["height", "width"], ascending=False
-                    )
-
-                    fig = px.scatter(
-                        df,
-                        x=df.index,
-                        y="value",
-                        color="channel",
-                        # facet_col="layer",
-                        hover_data=[
-                            "layer",
-                            "height",
-                            "width",
-                            "channel",
-                            "dimension",
-                            "value",
-                        ],
-                        labels={"value": "Congruence"},
-                    )
-
-                    # update x axis to hide the tick labels, and remove the label
-                    fig.update_xaxes(showticklabels=False, title=None)
+            # update x axis to hide the tick labels, and remove the label
+            fig.update_xaxes(showticklabels=False, title=None)
 
             st.plotly_chart(fig, use_container_width=True)
 
@@ -895,6 +1160,10 @@ def show_congruence(dt):
 
         with rtg_tab:
             rtg_in = dt.reward_embedding[0].weight
+            # rtg_in_normalized =
+
+            st.write(rtg_in.norm())
+            st.write(MLP_in.shape)
             MLP_in_rtg_congruence = MLP_in.permute(0, 2, 1) @ rtg_in
 
             # torch.Size([3, 256, 1])
@@ -929,7 +1198,14 @@ def show_congruence(dt):
             [block.mlp.W_out for block in dt.transformer.blocks]
         )
 
-        MLP_out_congruence = MLP_out @ dt.action_predictor.weight.T
+        # MLP_out = MLP_out / MLP_out.norm(dim=-1, keepdim=True)
+
+        action_predictor = dt.action_predictor.weight
+        # action_predictor = action_predictor / action_predictor.norm(
+        #     dim=-1, keepdim=True
+        # )
+
+        MLP_out_congruence = MLP_out @ action_predictor.T
         MLP_out_congruence = MLP_out_congruence.permute(0, 2, 1)
         MLP_out_congruence = MLP_out_congruence.detach()
 
@@ -956,6 +1232,7 @@ def show_congruence(dt):
             y="value",
             color="action",
             # facet_col="layer",
+            # opacity=0.5,
             hover_data=["layer", "action", "dimension", "value"],
             labels={"value": "Congruence"},
         )

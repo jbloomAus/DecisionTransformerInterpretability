@@ -1,6 +1,8 @@
 from functools import partial
 from typing import Callable, Dict
 
+import re
+import pandas as pd
 import plotly.express as px
 import streamlit as st
 import torch
@@ -47,35 +49,82 @@ BATCH_SIZE = 128
 # Ablation
 def show_ablation(dt, logit_dir, original_cache):
     with st.expander("Ablation Experiment"):
-        # make a streamlit form for choosing a component to ablate
+        # make a streamlit form for choosing a component to ablates
         n_layers = dt.transformer_config.n_layers
         n_heads = dt.transformer_config.n_heads
 
-        columns = st.columns(4)
-        with columns[0]:
-            layer = st.selectbox("Layer", list(range(n_layers)))
-        with columns[1]:
-            component = st.selectbox("Component", ["MLP", "HEAD"], index=1)
-        with columns[2]:
-            if component == "HEAD":
-                head = st.selectbox("Head", list(range(n_heads)))
-        with columns[3]:
-            ablate_to_mean = st.checkbox("Ablate to mean", value=True)
+        # make a list of all heads in all layers
+        heads = []
+        for layer in range(n_layers):
+            for head in range(n_heads):
+                heads.append((layer, head))
 
-        if component == "HEAD":
-            ablation_func = get_ablation_function(ablate_to_mean, head)
+        heads_to_ablate = st.multiselect(
+            "Select heads to ablate",
+            heads,
+            default=[],
+            format_func=lambda x: f"L{x[0]}H{x[1]}",
+        )
+
+        mlps_to_ablate = st.multiselect(
+            "Select MLPs to ablate",
+            list(range(n_layers)),
+            default=[],
+            format_func=lambda x: f"MLP{x}",
+        )
+
+        ablate_to_mean = st.checkbox("Ablate to mean", value=True)
+
+        layers_in_heads_to_ablate = set(
+            [layer for layer, _ in heads_to_ablate]
+        )
+
+        for layer in layers_in_heads_to_ablate:
+            heads_in_layer_to_ablate = [
+                head for l, head in heads_to_ablate if l == layer
+            ]
+
+            ablation_func = get_ablation_function(
+                ablate_to_mean, heads_in_layer_to_ablate
+            )
             dt.transformer.blocks[layer].attn.hook_z.add_hook(ablation_func)
-        elif component == "MLP":
+        for layer in mlps_to_ablate:
             ablation_func = get_ablation_function(
                 ablate_to_mean, layer, component="MLP"
             )
             dt.transformer.blocks[layer].hook_mlp_out.add_hook(ablation_func)
 
-        action_preds, x, cache, tokens = get_action_preds_from_app_state(dt)
+        (
+            corrupt_action_preds,
+            corrupt_x,
+            cache,
+            tokens,
+        ) = get_action_preds_from_app_state(dt)
         dt.transformer.reset_hooks()
-        if st.checkbox("show action predictions"):
-            plot_action_preds(action_preds)
-        if st.checkbox("show counterfactual residual contributions"):
+
+        clean_tokens = get_tokens_from_app_state(dt, previous_step=False)
+        clean_preds, clean_x, _, _ = get_action_preds_from_tokens(
+            dt, clean_tokens
+        )
+
+        clean_logit_dif = clean_x[0, -1] @ logit_dir
+        corrupted_logit_dif = corrupt_x[0, -1] @ logit_dir
+
+        st.write(
+            "Clean Logit Diff: ",
+            f"{clean_logit_dif.item():.3f}",
+            " Corrupted Logit Diff: ",
+            f"{corrupted_logit_dif.item():.3f}",
+        )
+
+        prediction_tab, contribution_tab, neuron_tab = st.tabs(
+            ["Prediction", "Attribution", "Neuron Activations"]
+        )
+
+        with prediction_tab:
+            plot_action_preds(corrupt_action_preds)
+
+        with contribution_tab:
             original_residual_decomp = get_residual_decomp(
                 dt, original_cache, logit_dir
             )
@@ -86,10 +135,109 @@ def show_ablation(dt, logit_dir, original_cache):
                 original_residual_decomp, ablation_residual_decomp
             )
 
-    # then, render a single residual stream contribution with the ablation
+            heads = dt.transformer_config.n_heads
+
+            result, labels = original_cache.stack_head_results(
+                apply_ln=True, return_labels=True
+            )
+
+            original_attribution = result[:, 0, -1] @ logit_dir
+            original_attribution = original_attribution.reshape(-1, heads)
+
+            result, labels = cache.stack_head_results(
+                apply_ln=True, return_labels=True
+            )
+
+            attribution = result[:, 0, -1] @ logit_dir
+            attribution = attribution.reshape(-1, heads)
+
+            fig = px.imshow(
+                attribution.detach() - original_attribution.detach(),
+                color_continuous_midpoint=0,
+                color_continuous_scale="RdBu",
+                title="Change in Logit Difference From Each Head",
+                labels={"x": "Head", "y": "Layer"},
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+        with neuron_tab:
+            result, labels = original_cache.get_full_resid_decomposition(
+                apply_ln=True, return_labels=True, expand_neurons=True
+            )
+            original_attribution = result[:, 0, -1] @ logit_dir
+
+            result, labels = cache.get_full_resid_decomposition(
+                apply_ln=True, return_labels=True, expand_neurons=True
+            )
+            attribution = result[:, 0, -1] @ logit_dir
+
+            # # use regex to look for the L {number} N {number} pattern in labels
+            neuron_attribution_mask = [
+                True if re.search(r"L\d+N\d+", label) else False
+                for label in labels
+            ]
+
+            original_attribution = original_attribution[
+                neuron_attribution_mask
+            ]
+            attribution = attribution[neuron_attribution_mask]
+
+            labels = [
+                label for label in labels if re.search(r"L\d+N\d+", label)
+            ]
+
+            df = pd.DataFrame(
+                {
+                    "Neuron": labels,
+                    "Original Logit Difference": original_attribution.detach().numpy(),
+                    "Ablation Logit Difference": attribution.detach().numpy(),
+                    "Change in Logit Difference": (
+                        attribution - original_attribution
+                    )
+                    .detach()
+                    .numpy(),
+                }
+            )
+            df["Layer"] = df["Neuron"].apply(
+                lambda x: int(x.split("L")[1].split("N")[0])
+            )
+
+            layertabs = st.tabs(
+                ["L" + str(layer) for layer in df["Layer"].unique().tolist()]
+            )
+
+            for i, layer in enumerate(df["Layer"].unique().tolist()):
+                with layertabs[i]:
+                    fig = px.scatter(
+                        df,  # [df["Layer"] == layer],
+                        x="Neuron",
+                        y="Original Logit Difference",
+                        hover_data=["Layer"],
+                        title="Logit Difference From Each Neuron",
+                        color="Original Logit Difference",
+                    )
+                    # color_continuous_scale="RdBu",
+                    # don't label xtick
+                    fig.update_xaxes(showticklabels=False)
+                    st.plotly_chart(fig, use_container_width=True)
+
+                    fig = px.scatter(
+                        df[df["Layer"] == layer],
+                        x="Neuron",
+                        y="Change in Logit Difference",
+                        hover_data=["Layer"],
+                        title="Change in Logit Difference From Each Neuron",
+                        color="Change in Logit Difference",
+                        color_continuous_midpoint=0,
+                        color_continuous_scale="RdBu",
+                    )
+                    # color_continuous_scale="RdBu",
+                    # don't label xtick
+                    fig.update_xaxes(showticklabels=False)
+                    st.plotly_chart(fig, use_container_width=True)
 
 
-def get_ablation_function(ablate_to_mean, head_to_ablate, component="HEAD"):
+def get_ablation_function(ablate_to_mean, heads_to_ablate, component="HEAD"):
     def head_ablation_hook(
         value: TT["batch", "pos", "head_index", "d_head"],  # noqa: F821
         hook: HookPoint,
@@ -97,11 +245,11 @@ def get_ablation_function(ablate_to_mean, head_to_ablate, component="HEAD"):
         print(f"Shape of the value tensor: {value.shape}")
 
         if ablate_to_mean:
-            value[:, :, head_to_ablate, :] = value[
-                :, :, head_to_ablate, :
+            value[:, :, heads_to_ablate, :] = value[
+                :, :, heads_to_ablate, :
             ].mean(dim=2, keepdim=True)
         else:
-            value[:, :, head_to_ablate, :] = 0.0
+            value[:, :, heads_to_ablate, :] = 0.0
         return value
 
     def mlp_ablation_hook(
@@ -759,8 +907,8 @@ def show_path_patching(dt, logit_dir, clean_cache):
         # patching.
         corrupted_tokens = get_corrupted_tokens(dt, key="path_")
         (
-            corrupted_preds,
-            corrupted_x,
+            corrupt_preds,
+            corrupt_x,
             corrupted_cache,
             _,
         ) = get_action_preds_from_tokens(dt, corrupted_tokens)
@@ -770,10 +918,8 @@ def show_path_patching(dt, logit_dir, clean_cache):
         clean_preds, clean_x, _, _ = get_action_preds_from_tokens(
             dt, clean_tokens
         )
+
         clean_logit_dif = clean_x[0, -1] @ logit_dir
-        corrupt_preds, corrupt_x, _, _ = get_action_preds_from_tokens(
-            dt, corrupted_tokens
-        )
         corrupted_logit_dif = corrupt_x[0, -1] @ logit_dir
 
         if st.checkbox("show corrupted action predictions", key="path"):
@@ -917,7 +1063,15 @@ def show_path_patching(dt, logit_dir, clean_cache):
             layers = list(range(dt.transformer_config.n_layers))
             heads = list(range(dt.transformer_config.n_heads))
 
-            a, b, c = st.columns(3)
+            col, a, b, c = st.columns(4)
+
+            with col:
+                sender_component = st.selectbox(
+                    "Select Sender Component",
+                    options=[
+                        "z",
+                    ],
+                )
             with a:
                 composition_type = st.selectbox(
                     "Select Receiver Head Component", ["v", "k", "q"]
@@ -955,32 +1109,35 @@ def show_path_patching(dt, logit_dir, clean_cache):
                 patching_metric=logit_diff_metric,
                 receiver_components=heads_selected + mlp_selected,
                 receiver_seq_pos="all",
-                sender_components="z",
+                sender_components=sender_component,
                 sender_seq_pos="all",
                 verbose=True,
             )
 
-            fig = px.imshow(
-                path_patch_head_every,
-                color_continuous_midpoint=0,
-                color_continuous_scale="RdBu",
-                title="Logit Difference From Patched Attn Out (all pos)",
-                labels={"x": "Head", "y": "Layer"},
-            )
+            if sender_component in ["z"]:
+                fig = px.imshow(
+                    path_patch_head_every,
+                    color_continuous_midpoint=0,
+                    color_continuous_scale="RdBu",
+                    title="Logit Difference From Patched Attn Out (all pos)",
+                    labels={"x": "Head", "y": "Layer"},
+                )
 
-            # set xticks to labels
-            fig.update_xaxes(
-                showgrid=False,
-                ticks="",
-                tickmode="linear",
-                automargin=True,
-            )
+                # set xticks to labels
+                fig.update_xaxes(
+                    showgrid=False,
+                    ticks="",
+                    tickmode="linear",
+                    automargin=True,
+                )
 
-            fig.update_yaxes(
-                showgrid=False,
-                ticks="",
-                tickmode="linear",
-                automargin=True,
-            )
+                fig.update_yaxes(
+                    showgrid=False,
+                    ticks="",
+                    tickmode="linear",
+                    automargin=True,
+                )
+                st.plotly_chart(fig, use_container_width=True)
 
-            st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.write("Not implemented yet")

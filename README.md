@@ -7,7 +7,7 @@
 
 This project is designed to facilitate mechanistic interpretability of decision transformers as well as RL agents using transformer architectures.
 
-This is achieved via:
+This is achieved by:
 
 - Training scripts for online RL agents using the PPO algorithm. This training script can be used to generate trajectories for training a decision transformer.
 - A decision transformer implementation and training script. This implementation is based on the [transformer architecture](https://arxiv.org/abs/1706.03762) and the [decision transformer architecture](https://arxiv.org/abs/2106.01345).
