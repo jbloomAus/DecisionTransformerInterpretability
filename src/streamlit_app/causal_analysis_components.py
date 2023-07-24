@@ -237,7 +237,7 @@ def show_ablation(dt, logit_dir, original_cache):
                     st.plotly_chart(fig, use_container_width=True)
 
 
-def get_ablation_function(ablate_to_mean, heads_to_ablate, component="HEAD"):
+def get_ablation_function(ablate_to_mean, head_to_ablate, component="HEAD"):
     def head_ablation_hook(
         value: TT["batch", "pos", "head_index", "d_head"],  # noqa: F821
         hook: HookPoint,
@@ -245,11 +245,11 @@ def get_ablation_function(ablate_to_mean, heads_to_ablate, component="HEAD"):
         print(f"Shape of the value tensor: {value.shape}")
 
         if ablate_to_mean:
-            value[:, :, heads_to_ablate, :] = value[
-                :, :, heads_to_ablate, :
+            value[:, :, head_to_ablate, :] = value[
+                :, :, head_to_ablate, :
             ].mean(dim=2, keepdim=True)
         else:
-            value[:, :, heads_to_ablate, :] = 0.0
+            value[:, :, head_to_ablate, :] = 0.0
         return value
 
     def mlp_ablation_hook(

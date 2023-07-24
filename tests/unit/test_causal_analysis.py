@@ -9,7 +9,6 @@ from src.streamlit_app.causal_analysis_components import get_ablation_function
 def hook():
     return HookPoint()
 
-
 def test_get_ablation_function_head(hook):
     hook.remove_hooks("both")
     ablation_func = get_ablation_function(
