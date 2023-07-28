@@ -1,0 +1,4 @@
+# Ignore large folders that are not needed for Docker context. Speeds up Docker build significantly.
+dti/
+trajectories/
+wandb/

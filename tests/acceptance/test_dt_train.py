@@ -300,15 +300,15 @@ def test_evaluate_dt_agent_with_trajectory_writer(environment_config, dt, run_co
             assert obs.dtype == np.float64
             assert obs.shape == (16, 1 + n_ctx // 3, 7, 7, 3), f"obs.shape is {obs.shape}"
 
-            rewards = data["data"]["rewards"]
-            assert type(rewards) == np.ndarray
-            assert rewards.dtype == np.float64
-            assert rewards.shape == (16,), f"rewards.shape is {rewards.shape}"
+            rtg = data["data"]["rtgs"]
+            assert type(rtg) == np.ndarray
+            assert rtg.dtype == np.float64
+            assert rtg.shape == (16, 1 + n_ctx // 3, 1), f"rtg.shape is {rtg.shape}"
 
             actions = data["data"]["actions"]
             assert type(actions) == np.ndarray
             assert actions.dtype == np.int64
-            assert actions.shape == (16, n_ctx // 3), f"actions.shape is {actions.shape}"
+            assert actions.shape == (16, n_ctx // 3, 1), f"actions.shape is {actions.shape}"
     finally:
         if os.path.exists(trajectory_path):
             os.remove(trajectory_path)

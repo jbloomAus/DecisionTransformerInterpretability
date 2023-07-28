@@ -177,7 +177,8 @@ def evaluate_dt_agent(
                     reward=np.array(rewards[i], dtype=float),
                     done=np.array(dones[i], dtype=bool),
                     truncated=np.array(truncated[i], dtype=bool),
-                    action=actions[i, ...].squeeze(-1).detach().cpu().numpy(), # No reason to have [16, max_len-1, 1] instead of [16, max_len-1]
+                    rtg=np.array(rtg[i], dtype=float),
+                    action=actions[i, ...].detach().cpu().numpy(),
                     info=info
                 )
 
