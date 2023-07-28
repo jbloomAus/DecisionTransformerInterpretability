@@ -61,8 +61,8 @@ class TrajectoryWriter:
         done: np.ndarray,
         truncated: np.ndarray,
         action: np.ndarray,
-        rtg: Optional[np.ndarray],
         info: Dict,
+        rtg: Optional[np.ndarray]=None,
     ):
         self.observations.append(next_obs)
         self.actions.append(action)
