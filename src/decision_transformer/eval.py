@@ -29,6 +29,7 @@ def evaluate_dt_agent(
     use_tqdm=True,
     device="cpu",
     num_envs=8,
+    trajectory_writer=None,
 ):
     model.eval()
 
@@ -168,6 +169,19 @@ def evaluate_dt_agent(
 
         # for each done, replace the obs, rtg, action, timestep with the new obs, rtg, action, timestep
         batch_reset_indexes = np.where(dones)
+
+        if trajectory_writer is not None and np.any(dones) and max_len > 1:
+            for i in batch_reset_indexes[0]: # Why do we have an array of one item here? Can this be multiple items?
+                trajectory_writer.accumulate_trajectory(
+                    next_obs=obs[i, ...].detach().cpu().numpy(),
+                    reward=np.array(rewards[i], dtype=float),
+                    done=np.array(dones[i], dtype=bool),
+                    truncated=np.array(truncated[i], dtype=bool),
+                    rtg=np.array(rtg[i], dtype=float),
+                    action=actions[i, ...].detach().cpu().numpy(),
+                    info=info
+                )
+
         if sum(dones) > 0:
             _new_obs = deepcopy(new_obs)
             _new_obs["image"] = _new_obs["image"][batch_reset_indexes]
@@ -242,6 +256,8 @@ def evaluate_dt_agent(
     }
 
     env.close()
+    if trajectory_writer is not None:
+        trajectory_writer.write()
     if track:
         # log statistics at batch number but prefix with eval
         for key, value in statistics.items():

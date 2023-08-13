@@ -5,7 +5,7 @@ import lzma
 import os
 import pickle
 import time
-from typing import Dict
+from typing import Dict, Optional
 
 import numpy as np
 from typeguard import typechecked
@@ -39,6 +39,7 @@ class TrajectoryWriter:
         self.rewards = []
         self.dones = []
         self.truncated = []
+        self.rtg = []
         self.infos = []
         self.path = path
 
@@ -61,12 +62,15 @@ class TrajectoryWriter:
         truncated: np.ndarray,
         action: np.ndarray,
         info: Dict,
+        rtg: Optional[np.ndarray]=None,
     ):
         self.observations.append(next_obs)
         self.actions.append(action)
         self.rewards.append(reward)
         self.dones.append(done)
         self.truncated.append(truncated)
+        if rtg is not None:
+            self.rtg.append(rtg)
         self.infos.append(info)
 
     def tag_terminated_trajectories(self):
@@ -89,6 +93,7 @@ class TrajectoryWriter:
             "rewards": np.array(self.rewards, dtype=np.float),
             "dones": np.array(self.dones, dtype=bool),
             "truncated": np.array(self.truncated, dtype=bool),
+            "rtgs": np.array(self.rtg, dtype=np.float),
             "infos": np.array(self.infos, dtype=object),
         }
         if dataclasses.is_dataclass(self.args):
