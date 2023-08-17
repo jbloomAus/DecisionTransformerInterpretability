@@ -25,6 +25,8 @@ from .environment import (
     get_tokens_from_app_state,
 )
 
+from .dynamic_analysis_components import visualize_attention_pattern
+
 ACTION_TO_IDX = {v: k for k, v in IDX_TO_ACTION.items()}
 OBJECT_TO_IDX = {v: k for k, v in IDX_TO_OBJECT.items()}
 
@@ -117,8 +119,13 @@ def show_ablation(dt, logit_dir, original_cache):
             f"{corrupted_logit_dif.item():.3f}",
         )
 
-        prediction_tab, contribution_tab, neuron_tab = st.tabs(
-            ["Prediction", "Attribution", "Neuron Activations"]
+        prediction_tab, contribution_tab, attention_tab, neuron_tab = st.tabs(
+            [
+                "Prediction",
+                "Attribution",
+                "Attention Tab",
+                "Neuron Activations",
+            ]
         )
 
         with prediction_tab:
@@ -159,6 +166,10 @@ def show_ablation(dt, logit_dir, original_cache):
                 labels={"x": "Head", "y": "Layer"},
             )
             st.plotly_chart(fig, use_container_width=True)
+
+        with attention_tab:
+            st.write("Corrupted Cache Attention Patterns")
+            visualize_attention_pattern(dt, original_cache)
 
         with neuron_tab:
             result, labels = original_cache.get_full_resid_decomposition(
@@ -209,32 +220,49 @@ def show_ablation(dt, logit_dir, original_cache):
             for i, layer in enumerate(df["Layer"].unique().tolist()):
                 with layertabs[i]:
                     fig = px.scatter(
-                        df,  # [df["Layer"] == layer],
-                        x="Neuron",
-                        y="Original Logit Difference",
-                        hover_data=["Layer"],
-                        title="Logit Difference From Each Neuron",
-                        color="Original Logit Difference",
-                    )
-                    # color_continuous_scale="RdBu",
-                    # don't label xtick
-                    fig.update_xaxes(showticklabels=False)
-                    st.plotly_chart(fig, use_container_width=True)
-
-                    fig = px.scatter(
                         df[df["Layer"] == layer],
-                        x="Neuron",
-                        y="Change in Logit Difference",
-                        hover_data=["Layer"],
-                        title="Change in Logit Difference From Each Neuron",
+                        x="Original Logit Difference",
+                        y="Ablation Logit Difference",
+                        hover_data=["Layer", "Neuron"],
+                        title="Logit Difference From Each Neuron",
                         color="Change in Logit Difference",
                         color_continuous_midpoint=0,
                         color_continuous_scale="RdBu",
+                        animation_frame="Layer",
                     )
                     # color_continuous_scale="RdBu",
                     # don't label xtick
-                    fig.update_xaxes(showticklabels=False)
+                    # fig.update_xaxes(showticklabels=False)
+                    # force consistent axis
+                    max_val = (
+                        max(
+                            abs(df["Original Logit Difference"].min()),
+                            abs(df["Original Logit Difference"].max()),
+                            abs(df["Ablation Logit Difference"].min()),
+                            abs(df["Ablation Logit Difference"].max()),
+                        )
+                        + 0.1
+                    )
+                    fig.update_layout(
+                        xaxis_range=[-max_val, max_val],
+                        yaxis_range=[-max_val, max_val],
+                    )
                     st.plotly_chart(fig, use_container_width=True)
+
+                    # fig = px.scatter(
+                    #     df[df["Layer"] == layer],
+                    #     x="Neuron",
+                    #     y="Change in Logit Difference",
+                    #     hover_data=["Layer"],
+                    #     title="Change in Logit Difference From Each Neuron",
+                    #     color="Change in Logit Difference",
+                    #     color_continuous_midpoint=0,
+                    #     color_continuous_scale="RdBu",
+                    # )
+                    # # color_continuous_scale="RdBu",
+                    # # don't label xtick
+                    # fig.update_xaxes(showticklabels=False)
+                    # st.plotly_chart(fig, use_container_width=True)
 
 
 def get_ablation_function(ablate_to_mean, head_to_ablate, component="HEAD"):

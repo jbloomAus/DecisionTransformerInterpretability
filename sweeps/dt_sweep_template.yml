@@ -9,7 +9,7 @@ parameters:
   wandb_project_name:
     values: ["DecisionTransformerInterpretability"]
   trajectory_path:
-    values: ["trajectories/MiniGrid-MemoryS7FixedStart-v0-Checkpoint11.gz"]
+    values: ["trajectories/MiniGrid-MemoryS7FixedStart-v0-Checkpoint11-VariedSamplingStrategies_T1_10k_T5_20k.gz"]
   exp_name:
     values: ["MiniGrid-MemoryS7FixedStart-v0"]
   track:
@@ -18,8 +18,8 @@ parameters:
   d_model:
     distribution: categorical
     values:
-    - 128
-    - 256
+    - 16
+    - 64
   n_heads:
     distribution: categorical
     values:
@@ -28,13 +28,13 @@ parameters:
   d_mlp:
     distribution: categorical
     values:
+    - 64
     - 128
-    - 256
   n_layers:
     distribution: categorical
     values:
+    - 1
     - 2
-    - 3
   activation_fn:
     values: ["relu", "gelu"]
   state_embedding:
@@ -46,17 +46,17 @@ parameters:
   # Training Hyperparameters
   learning_rate:
     distribution: categorical
-    values: [0.0001, 0.0005, 0.001]
+    values: [0.001]
   batch_size:
     distribution: categorical
-    values: [64, 128, 256]
+    values: [256, 512]
   train_epochs:
-    values: [10]
+    values: [90]
   pct_traj:
     value: 1
   weight_decay:
     distribution: categorical
-    values: [0.3, 0.2, 0.1]
+    values: [0.3, 0.2, 0.1, 0.01]
   seed:
     distribution: int_uniform
     min: 1

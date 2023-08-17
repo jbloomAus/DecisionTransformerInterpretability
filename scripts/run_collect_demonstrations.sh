@@ -19,7 +19,7 @@ CHECKPOINT_PATH="artifacts/Test-PPO-LSTM_checkpoints:v16/Test-PPO-LSTM_11.pt"
 NUM_ENVS=16 # I have 16 CPUs. 
 
 # Name output well. Possibly automated this later.
-TRAJECTORY_PATH="trajectories/MiniGrid-MemoryS7FixedStart-v0-Checkpoint11-VariedSamplingStrategies.gz"
+TRAJECTORY_PATH="trajectories/MiniGrid-MemoryS7FixedStart-v0-Checkpoint11-VariedSamplingStrategies_T1_10k_T5_20k.gz"
 
 
 # When deciding how many steps of a given trajectory, it's worth considering trajectory lengths
@@ -36,7 +36,7 @@ TRAJECTORY_PATH="trajectories/MiniGrid-MemoryS7FixedStart-v0-Checkpoint11-Varied
 # Sampling PPO agent/low entropy trajectoriess -> Contribute examples of high performance.
 
 # Collect many demonstrations of the PPO roughly optimally
-BASIC_STEPS=30000
+BASIC_STEPS=10000
 # Very low temperature is essentially greedy behavior, a bit of this might be good
 # to increase the probability of "prototypical" trajectories.
 # TEMPERATURE_1=0.001
@@ -45,7 +45,7 @@ BASIC_STEPS=30000
 # if using top K, avoid the bottom action k actions increases the prob
 # of the second best action being picked. This might be valuable since
 # there are a number of binary decision points. 
-TOPK_STEPS=15000
+TOPK_STEPS=5000
 TOPK_VALUE=2
 
 # However, mostly it would be good to have a good chunk of the trajectories be kinda warm but not
@@ -58,7 +58,7 @@ TEMP_STEPS_3=20000
 # very high temperature is essentially random behavior, a bit of this might be good
 # to increase the probability of sampling very confused but unbiased agents
 TEMPERATURE_2=100
-TEMP_STEPS_2=20000
+TEMP_STEPS_2=2000
 
 # if using bottom K, avoid the top action is probably only import thing.
 # if you avoid many more you probably just get nonsense trajectories.
@@ -71,10 +71,10 @@ python -m src.collect_demonstrations_runner \
     --num_envs $NUM_ENVS \
     --trajectory_path "$TRAJECTORY_PATH" \
     --basic $BASIC_STEPS \
-    --temp $TEMP_STEPS_2 $TEMPERATURE_2 \
-    --temp $TEMP_STEPS_3 $TEMPERATURE_3 \
-    --topk $TOPK_STEPS $TOPK_VALUE \
-    --bottomk $BOTTOMK_STEPS $BOTTOMK_VALUE
+    --temp $TEMP_STEPS_3 $TEMPERATURE_3 
+    # --temp $TEMP_STEPS_2 $TEMPERATURE_2 \
+    # --topk $TOPK_STEPS $TOPK_VALUE \
+    # --bottomk $BOTTOMK_STEPS $BOTTOMK_VALUE
     # --temp $TEMP_STEPS_1 $TEMPERATURE_1 \
 
 # can evalute the results for this by

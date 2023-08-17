@@ -312,7 +312,7 @@ def plot_logit_scan(scan_values, action_preds, position=-1, scan_name="RTG"):
                 "Toggle",
                 "Done",
             ],
-            title="Action Prediction vs " + scan_name,
+            # title="Action Prediction vs " + scan_name,
         )
     else:
         fig = px.line(
@@ -327,6 +327,8 @@ def plot_logit_scan(scan_values, action_preds, position=-1, scan_name="RTG"):
         yaxis_title="Action Prediction",
         legend_title="",
     )
+    # add vertical gridlines
+    fig.update_xaxes(showgrid=True, gridwidth=1)
     # add vertical dotted lines at RTG = -1, RTG = 0, RTG = 1
     # fig.add_vline(x=-1, line_dash="dot", line_width=1, line_color="white")
     # fig.add_vline(x=0, line_dash="dot", line_width=1, line_color="white")

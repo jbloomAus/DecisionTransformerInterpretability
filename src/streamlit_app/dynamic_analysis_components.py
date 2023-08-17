@@ -32,7 +32,7 @@ from .visualizations import (
     plot_logit_scan,
 )
 
-RTG_SCAN_BATCH_SIZE = 256
+RTG_SCAN_BATCH_SIZE = 128
 
 
 def show_attention_pattern(dt, cache):
@@ -98,6 +98,7 @@ def visualize_attention_pattern(dt, cache):
     )
 
 
+# Attribution / Logit Lens
 def show_attributions(dt, cache, logit_dir):
     with st.expander("Show Attributions"):
         layertab, componenttab, headtab, neurontab = st.tabs(
@@ -173,52 +174,181 @@ def show_attributions(dt, cache, logit_dir):
             )
 
         with neurontab:
+            by_neuron_tab, into_neuron_tab = st.tabs(
+                ["Attribution by Neuron", "Attribution into Neuron"]
+            )
             result, labels = cache.get_full_resid_decomposition(
                 apply_ln=True, return_labels=True, expand_neurons=True
             )
-            attribution = result[:, 0, -1] @ logit_dir
+            with by_neuron_tab:
+                attribution = result[:, 0, -1] @ logit_dir
 
-            # use regex to look for the L {number} N {number} pattern in labels
-            neuron_attribution_mask = [
-                True if re.search(r"L\d+N\d+", label) else False
-                for label in labels
-            ]
+                # use regex to look for the L {number} N {number} pattern in labels
+                neuron_attribution_mask = [
+                    True if re.search(r"L\d+N\d+", label) else False
+                    for label in labels
+                ]
 
-            attribution = attribution[neuron_attribution_mask]
-            labels = [
-                label for label in labels if re.search(r"L\d+N\d+", label)
-            ]
+                neuron_attribution = attribution[neuron_attribution_mask]
+                neuron_labels = [
+                    label for label in labels if re.search(r"L\d+N\d+", label)
+                ]
 
-            df = pd.DataFrame(
-                {
-                    "Neuron": labels,
-                    "Logit Difference": attribution.detach().numpy(),
-                }
-            )
-            df["Layer"] = df["Neuron"].apply(
-                lambda x: int(x.split("L")[1].split("N")[0])
-            )
+                df = pd.DataFrame(
+                    {
+                        "Neuron": neuron_labels,
+                        "Logit Difference": neuron_attribution.detach().numpy(),
+                    }
+                )
+                df["Layer"] = df["Neuron"].apply(
+                    lambda x: int(x.split("L")[1].split("N")[0])
+                )
 
-            layertabs = st.tabs(
-                ["L" + str(layer) for layer in df["Layer"].unique().tolist()]
-            )
+                layertabs = st.tabs(
+                    [
+                        "L" + str(layer)
+                        for layer in df["Layer"].unique().tolist()
+                    ]
+                )
 
-            for i, layer in enumerate(df["Layer"].unique().tolist()):
-                with layertabs[i]:
-                    fig = px.scatter(
-                        df[df["Layer"] == layer],
-                        x="Neuron",
-                        y="Logit Difference",
-                        hover_data=["Layer"],
-                        title="Logit Difference From Each Neuron",
-                        color="Logit Difference",
+                for i, layer in enumerate(df["Layer"].unique().tolist()):
+                    with layertabs[i]:
+                        fig = px.scatter(
+                            df[df["Layer"] == layer],
+                            x="Neuron",
+                            y="Logit Difference",
+                            hover_data=["Layer"],
+                            title="Logit Difference From Each Neuron",
+                            color="Logit Difference",
+                        )
+                        # color_continuous_scale="RdBu",
+                        # don't label xtick
+                        fig.update_xaxes(showticklabels=False)
+                        st.plotly_chart(fig, use_container_width=True)
+
+            with into_neuron_tab:
+                a, b = st.columns(2)
+                with a:
+                    neuron_text = st.text_input(
+                        f"Type the neuron you want", "L0N0"
                     )
-                    # color_continuous_scale="RdBu",
-                    # don't label xtick
-                    fig.update_xaxes(showticklabels=False)
-                    st.plotly_chart(fig, use_container_width=True)
+                # validate neuron
+                if not re.search(r"L\d+N\d+", neuron_text):
+                    st.error("Neuron must be in the format L{number}N{number}")
+                    return
+                # get the neuron index, and the layer
+                neuron = int(neuron_text.split("N")[1])
+                layer = int(neuron_text.split("L")[1].split("N")[0])
+
+                with b:
+                    # total_neuron_activaton = cache["hook_ml"]
+                    # st.write(cache.keys())
+                    # st.write(f"blocks.{layer}.mlp.hook_mid")
+                    total_neuron_activaton = cache[
+                        f"blocks.{layer}.mlp.hook_post"
+                    ]
+                    st.write(total_neuron_activaton[0, -1, neuron])
+
+                # mlp_in = dt.transformer.W_in[layer, neuron, :]
+                mlp_in = dt.transformer.W_in[layer, :, neuron]
+
+                attribution = result[:, 0, -1] @ mlp_in
+
+                head_mask = [
+                    True if re.search(r"H\d+", label) else False
+                    for label in labels
+                ]
+                head_attribution = attribution[head_mask]
+
+                n_heads = dt.transformer_config.n_heads
+                head_attribution = head_attribution.reshape(-1, n_heads)[
+                    :layer
+                ]
+
+                fig = px.imshow(
+                    head_attribution.detach(),
+                    color_continuous_midpoint=0,
+                    color_continuous_scale="RdBu",
+                    title="Neuron acitvation by Head",
+                    labels={"x": "Head", "y": "Layer"},
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+                neuron_attribution = result[:, 0, -1] @ mlp_in
+                # use regex to look for the L {number} N {number} pattern in labels
+                neuron_attribution_mask = [
+                    True if re.search(r"L\d+N\d+", label) else False
+                    for label in labels
+                ]
+
+                neuron_attribution = attribution[neuron_attribution_mask]
+                neuron_labels = [
+                    label for label in labels if re.search(r"L\d+N\d+", label)
+                ]
+
+                df = pd.DataFrame(
+                    {
+                        "Neuron": neuron_labels,
+                        "Activation Difference": neuron_attribution.detach().numpy(),
+                    }
+                )
+                df["Layer"] = df["Neuron"].apply(
+                    lambda x: int(x.split("L")[1].split("N")[0])
+                )
+                df = df[df["Layer"] < layer]
+
+                layertabs = st.tabs(
+                    [
+                        "L" + str(layer)
+                        for layer in df["Layer"].unique().tolist()
+                    ]
+                )
+
+                for i, layer in enumerate(df["Layer"].unique().tolist()):
+                    with layertabs[i]:
+                        fig = px.scatter(
+                            df[df["Layer"] == layer],
+                            x="Neuron",
+                            y="Activation Difference",
+                            hover_data=["Layer"],
+                            title="Activation Difference From Each Neuron",
+                            color="Activation Difference",
+                        )
+                        # color_continuous_scale="RdBu",
+                        # don't label xtick
+                        fig.update_xaxes(showticklabels=False)
+                        st.plotly_chart(fig, use_container_width=True)
 
     return
+
+
+# from src.visualization import tensor_cosine_similarity_heatmap
+# import torch.nn.functional as F
+# # Investigate Cache
+# def show_cache(dt, cache):
+
+#     with st.expander("Show cache"):
+
+#         head_output_similarity_tab, other_tab = st.tabs(
+#             ["Head Output Similarity", "Test"])
+
+#         with head_output_similarity_tab:
+#             st.write("Head Output Similarity")
+
+
+#             result, labels = cache.stack_head_results(
+#                 apply_ln=True, return_labels=True, pos_slice = -1
+#             )
+
+#             result  = result[:,0].detach()
+
+#             # get cosine similarity matrix
+#             # similarities  = F.cosine_similarity(result.unsqueeze(1), result.unsqueeze(0), dim=-1)
+#             # st.plotly_chart(px.imshow(similarities))
+#             # st.write(similarities.shape)
+#             # plot_heatmap(similarities)
+#             fig = tensor_cosine_similarity_heatmap(result, labels)
+#             st.plotly_chart(fig, use_container_width=True)
 
 
 # RTG Scan Utilities
@@ -319,7 +449,9 @@ def show_rtg_scan(dt, logit_dir):
             no_actions=False,
         )
 
-        logit_tab, decomp_tab = st.tabs(["Logit Scan", "Decomposition"])
+        logit_tab, decomp_tab, neuron_tab = st.tabs(
+            ["Logit Scan", "Decomposition", "Neurons"]
+        )
 
         with logit_tab:
             fig = plot_logit_scan(rtg, action_preds)
@@ -334,6 +466,61 @@ def show_rtg_scan(dt, logit_dir):
             st.plotly_chart(fig, use_container_width=True)
             fig2 = plot_decomp_scan_corr(df, cluster)
             st.plotly_chart(fig2, use_container_width=True)
+
+        with neuron_tab:
+            st.write(
+                "We may want to look for families of equivarient neurons."
+            )
+
+            layer = st.selectbox(
+                "Layer",
+                options=range(dt.transformer_config.n_layers),
+                index=dt.transformer_config.n_layers - 1,
+            )
+
+            weights = dt.transformer.blocks[layer].mlp.W_in
+            activations = cache[f"blocks.{layer}.mlp.hook_pre"][:, -1]
+
+            neuron_activations = einsum(
+                "d_model d_mlp, batch d_model -> batch d_mlp",
+                weights,
+                activations,
+            )
+
+            # st.write(neuron_activations.shape)
+
+            # cast it to df with columns for each neuron
+            df = pd.DataFrame(
+                neuron_activations.detach().cpu().numpy(),
+                index=rtg[:, 0, 0].detach().cpu().numpy(),
+                columns=[
+                    f"L{layer}N{i}" for i in range(neuron_activations.shape[1])
+                ],
+            )
+
+            fig = plot_decomp_scan_line(df, title="")
+            fig.update_traces(opacity=0.3)
+            # hide legend
+            fig.update_layout(showlegend=False)
+            st.plotly_chart(fig, use_container_width=True)
+
+            # fig2 = plot_decomp_scan_corr(df, True)
+            # st.plotly_chart(fig2, use_container_width=True)
+
+            # fig = px.line(
+            #     df,
+            #     x=df.index,
+            #     y=df.columns,
+            #     title=f"Layer {layer} Neuron Activations",
+            # )
+
+            # # reduce opacity on lines
+
+            # # hide legend
+            # fig.update_layout(showlegend=False)
+            # st.plotly_chart(fig, use_container_width=True)
+
+            # fig2 = plot_decomp_scan_corr(df, cluster)
 
 
 # Observation View
@@ -490,8 +677,6 @@ def project_weights_onto_dir(weights, dir):
 
 
 # Gated MLP
-
-
 def show_gated_mlp_dynamic(dt, cache):
     with st.expander("Gated MLP"):
         n_layers = dt.transformer_config.n_layers

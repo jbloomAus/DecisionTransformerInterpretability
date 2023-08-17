@@ -211,11 +211,16 @@ def get_decomp_scan(rtg, cache, logit_dir, decomp_level, normalize=False):
     return df
 
 
-def plot_decomp_scan_line(df, x="RTG"):
+def plot_decomp_scan_line(
+    df,
+    x="RTG",
+    labels={"index": "RTG", "value": "Logit Difference"},
+    title="Residual Stream Contributions in Directional Analysis",
+):
     fig = px.line(
         df,
-        labels={"index": x, "value": "Logit Difference"},
-        title="Residual Stream Contributions in Directional Analysis",
+        labels=labels,
+        title=title,
     )
 
     if df.index.min() < -1:

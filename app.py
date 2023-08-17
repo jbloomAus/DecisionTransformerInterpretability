@@ -160,6 +160,7 @@ with st.sidebar:
             "Attributions",
             "Attention Pattern",
             "Observation View",
+            "Cache",
         ]
         + (["GatedMLP"] if dt.transformer_config.gated_mlp else []),
     )
