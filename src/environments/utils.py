@@ -29,8 +29,8 @@ def reverse_one_hot(observation):
                 observation[i, j, len(OBJECT_TO_IDX) + len(COLOR_TO_IDX) :]
             ).item()
 
-            print(observation[i, j, : len(OBJECT_TO_IDX)])
-            print(type_idx)
+            # print(observation[i, j, : len(OBJECT_TO_IDX)])
+            # print(type_idx)
             dense_image[i, j, 0] = type_idx
             dense_image[i, j, 1] = color_idx
             dense_image[i, j, 2] = state_idx
