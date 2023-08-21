@@ -262,14 +262,14 @@ def show_attributions(dt, cache, logit_dir):
 
                 n_heads = dt.transformer_config.n_heads
                 head_attribution = head_attribution.reshape(-1, n_heads)[
-                    :layer
+                    : (1 + layer)
                 ]
-
+                st.write(head_attribution)
                 fig = px.imshow(
                     head_attribution.detach(),
                     color_continuous_midpoint=0,
                     color_continuous_scale="RdBu",
-                    title="Neuron acitvation by Head",
+                    title="Neuron activation by Head",
                     labels={"x": "Head", "y": "Layer"},
                 )
                 st.plotly_chart(fig, use_container_width=True)
@@ -297,27 +297,28 @@ def show_attributions(dt, cache, logit_dir):
                 )
                 df = df[df["Layer"] < layer]
 
-                layertabs = st.tabs(
-                    [
-                        "L" + str(layer)
-                        for layer in df["Layer"].unique().tolist()
-                    ]
-                )
+                if layer > 0:
+                    layertabs = st.tabs(
+                        [
+                            "L" + str(layer)
+                            for layer in df["Layer"].unique().tolist()
+                        ]
+                    )
 
-                for i, layer in enumerate(df["Layer"].unique().tolist()):
-                    with layertabs[i]:
-                        fig = px.scatter(
-                            df[df["Layer"] == layer],
-                            x="Neuron",
-                            y="Activation Difference",
-                            hover_data=["Layer"],
-                            title="Activation Difference From Each Neuron",
-                            color="Activation Difference",
-                        )
-                        # color_continuous_scale="RdBu",
-                        # don't label xtick
-                        fig.update_xaxes(showticklabels=False)
-                        st.plotly_chart(fig, use_container_width=True)
+                    for i, layer in enumerate(df["Layer"].unique().tolist()):
+                        with layertabs[i]:
+                            fig = px.scatter(
+                                df[df["Layer"] == layer],
+                                x="Neuron",
+                                y="Activation Difference",
+                                hover_data=["Layer"],
+                                title="Activation Difference From Each Neuron",
+                                color="Activation Difference",
+                            )
+                            # color_continuous_scale="RdBu",
+                            # don't label xtick
+                            fig.update_xaxes(showticklabels=False)
+                            st.plotly_chart(fig, use_container_width=True)
 
     return
 
