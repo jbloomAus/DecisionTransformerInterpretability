@@ -275,7 +275,7 @@ def get_ablation_function(ablate_to_mean, head_to_ablate, component="HEAD"):
         if ablate_to_mean:
             value[:, :, head_to_ablate, :] = value[
                 :, :, head_to_ablate, :
-            ].mean(dim=2, keepdim=True)
+            ].mean(dim=-1, keepdim=True)
         else:
             value[:, :, head_to_ablate, :] = 0.0
         return value
