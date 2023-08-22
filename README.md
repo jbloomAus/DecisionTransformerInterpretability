@@ -147,6 +147,33 @@ Then you can ssh into the docker and a good ide will bring credentials etc.
 
 ## Development
 
+If you're having trouble making the environment work, I recommend Docker. There's a dockerfile in the main folder - it takes a few minutes the first time, and 10-15 seconds for me when only changing code. If adding requirements it may take a bit longer. I (Jay) use Ubuntu through WSL and Docker Desktop, and it worked pretty easily for me.
+
+To run it, first navigate to your project directory, then:
+
+```bash
+docker build -t IMAGE_NAME .
+docker run -d -it -v $(pwd):/app --name CONTAINER_NAME IMAGE_NAME bash
+```
+
+To reset the container (e.g, you've changed the code, and want to rerun your tests), use:
+
+```bash
+docker stop CONTAINER_NAME
+docker rm CONTAINER_NAME
+docker rmi IMAGE_NAME
+docker build -t IMAGE_NAME .
+docker run -d -it -v $(pwd):/app --name CONTAINER_NAME IMAGE_NAME bash
+```
+
+I recommend setting this all up as a batch command so you can do it easily for a quick iteration time.
+
+Finally, to run a command, use:
+
+`docker exec CONTAINER_NAME COMMAND`
+
+For instance, to run unit tests, you would use `docker exec CONTAINER_NAME pytest tests/unit`.
+
 ### Tests:
 
 Ensure that the run_tests.sh script is executable:
@@ -185,6 +212,25 @@ src/visualization.py                   25     25     0%   1-34
 -----------------------------------------------------------------
 TOTAL                                 758    190    75%
 ```
+
+### Profiling
+
+To profile your code, add the following code:
+
+```python
+import cProfile
+profiler = cProfile.Profile()
+profiler.enable()
+
+# FUNCTION CODE GOES HERE
+
+profiler.disable()
+profiler.dump_stats('my_profile_output.prof')
+```
+
+If on Docker, use `docker cp CONTAINER_NAME:/home/my_profile_output.prof ./my_profile_output.prof` to get it to your local machine - Docker does not have access to a web browser. (I think you can set one up but it's more pain than it's worth imo)
+
+On your local machine, do `pip install snakeviz` and then `snakeviz my_profile_output.prof`, and voila - a web page with your code's performance pops up.
 
 # Next Steps
 
