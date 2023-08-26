@@ -129,41 +129,17 @@ def show_logit_lens(dt, cache, logit_dir):
         with layertab:
             tab1, tab2 = st.tabs(["Layerwise", "Accumulated"])
             with tab1:
-                results, labels = cache.decompose_resid(
-                    apply_ln=True, return_labels=True
+                fig = plot_decomposition_dot_product(
+                    cache, logit_dir, -1, mlp_input=False
                 )
-                attribution = results[:, 0, -1] @ logit_dir
-                fig = px.line(
-                    attribution.detach(),
-                    title="Logit Difference From Residual Stream",
-                    labels={"index": "Layer", "value": "Logit Difference"},
-                )
-                fig.update_layout(
-                    hovermode="x unified",
-                    showlegend=False,
-                    xaxis_tickvals=list(range(len(labels))),
-                    xaxis_ticktext=labels,
-                    xaxis_tickangle=45,
-                )
+                fig.update_yaxes(title_text="Logit Difference")
                 st.plotly_chart(fig, use_container_width=True)
 
             with tab2:
-                results, labels = cache.accumulated_resid(
-                    apply_ln=True, return_labels=True
+                fig = plot_decomposition_dot_product(
+                    cache, logit_dir, -1, mlp_input=False, accumulated=True
                 )
-                attribution = results[:, 0, -1] @ logit_dir
-                fig = px.line(
-                    attribution.detach(),
-                    title="Logit Difference From Accumulated Residual Stream",
-                    labels={"index": "Layer", "value": "Logit Difference"},
-                )
-                fig.update_layout(
-                    hovermode="x unified",
-                    showlegend=False,
-                    xaxis_tickvals=list(range(len(labels))),
-                    xaxis_ticktext=labels,
-                    xaxis_tickangle=45,
-                )
+                fig.update_yaxes(title_text="Logit Difference")
                 st.plotly_chart(fig, use_container_width=True)
 
         with componenttab:
@@ -316,11 +292,13 @@ def show_neuron_activation_decomposition(dt, cache, logit_dir):
         with lens_tab:
             tab1, tab2 = st.tabs(["Layerwise", "Accumulated"])
             with tab1:
-                fig = plot_decomposition(cache, mlp_in, layer, mlp_input=True)
+                fig = plot_decomposition_dot_product(
+                    cache, mlp_in, layer, mlp_input=True
+                )
                 st.plotly_chart(fig, use_container_width=True)
 
             with tab2:
-                fig = plot_decomposition(
+                fig = plot_decomposition_dot_product(
                     cache, mlp_in, layer, mlp_input=True, accumulated=True
                 )
                 st.plotly_chart(fig, use_container_width=True)
@@ -462,86 +440,86 @@ def show_neuron_activation_decomposition(dt, cache, logit_dir):
             else:
                 st.info("No neurons feed into neurons in layer 0.")
 
-        with debug_tab:
-            with b:
-                st.write(
-                    f"Total Neuron Activation (cache): {total_neuron_activation[0, -1, neuron].item():.3f}"
-                )
-                estimate = (
-                    attribution_df["Activation Difference"].sum()
-                    + dt.transformer.blocks[layer].mlp.b_in[neuron]
-                )
-                estimate = (
-                    dt.transformer.blocks[layer].mlp.act_fn(estimate).item()
-                )
-                st.write(f"Total Neuron Activation (estimated) {estimate:.3f}")
+        # with debug_tab:
+        #     with b:
+        #         st.write(
+        #             f"Total Neuron Activation (cache): {total_neuron_activation[0, -1, neuron].item():.3f}"
+        #         )
+        #         estimate = (
+        #             attribution_df["Activation Difference"].sum()
+        #             + dt.transformer.blocks[layer].mlp.b_in[neuron]
+        #         )
+        #         estimate = (
+        #             dt.transformer.blocks[layer].mlp.act_fn(estimate).item()
+        #         )
+        #         st.write(f"Total Neuron Activation (estimated) {estimate:.3f}")
 
-            # with aggregate_tab:
-            activation_sum = (
-                attribution_df["Activation Difference"].sum().item()
-            )
-            st.write("activation_sum", activation_sum)
-            st.write(
-                "from heads L0",
-                attribution_df[attribution_df.Component.str.contains("L0H")][
-                    ["Activation Difference"]
-                ]
-                .sum()
-                .item(),
-            )
-            st.write(
-                "from heads L1",
-                attribution_df[attribution_df.Component.str.contains("L1H")][
-                    ["Activation Difference"]
-                ]
-                .sum()
-                .item(),
-            )
-            st.write(
-                "from MLP0",
-                attribution_df[attribution_df.Component.str.contains("L0N")][
-                    ["Activation Difference"]
-                ]
-                .sum()
-                .item(),
-            )
-            st.write(
-                "from MLP1",
-                attribution_df[attribution_df.Component.str.contains("L1N")][
-                    ["Activation Difference"]
-                ]
-                .sum()
-                .item(),
-            )
-            st.write(
-                "from mlp",
-                attribution_df[attribution_df.Neuron != "None"][
-                    ["Activation Difference"]
-                ]
-                .sum()
-                .item(),
-            )
-            st.write(
-                "bias: ", dt.transformer.blocks[layer].mlp.b_in[neuron].item()
-            )
-            st.write(attribution_df.tail(3))
+        #     # with aggregate_tab:
+        #     activation_sum = (
+        #         attribution_df["Activation Difference"].sum().item()
+        #     )
+        #     st.write("activation_sum", activation_sum)
+        #     st.write(
+        #         "from heads L0",
+        #         attribution_df[attribution_df.Component.str.contains("L0H")][
+        #             ["Activation Difference"]
+        #         ]
+        #         .sum()
+        #         .item(),
+        #     )
+        #     st.write(
+        #         "from heads L1",
+        #         attribution_df[attribution_df.Component.str.contains("L1H")][
+        #             ["Activation Difference"]
+        #         ]
+        #         .sum()
+        #         .item(),
+        #     )
+        #     st.write(
+        #         "from MLP0",
+        #         attribution_df[attribution_df.Component.str.contains("L0N")][
+        #             ["Activation Difference"]
+        #         ]
+        #         .sum()
+        #         .item(),
+        #     )
+        #     st.write(
+        #         "from MLP1",
+        #         attribution_df[attribution_df.Component.str.contains("L1N")][
+        #             ["Activation Difference"]
+        #         ]
+        #         .sum()
+        #         .item(),
+        #     )
+        #     st.write(
+        #         "from mlp",
+        #         attribution_df[attribution_df.Neuron != "None"][
+        #             ["Activation Difference"]
+        #         ]
+        #         .sum()
+        #         .item(),
+        #     )
+        #     st.write(
+        #         "bias: ", dt.transformer.blocks[layer].mlp.b_in[neuron].item()
+        #     )
+        #     st.write(attribution_df.tail(3))
 
-            # check the MLP out
-            mlp_out = dt.transformer.blocks[layer].mlp.W_out[neuron, :]
-            st.write(
-                "expected logit effect, act sum",
-                attribution_df["Activation Difference"].sum()
-                * mlp_out
-                @ logit_dir,
-            )
-            st.write(
-                "expected logit effect, neuron act (no ln)",
-                total_neuron_activation[0, -1, neuron] * mlp_out @ logit_dir,
-            )
-            # st.write("expected logit effect, neuron act (no ln)", total_neuron_activation[0, -1, neuron] * mlp_out ) @ logit_dir)
+        #     # check the MLP out
+        #     mlp_out = dt.transformer.blocks[layer].mlp.W_out[neuron, :]
+        #     st.write(
+        #         "expected logit effect, act sum",
+        #         attribution_df["Activation Difference"].sum()
+        #         * mlp_out
+        #         @ logit_dir,
+        #     )
+        #     st.write(
+        #         "expected logit effect, neuron act (no ln)",
+        #         total_neuron_activation[0, -1, neuron] * mlp_out @ logit_dir,
+        #     )
+        #     # st.write("expected logit effect, neuron act (no ln)", total_neuron_activation[0, -1, neuron] * mlp_out ) @ logit_dir)
 
 
-def plot_decomposition(
+def plot_decomposition_dot_product(
     cache,
     residual_direction,
     layer,
