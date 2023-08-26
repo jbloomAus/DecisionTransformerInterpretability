@@ -440,19 +440,18 @@ def show_neuron_activation_decomposition(dt, cache, logit_dir):
             else:
                 st.info("No neurons feed into neurons in layer 0.")
 
+        with b:
+            st.write(
+                f"Total Neuron Activation (cache): {total_neuron_activation[0, -1, neuron].item():.3f}"
+            )
+            estimate = (
+                attribution_df["Activation Difference"].sum()
+                + dt.transformer.blocks[layer].mlp.b_in[neuron]
+            )
+            estimate = dt.transformer.blocks[layer].mlp.act_fn(estimate).item()
+            st.write(f"Total Neuron Activation (estimated) {estimate:.3f}")
+
         # with debug_tab:
-        #     with b:
-        #         st.write(
-        #             f"Total Neuron Activation (cache): {total_neuron_activation[0, -1, neuron].item():.3f}"
-        #         )
-        #         estimate = (
-        #             attribution_df["Activation Difference"].sum()
-        #             + dt.transformer.blocks[layer].mlp.b_in[neuron]
-        #         )
-        #         estimate = (
-        #             dt.transformer.blocks[layer].mlp.act_fn(estimate).item()
-        #         )
-        #         st.write(f"Total Neuron Activation (estimated) {estimate:.3f}")
 
         #     # with aggregate_tab:
         #     activation_sum = (
@@ -533,6 +532,7 @@ def plot_decomposition_dot_product(
             return_labels=True,
             layer=layer,
             mlp_input=mlp_input,
+            incl_mid=True,
         )
         plot_func = px.line
     else:
@@ -588,6 +588,190 @@ def plot_decomposition_dot_product(
 #             # plot_heatmap(similarities)
 #             fig = tensor_cosine_similarity_heatmap(result, labels)
 #             st.plotly_chart(fig, use_container_width=True)
+
+
+def show_residual_stream_projection_onto_component(dt, cache, logit_dir):
+    n_layers = dt.transformer_config.n_layers
+    n_heads = dt.transformer_config.n_heads
+    n_neurons = dt.transformer_config.d_mlp
+
+    heads = []
+    for layer in range(n_layers):
+        for head in range(n_heads):
+            heads.append((layer, head))
+
+    neurons = []
+    for layer in range(n_layers):
+        for neuron in range(n_neurons):
+            neurons.append((layer, neuron))
+
+    decomp_result, labels = cache.get_full_resid_decomposition(
+        apply_ln=False,
+        return_labels=True,
+        expand_neurons=True,
+    )  # LN is applied.
+
+    with st.expander("Projection onto Component Output in Residual Stream"):
+        # now let's decompose the residual stream
+
+        head_tab, neuron_tab, cluster_tab, help_tab = st.tabs(
+            ["Head", "Neuron", "Cluster", "Help"]
+        )
+
+        with head_tab:
+            head_mask = [
+                True if re.search(r"L\d+H\d+", label) else False
+                for label in labels
+            ]
+
+            head_vectors = decomp_result[head_mask, 0, -1]
+
+            decomp_result, labels = cache.accumulated_resid(
+                incl_mid=True,
+                apply_ln=False,
+                return_labels=True,
+            )
+            decomp_result = decomp_result[:, 0, -1]
+            decomp_norms = t.norm(decomp_result, dim=-1)
+            vector_norms = t.norm(head_vectors, dim=-1)
+            projection = einsum(
+                "layer d_model, head d_model -> layer head",
+                decomp_result,
+                head_vectors,
+            )
+
+            normalize_by = st.selectbox(
+                "Normalize by",
+                ["Vector Norm", "Component Norm"],
+                index=0,
+            )
+            if normalize_by == "Vector Norm":
+                projection = projection / vector_norms.unsqueeze(0)
+            elif normalize_by == "Component Norm":
+                projection = projection / decomp_norms.T.unsqueeze(-1)
+
+            df = pd.DataFrame(
+                projection.detach().numpy(),
+                columns=[f"L{layer}H{head}" for layer, head in heads],
+            )
+            fig = px.line(
+                df,
+                labels={"index": "Layer", "value": "Activation"},
+            )
+            fig.update_layout(
+                showlegend=True,
+                xaxis_tickvals=list(range(len(labels))),
+                xaxis_ticktext=labels,
+                xaxis_tickangle=45,
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+        with neuron_tab:
+            decomp_result, labels = cache.get_full_resid_decomposition(
+                apply_ln=False,
+                return_labels=True,
+                expand_neurons=True,
+            )  # LN is applied.
+
+            neurons_selected = st.multiselect(
+                "Select neurons",
+                options=neurons,
+                default=[],
+                format_func=lambda x: f"L{x[0]}N{x[1]}",
+                key="neuron_proj",
+            )
+            # format selected neurons
+            neurons_selected = [
+                f"L{layer}N{neuron}" for layer, neuron in neurons_selected
+            ]
+
+            neuron_mask = [
+                True if label in neurons_selected else False
+                for label in labels
+            ]
+
+            # get only those neurons in the mask from teh list of labels
+            neuron_labels = [
+                label for label in labels if label in neurons_selected
+            ]
+
+            neuron_vectors = decomp_result[neuron_mask, 0, -1]
+
+            decomp_result, labels = cache.accumulated_resid(
+                incl_mid=True,
+                apply_ln=False,
+                return_labels=True,
+            )
+            decomp_result = decomp_result[:, 0, -1]
+            decomp_norms = t.norm(decomp_result, dim=-1)
+            vector_norms = t.norm(neuron_vectors, dim=-1)
+
+            projection = einsum(
+                "layer d_model, neuron d_model -> layer neuron",
+                decomp_result,
+                neuron_vectors,
+            )
+
+            normalize_by = st.selectbox(
+                "Normalize by",
+                ["Vector Norm", "Component Norm"],
+                index=0,
+                key="asfdsbgfb",
+            )
+            if normalize_by == "Vector Norm":
+                projection = projection / vector_norms.unsqueeze(0)
+            elif normalize_by == "Component Norm":
+                projection = projection / decomp_norms.T.unsqueeze(-1)
+
+            df = pd.DataFrame(
+                projection.detach().numpy(), columns=neuron_labels
+            )
+            fig = px.line(
+                df,
+                labels={"index": "Layer", "value": "Activation"},
+            )
+            fig.update_layout(
+                showlegend=True,
+                xaxis_tickvals=list(range(len(labels))),
+                xaxis_ticktext=labels,
+                xaxis_tickangle=45,
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+        with cluster_tab:
+            decomp_result, labels = cache.get_full_resid_decomposition(
+                apply_ln=False,
+                return_labels=True,
+                expand_neurons=False,
+            )  # LN is applied.
+
+            # get final position
+            decomp_result = decomp_result[:, 0, -1].detach()
+
+            from src.visualization import get_cosine_sim_df
+
+            df = get_cosine_sim_df(decomp_result)
+            df.columns = labels
+            df.index = labels
+
+            from src.streamlit_app.visualizations import plot_heatmap
+
+            fig = plot_heatmap(df)
+            st.plotly_chart(fig, use_container_width=True)
+
+        with help_tab:
+            st.write(
+                """
+                This is an experimental feature where we look at decompositions of the residual stream and project them onto the output of a head or neuron. 
+
+                This should tell us information is ever getting deleted from the residual stream after being added by a component. 
+
+                The head tab will show how the outputs of heads increase/decrease in the residual stream and the neuron tab does the same. 
+
+                To see how any given component (neuron or head) aligns with each other, I'll do one of those clustergrams I love in the clustergram tab.
+
+                """
+            )
 
 
 # RTG Scan Utilities
