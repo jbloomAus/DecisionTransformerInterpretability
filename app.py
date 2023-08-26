@@ -20,7 +20,8 @@ from src.streamlit_app.components import (
 from src.streamlit_app.dynamic_analysis_components import (
     render_observation_view,
     show_attention_pattern,
-    show_attributions,
+    show_logit_lens,
+    show_neuron_activation_decomposition,
     show_rtg_scan,
     show_gated_mlp_dynamic,
 )
@@ -157,7 +158,8 @@ with st.sidebar:
         "Select Dynamic Analyses",
         [
             "Show RTG Scan",
-            "Attributions",
+            "Logit Lens",
+            "Neuron Activation Analysis",
             "Attention Pattern",
             "Observation View",
             "Cache",
@@ -195,8 +197,10 @@ if "Algebraic Value Editing" in analyses:
 
 if "Show RTG Scan" in analyses:
     show_rtg_scan(dt, logit_dir=logit_dir)
-if "Attributions" in analyses:
-    show_attributions(dt, cache, logit_dir=logit_dir)
+if "Logit Lens" in analyses:
+    show_logit_lens(dt, cache, logit_dir=logit_dir)
+if "Neuron Activation Analysis" in analyses:
+    show_neuron_activation_decomposition(dt, cache, logit_dir)
 if "Attention Pattern" in analyses:
     show_attention_pattern(dt, cache)
 if "Observation View" in analyses:

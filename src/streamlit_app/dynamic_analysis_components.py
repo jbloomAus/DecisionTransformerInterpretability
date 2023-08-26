@@ -8,6 +8,7 @@ import torch as t
 from einops import rearrange
 from fancy_einsum import einsum
 from minigrid.core.constants import IDX_TO_COLOR, IDX_TO_OBJECT
+import itertools
 
 from src.decision_transformer.utils import get_max_len_from_model_type
 
@@ -23,6 +24,7 @@ from .constants import (
     IDX_TO_STATE,
     three_channel_schema,
     twenty_idx_format_func,
+    SPARSE_CHANNEL_NAMES,
 )
 from .utils import fancy_histogram, fancy_imshow, tensor_to_long_data_frame
 from .visualizations import (
@@ -32,7 +34,26 @@ from .visualizations import (
     plot_logit_scan,
 )
 
+
 RTG_SCAN_BATCH_SIZE = 128
+
+all_index_labels = [
+    SPARSE_CHANNEL_NAMES,
+    list(range(7)),
+    list(range(7)),
+]
+
+indices = list(itertools.product(*all_index_labels))
+multi_index = pd.MultiIndex.from_tuples(
+    indices,
+    names=("x", "y", "z"),  # use labels differently if we have index labels
+)
+
+embedding_labels = (
+    multi_index.to_series()
+    .apply(lambda x: "{0}, ({1},{2})".format(*x))
+    .tolist()
+)
 
 
 def show_attention_pattern(dt, cache):
@@ -99,8 +120,8 @@ def visualize_attention_pattern(dt, cache):
 
 
 # Attribution / Logit Lens
-def show_attributions(dt, cache, logit_dir):
-    with st.expander("Show Attributions"):
+def show_logit_lens(dt, cache, logit_dir):
+    with st.expander("Show Logit Lens"):
         layertab, componenttab, headtab, neurontab = st.tabs(
             ["Layer", "Component", "Head", "Neuron"]
         )
@@ -174,36 +195,249 @@ def show_attributions(dt, cache, logit_dir):
             )
 
         with neurontab:
-            by_neuron_tab, into_neuron_tab = st.tabs(
-                ["Attribution by Neuron", "Attribution into Neuron"]
-            )
             result, labels = cache.get_full_resid_decomposition(
                 apply_ln=True, return_labels=True, expand_neurons=True
             )
-            with by_neuron_tab:
-                attribution = result[:, 0, -1] @ logit_dir
 
-                # use regex to look for the L {number} N {number} pattern in labels
-                neuron_attribution_mask = [
+            attribution = result[:, 0, -1] @ logit_dir
+
+            # use regex to look for the L {number} N {number} pattern in labels
+            neuron_attribution_mask = [
+                True if re.search(r"L\d+N\d+", label) else False
+                for label in labels
+            ]
+
+            neuron_attribution = attribution[neuron_attribution_mask]
+            neuron_labels = [
+                label for label in labels if re.search(r"L\d+N\d+", label)
+            ]
+
+            df = pd.DataFrame(
+                {
+                    "Neuron": neuron_labels,
+                    "Logit Difference": neuron_attribution.detach().numpy(),
+                }
+            )
+            df["Layer"] = df["Neuron"].apply(
+                lambda x: int(x.split("L")[1].split("N")[0])
+            )
+
+            layertabs = st.tabs(
+                ["L" + str(layer) for layer in df["Layer"].unique().tolist()]
+            )
+
+            for i, layer in enumerate(df["Layer"].unique().tolist()):
+                with layertabs[i]:
+                    fig = px.scatter(
+                        df[df["Layer"] == layer],
+                        x="Neuron",
+                        y="Logit Difference",
+                        hover_data=["Layer"],
+                        title="Logit Difference From Each Neuron",
+                        color="Logit Difference",
+                    )
+                    # color_continuous_scale="RdBu",
+                    # don't label xtick
+                    fig.update_xaxes(showticklabels=False)
+                    st.plotly_chart(fig, use_container_width=True)
+
+    return
+
+
+def show_neuron_activation_decomposition(dt, cache, logit_dir):
+    with st.expander("Neuron Activation Decomposition"):
+        a, b = st.columns(2)
+        with a:
+            neuron_text = st.text_input(
+                f"Type the neuron you want", "L0N0", key="neuron_act_analysis"
+            )
+            # validate neuron
+            if not re.search(r"L\d+N\d+", neuron_text):
+                st.error("Neuron must be in the format L{number}N{number}")
+                return
+            # get the neuron index, and the layer
+            neuron = int(neuron_text.split("N")[1])
+            layer = int(neuron_text.split("L")[1].split("N")[0])
+
+        with b:
+            total_neuron_activation = cache[f"blocks.{layer}.mlp.hook_pre"]
+
+        # GET DECOMPOSITION OF THE RESIDUAL STREAM
+        decomp_result, labels = cache.get_full_resid_decomposition(
+            apply_ln=True,
+            return_labels=True,
+            expand_neurons=True,
+            mlp_input=True,
+            layer=layer,
+        )  # LN is applied.
+
+        # GET THE MLP IN DIRECTION
+        mlp_in = dt.transformer.W_in[layer, :, neuron]
+        activation_contributions = decomp_result[:, 0, -1] @ mlp_in
+
+        attribution_df = pd.DataFrame(
+            {
+                "Component": labels,
+                "Activation Difference": activation_contributions.detach().numpy(),
+                "Head": [
+                    re.search(r"H\d+", label).group()
+                    if re.search(r"H\d+", label)
+                    else "None"
+                    for label in labels
+                ],
+                "Neuron": [
+                    re.search(r"L\d+N\d+", label).group()
+                    if re.search(r"L\d+N\d+", label)
+                    else "None"
+                    for label in labels
+                ],
+                "Layer": [
+                    int(re.search(r"L\d+", label).group().split("L")[1])
+                    if re.search(r"L\d+", label)
+                    else -1
+                    for label in labels
+                ],
+                "is_neuron": [
                     True if re.search(r"L\d+N\d+", label) else False
                     for label in labels
-                ]
+                ],
+                "is_head": [
+                    True if re.search(r"H\d+", label) else False
+                    for label in labels
+                ],
+            }
+        )
 
-                neuron_attribution = attribution[neuron_attribution_mask]
-                neuron_labels = [
-                    label for label in labels if re.search(r"L\d+N\d+", label)
-                ]
+        # 3 tabs, one for head, one for neuron, one for obs token
+        lens_tab, obs_tab, head_tab, neuron_tab, debug_tab = st.tabs(
+            ["Lens", "Obs Token", "Head", "Neuron", "Debug"]
+        )
 
-                df = pd.DataFrame(
+        with lens_tab:
+            tab1, tab2 = st.tabs(["Layerwise", "Accumulated"])
+            with tab1:
+                fig = plot_decomposition(cache, mlp_in, layer, mlp_input=True)
+                st.plotly_chart(fig, use_container_width=True)
+
+            with tab2:
+                fig = plot_decomposition(
+                    cache, mlp_in, layer, mlp_input=True, accumulated=True
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+        with obs_tab:
+            if dt.transformer_config.state_embedding_type.lower() == "grid":
+                # time is technically included in the token
+                time = st.session_state.timesteps
+                time_embedding = dt.get_time_embedding(time)[0, -1]
+                time_attribution = time_embedding @ mlp_in
+
+                # get the state embedding decomposition
+                states = st.session_state.obs
+                state_mask = (
+                    rearrange(
+                        states,
+                        "batch block height width channel -> (batch block) (channel height width)",
+                    )[-1]
+                    .numpy()
+                    .astype(bool)
+                )
+
+                token_decomposition = dt.state_embedding.weight.T
+                token_decomposition = cache.apply_ln_to_stack(
+                    token_decomposition,
+                    layer=layer,
+                    pos_slice=-1,
+                    has_batch_dim=False,
+                    mlp_input=True,
+                )
+                token_attribution = token_decomposition @ mlp_in
+                token_attribution_df = pd.DataFrame(
                     {
-                        "Neuron": neuron_labels,
-                        "Logit Difference": neuron_attribution.detach().numpy(),
+                        "Component": embedding_labels,
+                        "Activation Difference": token_attribution.detach().numpy(),
+                        "Present": state_mask,
+                        "Channel": [i.split(",")[0] for i in embedding_labels],
+                        "Position": [
+                            i.split(",")[1] + "," + i.split(",")[-1]
+                            for i in embedding_labels
+                        ],
                     }
                 )
-                df["Layer"] = df["Neuron"].apply(
-                    lambda x: int(x.split("L")[1].split("N")[0])
+
+                # filter using mask
+                token_attribution_df = token_attribution_df[
+                    token_attribution_df.Present
+                ]
+                total_activation_contribution_state = token_attribution_df[
+                    ["Activation Difference"]
+                ].sum()[0]
+                st.write(
+                    f"Activation Contribution of State Features (cache): {total_activation_contribution_state:.3f}"
+                )
+                st.write(
+                    f"Activation Contribution of Time Embedding: {time_attribution:.3f}"
+                )
+                st.write(
+                    f"Total Activation Contribution (cache): {total_activation_contribution_state + time_attribution:.3f}"
                 )
 
+                fig = px.strip(
+                    token_attribution_df,
+                    x="Channel",
+                    y="Activation Difference",
+                    color="Channel",
+                )
+                # fig.update_layout(showlegend=False)
+                st.plotly_chart(fig, use_container_width=True)
+
+        with head_tab:
+            head_mask = [
+                True if re.search(r"H\d+", label) else False
+                for label in labels
+            ]
+            head_attribution = activation_contributions[head_mask]
+            n_heads = dt.transformer_config.n_heads
+            head_attribution = head_attribution.reshape(-1, n_heads)[
+                : (1 + layer)
+            ]
+
+            fig = px.imshow(
+                head_attribution.detach(),
+                color_continuous_midpoint=0,
+                color_continuous_scale="RdBu",
+                title="Neuron activation by Head",
+                labels={"x": "Head", "y": "Layer"},
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+        with neuron_tab:
+            neuron_attribution = decomp_result[:, 0, -1] @ mlp_in
+            # use regex to look for the L {number} N {number} pattern in labels
+            neuron_attribution_mask = [
+                True if re.search(r"L\d+N\d+", label) else False
+                for label in labels
+            ]
+
+            neuron_attribution = activation_contributions[
+                neuron_attribution_mask
+            ]
+            neuron_labels = [
+                label for label in labels if re.search(r"L\d+N\d+", label)
+            ]
+
+            df = pd.DataFrame(
+                {
+                    "Neuron": neuron_labels,
+                    "Activation Difference": neuron_attribution.detach().numpy(),
+                }
+            )
+            df["Layer"] = df["Neuron"].apply(
+                lambda x: int(x.split("L")[1].split("N")[0])
+            )
+            df = df[df["Layer"] < layer]
+
+            if layer > 0:
                 layertabs = st.tabs(
                     [
                         "L" + str(layer)
@@ -216,111 +450,137 @@ def show_attributions(dt, cache, logit_dir):
                         fig = px.scatter(
                             df[df["Layer"] == layer],
                             x="Neuron",
-                            y="Logit Difference",
+                            y="Activation Difference",
                             hover_data=["Layer"],
-                            title="Logit Difference From Each Neuron",
-                            color="Logit Difference",
+                            title="Activation Difference From Each Neuron",
+                            color="Activation Difference",
                         )
                         # color_continuous_scale="RdBu",
                         # don't label xtick
                         fig.update_xaxes(showticklabels=False)
                         st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No neurons feed into neurons in layer 0.")
 
-            with into_neuron_tab:
-                a, b = st.columns(2)
-                with a:
-                    neuron_text = st.text_input(
-                        f"Type the neuron you want", "L0N0"
-                    )
-                # validate neuron
-                if not re.search(r"L\d+N\d+", neuron_text):
-                    st.error("Neuron must be in the format L{number}N{number}")
-                    return
-                # get the neuron index, and the layer
-                neuron = int(neuron_text.split("N")[1])
-                layer = int(neuron_text.split("L")[1].split("N")[0])
-
-                with b:
-                    # total_neuron_activaton = cache["hook_ml"]
-                    # st.write(cache.keys())
-                    # st.write(f"blocks.{layer}.mlp.hook_mid")
-                    total_neuron_activaton = cache[
-                        f"blocks.{layer}.mlp.hook_post"
-                    ]
-                    st.write(total_neuron_activaton[0, -1, neuron])
-
-                # mlp_in = dt.transformer.W_in[layer, neuron, :]
-                mlp_in = dt.transformer.W_in[layer, :, neuron]
-
-                attribution = result[:, 0, -1] @ mlp_in
-
-                head_mask = [
-                    True if re.search(r"H\d+", label) else False
-                    for label in labels
-                ]
-                head_attribution = attribution[head_mask]
-
-                n_heads = dt.transformer_config.n_heads
-                head_attribution = head_attribution.reshape(-1, n_heads)[
-                    : (1 + layer)
-                ]
-                st.write(head_attribution)
-                fig = px.imshow(
-                    head_attribution.detach(),
-                    color_continuous_midpoint=0,
-                    color_continuous_scale="RdBu",
-                    title="Neuron activation by Head",
-                    labels={"x": "Head", "y": "Layer"},
+        with debug_tab:
+            with b:
+                st.write(
+                    f"Total Neuron Activation (cache): {total_neuron_activation[0, -1, neuron].item():.3f}"
                 )
-                st.plotly_chart(fig, use_container_width=True)
-
-                neuron_attribution = result[:, 0, -1] @ mlp_in
-                # use regex to look for the L {number} N {number} pattern in labels
-                neuron_attribution_mask = [
-                    True if re.search(r"L\d+N\d+", label) else False
-                    for label in labels
-                ]
-
-                neuron_attribution = attribution[neuron_attribution_mask]
-                neuron_labels = [
-                    label for label in labels if re.search(r"L\d+N\d+", label)
-                ]
-
-                df = pd.DataFrame(
-                    {
-                        "Neuron": neuron_labels,
-                        "Activation Difference": neuron_attribution.detach().numpy(),
-                    }
+                estimate = (
+                    attribution_df["Activation Difference"].sum()
+                    + dt.transformer.blocks[layer].mlp.b_in[neuron]
                 )
-                df["Layer"] = df["Neuron"].apply(
-                    lambda x: int(x.split("L")[1].split("N")[0])
+                estimate = (
+                    dt.transformer.blocks[layer].mlp.act_fn(estimate).item()
                 )
-                df = df[df["Layer"] < layer]
+                st.write(f"Total Neuron Activation (estimated) {estimate:.3f}")
 
-                if layer > 0:
-                    layertabs = st.tabs(
-                        [
-                            "L" + str(layer)
-                            for layer in df["Layer"].unique().tolist()
-                        ]
-                    )
+            # with aggregate_tab:
+            activation_sum = (
+                attribution_df["Activation Difference"].sum().item()
+            )
+            st.write("activation_sum", activation_sum)
+            st.write(
+                "from heads L0",
+                attribution_df[attribution_df.Component.str.contains("L0H")][
+                    ["Activation Difference"]
+                ]
+                .sum()
+                .item(),
+            )
+            st.write(
+                "from heads L1",
+                attribution_df[attribution_df.Component.str.contains("L1H")][
+                    ["Activation Difference"]
+                ]
+                .sum()
+                .item(),
+            )
+            st.write(
+                "from MLP0",
+                attribution_df[attribution_df.Component.str.contains("L0N")][
+                    ["Activation Difference"]
+                ]
+                .sum()
+                .item(),
+            )
+            st.write(
+                "from MLP1",
+                attribution_df[attribution_df.Component.str.contains("L1N")][
+                    ["Activation Difference"]
+                ]
+                .sum()
+                .item(),
+            )
+            st.write(
+                "from mlp",
+                attribution_df[attribution_df.Neuron != "None"][
+                    ["Activation Difference"]
+                ]
+                .sum()
+                .item(),
+            )
+            st.write(
+                "bias: ", dt.transformer.blocks[layer].mlp.b_in[neuron].item()
+            )
+            st.write(attribution_df.tail(3))
 
-                    for i, layer in enumerate(df["Layer"].unique().tolist()):
-                        with layertabs[i]:
-                            fig = px.scatter(
-                                df[df["Layer"] == layer],
-                                x="Neuron",
-                                y="Activation Difference",
-                                hover_data=["Layer"],
-                                title="Activation Difference From Each Neuron",
-                                color="Activation Difference",
-                            )
-                            # color_continuous_scale="RdBu",
-                            # don't label xtick
-                            fig.update_xaxes(showticklabels=False)
-                            st.plotly_chart(fig, use_container_width=True)
+            # check the MLP out
+            mlp_out = dt.transformer.blocks[layer].mlp.W_out[neuron, :]
+            st.write(
+                "expected logit effect, act sum",
+                attribution_df["Activation Difference"].sum()
+                * mlp_out
+                @ logit_dir,
+            )
+            st.write(
+                "expected logit effect, neuron act (no ln)",
+                total_neuron_activation[0, -1, neuron] * mlp_out @ logit_dir,
+            )
+            # st.write("expected logit effect, neuron act (no ln)", total_neuron_activation[0, -1, neuron] * mlp_out ) @ logit_dir)
 
-    return
+
+def plot_decomposition(
+    cache,
+    residual_direction,
+    layer,
+    mlp_input,
+    apply_ln=True,
+    accumulated=False,
+):
+    if accumulated:
+        results, labels = cache.accumulated_resid(
+            apply_ln=apply_ln,
+            return_labels=True,
+            layer=layer,
+            mlp_input=mlp_input,
+        )
+        plot_func = px.line
+    else:
+        results, labels = cache.decompose_resid(
+            apply_ln=apply_ln,
+            return_labels=True,
+            layer=layer,
+            mlp_input=mlp_input,
+        )
+        plot_func = px.bar
+
+    attribution = results[:, 0, -1] @ residual_direction
+
+    fig = plot_func(
+        attribution.detach(),
+        labels={"index": "Layer", "value": "Activation"},
+    )
+    fig.update_layout(
+        hovermode="x unified",
+        showlegend=False,
+        xaxis_tickvals=list(range(len(labels))),
+        xaxis_ticktext=labels,
+        xaxis_tickangle=45,
+    )
+
+    return fig
 
 
 # from src.visualization import tensor_cosine_similarity_heatmap
