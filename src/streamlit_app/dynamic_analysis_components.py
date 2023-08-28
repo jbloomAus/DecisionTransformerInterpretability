@@ -448,7 +448,7 @@ def show_neuron_activation_decomposition(dt, cache, logit_dir):
                 attribution_df["Activation Difference"].sum()
                 + dt.transformer.blocks[layer].mlp.b_in[neuron]
             )
-            estimate = dt.transformer.blocks[layer].mlp.act_fn(estimate).item()
+            # estimate = dt.transformer.blocks[layer].mlp.act_fn(estimate).item()
             st.write(f"Total Neuron Activation (estimated) {estimate:.3f}")
 
         # with debug_tab:
