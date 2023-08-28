@@ -298,14 +298,188 @@ def get_ablation_function(ablate_to_mean, head_to_ablate, component="HEAD"):
 
 
 # Activation Patching
+def show_activation_patching(dt, logit_dir, original_cache):
+    token_labels = st.session_state.labels
+    with st.expander("Activation Patching"):
+        corrupted_tokens, noise_or_denoise = get_corrupted_tokens(
+            dt, key="act_patch"
+        )
+        # # look at current state and do a forward pass
+        clean_tokens = get_tokens_from_app_state(dt, previous_step=False)
+        clean_preds, clean_x, clean_cache, _ = get_action_preds_from_tokens(
+            dt, clean_tokens
+        )
+        clean_logit_dif = clean_x[0, -1] @ logit_dir
+        (
+            corrupt_preds,
+            corrupt_x,
+            corrupt_cache,
+            _,
+        ) = get_action_preds_from_tokens(dt, corrupted_tokens)
+        corrupted_logit_dif = corrupt_x[0, -1] @ logit_dir
+
+        # rewrite previous line but with nicer formatting
+        st.write(
+            "Clean Logit Diff: ",
+            f"{clean_logit_dif.item():.3f}",
+            " Corrupted Logit Diff: ",
+            f"{corrupted_logit_dif.item():.3f}",
+        )
+
+        if noise_or_denoise.lower() == "noise":
+            # we need to flip tokens because denoising works by taking the forward pass of the corrupted tokens
+            # and patching in the "correct output" from the clean tokens.
+            corrupted_tokens, clean_tokens = clean_tokens, corrupted_tokens
+            corrupt_preds, clean_preds = clean_preds, corrupt_preds
+            corrupt_x, clean_x = clean_x, corrupt_x
+            corrupted_logit_dif, clean_logit_dif = (
+                clean_logit_dif,
+                corrupted_logit_dif,
+            )
+            clean_cache, corrupt_cache = corrupt_cache, clean_cache
+
+        if st.checkbox("show corrupted action predictions"):
+            plot_action_preds(corrupt_preds)
+
+        # easy section.
+        (
+            dummy_tab,
+            layer_token_tab,
+            residual_stream_by_block_tab,
+            head_all_positions_tab,
+            head_all_positions_by_component_tab,
+            minimize_tab,
+        ) = st.tabs(
+            [
+                "Help",
+                "Layer-Token",
+                "Layer-Token + Attn/MLP",
+                "Head All Positions",
+                "Layer-Token-Head",
+                "Minimize",
+            ]
+        )
+
+        # advanced section
+        (
+            head_by_component_and_position_tab,
+            mlp_patching_tab,
+        ) = st.tabs(["Layer-Token-Head-Detail", "MLP - Neuron Detail"])
+
+        with dummy_tab:
+            st.write(
+                """
+                ### Activation Patching
+
+                This analysis feature enables the user to perform activation patching experiments.
+
+                You may patch different inputs including observations, actions and RTGs. 
+
+                If "Noise" is selected, then the metric shown is the proportion of restored logit difference
+                compared to the original logit difference (between the clean and corrupted logit differences).
+
+                If "Denoise" is selected, then the metric shown is proportion of corrupted logit difference
+                compared to the original logit difference (between the clean and corrupted logit differences)
+                reversed. That is, how much of the corrupted logit difference is restored.
+
+                Neither of these approaches can be trivially compared to the logit lens, but generally speaking
+                noising will make more sense in the context of the current forward pass, since you are patching
+                a corrupted node into what is otherwise mostly the same forward pass. Denoising, on the other hand,
+                involves patching clean nodes into a corrupted forward pass.
+
+                Complete "recovery" in denoising and complete "corruption" in noising will have values of 1 in the 
+                logit difference metric used. This is evident when you look at patching the residual stream before the first
+                attention layer of the token which you have edited.
+
+                Note: These tabs automatically run everytime you change the input. 
+                If it crashes your browser, let me know. It shouldn't on these models.*
+                """
+            )
+
+        with layer_token_tab:
+            layer_token_patch_component(
+                dt,
+                corrupted_tokens,
+                clean_cache,
+                logit_dir,
+                clean_logit_dif,
+                corrupted_logit_dif,
+                token_labels,
+            )
+
+        with residual_stream_by_block_tab:
+            layer_token_block_patch_component(
+                dt,
+                corrupted_tokens,
+                clean_cache,
+                logit_dir,
+                clean_logit_dif,
+                corrupted_logit_dif,
+                token_labels,
+            )
+
+        with head_all_positions_tab:
+            head_all_positions_patch_component(
+                dt,
+                corrupted_tokens,
+                clean_cache,
+                logit_dir,
+                clean_logit_dif,
+                corrupted_logit_dif,
+                token_labels,
+            )
+
+        with head_all_positions_by_component_tab:
+            head_all_positions_by_input_patch_component(
+                dt,
+                corrupted_tokens,
+                clean_cache,
+                logit_dir,
+                clean_logit_dif,
+                corrupted_logit_dif,
+                token_labels,
+            )
+
+        with minimize_tab:
+            pass
+
+        with head_by_component_and_position_tab:
+            head_by_component_and_position_patch_component(
+                dt,
+                corrupted_tokens,
+                clean_cache,
+                logit_dir,
+                clean_logit_dif,
+                corrupted_logit_dif,
+                token_labels,
+            )
+
+        with mlp_patching_tab:
+            mlp_patch_single_neuron_component(
+                dt,
+                corrupted_tokens,
+                clean_cache,
+                logit_dir,
+                clean_logit_dif,
+                corrupted_logit_dif,
+                token_labels,
+            )
 
 
 def get_corrupted_tokens(dt, key=""):
-    path_patch_by = st.selectbox(
-        "Patch by",
-        ["State", "All RTG", "Specific RTG", "Action"],
-        key=key + "patch_by_selector",
-    )
+    a, b = st.columns(2)
+    with a:
+        path_patch_by = st.selectbox(
+            "Patch by",
+            ["State", "All RTG", "Specific RTG", "Action"],
+            key=key + "patch_by_selector",
+        )
+    with b:
+        noise_or_denoise = st.selectbox(
+            "Noise or Denoise",
+            ["Noise", "Denoise"],
+            key=key + "noise_or_denoise_selector",
+        )
 
     if path_patch_by == "Specific RTG":
         min_rtg = st.slider(
@@ -442,285 +616,259 @@ def get_corrupted_tokens(dt, key=""):
     else:
         st.warning("Not implemented yet")
 
-    return corrupted_tokens
+    return corrupted_tokens, noise_or_denoise
 
 
-def show_activation_patching(dt, logit_dir, original_cache):
-    token_labels = st.session_state.labels
-    with st.expander("Activation Patching"):
-        corrupted_tokens = get_corrupted_tokens(dt, key="act_patch")
-        # # look at current state and do a forward pass
-        clean_tokens = get_tokens_from_app_state(dt, previous_step=False)
-        clean_preds, clean_x, _, _ = get_action_preds_from_tokens(
-            dt, clean_tokens
+def layer_token_patch_component(
+    dt,
+    corrupted_tokens,
+    clean_cache,
+    logit_dir,
+    clean_logit_dif,
+    corrupted_logit_dif,
+    token_labels,
+):
+    # let's gate until we have a sense for run time.
+    patch = patching.get_act_patch_resid_pre(
+        dt.transformer,
+        corrupted_tokens=corrupted_tokens,
+        clean_cache=clean_cache,
+        patching_metric=partial(
+            logit_diff_recovery_metric,
+            logit_dir=logit_dir,
+            clean_logit_dif=clean_logit_dif,
+            corrupted_logit_dif=corrupted_logit_dif,
+        ),
+    )
+
+    fig = px.imshow(
+        patch,
+        color_continuous_midpoint=0.0,
+        color_continuous_scale="RdBu",
+        title="Logit Difference From Patched Residual Stream",
+        labels={"x": "Sequence Position", "y": "Layer"},
+    )
+
+    # set xticks to labels
+    fig.update_xaxes(
+        tickmode="array",
+        tickvals=list(range(len(token_labels))),
+        ticktext=token_labels,
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def layer_token_block_patch_component(
+    dt,
+    corrupted_tokens,
+    clean_cache,
+    logit_dir,
+    clean_logit_dif,
+    corrupted_logit_dif,
+    token_labels,
+):
+    # let's gate until we have a sense for run time.
+    patch = patching.get_act_patch_block_every(
+        dt.transformer,
+        corrupted_tokens=corrupted_tokens,
+        clean_cache=clean_cache,
+        metric=partial(
+            logit_diff_recovery_metric,
+            logit_dir=logit_dir,
+            clean_logit_dif=clean_logit_dif,
+            corrupted_logit_dif=corrupted_logit_dif,
+        ),
+    )
+
+    fig = px.imshow(
+        patch,
+        color_continuous_midpoint=0.0,
+        color_continuous_scale="RdBu",
+        facet_col=0,
+        facet_col_wrap=1,
+        title="Logit Difference From Patched Residual Stream",
+        labels={"x": "Sequence Position", "y": "Layer"},
+    )
+
+    # set xticks to labels
+    fig.update_xaxes(
+        tickmode="array",
+        tickvals=list(range(len(token_labels))),
+        ticktext=token_labels,
+    )
+
+    fig.layout.annotations[2]["text"] = "Residual Stream"
+    fig.layout.annotations[1]["text"] = "Attention"
+    fig.layout.annotations[0]["text"] = "MLP"
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def head_all_positions_patch_component(
+    dt,
+    corrupted_tokens,
+    clean_cache,
+    logit_dir,
+    clean_logit_dif,
+    corrupted_logit_dif,
+    token_labels,
+):
+    patch = patching.get_act_patch_attn_head_out_all_pos(
+        dt.transformer,
+        corrupted_tokens=corrupted_tokens,
+        clean_cache=clean_cache,
+        patching_metric=partial(
+            logit_diff_recovery_metric,
+            logit_dir=logit_dir,
+            clean_logit_dif=clean_logit_dif,
+            corrupted_logit_dif=corrupted_logit_dif,
+        ),
+    )
+
+    fig = px.imshow(
+        patch,
+        color_continuous_midpoint=0.0,
+        color_continuous_scale="RdBu",
+        title="Logit Difference From Patched Attn Head Output",
+        labels={"x": "Head", "y": "Layer"},
+    )
+
+    fig.update_xaxes(
+        tickmode="array",
+        tickvals=list(range(patch.shape[-1])),
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def head_all_positions_by_input_patch_component(
+    dt,
+    corrupted_tokens,
+    clean_cache,
+    logit_dir,
+    clean_logit_dif,
+    corrupted_logit_dif,
+    token_labels,
+):
+    patch = patching.get_act_patch_attn_head_all_pos_every(
+        dt.transformer,
+        corrupted_tokens=corrupted_tokens,
+        clean_cache=clean_cache,
+        metric=partial(
+            logit_diff_recovery_metric,
+            logit_dir=logit_dir,
+            clean_logit_dif=clean_logit_dif,
+            corrupted_logit_dif=corrupted_logit_dif,
+        ),
+    )
+
+    fig = px.imshow(
+        patch,
+        color_continuous_midpoint=0.0,
+        color_continuous_scale="RdBu",
+        facet_col=0,
+        title="Activation Patching Per Head (All Pos)",
+        labels={"x": "Head", "y": "Layer"},
+    )
+
+    # remove ticks,
+    fig.update_xaxes(showticklabels=False, showgrid=False, ticks="")
+    fig.update_yaxes(showticklabels=False, showgrid=False, ticks="")
+
+    facet_labels = ["Output", "Query", "Key", "Value", "Pattern"]
+    for i, facet_label in enumerate(facet_labels):
+        fig.layout.annotations[i]["text"] = facet_label
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def head_by_component_and_position_patch_component(
+    dt,
+    corrupted_tokens,
+    clean_cache,
+    logit_dir,
+    clean_logit_dif,
+    corrupted_logit_dif,
+    token_labels,
+):
+    if st.checkbox("Run this slightly expensive compute"):
+        patch = patching.get_act_patch_attn_head_by_pos_every(
+            dt.transformer,
+            corrupted_tokens=corrupted_tokens,
+            clean_cache=clean_cache,
+            metric=partial(
+                logit_diff_recovery_metric,
+                logit_dir=logit_dir,
+                clean_logit_dif=clean_logit_dif,
+                corrupted_logit_dif=corrupted_logit_dif,
+            ),
         )
-        clean_logit_dif = clean_x[0, -1] @ logit_dir
-        corrupt_preds, corrupt_x, _, _ = get_action_preds_from_tokens(
-            dt, corrupted_tokens
+
+        fig = px.imshow(
+            patch,
+            color_continuous_midpoint=0.0,
+            color_continuous_scale="RdBu",
+            animation_frame=2,
+            facet_col=0,
+            title="Activation Patching Per Head (All Pos)",
+            labels={"x": "Head", "y": "Layer"},
         )
-        corrupted_logit_dif = corrupt_x[0, -1] @ logit_dir
+        # remove ticks,
+        fig.update_xaxes(showticklabels=False, showgrid=False, ticks="")
+        fig.update_yaxes(showticklabels=False, showgrid=False, ticks="")
+        facet_labels = ["Output", "Query", "Key", "Value", "Pattern"]
+        for i, facet_label in enumerate(facet_labels):
+            fig.layout.annotations[i]["text"] = facet_label
 
-        if st.checkbox("show corrupted action predictions"):
-            plot_action_preds(corrupt_preds)
+        slider_labels = st.session_state.labels
+        st.plotly_chart(fig, use_container_width=True)
+        st.write(slider_labels)
 
-        # rewrite previous line but with nicer formatting
-        st.write(
-            "Clean Logit Diff: ",
-            f"{clean_logit_dif.item():.3f}",
-            " Corrupted Logit Diff: ",
-            f"{corrupted_logit_dif.item():.3f}",
-        )
-        # easy section.
-        (
-            dummy_tab,
-            residual_stream_tab,
-            residual_stream_by_block_tab,
-            head_all_positions_tab,
-            head_all_positions_by_component_tab,
-            minimize_tab,
-        ) = st.tabs(
-            [
-                "Help",
-                "Layer-Token",
-                "Layer-Token + Attn/MLP",
-                "Head All Positions",
-                "Layer-Token-Head",
-                "Minimize",
-            ]
-        )
 
-        with dummy_tab:
-            st.write(
-                """
-                Welcome to Activation Patching! This is a tool for understanding how
-                the model's respond when we change the input tokens. 
-
-                You're mission, should you choose to accept it, is to generate hypotheses
-                about the algorithm being implemented by the transformer. 
-
-                Use different patching methods and different degrees of granularity to
-                refine your hypothesis. 
-                
-                Keep in mind that this method probably doesn't validate your hypothesis
-                unless you use something more advanced like path patching or causal
-                scrubbing. Happy patching!
-
-                *PS: These tabs automatically run everytime you change the input. 
-                If it crashes your browser, let me know. It shouldn't on these models.*
-                """
+def mlp_patch_single_neuron_component(
+    dt,
+    corrupted_tokens,
+    clean_cache,
+    logit_dir,
+    clean_logit_dif,
+    corrupted_logit_dif,
+    token_labels,
+):
+    with st.form("MLP Patching"):
+        b, c = st.columns(2)
+        with b:
+            layer = st.selectbox(
+                "Layer", list(range(dt.transformer_config.n_layers))
             )
+        with c:
+            st.write(" ")
+            st.write(" ")
+            submitted = st.form_submit_button("Patch Neuron!")
 
-        with residual_stream_tab:
+        if submitted:
             # let's gate until we have a sense for run time.
-            patch = patching.get_act_patch_resid_pre(
+            patch = get_act_patch_mlp(
                 dt.transformer,
                 corrupted_tokens=corrupted_tokens,
-                clean_cache=original_cache,
-                patching_metric=partial(
-                    logit_diff_recovery_metric,
-                    logit_dir=logit_dir,
-                    clean_logit_dif=clean_logit_dif,
-                    corrupted_logit_dif=corrupted_logit_dif,
-                ),
-            )
-
-            fig = px.imshow(
-                patch,
-                color_continuous_midpoint=0.0,
-                color_continuous_scale="RdBu",
-                title="Logit Difference From Patched Residual Stream",
-                labels={"x": "Sequence Position", "y": "Layer"},
-            )
-
-            # set xticks to labels
-            fig.update_xaxes(
-                tickmode="array",
-                tickvals=list(range(len(token_labels))),
-                ticktext=token_labels,
-            )
-
-            st.plotly_chart(fig, use_container_width=True)
-
-        with residual_stream_by_block_tab:
-            # let's gate until we have a sense for run time.
-            patch = patching.get_act_patch_block_every(
-                dt.transformer,
-                corrupted_tokens=corrupted_tokens,
-                clean_cache=original_cache,
+                clean_cache=clean_cache,
                 metric=partial(
                     logit_diff_recovery_metric,
                     logit_dir=logit_dir,
                     clean_logit_dif=clean_logit_dif,
                     corrupted_logit_dif=corrupted_logit_dif,
                 ),
-            )
+                layer=layer,
+            ).detach()
 
-            fig = px.imshow(
-                patch,
-                color_continuous_midpoint=0.0,
-                color_continuous_scale="RdBu",
-                facet_col=0,
-                facet_col_wrap=1,
-                title="Logit Difference From Patched Residual Stream",
-                labels={"x": "Sequence Position", "y": "Layer"},
-            )
-
-            # set xticks to labels
-            fig.update_xaxes(
-                tickmode="array",
-                tickvals=list(range(len(token_labels))),
-                ticktext=token_labels,
-            )
-
-            fig.layout.annotations[2]["text"] = "Residual Stream"
-            fig.layout.annotations[1]["text"] = "Attention"
-            fig.layout.annotations[0]["text"] = "MLP"
-            st.plotly_chart(fig, use_container_width=True)
-
-        with head_all_positions_tab:
-            patch = patching.get_act_patch_attn_head_out_all_pos(
-                dt.transformer,
-                corrupted_tokens=corrupted_tokens,
-                clean_cache=original_cache,
-                patching_metric=partial(
-                    logit_diff_recovery_metric,
-                    logit_dir=logit_dir,
-                    clean_logit_dif=clean_logit_dif,
-                    corrupted_logit_dif=corrupted_logit_dif,
-                ),
-            )
-
-            fig = px.imshow(
-                patch,
-                color_continuous_midpoint=0.0,
-                color_continuous_scale="RdBu",
-                title="Logit Difference From Patched Attn Head Output",
-                labels={"x": "Head", "y": "Layer"},
-            )
-
-            fig.update_xaxes(
-                tickmode="array",
-                tickvals=list(range(patch.shape[-1])),
+            fig = px.scatter(
+                x=list(range(patch.shape[0])),
+                y=patch,
+                color=patch,
+                title="Activation Patching Per Neuron",
+                labels={"x": "Position", "y": "Metric"},
             )
 
             st.plotly_chart(fig, use_container_width=True)
-
-        with head_all_positions_by_component_tab:
-            patch = patching.get_act_patch_attn_head_all_pos_every(
-                dt.transformer,
-                corrupted_tokens=corrupted_tokens,
-                clean_cache=original_cache,
-                metric=partial(
-                    logit_diff_recovery_metric,
-                    logit_dir=logit_dir,
-                    clean_logit_dif=clean_logit_dif,
-                    corrupted_logit_dif=corrupted_logit_dif,
-                ),
-            )
-
-            st.write(patch.shape)
-            fig = px.imshow(
-                patch,
-                color_continuous_midpoint=0.0,
-                color_continuous_scale="RdBu",
-                facet_col=0,
-                title="Activation Patching Per Head (All Pos)",
-                labels={"x": "Head", "y": "Layer"},
-            )
-
-            # remove ticks,
-            fig.update_xaxes(showticklabels=False, showgrid=False, ticks="")
-            fig.update_yaxes(showticklabels=False, showgrid=False, ticks="")
-
-            facet_labels = ["Output", "Query", "Key", "Value", "Pattern"]
-            for i, facet_label in enumerate(facet_labels):
-                fig.layout.annotations[i]["text"] = facet_label
-
-            st.plotly_chart(fig, use_container_width=True)
-
-        with minimize_tab:
-            pass
-
-        # advanced section
-        (
-            head_by_component_and_position_tab,
-            mlp_patching,
-        ) = st.tabs(["Layer-Token-Head-Detail", "MLP - Neuron Detail"])
-
-        with head_by_component_and_position_tab:
-            if st.checkbox("Run this slightly expensive compute"):
-                patch = patching.get_act_patch_attn_head_by_pos_every(
-                    dt.transformer,
-                    corrupted_tokens=corrupted_tokens,
-                    clean_cache=original_cache,
-                    metric=partial(
-                        logit_diff_recovery_metric,
-                        logit_dir=logit_dir,
-                        clean_logit_dif=clean_logit_dif,
-                        corrupted_logit_dif=corrupted_logit_dif,
-                    ),
-                )
-
-                fig = px.imshow(
-                    patch,
-                    color_continuous_midpoint=0.0,
-                    color_continuous_scale="RdBu",
-                    animation_frame=2,
-                    facet_col=0,
-                    title="Activation Patching Per Head (All Pos)",
-                    labels={"x": "Head", "y": "Layer"},
-                )
-                # remove ticks,
-                fig.update_xaxes(
-                    showticklabels=False, showgrid=False, ticks=""
-                )
-                fig.update_yaxes(
-                    showticklabels=False, showgrid=False, ticks=""
-                )
-                facet_labels = ["Output", "Query", "Key", "Value", "Pattern"]
-                for i, facet_label in enumerate(facet_labels):
-                    fig.layout.annotations[i]["text"] = facet_label
-
-                slider_labels = st.session_state.labels
-                st.plotly_chart(fig, use_container_width=True)
-                st.write(slider_labels)
-
-        with mlp_patching:
-            with st.form("MLP Patching"):
-                b, c = st.columns(2)
-                with b:
-                    layer = st.selectbox(
-                        "Layer", list(range(dt.transformer_config.n_layers))
-                    )
-                with c:
-                    st.write(" ")
-                    st.write(" ")
-                    submitted = st.form_submit_button("Patch Neuron!")
-
-                if submitted:
-                    # let's gate until we have a sense for run time.
-                    patch = get_act_patch_mlp(
-                        dt.transformer,
-                        corrupted_tokens=corrupted_tokens,
-                        clean_cache=original_cache,
-                        metric=partial(
-                            logit_diff_recovery_metric,
-                            logit_dir=logit_dir,
-                            clean_logit_dif=clean_logit_dif,
-                            corrupted_logit_dif=corrupted_logit_dif,
-                        ),
-                        layer=layer,
-                    ).detach()
-
-                    fig = px.scatter(
-                        x=list(range(patch.shape[0])),
-                        y=patch,
-                        color=patch,
-                        title="Activation Patching Per Neuron",
-                        labels={"x": "Position", "y": "Metric"},
-                    )
-
-                    st.plotly_chart(fig, use_container_width=True)
 
 
 def logit_diff_recovery_metric(
