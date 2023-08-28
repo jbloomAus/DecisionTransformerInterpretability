@@ -313,3 +313,13 @@ def get_rendered_obs(
         obs = reverse_one_hot(observation=obs)
     image = render_minigrid_observation(env, obs)
     return image
+
+
+# used by streamlit app, works on many obs
+def get_rendered_obss(
+    env: gym.Env,
+    obs: torch.Tensor,
+):
+    obs = [get_rendered_obs(env, frame) for frame in obs]
+    obs = np.stack(obs)
+    return obs

@@ -12,7 +12,12 @@ from torchtyping import TensorType as TT
 from tqdm import tqdm
 from transformer_lens.hook_points import HookPoint
 
-from src.visualization import get_rendered_obs
+from src.visualization import (
+    get_rendered_obs,
+    get_rendered_obss,
+    render_minigrid_observation,
+    render_minigrid_observations,
+)
 
 from .visualizations import plot_logit_scan
 
@@ -301,7 +306,7 @@ def get_ablation_function(ablate_to_mean, head_to_ablate, component="HEAD"):
 def show_activation_patching(dt, logit_dir, original_cache):
     token_labels = st.session_state.labels
     with st.expander("Activation Patching"):
-        corrupted_tokens, noise_or_denoise = get_corrupted_tokens(
+        corrupted_tokens, noise_or_denoise = get_corrupted_tokens_component(
             dt, key="act_patch"
         )
         # # look at current state and do a forward pass
@@ -466,8 +471,8 @@ def show_activation_patching(dt, logit_dir, original_cache):
             )
 
 
-def get_corrupted_tokens(dt, key=""):
-    a, b = st.columns(2)
+def get_corrupted_tokens_component(dt, key=""):
+    a, b, c = st.columns(3)
     with a:
         path_patch_by = st.selectbox(
             "Patch by",
@@ -480,9 +485,31 @@ def get_corrupted_tokens(dt, key=""):
             ["Noise", "Denoise"],
             key=key + "noise_or_denoise_selector",
         )
+    with c:
+        if path_patch_by == "State":
+            number_modifications = st.slider(
+                "Number of Modifications",
+                min_value=1,
+                max_value=3,
+                value=1,
+                key=key + "number_modifications_slider",
+            )
+
+    from src.streamlit_app.environment import (
+        preprocess_inputs,
+        get_state_history,
+    )
+
+    obs, actions, rtg, timesteps = preprocess_inputs(
+        **get_state_history(previous_step=False),
+    )
+
+    previous_tokens = dt.to_tokens(obs, actions, rtg, timesteps)
+    rtg = rtg.clone()  # don't accidentally modify the session state.
+    obs = obs.clone()  # don't accidentally modify the session state.
 
     if path_patch_by == "Specific RTG":
-        min_rtg = st.slider(
+        specific_rtg = st.slider(
             "Corrupted RTG",
             min_value=0.0,
             max_value=st.session_state.rtg[0][0].item(),
@@ -496,27 +523,41 @@ def get_corrupted_tokens(dt, key=""):
             value=0,
             key=key + "position_slider",
         )
-        # at this point I can set the corrupted tokens.
-        corrupted_tokens = get_modified_tokens_from_app_state(
-            dt, specific_rtg=min_rtg, position=position
-        )
+
+        new_rtg = rtg.clone()
+        new_rtg[0][position] = specific_rtg
+
+        st.write("Previous RTG: ", rtg.flatten())
+        st.write("Updated RTG: ", new_rtg.flatten())
+
+        corrupted_tokens = dt.to_tokens(obs, actions, new_rtg, timesteps)
+
+        # # at this point I can set the corrupted tokens.
+        # corrupted_tokens = get_modified_tokens_from_app_state(
+        #     dt, specific_rtg=min_rtg, position=position
+        # )
 
     elif path_patch_by == "All RTG":
-        min_rtg = st.slider(
+        all_rtg = st.slider(
             "Corrupted RTG",
             min_value=0.0,
             max_value=st.session_state.rtg[0][0].item() - 0.01,
             value=0.0,
             key=key + "rtg_slider",
         )
+
+        rtg_dif = rtg[0] - all_rtg
+        new_rtg = rtg - rtg_dif
+
+        st.write("Previous RTG: ", rtg.flatten())
+        st.write("Updated RTG: ", new_rtg.flatten())
+
         # at this point I can set the corrupted tokens.
-        corrupted_tokens = get_modified_tokens_from_app_state(
-            dt, all_rtg=min_rtg
-        )
+        corrupted_tokens = dt.to_tokens(obs, actions, new_rtg, timesteps)
 
     elif path_patch_by == "Action":
-        action = st.selectbox("Choose an action", IDX_TO_ACTION.values())
-        action_idx = ACTION_TO_IDX[action]
+        new_action = st.selectbox("Choose an action", IDX_TO_ACTION.values())
+        action_idx = ACTION_TO_IDX[new_action]
         position = st.slider(
             "Position",
             min_value=0,
@@ -524,99 +565,145 @@ def get_corrupted_tokens(dt, key=""):
             value=0,
             key=key + "action_selector",
         )
-        # at this point I can set the corrupted tokens.
-        corrupted_tokens = get_modified_tokens_from_app_state(
-            dt, new_action=action_idx, position=position
-        )
+
+        new_actions = actions.clone()
+        new_actions[0][position] = action_idx
+
+        corrupted_tokens = dt.to_tokens(obs, new_actions, rtg, timesteps)
+
+        st.write(actions.squeeze(-1))
+        st.write(new_actions.squeeze(-1))
 
     elif path_patch_by == "State":
         assert (
             dt.environment_config.env_id == "MiniGrid-MemoryS7FixedStart-v0"
         ), "State patching only implemented for MiniGrid-MemoryS7FixedStart-v0"
 
-        # Let's construct this as a series (starting with one)
-        # of changes to any previous state.
-
-        a, b, c, d, f = st.columns(5)
-
-        with a:
-            current_len = st.session_state.current_len
-            max_len = st.session_state.max_len
-
-            if current_len == 1:
-                st.write("Can only modify current _state timestep = 1")
-                timestep_to_modify = max_len - 1
-            else:
-                timestep_to_modify = st.selectbox(
-                    "Timestep",
-                    range(max_len),
-                    format_func=lambda x: st.session_state.labels[1::3][x],
-                    index=max(0, max_len - current_len),
-                    key=key + "timestep_selector",
-                )
-        with b:
-            x_position_to_update = st.selectbox(
-                "X Position (Rel to Agent)",
-                range(8),
-                format_func=lambda x: f"{x-3}",
-                index=2,
-                key=key + "x_position_selector",
-            )
-        with c:
-            y_position_to_update = st.selectbox(
-                "Y Position (Rel to Agent)",
-                range(8),
-                format_func=lambda x: f"{6-x}",
-                index=6,
-                key=key + "y_position_selector",
-            )
-        with d:
-            object_to_update = st.selectbox(
-                "Select an object",
-                list(IDX_TO_OBJECT.keys()),
-                index=OBJECT_TO_IDX["key"],
-                format_func=IDX_TO_OBJECT.get,
-                key=key + "object_selector",
-            )
-        with f:
-            show_update_tick = st.checkbox(
-                "Show state update", key=key + "show_update_tick"
-            )
+        max_len = st.session_state.max_len
         env = st.session_state.env
-        obs = st.session_state.obs[0][-max_len:].clone()
-        obs = obs[timestep_to_modify].clone()
+        new_obs = st.session_state.obs[:, -max_len:].clone()
 
-        corrupt_obs = obs.detach().clone()
-        corrupt_obs[
-            x_position_to_update,
-            y_position_to_update,
-            : len(OBJECT_TO_IDX),
-        ] = 0
-        corrupt_obs[
-            x_position_to_update, y_position_to_update, object_to_update
-        ] = 1
+        modification_tabs = st.tabs(
+            [f"Modification {i}" for i in range(number_modifications)]
+        )
+
+        for i in range(number_modifications):
+            with modification_tabs[i]:
+                # get instructions
+                instructions = get_corrupt_obs_instructions(
+                    key=key + f"-modification_{i}"
+                )
+                position = instructions[0]
+
+                # edit the state
+                corrupt_obs = get_updated_obs(
+                    new_obs[0], *instructions, key=key + f"-modification_{i}"
+                )
+                # new_obs = obs.clone().unsqueeze(0)
+                new_obs[0][position] = corrupt_obs
+
+        corrupted_tokens = dt.to_tokens(new_obs, actions, rtg, timesteps)
+
+        # convert that to tokens
+        corrupted_tokens = get_modified_tokens_from_app_state(
+            dt, corrupt_obs=corrupt_obs, position=position
+        )
+
+        # make sure the user can see their updates.
+        show_update_tick = st.checkbox(
+            "Show state update", key=key + "show_update_tick"
+        )
 
         if show_update_tick:
             clean_col, corrupt_col = st.columns(2)
             with clean_col:
                 st.write("Clean")
-                image = get_rendered_obs(env, obs)
-                fig = px.imshow(image)
+                image = get_rendered_obss(env, obs[0])
+                fig = px.imshow(image, animation_frame=0)
                 st.plotly_chart(fig, use_container_width=True)
             with corrupt_col:
                 st.write("Corrupted")
-                image = get_rendered_obs(env, corrupt_obs)
-                fig = px.imshow(image)
+                image = get_rendered_obss(env, new_obs[0])
+                fig = px.imshow(image, animation_frame=0)
                 st.plotly_chart(fig, use_container_width=True)
 
-        corrupted_tokens = get_modified_tokens_from_app_state(
-            dt, corrupt_obs=corrupt_obs, position=timestep_to_modify
-        )
-
-    else:
-        st.warning("Not implemented yet")
+    assert not torch.all(
+        corrupted_tokens == previous_tokens
+    ), "corrupted tokens are the same!"
 
     return corrupted_tokens, noise_or_denoise
+
+
+def get_corrupt_obs_instructions(key=""):
+    a, b, c, d = st.columns(4)
+
+    current_len = st.session_state.current_len
+    max_len = st.session_state.max_len
+    with a:
+        if current_len == 1:
+            st.write("Can only modify current _state timestep = 1")
+            timestep_to_modify = max_len - 1
+        else:
+            timestep_to_modify = st.selectbox(
+                "Timestep",
+                range(max_len),
+                format_func=lambda x: st.session_state.labels[1::3][x],
+                index=max(0, max_len - current_len),
+                key=key + "timestep_selector",
+            )
+    with b:
+        x_position_to_update = st.selectbox(
+            "X Position (Rel to Agent)",
+            range(8),
+            format_func=lambda x: f"{x-3}",
+            index=2,
+            key=key + "x_position_selector",
+        )
+    with c:
+        y_position_to_update = st.selectbox(
+            "Y Position (Rel to Agent)",
+            range(8),
+            format_func=lambda x: f"{6-x}",
+            index=6,
+            key=key + "y_position_selector",
+        )
+    with d:
+        object_to_update = st.selectbox(
+            "Select an object",
+            list(IDX_TO_OBJECT.keys()),
+            index=OBJECT_TO_IDX["key"],
+            format_func=IDX_TO_OBJECT.get,
+            key=key + "object_selector",
+        )
+
+    return (
+        timestep_to_modify,
+        x_position_to_update,
+        y_position_to_update,
+        object_to_update,
+    )
+
+
+def get_updated_obs(
+    obs,
+    timestep_to_modify,
+    x_position_to_update,
+    y_position_to_update,
+    object_to_update,
+    key="",
+):
+    obs = obs[timestep_to_modify].clone()
+    corrupt_obs = obs.detach().clone()
+    corrupt_obs[
+        x_position_to_update,
+        y_position_to_update,
+        : len(OBJECT_TO_IDX),
+    ] = 0
+    corrupt_obs[
+        x_position_to_update, y_position_to_update, object_to_update
+    ] = 1
+
+    return corrupt_obs
 
 
 def layer_token_patch_component(
@@ -953,7 +1040,7 @@ def show_algebraic_value_editing(dt, logit_dir, original_cache):
 
         # 1. Create a corrupted forward pass using the same essential logic as activation
         # patching.
-        corrupted_tokens = get_corrupted_tokens(dt, key="avec")
+        corrupted_tokens = get_corrupted_tokens_component(dt, key="avec")
         (
             corrupted_preds,
             corrupted_x,
@@ -1081,7 +1168,7 @@ def show_path_patching(dt, logit_dir, clean_cache):
     with st.expander("Path Patching"):
         # 1. Create a corrupted forward pass using the same essential logic as activation
         # patching.
-        corrupted_tokens = get_corrupted_tokens(dt, key="path_")
+        corrupted_tokens = get_corrupted_tokens_component(dt, key="path_")
         (
             corrupt_preds,
             corrupt_x,

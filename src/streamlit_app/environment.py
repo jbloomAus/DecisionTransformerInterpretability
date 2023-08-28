@@ -105,39 +105,39 @@ def get_modified_tokens_from_app_state(
     rtg = rtg.clone()  # don't accidentally modify the session state.
     obs = obs.clone()  # don't accidentally modify the session state.
     # now do interventions
-    if all_rtg is not None:
-        rtg_dif = rtg[0] - all_rtg
-        new_rtg = rtg - rtg_dif
+    # if all_rtg is not None:
+    #     rtg_dif = rtg[0] - all_rtg
+    #     new_rtg = rtg - rtg_dif
 
-        st.write(rtg.squeeze(-1))
-        st.write(new_rtg.squeeze(-1))
-        tokens = dt.to_tokens(obs, actions, new_rtg, timesteps)
+    #     st.write(rtg.squeeze(-1))
+    #     st.write(new_rtg.squeeze(-1))
+    #     tokens = dt.to_tokens(obs, actions, new_rtg, timesteps)
 
-    elif specific_rtg is not None:
-        assert position is not None
-        # print("specific rtg", specific_rtg)
-        # make a table showing the rtg at each position before/after
-        # and then highlight the position that is being changed.
+    # if specific_rtg is not None:
+    #     assert position is not None
+    #     # print("specific rtg", specific_rtg)
+    #     # make a table showing the rtg at each position before/after
+    #     # and then highlight the position that is being changed.
 
-        new_rtg = rtg.clone()
-        new_rtg[0][position] = specific_rtg
+    #     new_rtg = rtg.clone()
+    #     new_rtg[0][position] = specific_rtg
 
-        st.write(rtg.squeeze(-1))
-        st.write(new_rtg.squeeze(-1))
+    #     st.write(rtg.squeeze(-1))
+    #     st.write(new_rtg.squeeze(-1))
 
-        tokens = dt.to_tokens(obs, actions, new_rtg, timesteps)
+    #     tokens = dt.to_tokens(obs, actions, new_rtg, timesteps)
 
-    elif new_action is not None:
-        assert position is not None
-        new_actions = actions.clone()
-        new_actions[0][position] = new_action
+    # if new_action is not None:
+    #     assert position is not None
+    #     new_actions = actions.clone()
+    #     new_actions[0][position] = new_action
 
-        tokens = dt.to_tokens(obs, new_actions, rtg, timesteps)
+    #     tokens = dt.to_tokens(obs, new_actions, rtg, timesteps)
 
-        st.write(actions.squeeze(-1))
-        st.write(new_actions.squeeze(-1))
+    #     st.write(actions.squeeze(-1))
+    #     st.write(new_actions.squeeze(-1))
 
-    elif obs is not None:
+    if obs is not None:
         assert position is not None
         new_obs = obs.clone()
         new_obs[0][position] = corrupt_obs
