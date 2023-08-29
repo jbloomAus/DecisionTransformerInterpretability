@@ -727,7 +727,7 @@ def layer_token_patch_component(
         patch,
         color_continuous_midpoint=0.0,
         color_continuous_scale="RdBu",
-        title="Logit Difference From Patched Residual Stream",
+        title="Percent Logit Difference Restored From Patched Residual Stream",
         labels={"x": "Sequence Position", "y": "Layer"},
     )
 
@@ -769,7 +769,7 @@ def layer_token_block_patch_component(
         color_continuous_scale="RdBu",
         facet_col=0,
         facet_col_wrap=1,
-        title="Logit Difference From Patched Residual Stream",
+        title="Percent Logit Difference Restored From Patched Residual Stream",
         labels={"x": "Sequence Position", "y": "Layer"},
     )
 
@@ -811,7 +811,7 @@ def head_all_positions_patch_component(
         patch,
         color_continuous_midpoint=0.0,
         color_continuous_scale="RdBu",
-        title="Logit Difference From Patched Attn Head Output",
+        title="Percent Logit Difference Restored From Patched Attn Head Output",
         labels={"x": "Head", "y": "Layer"},
     )
 
@@ -849,7 +849,7 @@ def head_all_positions_by_input_patch_component(
         color_continuous_midpoint=0.0,
         color_continuous_scale="RdBu",
         facet_col=0,
-        title="Activation Patching Per Head (All Pos)",
+        title="Percent Logit Difference Restored Per Head (All Pos)",
         labels={"x": "Head", "y": "Layer"},
     )
 
@@ -892,7 +892,7 @@ def head_by_component_and_position_patch_component(
             color_continuous_scale="RdBu",
             animation_frame=2,
             facet_col=0,
-            title="Activation Patching Per Head (All Pos)",
+            title="Percent Logit Difference Restored from Patching Per Head (All Pos)",
             labels={"x": "Head", "y": "Layer"},
         )
         # remove ticks,
