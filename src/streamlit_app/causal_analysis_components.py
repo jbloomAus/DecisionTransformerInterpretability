@@ -605,9 +605,9 @@ def get_corrupted_tokens_component(dt, key=""):
         corrupted_tokens = dt.to_tokens(new_obs, actions, rtg, timesteps)
 
         # convert that to tokens
-        corrupted_tokens = get_modified_tokens_from_app_state(
-            dt, corrupt_obs=corrupt_obs, position=position
-        )
+        # corrupted_tokens = get_modified_tokens_from_app_state(
+        #     dt, corrupt_obs=corrupt_obs, position=position
+        # )
 
         # make sure the user can see their updates.
         show_update_tick = st.checkbox(
