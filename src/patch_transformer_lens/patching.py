@@ -5,6 +5,11 @@ The structure is to have a single generic_activation_patch function that does ev
 
 See this explanation for more https://dynalist.io/d/n2ZWtnoYHrU1s4vnFSAQ519J#z=qeWBvs-R-taFfcCq-S_hgMqx
 And check out the Activation Patching in TransformerLens Demo notebook for a demo of how to use this module.
+
+Notes for Joseph's Monkey patch version of this module:
+1. Updated so I can pass in tokenized text instead of token ids. 
+2. Remove the return_index_df of generic_activation_patch, since I don't like it. 
+3. Use run_with_cache instead of run with hooks, to enable neuron activation based metrics. 
 """
 
 from __future__ import annotations
@@ -42,6 +47,8 @@ AxisNames = Literal[
 
 from typing import Sequence
 
+import streamlit as st
+
 
 def make_df_from_ranges(
     column_max_ranges: Sequence[int], column_names: Sequence[str]
@@ -77,7 +84,6 @@ def generic_activation_patch(
     activation_name: str,
     index_axis_names: Optional[Sequence[AxisNames]] = None,
     index_df: Optional[pd.DataFrame] = None,
-    return_index_df: bool = False,
 ) -> Union[torch.Tensor, Tuple[torch.Tensor, pd.DataFrame]]:
     """
     A generic function to do activation patching, will be specialised to specific use cases.
@@ -169,10 +175,16 @@ def generic_activation_patch(
         )
 
         # Run the model with the patching hook and get the logits!
-        patched_logits = model.run_with_hooks(
-            corrupted_tokens,
-            fwd_hooks=[(current_activation_name, current_hook)],
-        )
+        # with
+        # patched_logits = model.run_with_hooks(
+        #     corrupted_tokens,
+        #     fwd_hooks=[(current_activation_name, current_hook)],
+        # )
+
+        with model.hooks(fwd_hooks=[(current_activation_name, current_hook)]):
+            patched_logits, patched_cache = model.run_with_cache(
+                corrupted_tokens
+            )
 
         # Calculate the patching metric and store
         if flattened_output:
@@ -182,10 +194,7 @@ def generic_activation_patch(
                 patched_logits
             ).item()
 
-    if return_index_df:
-        return patched_metric_output, index_df
-    else:
-        return patched_metric_output
+    return patched_metric_output
 
 
 # Defining patch setters for various shapes of activations
