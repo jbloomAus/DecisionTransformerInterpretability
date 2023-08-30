@@ -324,6 +324,26 @@ def show_activation_patching(dt, logit_dir, original_cache):
         if st.checkbox("show corrupted action predictions"):
             plot_action_preds(corrupt_preds)
 
+        clean_logit_dif = clean_x[0, -1] @ logit_dir
+        corrupted_logit_dif = corrupt_x[0, -1] @ logit_dir
+
+        st.write(
+            "Clean Logit Diff: ",
+            f"{clean_logit_dif.item():.3f}," + " Corrupted Logit Diff: ",
+            f"{corrupted_logit_dif.item():.3f}",
+        )
+
+        if noise_or_denoise.lower() == "noise":
+            # we need to flip tokens because denoising works by taking the forward pass of the corrupted tokens
+            # and patching in the "correct output" from the clean tokens.
+            corrupted_tokens, clean_tokens = clean_tokens, corrupted_tokens
+            corrupt_preds, clean_preds = clean_preds, corrupt_preds
+            corrupt_x, clean_x = clean_x, corrupt_x
+            corrupted_logit_dif, clean_logit_dif = (
+                clean_logit_dif,
+                corrupted_logit_dif,
+            )
+            clean_cache, corrupt_cache = corrupt_cache, clean_cache
         (
             restored_logit_difference_tab,
             neuron_activation_difference_tab,
@@ -332,28 +352,6 @@ def show_activation_patching(dt, logit_dir, original_cache):
         )
 
         with restored_logit_difference_tab:
-            clean_logit_dif = clean_x[0, -1] @ logit_dir
-
-            corrupted_logit_dif = corrupt_x[0, -1] @ logit_dir
-
-            st.write(
-                "Clean Logit Diff: ",
-                f"{clean_logit_dif.item():.3f}," + " Corrupted Logit Diff: ",
-                f"{corrupted_logit_dif.item():.3f}",
-            )
-
-            if noise_or_denoise.lower() == "noise":
-                # we need to flip tokens because denoising works by taking the forward pass of the corrupted tokens
-                # and patching in the "correct output" from the clean tokens.
-                corrupted_tokens, clean_tokens = clean_tokens, corrupted_tokens
-                corrupt_preds, clean_preds = clean_preds, corrupt_preds
-                corrupt_x, clean_x = clean_x, corrupt_x
-                corrupted_logit_dif, clean_logit_dif = (
-                    clean_logit_dif,
-                    corrupted_logit_dif,
-                )
-                clean_cache, corrupt_cache = corrupt_cache, clean_cache
-
             metric_func = logit_diff_recovery_metric
             kwargs = {
                 "logit_dir": logit_dir,
@@ -376,7 +374,7 @@ def show_activation_patching(dt, logit_dir, original_cache):
                 neuron_text = st.text_input(
                     f"Type the neuron you want",
                     "L0N0",
-                    key="neuron_act_analysis",
+                    key="neuron_act_analysis, causal",
                 )
                 # validate neuron
                 if not re.search(r"L\d+N\d+", neuron_text):
@@ -388,14 +386,22 @@ def show_activation_patching(dt, logit_dir, original_cache):
             with b:
                 pass
 
-            clean_neuron_activation = original_cache[
+            clean_neuron_activation = clean_cache[
                 f"blocks.{layer}.mlp.hook_pre"
             ][0, -1, neuron]
             corrupted_neuron_activation = corrupt_cache[
                 f"blocks.{layer}.mlp.hook_pre"
             ][0, -1, neuron]
+            if noise_or_denoise.lower() == "noise":
+                # swap these to be accurate.
+                clean_neuron_activation, corrupted_neuron_activation = (
+                    corrupted_neuron_activation,
+                    clean_neuron_activation,
+                )
+
+            # if
             with b:
-                st.write(f"clean: {clean_neuron_activation:3f}")
+                st.write(f"Clean: {clean_neuron_activation:3f}")
                 st.write(f"Corrupted: {corrupted_neuron_activation:3f}")
 
             metric_func = neuron_activation_metric
