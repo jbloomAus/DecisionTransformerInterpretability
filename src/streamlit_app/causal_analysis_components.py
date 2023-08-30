@@ -309,27 +309,20 @@ def show_activation_patching(dt, logit_dir, original_cache):
         corrupted_tokens, noise_or_denoise = get_corrupted_tokens_component(
             dt, key="act_patch"
         )
-        # # look at current state and do a forward pass
+        # look at current state and do a forward pass
         clean_tokens = get_tokens_from_app_state(dt, previous_step=False)
         clean_preds, clean_x, clean_cache, _ = get_action_preds_from_tokens(
             dt, clean_tokens
         )
-        clean_logit_dif = clean_x[0, -1] @ logit_dir
         (
             corrupt_preds,
             corrupt_x,
             corrupt_cache,
             _,
         ) = get_action_preds_from_tokens(dt, corrupted_tokens)
-        corrupted_logit_dif = corrupt_x[0, -1] @ logit_dir
 
-        # rewrite previous line but with nicer formatting
-        st.write(
-            "Clean Logit Diff: ",
-            f"{clean_logit_dif.item():.3f}",
-            " Corrupted Logit Diff: ",
-            f"{corrupted_logit_dif.item():.3f}",
-        )
+        if st.checkbox("show corrupted action predictions"):
+            plot_action_preds(corrupt_preds)
 
         (
             restored_logit_difference_tab,
@@ -339,6 +332,16 @@ def show_activation_patching(dt, logit_dir, original_cache):
         )
 
         with restored_logit_difference_tab:
+            clean_logit_dif = clean_x[0, -1] @ logit_dir
+
+            corrupted_logit_dif = corrupt_x[0, -1] @ logit_dir
+
+            st.write(
+                "Clean Logit Diff: ",
+                f"{clean_logit_dif.item():.3f}," + " Corrupted Logit Diff: ",
+                f"{corrupted_logit_dif.item():.3f}",
+            )
+
             if noise_or_denoise.lower() == "noise":
                 # we need to flip tokens because denoising works by taking the forward pass of the corrupted tokens
                 # and patching in the "correct output" from the clean tokens.
@@ -351,34 +354,6 @@ def show_activation_patching(dt, logit_dir, original_cache):
                 )
                 clean_cache, corrupt_cache = corrupt_cache, clean_cache
 
-            if st.checkbox("show corrupted action predictions"):
-                plot_action_preds(corrupt_preds)
-
-            # easy section.
-            (
-                dummy_tab,
-                layer_token_tab,
-                residual_stream_by_block_tab,
-                head_all_positions_tab,
-                head_all_positions_by_component_tab,
-                minimize_tab,
-            ) = st.tabs(
-                [
-                    "Help",
-                    "Layer-Token",
-                    "Layer-Token + Attn/MLP",
-                    "Head All Positions",
-                    "Layer-Token-Head",
-                    "Minimize",
-                ]
-            )
-
-            # advanced section
-            (
-                head_by_component_and_position_tab,
-                mlp_patching_tab,
-            ) = st.tabs(["Layer-Token-Head-Detail", "MLP - Neuron Detail"])
-
             metric_func = logit_diff_recovery_metric
             kwargs = {
                 "logit_dir": logit_dir,
@@ -386,94 +361,14 @@ def show_activation_patching(dt, logit_dir, original_cache):
                 "corrupted_logit_dif": corrupted_logit_dif,
             }
 
-            with dummy_tab:
-                st.write(
-                    """
-                    ### Activation Patching
-
-                    This analysis feature enables the user to perform activation patching experiments.
-
-                    You may patch different inputs including observations, actions and RTGs. 
-
-                    If "Noise" is selected, then the metric shown is the proportion of restored logit difference
-                    compared to the original logit difference (between the clean and corrupted logit differences).
-
-                    If "Denoise" is selected, then the metric shown is proportion of corrupted logit difference
-                    compared to the original logit difference (between the clean and corrupted logit differences)
-                    reversed. That is, how much of the corrupted logit difference is restored.
-
-                    Neither of these approaches can be trivially compared to the logit lens, but generally speaking
-                    noising will make more sense in the context of the current forward pass, since you are patching
-                    a corrupted node into what is otherwise mostly the same forward pass. Denoising, on the other hand,
-                    involves patching clean nodes into a corrupted forward pass.
-
-                    Complete "recovery" in denoising and complete "corruption" in noising will have values of 1 in the 
-                    logit difference metric used. This is evident when you look at patching the residual stream before the first
-                    attention layer of the token which you have edited.
-
-                    Note: These tabs automatically run everytime you change the input. 
-                    If it crashes your browser, let me know. It shouldn't on these models.*
-                    """
-                )
-
-            with layer_token_tab:
-                layer_token_patch_component(
-                    dt,
-                    corrupted_tokens,
-                    clean_cache,
-                    token_labels,
-                    metric_func,
-                    kwargs,
-                )
-
-            with residual_stream_by_block_tab:
-                layer_token_block_patch_component(
-                    dt,
-                    corrupted_tokens,
-                    clean_cache,
-                    token_labels,
-                    metric_func,
-                    kwargs,
-                )
-
-            with head_all_positions_tab:
-                head_all_positions_patch_component(
-                    dt,
-                    corrupted_tokens,
-                    clean_cache,
-                    metric_func,
-                    kwargs,
-                )
-
-            with head_all_positions_by_component_tab:
-                head_all_positions_by_input_patch_component(
-                    dt,
-                    corrupted_tokens,
-                    clean_cache,
-                    metric_func,
-                    kwargs,
-                )
-
-            with minimize_tab:
-                pass
-
-            with head_by_component_and_position_tab:
-                head_by_component_and_position_patch_component(
-                    dt,
-                    corrupted_tokens,
-                    clean_cache,
-                    metric_func,
-                    kwargs,
-                )
-
-            with mlp_patching_tab:
-                mlp_patch_single_neuron_component(
-                    dt,
-                    corrupted_tokens,
-                    clean_cache,
-                    metric_func,
-                    kwargs,
-                )
+            patching_scan_umbrella_component(
+                dt,
+                corrupted_tokens,
+                clean_cache,
+                token_labels,
+                metric_func,
+                kwargs,
+            )
 
         with neuron_activation_difference_tab:
             a, b = st.columns(2)
@@ -492,55 +387,33 @@ def show_activation_patching(dt, logit_dir, original_cache):
                 layer = int(neuron_text.split("L")[1].split("N")[0])
             with b:
                 pass
-                # total_neuron_activation = cache[f"blocks.{layer}.mlp.hook_pre"]
 
-            st.write(original_cache[f"blocks.{layer}.mlp.hook_pre"].shape)
             clean_neuron_activation = original_cache[
                 f"blocks.{layer}.mlp.hook_pre"
             ][0, -1, neuron]
             corrupted_neuron_activation = corrupt_cache[
                 f"blocks.{layer}.mlp.hook_pre"
             ][0, -1, neuron]
+            with b:
+                st.write(f"clean: {clean_neuron_activation:3f}")
+                st.write(f"Corrupted: {corrupted_neuron_activation:3f}")
 
-            st.write("clean: ", clean_neuron_activation)
-            st.write("corrupted: ", corrupted_neuron_activation)
-
-            # easy section.
-            (
-                dummy_tab,
-                layer_token_tab,
-                residual_stream_by_block_tab,
-                head_all_positions_tab,
-                head_all_positions_by_component_tab,
-                minimize_tab,
-            ) = st.tabs(
-                [
-                    "Help",
-                    "Layer-Token",
-                    "Layer-Token + Attn/MLP",
-                    "Head All Positions",
-                    "Layer-Token-Head",
-                    "Minimize",
-                ]
+            metric_func = neuron_activation_metric
+            kwargs = {
+                "layer": layer,
+                "neuron": neuron,
+                "clean_neuron_activation": clean_neuron_activation,
+                "corrupted_neuron_activation": corrupted_neuron_activation,
+            }
+            patching_scan_umbrella_component(
+                dt,
+                corrupted_tokens,
+                clean_cache,
+                token_labels,
+                metric_func,
+                kwargs,
+                apply_metric_to_cache=True,
             )
-
-            with layer_token_tab:
-                metric_func = neuron_activation_metric
-                kwargs = {
-                    "neuron": neuron,
-                    "layer": layer,
-                    "clean_neuron_activation": clean_neuron_activation,
-                    "corrupted_neuron_activation": corrupted_neuron_activation,
-                }
-                layer_token_patch_component(
-                    dt,
-                    corrupted_tokens,
-                    clean_cache,
-                    token_labels,
-                    metric_func,
-                    kwargs,
-                    apply_metric_to_cache=True,
-                )
 
 
 def get_corrupted_tokens_component(dt, key=""):
@@ -773,6 +646,136 @@ def get_updated_obs(
     return corrupt_obs
 
 
+def patching_scan_umbrella_component(
+    dt,
+    corrupted_tokens,
+    clean_cache,
+    token_labels,
+    metric_func,
+    kwargs,
+    apply_metric_to_cache=False,
+):
+    # easy section.
+    (
+        dummy_tab,
+        layer_token_tab,
+        residual_stream_by_block_tab,
+        head_all_positions_tab,
+        head_all_positions_by_component_tab,
+        minimize_tab,
+    ) = st.tabs(
+        [
+            "Help",
+            "Layer-Token",
+            "Layer-Token + Attn/MLP",
+            "Head All Positions",
+            "Layer-Token-Head",
+            "Minimize",
+        ]
+    )
+
+    # advanced section
+    (
+        head_by_component_and_position_tab,
+        mlp_patching_tab,
+    ) = st.tabs(["Layer-Token-Head-Detail", "MLP - Neuron Detail"])
+
+    with dummy_tab:
+        st.write(
+            """
+                ### Activation Patching
+
+                This analysis feature enables the user to perform activation patching experiments.
+
+                You may patch different inputs including observations, actions and RTGs. 
+
+                If "Noise" is selected, then the metric shown is the proportion of restored logit difference
+                compared to the original logit difference (between the clean and corrupted logit differences).
+
+                If "Denoise" is selected, then the metric shown is proportion of corrupted logit difference
+                compared to the original logit difference (between the clean and corrupted logit differences)
+                reversed. That is, how much of the corrupted logit difference is restored.
+
+                Neither of these approaches can be trivially compared to the logit lens, but generally speaking
+                noising will make more sense in the context of the current forward pass, since you are patching
+                a corrupted node into what is otherwise mostly the same forward pass. Denoising, on the other hand,
+                involves patching clean nodes into a corrupted forward pass.
+
+                Complete "recovery" in denoising and complete "corruption" in noising will have values of 1 in the 
+                logit difference metric used. This is evident when you look at patching the residual stream before the first
+                attention layer of the token which you have edited.
+
+                Note: These tabs automatically run everytime you change the input. 
+                If it crashes your browser, let me know. It shouldn't on these models.*
+                """
+        )
+
+    with layer_token_tab:
+        layer_token_patch_component(
+            dt,
+            corrupted_tokens,
+            clean_cache,
+            token_labels,
+            metric_func,
+            kwargs,
+            apply_metric_to_cache=apply_metric_to_cache,
+        )
+
+    with residual_stream_by_block_tab:
+        layer_token_block_patch_component(
+            dt,
+            corrupted_tokens,
+            clean_cache,
+            token_labels,
+            metric_func,
+            kwargs,
+            apply_metric_to_cache=apply_metric_to_cache,
+        )
+
+    with head_all_positions_tab:
+        head_all_positions_patch_component(
+            dt,
+            corrupted_tokens,
+            clean_cache,
+            metric_func,
+            kwargs,
+            apply_metric_to_cache=apply_metric_to_cache,
+        )
+
+    with head_all_positions_by_component_tab:
+        head_all_positions_by_input_patch_component(
+            dt,
+            corrupted_tokens,
+            clean_cache,
+            metric_func,
+            kwargs,
+            apply_metric_to_cache=apply_metric_to_cache,
+        )
+
+    with minimize_tab:
+        pass
+
+    with head_by_component_and_position_tab:
+        head_by_component_and_position_patch_component(
+            dt,
+            corrupted_tokens,
+            clean_cache,
+            metric_func,
+            kwargs,
+            apply_metric_to_cache=apply_metric_to_cache,
+        )
+
+    with mlp_patching_tab:
+        mlp_patch_single_neuron_component(
+            dt,
+            corrupted_tokens,
+            clean_cache,
+            metric_func,
+            kwargs,
+            apply_metric_to_cache=apply_metric_to_cache,
+        )
+
+
 def layer_token_patch_component(
     dt,
     corrupted_tokens,
@@ -938,7 +941,9 @@ def head_by_component_and_position_patch_component(
     patching_metric_kwargs={},
     apply_metric_to_cache=False,
 ):
-    if st.checkbox("Run this slightly expensive compute"):
+    if st.checkbox(
+        "Run this slightly expensive compute", key=str(apply_metric_to_cache)
+    ):
         patch = patching.get_act_patch_attn_head_by_pos_every(
             dt.transformer,
             corrupted_tokens=corrupted_tokens,
@@ -979,7 +984,7 @@ def mlp_patch_single_neuron_component(
     patching_metric_kwargs={},
     apply_metric_to_cache=False,
 ):
-    with st.form("MLP Patching"):
+    with st.form(key=str(apply_metric_to_cache)):
         b, c = st.columns(2)
         with b:
             layer = st.selectbox(
