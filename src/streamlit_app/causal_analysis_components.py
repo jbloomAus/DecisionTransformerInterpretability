@@ -392,17 +392,13 @@ def show_activation_patching(dt, logit_dir, original_cache):
             corrupted_neuron_activation = corrupt_cache[
                 f"blocks.{layer}.mlp.hook_pre"
             ][0, -1, neuron]
-            if noise_or_denoise.lower() == "noise":
-                # swap these to be accurate.
-                clean_neuron_activation, corrupted_neuron_activation = (
-                    corrupted_neuron_activation,
-                    clean_neuron_activation,
-                )
-
-            # if
             with b:
-                st.write(f"Clean: {clean_neuron_activation:3f}")
-                st.write(f"Corrupted: {corrupted_neuron_activation:3f}")
+                if noise_or_denoise.lower() == "noise":
+                    st.write(f"Clean: {corrupted_neuron_activation:3f}")
+                    st.write(f"Corrupted: {clean_neuron_activation:3f}")
+                else:
+                    st.write(f"Clean: {clean_neuron_activation:3f}")
+                    st.write(f"Corrupted: {corrupted_neuron_activation:3f}")
 
             metric_func = neuron_activation_metric
             kwargs = {

@@ -749,7 +749,11 @@ def get_act_patch_attn_head_by_pos_every(
 
     # Reshape pattern to be compatible with the rest of the results
     pattern_results = get_act_patch_attn_head_pattern_by_pos(
-        model, corrupted_tokens, clean_cache, metric
+        model,
+        corrupted_tokens,
+        clean_cache,
+        metric,
+        apply_metric_to_cache=apply_metric_to_cache,
     )
     act_patch_results.append(
         einops.rearrange(pattern_results, "batch head pos -> batch pos head")
