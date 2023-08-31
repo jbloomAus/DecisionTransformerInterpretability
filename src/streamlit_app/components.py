@@ -244,6 +244,44 @@ def plot_decomp_scan_corr(df, cluster=False, x="RTG"):
     return fig2
 
 
+def plot_attention_patterns_by_rtg(dt, rtgs=11):
+
+    x = [[] for _ in range(dt.transformer_config.n_layers)]
+    y = [[] for _ in range(dt.transformer_config.n_layers)]
+    frame = [[] for _ in range(dt.transformer_config.n_layers)]
+
+    max_len = 1 + dt.transformer_config.n_ctx // 3
+    context_vals = [[f"S{i+1}", f"A{i+1}", f"R{i+1}"] for i in range(max_len)]
+    context_vals = list(np.array(context_vals).flatten())[:-1] # Remove R9
+    initial_rtg = st.session_state.rtg
+    rtgs = max(2, rtgs)
+
+    for i in [i/(rtgs-1) for i in range(rtgs)]: # Shows even RTG steps from 0 to 1.
+
+        # Change RTG before running cache
+        cumulative_reward = st.session_state.reward.cumsum(dim=1)
+        rtg = i * torch.ones(
+            (1, cumulative_reward.shape[1], 1), dtype=torch.float
+        )
+        st.session_state.rtg = rtg - cumulative_reward
+
+        # Get hook pattern for appropriate layer.
+        _, _, cache, _ = get_action_preds_from_app_state(dt)
+
+        for layer in range(dt.transformer_config.n_layers):
+            attn = cache[f"blocks.{str(layer)}.attn.hook_pattern"]
+
+            # Add S9's attention pattern to fig.
+            data = attn[0, -1, -1, :].detach().cpu().numpy()
+            x[layer].extend(context_vals) # (S1, A1, R1, S2, ...)
+            y[layer].extend(data)
+            frame[layer].extend([i for _ in range(len(data))])
+
+        st.session_state.rtg = initial_rtg # Set RTG back to original value.
+    return x, y, frame
+
+
+
 # Searching data frames
 def search_dataframe(df: pd.DataFrame, query: str, top_n: int) -> pd.DataFrame:
     df_str = df.astype(str).apply(lambda x: " ".join(x), axis=1)
