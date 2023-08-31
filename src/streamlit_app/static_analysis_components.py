@@ -40,6 +40,25 @@ from .constants import (
 from .visualizations import plot_heatmap
 
 
+all_index_labels = [
+    SPARSE_CHANNEL_NAMES,
+    list(range(7)),
+    list(range(7)),
+]
+
+indices = list(itertools.product(*all_index_labels))
+multi_index = pd.MultiIndex.from_tuples(
+    indices,
+    names=("x", "y", "z"),  # use labels differently if we have index labels
+)
+
+embedding_labels = (
+    multi_index.to_series()
+    .apply(lambda x: "{0}, ({1},{2})".format(*x))
+    .tolist()
+)
+
+
 def show_param_statistics(dt):
     with st.expander("Show Parameter Statistics"):
         df = get_param_stats(dt)
@@ -1408,16 +1427,18 @@ def show_composition_scores(dt):
 
 
 def show_dim_reduction(dt):
-    with st.expander("Show Dimensionality Reduction Decomposition"):
-        st.write(
-            """
-            This analysis is heavily based on the [post](https://www.lesswrong.com/posts/mkbGjzxD8d8XqKHzA/the-singular-value-decompositions-of-transformer-weight#Our_SVD_projection_method) by Conjecture on this topic. 
-            """
-        )
+    with st.expander("Head Dimensionality Reduction Techniques (WIP)"):
+        # get head objects.
+        W_QK = get_qk_circuit(dt)
+        W_OV = get_ov_circuit(dt)
 
-        st.warning("I'm not convinced yet that my implementation is correct.")
-
-        svd_tab, eig_tab = st.tabs(["SVD", "Eig"])
+        help_tab, svd_tab, eig_tab = st.tabs(["Help", "SVD", "Eig"])
+        with help_tab:
+            st.write(
+                """
+                This analysis is heavily based on the [post](https://www.lesswrong.com/posts/mkbGjzxD8d8XqKHzA/the-singular-value-decompositions-of-transformer-weight#Our_SVD_projection_method) by Conjecture on this topic. 
+                """
+            )
 
         with eig_tab:
             st.write("Not implemented yet")
@@ -1426,51 +1447,156 @@ def show_dim_reduction(dt):
             qk_tab, ov_tab = st.tabs(["QK", "OV"])
 
             with qk_tab:
-                # stack the heads
-                W_Q = torch.stack(
-                    [block.attn.W_Q for block in dt.transformer.blocks]
-                )
-                W_K = torch.stack(
-                    [block.attn.W_K for block in dt.transformer.blocks]
-                )
-                # inner QK circuits.
-                W_QK = einsum(
-                    "layer head d_model1 d_head, layer head d_model2 d_head -> layer head d_model1 d_model2",
-                    W_Q,
-                    W_K,
-                )
+                st.warning("WIP")
 
                 U, S, V = torch.linalg.svd(W_QK)
-
                 layer, head, k, dims = layer_head_k_selector_ui(dt, key="qk")
-                emb1, emb2 = embedding_matrix_selection_ui(dt)
-
+                # emb1, emb2 = embedding_matrix_selection_ui(dt)
                 plot_svd_by_head_layer(dt, S)
 
             with ov_tab:
-                # stack the heads
-                W_V = torch.stack(
-                    [block.attn.W_V for block in dt.transformer.blocks]
-                )
-                W_0 = torch.stack(
-                    [block.attn.W_O for block in dt.transformer.blocks]
-                )
-
-                # inner OV circuits.
-                W_OV = torch.einsum("lhmd,lhdn->lhmn", W_V, W_0)
-
-                # Unembedding Values
-                W_U = dt.action_predictor.weight
-
                 U, S, V = torch.linalg.svd(W_OV)
 
-                a, b = st.columns(2)
-                with a:
-                    congruence_with = st.selectbox(
-                        "What should we project onto?", ["W_U", "MLP_in"]
+                (
+                    embed_tab,
+                    mlp_in_tab,
+                    w_u_tab,
+                ) = st.tabs(["Embedding", "MLP_in", "Unembedding"])
+
+                with embed_tab:
+                    st.write("Projection onto SVD of OV Circuit")
+
+                    W_E = dt.state_embedding.weight.detach().T
+                    U, S, V = torch.linalg.svd(W_OV)
+
+                    left_svd_vectors = st.slider(
+                        "Number of Singular Directions",
+                        min_value=3,
+                        max_value=dt.transformer_config.d_head,
+                        key="embed, left svd",
                     )
 
-                if congruence_with == "W_U":
+                    U_filtered = U[:, :, :left_svd_vectors, :]
+
+                    activations = einsum(
+                        "n_emb d_model, layer head d_model_in d_model -> layer head n_emb d_model_in",
+                        W_E,
+                        U_filtered,
+                    )
+
+                    activations = tensor_to_long_data_frame(
+                        activations,
+                        [
+                            "Layer",
+                            "Head",
+                            "Embedding",
+                            "Direction",
+                        ],
+                    )
+                    activations["Head"] = activations["Layer"].map(
+                        lambda x: f"L{x}"
+                    ) + activations["Head"].map(lambda x: f"H{x}")
+                    activations["Embedding"] = activations["Embedding"].map(
+                        lambda x: embedding_labels[x]
+                    )
+                    activations["Direction"] = activations[
+                        "Head"
+                    ] + activations["Direction"].map(lambda x: f"D{x}")
+
+                    fig = px.scatter(
+                        activations,
+                        x=activations.index,
+                        color="Head",
+                        y="Score",
+                        hover_data=["Embedding", "Direction"],
+                        labels={"Score": "Congruence"},
+                        render_mode="webgl",
+                    )
+
+                    st.plotly_chart(fig, use_container_width=True)
+
+                    # add search box
+                    create_search_component(
+                        activations[["Direction", "Embedding", "Score"]],
+                        "Search Bar (eg: L0H1)",
+                        key="embed, left svd",
+                    )
+
+                with mlp_in_tab:
+                    right_svd_vectors = st.slider(
+                        "Number of Singular Directions",
+                        min_value=3,
+                        max_value=dt.transformer_config.d_head,
+                    )
+
+                    MLP_in = torch.stack(
+                        [block.mlp.W_in for block in dt.transformer.blocks]
+                    )
+                    V_filtered = V[:, :, :right_svd_vectors, :]
+                    activations = einsum(
+                        "l1 h1 d_head_in d_head_ext, l2 d_head_ext d_mlp_out -> l2 l1 h1 d_head_in d_mlp_out",
+                        V_filtered,
+                        MLP_in,
+                    )
+
+                    activations = tensor_to_long_data_frame(
+                        activations,
+                        [
+                            "mlp_layer",
+                            "head_layer",
+                            "Head",
+                            "Direction",
+                            "Neuron",
+                        ],
+                    )
+
+                    # remove rows where mlp_layer < head_layer
+                    activations = activations[
+                        activations["mlp_layer"] >= activations["head_layer"]
+                    ]
+
+                    activations["Head"] = activations["head_layer"].map(
+                        lambda x: f"L{x}"
+                    ) + activations["Head"].map(lambda x: f"H{x}")
+
+                    activations["Neuron"] = activations["mlp_layer"].map(
+                        lambda x: f"L{x}"
+                    ) + activations["Neuron"].map(lambda x: f"N{x}")
+                    activations["Direction"] = activations[
+                        "Head"
+                    ] + activations["Direction"].map(lambda x: f"D{x}")
+
+                    # drop head head_layer, mlp_layer, head_out_dim
+                    activations.drop(
+                        ["head_layer", "mlp_layer"], axis=1, inplace=True
+                    )
+
+                    activations = activations.sort_values(
+                        ["Head", "Direction", "Neuron", "Score"]
+                    )
+                    activations.reset_index(drop=True, inplace=True)
+                    fig = px.scatter(
+                        activations,
+                        x=activations.index,
+                        color="Head",
+                        y="Score",
+                        hover_data=["Head", "Neuron", "Direction"],
+                        labels={"Score": "Congruence"},
+                        render_mode="webgl",
+                    )
+
+                    st.plotly_chart(fig, use_container_width=True)
+
+                    # add search box
+                    create_search_component(
+                        activations[["Neuron", "Direction", "Score"]],
+                        "Head Out Singular Value Projections onto MLP",
+                    )
+
+                with w_u_tab:
+                    # Unembedding Values
+                    W_U = dt.action_predictor.weight
+
                     # shape d_action, d_mod
                     activations = einsum("l h d1 d2, a d1 -> l h d2 a", V, W_U)
 
@@ -1519,83 +1645,30 @@ def show_dim_reduction(dt):
 
                     plot_svd_by_head_layer(dt, S)
 
-                if congruence_with == "MLP_in":
-                    right_svd_vectors = st.slider(
-                        "Number of Singular Directions",
-                        min_value=10,
-                        max_value=dt.transformer_config.d_head,
-                    )
 
-                    MLP_in = torch.stack(
-                        [block.mlp.W_in for block in dt.transformer.blocks]
-                    )
-                    V = V[:, :, :right_svd_vectors, :]
-                    activations = einsum(
-                        "l1 h1 d_head_in d_head_ext, l2 d_head_ext d_mlp_out -> l2 l1 h1 d_head_in d_mlp_out",
-                        V,
-                        MLP_in,
-                    )
+def get_ov_circuit(dt):
+    # stack the heads
+    W_V = torch.stack([block.attn.W_V for block in dt.transformer.blocks])
+    W_0 = torch.stack([block.attn.W_O for block in dt.transformer.blocks])
 
-                    activations = tensor_to_long_data_frame(
-                        activations,
-                        [
-                            "mlp_layer",
-                            "head_layer",
-                            "Head",
-                            "Singular Direction",
-                            "Neuron",
-                        ],
-                    )
+    # inner OV circuits.
+    W_OV = torch.einsum("lhmd,lhdn->lhmn", W_V, W_0)
 
-                    # remove rows where mlp_layer < head_layer
-                    activations = activations[
-                        activations["mlp_layer"] >= activations["head_layer"]
-                    ]
+    return W_OV
 
-                    activations["head_layer"] = activations["head_layer"].map(
-                        lambda x: f"L{x}"
-                    )
-                    activations["Head"] = activations["Head"].map(
-                        lambda x: f"H{x}"
-                    )
-                    activations["Head"] = (
-                        activations["head_layer"] + activations["Head"]
-                    )
 
-                    activations["mlp_layer"] = activations["mlp_layer"].map(
-                        lambda x: f"L{x}"
-                    )
-                    activations["Neuron"] = activations["Neuron"].map(
-                        lambda x: f"N{x}"
-                    )
-                    activations["Neuron"] = (
-                        activations["mlp_layer"] + activations["Neuron"]
-                    )
+def get_qk_circuit(dt):
+    # stack the heads
+    W_Q = torch.stack([block.attn.W_Q for block in dt.transformer.blocks])
+    W_K = torch.stack([block.attn.W_K for block in dt.transformer.blocks])
+    # inner QK circuits.
+    W_QK = einsum(
+        "layer head d_model1 d_head, layer head d_model2 d_head -> layer head d_model1 d_model2",
+        W_Q,
+        W_K,
+    )
 
-                    # drop head head_layer, mlp_layer, head_out_dim
-                    activations.drop(["head_layer", "mlp_layer"], axis=1)
-
-                    activations = activations.sort_values(
-                        ["Head", "Singular Direction", "Neuron", "Score"]
-                    )
-                    activations.reset_index(drop=True, inplace=True)
-                    fig = px.scatter(
-                        activations,
-                        x=activations.index,
-                        color="Head",
-                        y="Score",
-                        hover_data=["Head", "Neuron", "Singular Direction"],
-                        labels={"Score": "Congruence"},
-                        render_mode="webgl",
-                    )
-
-                    st.plotly_chart(fig, use_container_width=True)
-
-                    # add search box
-                    create_search_component(
-                        activations,
-                        "Head Out Singular Value Projections onto MLP",
-                    )
+    return W_QK
 
 
 def plot_svd_by_head_layer(dt, S):

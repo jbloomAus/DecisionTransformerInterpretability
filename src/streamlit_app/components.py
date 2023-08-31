@@ -245,20 +245,42 @@ def plot_decomp_scan_corr(df, cluster=False, x="RTG"):
 
 
 # Searching data frames
-def search_dataframe(df: pd.DataFrame, query: str, top_n: int) -> pd.DataFrame:
+def search_dataframe(df: pd.DataFrame, query: str) -> pd.DataFrame:
     df_str = df.astype(str).apply(lambda x: " ".join(x), axis=1)
     mask = df_str.str.contains(query, case=False)
-    return df[mask].head(top_n)
+    return df[mask]
 
 
 def create_search_component(df: pd.DataFrame, title: str, key=""):
-    # Define your search bar
-    query = st.text_input("Search " + title, key=key + "search")
+    a, b, c = st.columns(3)
+
+    with a:
+        # Define your search bar
+        query = st.text_input(title, key=key + "search")
+    with b:
+        sort_by = st.selectbox(
+            "Sort by",
+            options=df.columns,
+            index=len(df.columns) - 1,
+            key=key + "sort_by",
+        )
+    with c:
+        ascending = st.checkbox("Ascending", key=key + "ascending")
+        show_top_10_only = st.checkbox("Show top 10 only", key=key + "top_10")
 
     if query:
         # Call your function and print output
-        search_result = search_dataframe(df, query, 50)
+        search_result = search_dataframe(df, query)
         if not search_result.empty:
-            st.dataframe(search_result)
+            if show_top_10_only:
+                st.write(
+                    search_result.sort_values(
+                        sort_by, ascending=ascending
+                    ).head(10)
+                )
+            else:
+                st.write(
+                    search_result.sort_values(sort_by, ascending=ascending)
+                )
         else:
             st.write("No results found.")
