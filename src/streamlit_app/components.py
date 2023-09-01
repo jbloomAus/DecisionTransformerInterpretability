@@ -1,3 +1,4 @@
+import itertools
 import torch
 import pandas as pd
 import numpy as np
@@ -246,38 +247,45 @@ def plot_decomp_scan_corr(df, cluster=False, x="RTG"):
 
 def plot_attention_patterns_by_rtg(dt, rtgs=11):
 
-    x = [[] for _ in range(dt.transformer_config.n_layers)]
-    y = [[] for _ in range(dt.transformer_config.n_layers)]
-    frame = [[] for _ in range(dt.transformer_config.n_layers)]
+    x = [[[] for _ in range(dt.transformer_config.n_heads)] for _ in range(dt.transformer_config.n_layers)]
+    y = [[[] for _ in range(dt.transformer_config.n_heads)] for _ in range(dt.transformer_config.n_layers)]
+    frame = [[[] for _ in range(dt.transformer_config.n_heads)] for _ in range(dt.transformer_config.n_layers)]
 
-    max_len = 1 + dt.transformer_config.n_ctx // 3
-    context_vals = [[f"S{i+1}", f"A{i+1}", f"R{i+1}"] for i in range(max_len)]
-    context_vals = list(np.array(context_vals).flatten())[:-1] # Remove R9
     initial_rtg = st.session_state.rtg
     rtgs = max(2, rtgs)
+    rtg_caches = []
 
-    for i in [i/(rtgs-1) for i in range(rtgs)]: # Shows even RTG steps from 0 to 1.
-
-        # Change RTG before running cache
+    for r in [i/(rtgs-1) for i in range(rtgs)]:
+        _, _, cache, _ = get_action_preds_from_app_state(dt)
         cumulative_reward = st.session_state.reward.cumsum(dim=1)
-        rtg = i * torch.ones(
+        rtg = r * torch.ones(
             (1, cumulative_reward.shape[1], 1), dtype=torch.float
         )
         st.session_state.rtg = rtg - cumulative_reward
+        cache = torch.stack([cache[f"blocks.{str(layer)}.attn.hook_pattern"] for layer in range(dt.transformer_config.n_layers)])
+        rtg_caches.append(cache.squeeze(1)) # (layers, heads, n_ctx, n_ctx)
 
-        # Get hook pattern for appropriate layer.
-        _, _, cache, _ = get_action_preds_from_app_state(dt)
+    rtg_cache = torch.stack(rtg_caches) # (rtgs, layers, heads, n_ctx, n_ctx)
+    st.write(rtg_cache.shape)
 
-        for layer in range(dt.transformer_config.n_layers):
-            attn = cache[f"blocks.{str(layer)}.attn.hook_pattern"]
+    st.session_state.rtg = initial_rtg # Set RTG back to original value.
 
-            # Add S9's attention pattern to fig.
-            data = attn[0, -1, -1, :].detach().cpu().numpy()
-            x[layer].extend(context_vals) # (S1, A1, R1, S2, ...)
-            y[layer].extend(data)
-            frame[layer].extend([i for _ in range(len(data))])
+    # layers = range(dt.transformer_config.n_layers)
+    # heads = range(dt.transformer_config.n_heads)
+    # rtgs = range(rtg_cache.shape[0])
+    # rows = range(rtg_cache.shape[-1])
+    # for (layer, head, rtg, row) in itertools.product(layers, heads, rtgs, rows):
 
-        st.session_state.rtg = initial_rtg # Set RTG back to original value.
+    for layer in range(dt.transformer_config.n_layers):
+        for head in range(dt.transformer_config.n_heads):
+            for rtg in range(rtg_cache.shape[0]): # rtgs.
+                for row in range(rtg_cache.shape[-1]): # Number of rows (Also, a 4-nested for loop? Come on, there must be a better way!)
+                    data = rtg_cache[rtg, layer, head, row, :].detach().cpu().numpy() # Values of a given row.
+                    st.write(layer, head)
+                    x[layer][head].extend([i for i in range(rtg_cache.shape[-1])]) # 0-(num_rows-1)
+                    y[layer][head].extend(data)
+                    frame[layer][head].extend([row for _ in range(len(data))]) # Frame is based on row number.
+
     return x, y, frame
 
 
