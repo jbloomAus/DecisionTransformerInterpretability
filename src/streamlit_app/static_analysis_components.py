@@ -1071,11 +1071,11 @@ def show_congruence(_dt):
 
         elif selected_writer == "Neurons":
             (
-                mlp_out_tab,
+                unembedding_tab,
                 mlp_in_tab,
             ) = st.tabs(["MLP to Unembeddings", "MLP to MLP"])
 
-            with mlp_out_tab:
+            with unembedding_tab:
                 MLP_out_congruence = einsum(
                     "layer d_mlp d_model, d_action d_model -> layer d_mlp d_action",
                     MLP_out,
@@ -1826,28 +1826,86 @@ def svd_out_to_unembedding_component(_dt, V_OV, W_U):
     # remove layer column
     activations.drop(["Layer"], axis=1, inplace=True)
 
-    fig = px.scatter(
-        activations,
-        x=activations.index,
-        y="Score",
-        color="Head",
-        # facet_col="layer",
-        # opacity=0.5,
-        hover_data=["Head", "Direction", "Action"],
-        labels={"value": "Congruence"},
-    )
+    if st.checkbox("Project into Action space"):
+        # pivot the table
+        activations = activations.pivot_table(
+            index=["Head", "Direction"],
+            columns=["Action"],
+            values=["Score"],
+        )
+        activations.columns = activations.columns.droplevel(0)
+        activations.reset_index(inplace=True)
+        a, b = st.columns(2)
+        with a:
+            action_1 = st.selectbox(
+                "Select Action 1",
+                options=IDX_TO_ACTION.values(),
+                index=1,
+            )
+        with b:
+            action_2 = st.selectbox(
+                "Select Action 2",
+                options=IDX_TO_ACTION.values(),
+                index=0,
+            )
 
-    # update x axis to hide the tick labels, and remove the label
-    fig.update_xaxes(showticklabels=False, title=None)
+        fig = px.scatter(
+            activations,
+            x=action_1,
+            y=action_2,
+            color="Head",
+            hover_data=["Head", "Direction", action_1, action_2],
+            labels={"Score": "Congruence"},
+        )
+        # centre plot on 0,0
+        y_abs_max = (
+            max(
+                abs(activations[action_1].min()),
+                abs(activations[action_1].max()),
+            )
+            + 0.1
+        )
+        x_abs_max = (
+            max(
+                abs(activations[action_2].min()),
+                abs(activations[action_2].max()),
+            )
+            + 0.1
+        )
+        fig.update_xaxes(range=[-x_abs_max, x_abs_max])
+        fig.update_yaxes(range=[-y_abs_max, y_abs_max])
 
-    st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True)
 
-    # add search box
-    create_search_component(
-        activations[["Head", "Direction", "Action", "Score"]],
-        title="Head Out Singular Value Projections onto Unembedding",
-        key="Head Out Singular Value Projections onto Unembedding",
-    )
+        # add search box
+        create_search_component(
+            activations,
+            title="Head Out Singular Value Projections onto Unembedding",
+            key="Head Out Singular Value Projections onto Unembedding",
+        )
+    else:
+        fig = px.scatter(
+            activations,
+            x=activations.index,
+            y="Score",
+            color="Head",
+            # facet_col="layer",
+            # opacity=0.5,
+            hover_data=["Head", "Direction", "Action"],
+            labels={"value": "Congruence"},
+        )
+
+        # update x axis to hide the tick labels, and remove the label
+        fig.update_xaxes(showticklabels=False, title=None)
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        # add search box
+        create_search_component(
+            activations[["Head", "Direction", "Action", "Score"]],
+            title="Head Out Singular Value Projections onto Unembedding",
+            key="Head Out Singular Value Projections onto Unembedding",
+        )
 
     # quick experiment, let's see what happens if we plot two actions against each other.
 
