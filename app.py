@@ -49,6 +49,7 @@ from src.streamlit_app.content import (
     analysis_help,
     help_page,
     reference_tables,
+    maths_help,
 )
 
 from src.streamlit_app.visualizations import action_string_to_id
@@ -248,3 +249,4 @@ model_info()
 help_page()
 analysis_help()
 reference_tables()
+maths_help()
