@@ -1224,38 +1224,35 @@ def show_congruence(dt):
         #     dim=-1, keepdim=True
         # )
 
-        MLP_out_congruence = MLP_out @ action_predictor.T
-        MLP_out_congruence = MLP_out_congruence.permute(0, 2, 1)
-        MLP_out_congruence = MLP_out_congruence.detach()
+        MLP_out_congruence = einsum(
+            "layer d_mlp d_model, d_action d_model -> layer d_mlp d_action",
+            MLP_out,
+            action_predictor,
+        ).detach()
 
-        MLP_out_congruence_2d = MLP_out_congruence.reshape(-1)
-        df = pd.DataFrame(MLP_out_congruence_2d.numpy(), columns=["value"])
-        layers, actions, dims = MLP_out_congruence.shape
-        indices = pd.MultiIndex.from_tuples(
-            [
-                (i, k, l)
-                for i in range(layers)
-                for k in range(actions)
-                for l in range(dims)
-            ],
-            names=["layer", "action", "dimension"],
+        congruence_df = tensor_to_long_data_frame(
+            MLP_out_congruence, ["Layer", "Neuron", "Action"]
         )
-        df.index = indices
-        df.reset_index(inplace=True)
-        # ensure action is interpreted as a categorical variable
-        df["action"] = df["action"].map(IDX_TO_ACTION)
+
+        congruence_df["Layer"] = congruence_df["Layer"].map(lambda x: f"L{x}")
+        congruence_df["Neuron"] = congruence_df["Layer"] + congruence_df[
+            "Neuron"
+        ].map(lambda x: f"N{x}")
+
+        # sort by Layer and Action
+        congruence_df = congruence_df.sort_values(
+            by=["Layer", "Action"]
+        ).reset_index(drop=True)
+        congruence_df["Action"] = congruence_df["Action"].map(IDX_TO_ACTION)
 
         fig = px.scatter(
-            df,
-            x=df.index,
-            y="value",
-            color="action",
-            # facet_col="layer",
-            # opacity=0.5,
-            hover_data=["layer", "action", "dimension", "value"],
-            labels={"value": "Congruence"},
+            congruence_df,
+            x=congruence_df.index,
+            y="Score",
+            color="Action",
+            hover_data=["Layer", "Action", "Neuron", "Score"],
+            labels={"Score": "Congruence"},
         )
-
         # update x axis to hide the tick labels, and remove the label
         fig.update_xaxes(showticklabels=False, title=None)
 
@@ -1638,7 +1635,7 @@ def svd_out_to_svd_in_component(
     )
 
 
-def svd_out_to_mlpin_component(dt, V_OV):
+def svd_out_to_mlp_in_component(dt, V_OV):
     right_svd_vectors = st.slider(
         "Number of Singular Directions",
         min_value=3,
@@ -1705,6 +1702,84 @@ def svd_out_to_mlpin_component(dt, V_OV):
     create_search_component(
         activations[["Neuron", "Direction", "Score"]],
         "Head Out Singular Value Projections onto MLP",
+    )
+
+
+def mlp_out_to_svd_in_component(
+    dt, reading_svd_projection, key="mlp + composition type"
+):
+    U = reading_svd_projection
+    left_svd_vectors = st.slider(
+        "Number of Singular Directions (in)",
+        min_value=3,
+        max_value=dt.transformer_config.d_head,
+        key="svd out to mlp in" + key,
+    )
+    U_filtered = U[:, :, :left_svd_vectors, :]
+
+    MLP_out = torch.stack([block.mlp.W_out for block in dt.transformer.blocks])
+
+    # MLP_out = MLP_out / MLP_out.norm(dim=(-2,-1), keepdim=True)
+
+    activations = einsum(
+        "mlp_layer d_model Neuron, head_layer Head d_head_in d_res -> mlp_layer head_layer Neuron Head d_head_in",
+        MLP_out,
+        U_filtered,
+    )
+
+    activations = tensor_to_long_data_frame(
+        activations,
+        [
+            "mlp_layer",
+            "head_layer",
+            "Neuron",
+            "Head",
+            "Direction",
+        ],
+    )
+
+    # since this is neuron out to head in, we want to remove any rows where
+    # mlp_layer < head_layer (neurons can only write to heads in later layers)
+    activations = activations[
+        activations["mlp_layer"] < activations["head_layer"]
+    ]
+
+    activations["Head"] = activations["head_layer"].map(
+        lambda x: f"L{x}"
+    ) + activations["Head"].map(lambda x: f"H{x}")
+
+    activations["Neuron"] = activations["mlp_layer"].map(
+        lambda x: f"L{x}"
+    ) + activations["Neuron"].map(lambda x: f"N{x}")
+    activations["Direction"] = activations["Head"] + activations[
+        "Direction"
+    ].map(lambda x: f"D{x}")
+
+    # drop head head_layer, mlp_layer, head_out_dim
+    activations.drop(["head_layer", "mlp_layer"], axis=1, inplace=True)
+
+    activations = activations.sort_values(
+        ["Head", "Direction", "Neuron", "Score"]
+    )
+
+    activations.reset_index(drop=True, inplace=True)
+    fig = px.scatter(
+        activations,
+        x=activations.index,
+        color="Head",
+        y="Score",
+        hover_data=["Head", "Neuron", "Direction"],
+        labels={"Score": "Congruence"},
+        render_mode="webgl",
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    # add search box
+    create_search_component(
+        activations[["Neuron", "Direction", "Score"]],
+        "Head Out Singular Value Projections onto MLP",
+        key="search: mlp out to svd in " + key,
     )
 
 
@@ -1867,16 +1942,15 @@ def show_svd_virtual_weights(dt):
                 ["Keys", "Queries", "Values"]
             )
             with keys_tab:
-                embedding_projection_onto_svd_component(dt, U_QK, key="keys")
+                embedding_projection_onto_svd_component(dt, V_QK, key="keys")
 
             with queries_tab:
                 embedding_projection_onto_svd_component(
-                    dt, V_QK, key="queries"
+                    dt, U_QK, key="queries"
                 )
 
             with values_tab:
-                U, S, V = torch.linalg.svd(W_OV)
-                embedding_projection_onto_svd_component(dt, U_OV, key="values")
+                embedding_projection_onto_svd_component(dt, V_OV, key="values")
 
         if selected_writer == "Head Output":
             (
@@ -1913,10 +1987,26 @@ def show_svd_virtual_weights(dt):
                 )
 
             with mlp_in_tab:
-                svd_out_to_mlpin_component(dt, V_OV)
+                svd_out_to_mlp_in_component(dt, V_OV)
 
             with unembedding_tab:
                 svd_out_to_unembedding_component(dt, V_OV, W_U)
+
+        if selected_writer == "Neuron Output":
+            key_tab, query_tab, value_tab = st.tabs(
+                ["Keys", "Queries", "Values"]
+            )
+
+            with key_tab:
+                V_QK_tmp = V_QK.permute(0, 1, 3, 2)
+                mlp_out_to_svd_in_component(dt, V_QK_tmp, key="key")
+
+            with query_tab:
+                mlp_out_to_svd_in_component(dt, U_QK, key="query")
+
+            with value_tab:
+                V_OV_tmp = V_OV.permute(0, 1, 3, 2)
+                mlp_out_to_svd_in_component(dt, V_OV_tmp, key="value")
 
 
 def get_ov_circuit(dt):
