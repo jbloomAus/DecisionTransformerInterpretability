@@ -1426,224 +1426,497 @@ def show_composition_scores(dt):
         )
 
 
-def show_dim_reduction(dt):
-    with st.expander("Head Dimensionality Reduction Techniques (WIP)"):
+def embedding_projection_onto_svd_component(
+    dt, reading_svd_projection, key="embeddings"
+):
+    U = reading_svd_projection
+    W_E_state = dt.state_embedding.weight.detach().T
+    W_E_action = dt.action_embedding[0].weight.detach().T
+    W_E_reward = dt.reward_embedding[0].weight.detach().T
+
+    state_tab, rtg_tab = st.tabs(["State", "RTG"])  # , "Action"]
+
+    with state_tab:
+        left_svd_vectors = st.slider(
+            "Number of Singular Directions",
+            min_value=3,
+            max_value=dt.transformer_config.d_head,
+            key=f"state out, head svd, {key}",
+        )
+
+        U_filtered = U[:, :, :left_svd_vectors, :]
+
+        activations = einsum(
+            "n_emb d_model, layer head d_head_in d_model -> layer head n_emb d_head_in",
+            W_E_state,
+            U_filtered,
+        )
+
+        activations = tensor_to_long_data_frame(
+            activations,
+            [
+                "Layer",
+                "Head",
+                "Embedding",
+                "Direction",
+            ],
+        )
+        activations["Head"] = activations["Layer"].map(
+            lambda x: f"L{x}"
+        ) + activations["Head"].map(lambda x: f"H{x}")
+        activations["Embedding"] = activations["Embedding"].map(
+            lambda x: embedding_labels[x]
+        )
+        activations["Direction"] = activations["Head"] + activations[
+            "Direction"
+        ].map(lambda x: f"D{x}")
+        fig = px.scatter(
+            activations.sort_values(by="Direction"),
+            x=activations.index,
+            color="Head",
+            y="Score",
+            hover_data=["Embedding", "Direction"],
+            labels={"Score": "Congruence"},
+            render_mode="webgl",
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        # add search box
+        create_search_component(
+            activations[["Direction", "Embedding", "Score"]],
+            "Search Bar (eg: L0H1)",
+            key=f"search bar  state in, svd {key}",
+        )
+
+    with rtg_tab:
+        W_E = dt.reward_embedding[0].weight.T
+        # W_pos_e = dt.transformer.W_pos
+        # W_E = W_E.T + W_pos_e
+
+        left_svd_vectors = st.slider(
+            "Number of Singular Directions",
+            min_value=3,
+            max_value=dt.transformer_config.d_head,
+            key=f"embed rtg, left svd {key}",
+        )
+
+        U_filtered = U[:, :, :left_svd_vectors, :]
+        activations = einsum(
+            "n_emb d_model, layer head d_head_in d_model -> layer head n_emb d_head_in",
+            W_E,
+            U_filtered,
+        )
+
+        activations = tensor_to_long_data_frame(
+            activations,
+            [
+                "Layer",
+                "Head",
+                "Embedding",
+                "Direction",
+            ],
+        )
+        activations["Head"] = activations["Layer"].map(
+            lambda x: f"L{x}"
+        ) + activations["Head"].map(lambda x: f"H{x}")
+        activations["Embedding"] = activations["Embedding"].map(
+            lambda x: embedding_labels[x]
+        )
+
+        activations["Direction"] = activations["Head"] + activations[
+            "Direction"
+        ].map(lambda x: f"D{x}")
+
+        fig = px.scatter(
+            activations,
+            x=activations.index,
+            color="Head",
+            y="Score",
+            hover_data=["Direction"],
+            labels={"Score": "Congruence"},
+            render_mode="webgl",
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+
+def svd_out_to_svd_in_component(
+    dt, writing_svd_projection, reading_svd_projection, key="composition type"
+):
+    U = reading_svd_projection
+    V = writing_svd_projection
+
+    a, b = st.columns(2)
+    with a:
+        left_svd_vectors = st.slider(
+            "Number of Singular Directions (out)",
+            min_value=3,
+            max_value=dt.transformer_config.d_head,
+            key="head head left" + key,
+        )
+    with b:
+        right_svd_vectors = st.slider(
+            "Number of Singular Directions (in)",
+            min_value=3,
+            max_value=dt.transformer_config.d_head,
+            key="head head right" + key,
+        )
+
+    U_filtered = U[:, :, :left_svd_vectors, :]
+    V_filtered = V[:, :, :right_svd_vectors, :]
+
+    activations = einsum(
+        "l1 h1 d_head_out d_res, l2 h2 d_head_in d_res  -> l2 l1 h1 h2 d_head_out d_head_in",
+        V_filtered,
+        U_filtered,
+    )
+
+    activations = tensor_to_long_data_frame(
+        activations,
+        [
+            "head_layer_in",
+            "head_layer_out",
+            "head_in",
+            "head_out",
+            "Direction In",
+            "Direction Out",
+        ],
+    )
+
+    # remove rows where head in layer is <= head out layer
+    activations = activations[
+        activations["head_layer_in"] > activations["head_layer_out"]
+    ].reset_index(drop=True)
+
+    activations["Head Out"] = activations["head_layer_out"].map(
+        lambda x: f"L{x}"
+    ) + activations["head_out"].map(lambda x: f"H{x}")
+
+    activations["Head In"] = activations["head_layer_in"].map(
+        lambda x: f"L{x}"
+    ) + activations["head_in"].map(lambda x: f"H{x}")
+
+    activations["Direction Out"] = activations["Head Out"] + activations[
+        "Direction Out"
+    ].map(lambda x: f"D{x}")
+
+    activations["Direction In"] = activations["Head In"] + activations[
+        "Direction In"
+    ].map(lambda x: f"D{x}")
+
+    activations = activations[
+        ["Head Out", "Direction Out", "Head In", "Direction In", "Score"]
+    ]
+
+    group_by = st.selectbox(
+        "Group By", options=["Head Out", "Head In"], key="head in out" + key
+    )
+    if group_by == "Head Out":
+        # reorder rows
+        activations = activations.sort_values(
+            by=["Head Out", "Head In", "Direction Out", "Direction In"]
+        ).reset_index(drop=True)
+
+    fig = px.scatter(
+        activations,
+        x=activations.index,
+        color=group_by,
+        y="Score",
+        hover_data=["Head Out", "Direction Out", "Head In", "Direction In"],
+        labels={"Score": "Congruence"},
+        render_mode="webgl",
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    # add search box
+    create_search_component(
+        activations,
+        "Head Out Singular Value Projections onto Head In",
+        key="svd, head head" + key,
+    )
+
+
+def svd_out_to_mlpin_component(dt, V_OV):
+    right_svd_vectors = st.slider(
+        "Number of Singular Directions",
+        min_value=3,
+        max_value=dt.transformer_config.d_head,
+        key="svd out to mlp in",
+    )
+
+    MLP_in = torch.stack([block.mlp.W_in for block in dt.transformer.blocks])
+    V_filtered = V_OV[:, :, :right_svd_vectors, :]
+    activations = einsum(
+        "l1 h1 d_head_out d_head_ext, l2 d_head_ext d_mlp_in -> l2 l1 h1 d_head_out d_mlp_in",
+        V_filtered,
+        MLP_in,
+    )
+
+    activations = tensor_to_long_data_frame(
+        activations,
+        [
+            "mlp_layer",
+            "head_layer",
+            "Head",
+            "Direction",
+            "Neuron",
+        ],
+    )
+
+    # remove rows where mlp_layer < head_layer
+    activations = activations[
+        activations["mlp_layer"] >= activations["head_layer"]
+    ]
+
+    activations["Head"] = activations["head_layer"].map(
+        lambda x: f"L{x}"
+    ) + activations["Head"].map(lambda x: f"H{x}")
+
+    activations["Neuron"] = activations["mlp_layer"].map(
+        lambda x: f"L{x}"
+    ) + activations["Neuron"].map(lambda x: f"N{x}")
+    activations["Direction"] = activations["Head"] + activations[
+        "Direction"
+    ].map(lambda x: f"D{x}")
+
+    # drop head head_layer, mlp_layer, head_out_dim
+    activations.drop(["head_layer", "mlp_layer"], axis=1, inplace=True)
+
+    activations = activations.sort_values(
+        ["Head", "Direction", "Neuron", "Score"]
+    )
+
+    activations.reset_index(drop=True, inplace=True)
+    fig = px.scatter(
+        activations,
+        x=activations.index,
+        color="Head",
+        y="Score",
+        hover_data=["Head", "Neuron", "Direction"],
+        labels={"Score": "Congruence"},
+        render_mode="webgl",
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    # add search box
+    create_search_component(
+        activations[["Neuron", "Direction", "Score"]],
+        "Head Out Singular Value Projections onto MLP",
+    )
+
+
+def svd_out_to_unembedding_component_top_k_variation(dt, V_OV, W_U):
+    """
+    This version of this analysis is based on "The SVD Decomposition is Highly Interpretable"
+    Conjecture LessWrong post.
+
+    It doesn't work as nicely when your output dimension is much smaller or not super orthogonal.
+    A better alternative here is to use a strip plot, or a scatter plot to
+    show all the scores.
+
+    """
+    # Unembedding Values
+    # shape d_action, d_mod
+    activations = einsum("l h d1 d2, a d1 -> l h d2 a", V_OV, W_U)
+
+    # torch.Size([3, 8, 7, 256])
+    # Now we want to select a head/layer and plot the imshow of the activations
+    # only for the first n activations
+    layer, head, k, dims = layer_head_k_selector_ui(dt, key="ov")
+
+    head_v_projections = activations[layer, head, :dims, :].detach()
+
+    st.write(head_v_projections.shape)
+    # get top k activations per column
+    topk_values, topk_indices = torch.topk(head_v_projections, k, dim=1)
+
+    # put indices into a heat map then replace with the IDX_TO_ACTION string
+    df = pd.DataFrame(topk_indices.T.detach().numpy())
+    fig = px.imshow(
+        topk_values.T,
+        color_continuous_midpoint=0,
+        color_continuous_scale="RdBu",
+        labels={
+            "y": "Output Token Rank",
+            "x": "Singular vector",
+        },
+    )
+
+    fig = fig.update_traces(
+        text=df.applymap(lambda x: IDX_TO_ACTION[x]).values,
+        texttemplate="%{text}",
+        hovertemplate=None,
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def svd_out_to_unembedding_component(dt, V_OV, W_U):
+    right_svd_vectors = st.slider(
+        "Number of Singular Directions",
+        min_value=3,
+        max_value=dt.transformer_config.d_head,
+        key="svd out to unembedding",
+    )
+
+    V_OV = V_OV[:, :, :right_svd_vectors, :]
+
+    activations = einsum(
+        "l1 h1 d_head_out d_head_ext, a d_head_ext -> l1 h1 d_head_out a",
+        V_OV,
+        W_U,
+    )
+
+    # convert to long df
+    activations = tensor_to_long_data_frame(
+        activations,
+        [
+            "Layer",
+            "Head",
+            "Direction",
+            "Action",
+        ],
+    )
+    activations["Head"] = activations["Layer"].map(
+        lambda x: f"L{x}"
+    ) + activations["Head"].map(lambda x: f"H{x}")
+
+    activations["Direction"] = activations["Head"] + activations[
+        "Direction"
+    ].map(lambda x: f"D{x}")
+
+    activations["Action"] = activations["Action"].map(
+        lambda x: IDX_TO_ACTION[x]
+    )
+
+    # remove layer column
+    activations.drop(["Layer"], axis=1, inplace=True)
+
+    fig = px.scatter(
+        activations,
+        x=activations.index,
+        y="Score",
+        color="Head",
+        # facet_col="layer",
+        # opacity=0.5,
+        hover_data=["Head", "Direction", "Action"],
+        labels={"value": "Congruence"},
+    )
+
+    # update x axis to hide the tick labels, and remove the label
+    fig.update_xaxes(showticklabels=False, title=None)
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    # add search box
+    create_search_component(
+        activations[["Head", "Direction", "Action", "Score"]],
+        title="Head Out Singular Value Projections onto Unembedding",
+        key="Head Out Singular Value Projections onto Unembedding",
+    )
+
+    # quick experiment, let's see what happens if we plot two actions against each other.
+
+    # # make the df wide
+    # activations_wide = activations.pivot_table(
+    #     index = ["Head", "Direction"],
+    #     columns = ["Action"],
+    #     values = ["Score"]
+    # )
+    # # remove the multi index
+    # activations_wide.columns = activations_wide.columns.droplevel(0)
+    # activations_wide.reset_index(inplace=True)
+    # st.write(activations_wide.head())
+
+    # fig = px.scatter(
+    #     activations_wide,
+    #     x="left",
+    #     y="right",
+    #     color="Head",
+    #     # facet_col="layer",
+    #     # opacity=0.5,
+    #     hover_data=["Head", "Direction"],
+    #     labels={"value": "Congruence"},
+    # )
+
+    # st.plotly_chart(fig, use_container_width=True)
+
+
+def show_svd_virtual_weights(dt):
+    with st.expander("Analysis of Virtual Weights"):
         # get head objects.
         W_QK = get_qk_circuit(dt)
+        U_QK, S_QK, V_QK = torch.linalg.svd(W_QK)
         W_OV = get_ov_circuit(dt)
+        U_OV, S_OV, V_OV = torch.linalg.svd(W_OV)
+        W_U = dt.action_predictor.weight
 
-        help_tab, svd_tab, eig_tab = st.tabs(["Help", "SVD", "Eig"])
-        with help_tab:
-            st.write(
-                """
-                This analysis is heavily based on the [post](https://www.lesswrong.com/posts/mkbGjzxD8d8XqKHzA/the-singular-value-decompositions-of-transformer-weight#Our_SVD_projection_method) by Conjecture on this topic. 
-                """
+        a, b = st.columns(2)
+        with a:
+            selected_writer = st.selectbox(
+                "Select Writer",
+                options=["Embeddings", "Head Output", "Neuron Output"],
+            )
+        with b:
+            st.write("Select the component writing to the residual stream.")
+
+        if selected_writer == "Embeddings":
+            keys_tab, queries_tab, values_tab = st.tabs(
+                ["Keys", "Queries", "Values"]
+            )
+            with keys_tab:
+                embedding_projection_onto_svd_component(dt, U_QK, key="keys")
+
+            with queries_tab:
+                embedding_projection_onto_svd_component(
+                    dt, V_QK, key="queries"
+                )
+
+            with values_tab:
+                U, S, V = torch.linalg.svd(W_OV)
+                embedding_projection_onto_svd_component(dt, U_OV, key="values")
+
+        if selected_writer == "Head Output":
+            (
+                key_composition_tab,
+                query_composition_tab,
+                value_composition_tab,
+                mlp_in_tab,
+                unembedding_tab,
+            ) = st.tabs(
+                [
+                    "Keys",
+                    "Queries",
+                    "Values",
+                    "Neuron Activation",
+                    "Unembedding",
+                ]
             )
 
-        with eig_tab:
-            st.write("Not implemented yet")
+            with key_composition_tab:
+                V_Q_tmp = V_QK.permute(0, 1, 3, 2)
+                svd_out_to_svd_in_component(
+                    dt, U_OV, V_Q_tmp, key="key composition"
+                )
 
-        with svd_tab:
-            qk_tab, ov_tab = st.tabs(["QK", "OV"])
+            with query_composition_tab:
+                svd_out_to_svd_in_component(
+                    dt, U_OV, U_QK, key="query composition"
+                )
 
-            with qk_tab:
-                st.warning("WIP")
+            with value_composition_tab:
+                V_OV_tmp = V_OV.permute(0, 1, 3, 2)
+                svd_out_to_svd_in_component(
+                    dt, U_OV, V_OV_tmp, key="value composition"
+                )
 
-                U, S, V = torch.linalg.svd(W_QK)
-                layer, head, k, dims = layer_head_k_selector_ui(dt, key="qk")
-                # emb1, emb2 = embedding_matrix_selection_ui(dt)
-                plot_svd_by_head_layer(dt, S)
+            with mlp_in_tab:
+                svd_out_to_mlpin_component(dt, V_OV)
 
-            with ov_tab:
-                U, S, V = torch.linalg.svd(W_OV)
-
-                (
-                    embed_tab,
-                    mlp_in_tab,
-                    w_u_tab,
-                ) = st.tabs(["Embedding", "MLP_in", "Unembedding"])
-
-                with embed_tab:
-                    st.write("Projection onto SVD of OV Circuit")
-
-                    W_E = dt.state_embedding.weight.detach().T
-                    U, S, V = torch.linalg.svd(W_OV)
-
-                    left_svd_vectors = st.slider(
-                        "Number of Singular Directions",
-                        min_value=3,
-                        max_value=dt.transformer_config.d_head,
-                        key="embed, left svd",
-                    )
-
-                    U_filtered = U[:, :, :left_svd_vectors, :]
-
-                    activations = einsum(
-                        "n_emb d_model, layer head d_model_in d_model -> layer head n_emb d_model_in",
-                        W_E,
-                        U_filtered,
-                    )
-
-                    activations = tensor_to_long_data_frame(
-                        activations,
-                        [
-                            "Layer",
-                            "Head",
-                            "Embedding",
-                            "Direction",
-                        ],
-                    )
-                    activations["Head"] = activations["Layer"].map(
-                        lambda x: f"L{x}"
-                    ) + activations["Head"].map(lambda x: f"H{x}")
-                    activations["Embedding"] = activations["Embedding"].map(
-                        lambda x: embedding_labels[x]
-                    )
-                    activations["Direction"] = activations[
-                        "Head"
-                    ] + activations["Direction"].map(lambda x: f"D{x}")
-
-                    fig = px.scatter(
-                        activations,
-                        x=activations.index,
-                        color="Head",
-                        y="Score",
-                        hover_data=["Embedding", "Direction"],
-                        labels={"Score": "Congruence"},
-                        render_mode="webgl",
-                    )
-
-                    st.plotly_chart(fig, use_container_width=True)
-
-                    # add search box
-                    create_search_component(
-                        activations[["Direction", "Embedding", "Score"]],
-                        "Search Bar (eg: L0H1)",
-                        key="embed, left svd",
-                    )
-
-                with mlp_in_tab:
-                    right_svd_vectors = st.slider(
-                        "Number of Singular Directions",
-                        min_value=3,
-                        max_value=dt.transformer_config.d_head,
-                    )
-
-                    MLP_in = torch.stack(
-                        [block.mlp.W_in for block in dt.transformer.blocks]
-                    )
-                    V_filtered = V[:, :, :right_svd_vectors, :]
-                    activations = einsum(
-                        "l1 h1 d_head_in d_head_ext, l2 d_head_ext d_mlp_out -> l2 l1 h1 d_head_in d_mlp_out",
-                        V_filtered,
-                        MLP_in,
-                    )
-
-                    activations = tensor_to_long_data_frame(
-                        activations,
-                        [
-                            "mlp_layer",
-                            "head_layer",
-                            "Head",
-                            "Direction",
-                            "Neuron",
-                        ],
-                    )
-
-                    # remove rows where mlp_layer < head_layer
-                    activations = activations[
-                        activations["mlp_layer"] >= activations["head_layer"]
-                    ]
-
-                    activations["Head"] = activations["head_layer"].map(
-                        lambda x: f"L{x}"
-                    ) + activations["Head"].map(lambda x: f"H{x}")
-
-                    activations["Neuron"] = activations["mlp_layer"].map(
-                        lambda x: f"L{x}"
-                    ) + activations["Neuron"].map(lambda x: f"N{x}")
-                    activations["Direction"] = activations[
-                        "Head"
-                    ] + activations["Direction"].map(lambda x: f"D{x}")
-
-                    # drop head head_layer, mlp_layer, head_out_dim
-                    activations.drop(
-                        ["head_layer", "mlp_layer"], axis=1, inplace=True
-                    )
-
-                    activations = activations.sort_values(
-                        ["Head", "Direction", "Neuron", "Score"]
-                    )
-                    activations.reset_index(drop=True, inplace=True)
-                    fig = px.scatter(
-                        activations,
-                        x=activations.index,
-                        color="Head",
-                        y="Score",
-                        hover_data=["Head", "Neuron", "Direction"],
-                        labels={"Score": "Congruence"},
-                        render_mode="webgl",
-                    )
-
-                    st.plotly_chart(fig, use_container_width=True)
-
-                    # add search box
-                    create_search_component(
-                        activations[["Neuron", "Direction", "Score"]],
-                        "Head Out Singular Value Projections onto MLP",
-                    )
-
-                with w_u_tab:
-                    # Unembedding Values
-                    W_U = dt.action_predictor.weight
-
-                    # shape d_action, d_mod
-                    activations = einsum("l h d1 d2, a d1 -> l h d2 a", V, W_U)
-
-                    # torch.Size([3, 8, 7, 256])
-                    # Now we want to select a head/layer and plot the imshow of the activations
-                    # only for the first n activations
-                    layer, head, k, dims = layer_head_k_selector_ui(
-                        dt, key="ov"
-                    )
-
-                    head_v_projections = activations[
-                        layer, head, :dims, :
-                    ].detach()
-                    # st.write(head_v_projections.shape)
-                    # get top k activations per column
-                    topk_values, topk_indices = torch.topk(
-                        head_v_projections, k, dim=1
-                    )
-
-                    # put indices into a heat map then replace with the IDX_TO_ACTION string
-                    df = pd.DataFrame(topk_indices.T.detach().numpy())
-                    fig = px.imshow(
-                        topk_values.T,
-                        color_continuous_midpoint=0,
-                        color_continuous_scale="RdBu",
-                        labels={
-                            "y": "Output Token Rank",
-                            "x": "Singular vector",
-                        },
-                    )
-
-                    fig = fig.update_traces(
-                        text=df.applymap(lambda x: IDX_TO_ACTION[x]).values,
-                        texttemplate="%{text}",
-                        hovertemplate=None,
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-
-                    # fig = px.imshow(
-                    #     head_v_projections.T,
-                    #     labels={'y': 'Action', 'x': 'Activation'})
-                    # st.plotly_chart(fig, use_container_width=True)
-
-                    # now I want to plot the SVD decay for each S.
-                    # Let's create labels for each S.
-
-                    plot_svd_by_head_layer(dt, S)
+            with unembedding_tab:
+                svd_out_to_unembedding_component(dt, V_OV, W_U)
 
 
 def get_ov_circuit(dt):

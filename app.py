@@ -34,7 +34,7 @@ from src.streamlit_app.static_analysis_components import (
     show_qk_circuit,
     show_congruence,
     show_param_statistics,
-    show_dim_reduction,
+    show_svd_virtual_weights,
     show_composition_scores,
 )
 
@@ -152,7 +152,7 @@ with st.sidebar:
             "OV Circuit",
             "QK Circuit",
             "Parameter Distributions",
-            "Dimensionality Reduction",
+            "SVD of Virtual Weights",
             "Composition Scores",
         ],
     )
@@ -219,8 +219,8 @@ if "Parameter Distributions" in analyses:
     show_param_statistics(dt)
 if "Neuron Directions" in analyses:
     show_neuron_directions(dt)
-if "Dimensionality Reduction" in analyses:
-    show_dim_reduction(dt)
+if "SVD of Virtual Weights" in analyses:
+    show_svd_virtual_weights(dt)
 if "Composition Scores" in analyses:
     show_composition_scores(dt)
 if "Congruence" in analyses:
