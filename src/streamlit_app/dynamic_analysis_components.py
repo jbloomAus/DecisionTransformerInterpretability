@@ -3,6 +3,7 @@ import re
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 import torch
 import torch as t
@@ -952,17 +953,18 @@ def show_rtg_scan(dt, logit_dir):
             layertabs = st.tabs(
                 [f"L{i}" for i in range(dt.transformer_config.n_layers)]
             )
-            headtabs = st.tabs([f"H{i}" for i in range(dt.transformer_config.n_heads)])
 
-            xs, ys, frames = plot_attention_patterns_by_rtg(dt)
+            xs, ys, frames, rtgs = plot_attention_patterns_by_rtg(dt)
 
             for l, layer in enumerate(layertabs):
-                for h, head in enumerate(headtabs):
-                    with layertabs[l] and headtabs[h]:
-                        df = pd.DataFrame({'x': xs[l][h], 'y': ys[l][h], 'frame': frames[l][h]}) 
-                        fig = px.line(df, x='x', y='y', animation_frame='frame', line_shape='linear')
-                        fig.update_layout(yaxis=dict(range=[0, 1]))
-                        st.plotly_chart(fig, use_container_width=True)
+                    with layertabs[l]:
+                        headtabs = st.tabs([f"H{i}" for i in range(dt.transformer_config.n_heads)])
+                        for h, head in enumerate(headtabs):
+                            with headtabs[h]:
+                                df = pd.DataFrame({'x': xs[l][h], 'y': ys[l][h], 'frame': frames[l][h], 'rtg': rtgs[l][h]}) 
+                                fig = px.line(df, x='x', y='y', animation_frame='frame', color='rtg', hover_data=['x', 'y'])
+                                fig.update_layout(yaxis=dict(range=[0, 1]))
+                                st.plotly_chart(fig, use_container_width=True)
 
 
 # Observation View

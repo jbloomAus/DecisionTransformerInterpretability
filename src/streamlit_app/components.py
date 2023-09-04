@@ -250,11 +250,16 @@ def plot_attention_patterns_by_rtg(dt, rtgs=11):
     x = [[[] for _ in range(dt.transformer_config.n_heads)] for _ in range(dt.transformer_config.n_layers)]
     y = [[[] for _ in range(dt.transformer_config.n_heads)] for _ in range(dt.transformer_config.n_layers)]
     frame = [[[] for _ in range(dt.transformer_config.n_heads)] for _ in range(dt.transformer_config.n_layers)]
+    rtg_labels = [[[] for _ in range(dt.transformer_config.n_heads)] for _ in range(dt.transformer_config.n_layers)]
 
     initial_rtg = st.session_state.rtg
-    rtgs = max(2, rtgs)
+    rtgs = max(2, rtgs) # RTG should be a minimum of 2, for [0, 1].
     rtg_caches = []
 
+    # [S1, A1, R1, S2, A2, R2, ... Sn, An, Rn]. Rn won't be used.
+    step_vals = list(np.array([[f"S{i+1}", f"A{i+1}", f"R{i+1}"] for i in range(1 + dt.transformer_config.n_ctx // 3)]).flatten())
+    
+    # Run the model for each RTG value and collect its cache.
     for r in [i/(rtgs-1) for i in range(rtgs)]:
         _, _, cache, _ = get_action_preds_from_app_state(dt)
         cumulative_reward = st.session_state.reward.cumsum(dim=1)
@@ -266,28 +271,22 @@ def plot_attention_patterns_by_rtg(dt, rtgs=11):
         rtg_caches.append(cache.squeeze(1)) # (layers, heads, n_ctx, n_ctx)
 
     rtg_cache = torch.stack(rtg_caches) # (rtgs, layers, heads, n_ctx, n_ctx)
-    st.write(rtg_cache.shape)
 
     st.session_state.rtg = initial_rtg # Set RTG back to original value.
 
-    # layers = range(dt.transformer_config.n_layers)
-    # heads = range(dt.transformer_config.n_heads)
-    # rtgs = range(rtg_cache.shape[0])
-    # rows = range(rtg_cache.shape[-1])
-    # for (layer, head, rtg, row) in itertools.product(layers, heads, rtgs, rows):
+    layers = range(dt.transformer_config.n_layers)
+    heads = range(dt.transformer_config.n_heads)
+    rtg_nums = range(rtg_cache.shape[0])
+    rows = range(rtg_cache.shape[-1])
 
-    for layer in range(dt.transformer_config.n_layers):
-        for head in range(dt.transformer_config.n_heads):
-            for rtg in range(rtg_cache.shape[0]): # rtgs.
-                for row in range(rtg_cache.shape[-1]): # Number of rows (Also, a 4-nested for loop? Come on, there must be a better way!)
-                    data = rtg_cache[rtg, layer, head, row, :].detach().cpu().numpy() # Values of a given row.
-                    st.write(layer, head)
-                    x[layer][head].extend([i for i in range(rtg_cache.shape[-1])]) # 0-(num_rows-1)
-                    y[layer][head].extend(data)
-                    frame[layer][head].extend([row for _ in range(len(data))]) # Frame is based on row number.
+    for (layer, head, rtg, row) in itertools.product(layers, heads, rtg_nums, rows):
+        data = rtg_cache[rtg, layer, head, row, :].detach().cpu().numpy() # Values of a given row.
+        x[layer][head].extend([step_vals[i] for i in range(len(data))]) # 0-(num_rows-1)
+        y[layer][head].extend(data)
+        frame[layer][head].extend([step_vals[row] for _ in range(len(data))]) # Frame is based on row number.
+        rtg_labels[layer][head].extend(round(rtg/(rtgs-1), 3) for _ in range(len(data))) # Get RTG vals to 3 digits only.
 
-    return x, y, frame
-
+    return x, y, frame, rtg_labels
 
 
 # Searching data frames
