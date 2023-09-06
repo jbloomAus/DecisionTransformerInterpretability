@@ -59,6 +59,7 @@ embedding_labels = (
 )
 
 
+@st.cache
 def show_param_statistics(dt):
     with st.expander("Show Parameter Statistics"):
         df = get_param_stats(dt)
@@ -69,6 +70,7 @@ def show_param_statistics(dt):
         st.plotly_chart(fig_norm, use_container_width=True)
 
 
+@st.cache
 def show_embeddings(dt):
     with st.expander("Embeddings"):
         all_index_labels = [
@@ -339,6 +341,7 @@ def show_embeddings(dt):
                 st.plotly_chart(fig, use_container_width=True)
 
 
+@st.cache
 def show_neuron_directions(dt):
     MLP_in = torch.stack(
         [block.mlp.W_in for block in dt.transformer.blocks]
@@ -373,6 +376,7 @@ def show_neuron_directions(dt):
     return
 
 
+@st.cache
 def show_qk_circuit(dt):
     with st.expander("show QK circuit"):
         st.write(
@@ -717,6 +721,7 @@ def show_qk_circuit(dt):
                         )
 
 
+@st.cache
 def show_ov_circuit(dt):
     with st.expander("Show OV Circuit"):
         st.subheader("OV circuits")
@@ -949,6 +954,7 @@ def show_ov_circuit(dt):
                             )
 
 
+@st.cache
 def show_congruence(dt):
     with st.expander("Show Congruence"):
         (
@@ -1259,6 +1265,7 @@ def show_congruence(dt):
         st.plotly_chart(fig, use_container_width=True)
 
 
+@st.cache
 def show_composition_scores(dt):
     with st.expander("Show Composition Scores"):
         st.markdown(
@@ -1423,6 +1430,7 @@ def show_composition_scores(dt):
         )
 
 
+@st.cache
 def embedding_projection_onto_svd_component(
     dt, reading_svd_projection, key="embeddings"
 ):
@@ -1538,6 +1546,7 @@ def embedding_projection_onto_svd_component(
         st.plotly_chart(fig, use_container_width=True)
 
 
+@st.cache
 def svd_out_to_svd_in_component(
     dt, writing_svd_projection, reading_svd_projection, key="composition type"
 ):
@@ -1635,6 +1644,7 @@ def svd_out_to_svd_in_component(
     )
 
 
+@st.cache
 def svd_out_to_mlp_in_component(dt, V_OV):
     right_svd_vectors = st.slider(
         "Number of Singular Directions",
@@ -1705,6 +1715,7 @@ def svd_out_to_mlp_in_component(dt, V_OV):
     )
 
 
+@st.cache
 def mlp_out_to_svd_in_component(
     dt, reading_svd_projection, key="mlp + composition type"
 ):
@@ -1783,6 +1794,7 @@ def mlp_out_to_svd_in_component(
     )
 
 
+@st.cache
 def svd_out_to_unembedding_component_top_k_variation(dt, V_OV, W_U):
     """
     This version of this analysis is based on "The SVD Decomposition is Highly Interpretable"
@@ -1828,6 +1840,7 @@ def svd_out_to_unembedding_component_top_k_variation(dt, V_OV, W_U):
     st.plotly_chart(fig, use_container_width=True)
 
 
+@st.cache
 def svd_out_to_unembedding_component(dt, V_OV, W_U):
     right_svd_vectors = st.slider(
         "Number of Singular Directions",
@@ -1919,7 +1932,8 @@ def svd_out_to_unembedding_component(dt, V_OV, W_U):
     # st.plotly_chart(fig, use_container_width=True)
 
 
-def show_svd_virtual_weights(dt):
+@st.cache
+def show_dimensionality_reduction(dt):
     with st.expander("Analysis of Virtual Weights"):
         # get head objects.
         W_QK = get_qk_circuit(dt)
@@ -2009,6 +2023,7 @@ def show_svd_virtual_weights(dt):
                 mlp_out_to_svd_in_component(dt, V_OV_tmp, key="value")
 
 
+@st.cache
 def get_ov_circuit(dt):
     # stack the heads
     W_V = torch.stack([block.attn.W_V for block in dt.transformer.blocks])
@@ -2020,6 +2035,7 @@ def get_ov_circuit(dt):
     return W_OV
 
 
+@st.cache
 def get_qk_circuit(dt):
     # stack the heads
     W_Q = torch.stack([block.attn.W_Q for block in dt.transformer.blocks])
@@ -2034,6 +2050,7 @@ def get_qk_circuit(dt):
     return W_QK
 
 
+@st.cache
 def plot_svd_by_head_layer(dt, S):
     d_head = dt.transformer_config.d_head
     labels = [
@@ -2055,6 +2072,7 @@ def plot_svd_by_head_layer(dt, S):
     st.plotly_chart(fig, use_container_width=True)
 
 
+@st.cache
 def layer_head_k_selector_ui(dt, key=""):
     n_actions = dt.action_predictor.weight.shape[0]
     layer_selection, head_selection, k_selection, d_selection = st.columns(4)
@@ -2100,6 +2118,7 @@ def layer_head_k_selector_ui(dt, key=""):
     return layer, head, k, dims
 
 
+@st.cache
 def embedding_matrix_selection_ui(dt):
     embedding_matrix_selection = st.columns(2)
     with embedding_matrix_selection[0]:
@@ -2136,6 +2155,7 @@ def embedding_matrix_selection_ui(dt):
     return embedding_matrix_1, embedding_matrix_2
 
 
+@st.cache
 def layer_head_channel_selector(dt, key=""):
     n_heads = dt.transformer_config.n_heads
     height, width, channels = dt.environment_config.observation_space[
