@@ -50,7 +50,7 @@ numpy==1.23.5
 moviepy==1.0.3
 
 # streamlit
-streamlit==1.16.0
+streamlit==1.18.0
 altair==4.2.2
 
 # typeguard

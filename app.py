@@ -195,10 +195,10 @@ if "Neuron Directions" in analyses:
     show_neuron_directions(dt)
 if "Congruence" in analyses:
     show_congruence(dt)
-if "QK Circuit" in analyses:
-    show_qk_circuit(dt)
 if "OV Circuit" in analyses:
     show_ov_circuit(dt)
+if "QK Circuit" in analyses:
+    show_qk_circuit(dt)
 if "Parameter Distributions" in analyses:
     show_param_statistics(dt)
 if "Show Dimensionality Reduction" in analyses:
