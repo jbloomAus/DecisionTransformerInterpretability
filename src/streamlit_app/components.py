@@ -249,7 +249,7 @@ def plot_attention_patterns_by_rtg(dt, rtgs=11):
 
     x = [[[] for _ in range(dt.transformer_config.n_heads)] for _ in range(dt.transformer_config.n_layers)]
     y = [[[] for _ in range(dt.transformer_config.n_heads)] for _ in range(dt.transformer_config.n_layers)]
-    frame = [[[] for _ in range(dt.transformer_config.n_heads)] for _ in range(dt.transformer_config.n_layers)]
+    lines = [[[] for _ in range(dt.transformer_config.n_heads)] for _ in range(dt.transformer_config.n_layers)]
     rtg_labels = [[[] for _ in range(dt.transformer_config.n_heads)] for _ in range(dt.transformer_config.n_layers)]
 
     initial_rtg = st.session_state.rtg
@@ -283,10 +283,10 @@ def plot_attention_patterns_by_rtg(dt, rtgs=11):
         data = rtg_cache[rtg, layer, head, row, :].detach().cpu().numpy() # Values of a given row.
         x[layer][head].extend([step_vals[i] for i in range(len(data))]) # 0-(num_rows-1)
         y[layer][head].extend(data)
-        frame[layer][head].extend([step_vals[row] for _ in range(len(data))]) # Frame is based on row number.
+        lines[layer][head].extend([step_vals[row] for _ in range(len(data))]) # Frame is based on row number.
         rtg_labels[layer][head].extend(round(rtg/(rtgs-1), 3) for _ in range(len(data))) # Get RTG vals to 3 digits only.
 
-    return x, y, frame, rtg_labels
+    return x, y, lines, rtg_labels
 
 
 # Searching data frames

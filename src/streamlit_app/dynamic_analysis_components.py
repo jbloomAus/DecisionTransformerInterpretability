@@ -950,19 +950,20 @@ def show_rtg_scan(dt, logit_dir):
             # fig2 = plot_decomp_scan_corr(df, cluster)
 
         with attention_patterns_by_rtg_tab:
+
             layertabs = st.tabs(
                 [f"L{i}" for i in range(dt.transformer_config.n_layers)]
             )
 
-            xs, ys, frames, rtgs = plot_attention_patterns_by_rtg(dt)
+            xs, ys, rows, rtgs = plot_attention_patterns_by_rtg(dt)
 
             for l, layer in enumerate(layertabs):
                     with layertabs[l]:
                         headtabs = st.tabs([f"H{i}" for i in range(dt.transformer_config.n_heads)])
                         for h, head in enumerate(headtabs):
                             with headtabs[h]:
-                                df = pd.DataFrame({'x': xs[l][h], 'y': ys[l][h], 'frame': frames[l][h], 'rtg': rtgs[l][h]}) 
-                                fig = px.line(df, x='x', y='y', animation_frame='frame', color='rtg', hover_data=['x', 'y'])
+                                df = pd.DataFrame({'x': xs[l][h], 'y': ys[l][h], 'row': rows[l][h], 'rtg': rtgs[l][h]}) 
+                                fig = px.line(df, x='x', y='y', animation_frame='rtg', color='row', hover_data=['x', 'y'])
                                 fig.update_layout(yaxis=dict(range=[0, 1]))
                                 st.plotly_chart(fig, use_container_width=True)
 
