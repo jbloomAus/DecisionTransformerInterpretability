@@ -966,18 +966,35 @@ def show_rtg_scan(dt, logit_dir):
             step_vals = list(
                 np.array(
                     [
-                        [f"S{i+1}", f"A{i+1}", f"R{i+1}"]
+                        [f"R{i+1}", f"S{i+1}", f"A{i+1}"]
                         for i in range(1 + dt.transformer_config.n_ctx // 3)
                     ]
                 ).flatten()
-            )
+            )[:-1]
 
-            attention_patterns = torch.stack(
-                [
-                    cache[f"blocks.{layer}.attn.hook_pattern"]
-                    for layer in range(dt.transformer_config.n_layers)
-                ]
-            )
+            a, b = st.columns(2)
+            with a:
+                score_or_pattern = st.radio(
+                    "Show Attention Score or Pattern",
+                    ["Scores", "Pattern"],
+                    index=0,
+                    key="score_or_pattern",
+                )
+
+            if score_or_pattern == "Scores":
+                attention_patterns = torch.stack(
+                    [
+                        cache[f"blocks.{layer}.attn.hook_attn_scores"]
+                        for layer in range(dt.transformer_config.n_layers)
+                    ]
+                )
+            else:
+                attention_patterns = torch.stack(
+                    [
+                        cache[f"blocks.{layer}.attn.hook_pattern"]
+                        for layer in range(dt.transformer_config.n_layers)
+                    ]
+                )
 
             df = tensor_to_long_data_frame(
                 attention_patterns,
@@ -998,12 +1015,13 @@ def show_rtg_scan(dt, logit_dir):
             # drop the Query Column
             df = df.drop(columns=["Query"])
 
-            selected_heads = st.multiselect(
-                "Select Heads",
-                options=df["Head"].unique().tolist(),
-                default=["L0H0"],
-                key="head_select",
-            )
+            with b:
+                selected_heads = st.multiselect(
+                    "Select Heads",
+                    options=df["Head"].unique().tolist(),
+                    default=["L0H0"],
+                    key="head_select",
+                )
 
             head_tabs = st.tabs(
                 selected_heads,
