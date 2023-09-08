@@ -257,10 +257,21 @@ def show_embeddings(dt):
                     pca_df["Channel"] = pca_df["State"].apply(
                         lambda x: x.split(",")[0]
                     )
+                
+                st.text('Inputs are of the form: "channel,(x,y)" and separated by | characters.')
+                user_input = st.text_input("Enter one or more states:", "")
+
+                # Ugly, ugly workaround for Streamlit not accepting spaces. So, channel,(x,y) becomes channel, (x,y) as desired.
+                states_to_filter = [state.replace('(', ' (') for state in user_input.split('|')]
+
+                if user_input:  # If the user has entered something
+                    pca_df_filtered = pca_df[pca_df['State'].isin(states_to_filter)]
+                else:
+                    pca_df_filtered = pca_df
 
                 # Create the plot
                 fig = px.scatter(
-                    pca_df,
+                    pca_df_filtered,
                     x="PC1",
                     y="PC2",
                     title="PCA on Embeddings",
