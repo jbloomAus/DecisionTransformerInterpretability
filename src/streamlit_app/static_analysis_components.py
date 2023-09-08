@@ -36,6 +36,7 @@ from .constants import (
     SPARSE_CHANNEL_NAMES,
     POSITION_NAMES,
     ACTION_NAMES,
+    STATE_EMBEDDING_LABELS,
 )
 from .visualizations import plot_heatmap
 
@@ -70,7 +71,7 @@ def show_param_statistics(_dt):
         st.plotly_chart(fig_norm, use_container_width=True)
 
 
-@st.cache_data(experimental_allow_widgets=True)
+# @st.cache_data(experimental_allow_widgets=True)
 def show_embeddings(_dt):
     with st.expander("Embeddings"):
         all_index_labels = [
@@ -98,43 +99,57 @@ def show_embeddings(_dt):
             )
 
             with state_tab:
-                a, b = st.columns(2)
+                a, b, c, d = st.columns(4)
                 with a:
                     aggregation_group = st.selectbox(
                         "Select aggregation method",
                         ["None", "Channels", "Positions"],
                     )
-                with b:
-                    if aggregation_group == "Channels":
+
+                with c:
+                    cluster = st.checkbox("Cluster")
+
+                embedding = _dt.state_embedding.weight.detach().T
+
+                with d:
+                    centre_embeddings = st.checkbox("Centre Embeddings")
+                    if centre_embeddings:
+                        embedding = embedding - embedding.mean(dim=0)
+
+                df = get_cosine_sim_df(embedding)
+                df.columns = STATE_EMBEDDING_LABELS
+                df.index = STATE_EMBEDDING_LABELS
+
+                if aggregation_group == "None":
+                    with b:
+                        selected_embeddings = st.multiselect(
+                            "Select Embeddings",
+                            options=STATE_EMBEDDING_LABELS,
+                            key="embedding",
+                            default=[],
+                        )
+                        if selected_embeddings:
+                            df = df.loc[
+                                selected_embeddings, selected_embeddings
+                            ]
+
+                    fig = plot_heatmap(
+                        df,
+                        cluster,
+                        show_labels=df.shape[0] < 20,
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+
+                if aggregation_group == "Channels":
+                    with b:
                         selected_positions = st.multiselect(
-                            "Filter Positions",
+                            "Select Positions",
                             options=list(range(len(POSITION_NAMES))),
                             format_func=lambda x: POSITION_NAMES[x],
                             key="position embedding",
                             default=[5, 6],
                         )
 
-                    if aggregation_group == "Positions":
-                        selected_channels = st.multiselect(
-                            "Filter Positions",
-                            options=list(range(len(SPARSE_CHANNEL_NAMES))),
-                            format_func=lambda x: SPARSE_CHANNEL_NAMES[x],
-                            key="position embedding",
-                            default=[5, 6],
-                        )
-
-                embedding = _dt.state_embedding.weight.detach().T
-
-                if aggregation_group == "None":
-                    fig = tensor_cosine_similarity_heatmap(
-                        embedding,
-                        labels=("x", "y", "z"),
-                        index_labels=all_index_labels,
-                    )
-
-                    st.plotly_chart(fig, use_container_width=True)
-
-                if aggregation_group == "Channels":
                     image_shape = _dt.environment_config.observation_space[
                         "image"
                     ].shape
@@ -187,6 +202,15 @@ def show_embeddings(_dt):
                     st.plotly_chart(fig, use_container_width=True)
 
                 if aggregation_group == "Positions":
+                    with b:
+                        selected_channels = st.multiselect(
+                            "Select Positions",
+                            options=list(range(len(SPARSE_CHANNEL_NAMES))),
+                            format_func=lambda x: SPARSE_CHANNEL_NAMES[x],
+                            key="position embedding",
+                            default=[5, 6],
+                        )
+
                     image_shape = _dt.environment_config.observation_space[
                         "image"
                     ].shape
@@ -213,19 +237,41 @@ def show_embeddings(_dt):
                     st.plotly_chart(fig, use_container_width=True)
 
             with in_action_tab:
-                embedding = _dt.action_embedding[0].weight.detach()
+                embedding = _dt.action_embedding[0].weight.detach()[:-1, :]
+
+                df = get_cosine_sim_df(embedding)
+                df.columns = ACTION_NAMES
+                df.index = ACTION_NAMES
+
                 fig = tensor_cosine_similarity_heatmap(
                     embedding, labels=ACTION_NAMES
                 )
 
+                if st.checkbox("Centre Embeddings", key="centre in action"):
+                    embedding = embedding - embedding.mean(dim=0)
+
+                fig = plot_heatmap(
+                    df,
+                    cluster=True,
+                    show_labels=True,
+                )
                 st.plotly_chart(fig, use_container_width=True)
 
             with out_action_tab:
                 embedding = _dt.action_predictor.weight.detach()
-                fig = tensor_cosine_similarity_heatmap(
-                    embedding, labels=ACTION_NAMES
-                )
 
+                df = get_cosine_sim_df(embedding)
+                df.columns = ACTION_NAMES
+                df.index = ACTION_NAMES
+
+                if st.checkbox("Centre Embeddings", key="centre out action"):
+                    embedding = embedding - embedding.mean(dim=0)
+
+                fig = plot_heatmap(
+                    df,
+                    cluster=True,
+                    show_labels=True,
+                )
                 st.plotly_chart(fig, use_container_width=True)
 
         with pca_tab:

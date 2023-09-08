@@ -233,6 +233,7 @@ def plot_heatmap(
     color_continuous_midpoint=0,
     color_continuous_scale="RdBu",
     cluster=True,
+    show_labels=True,
 ):
     # Convert dataframe to numpy array
     data_array = df.to_numpy()
@@ -270,6 +271,17 @@ def plot_heatmap(
         tickmode="linear",
         automargin=True,
     )
+
+    # hide the colorbar
+    fig.update_layout(coloraxis_showscale=False)
+
+    if not show_labels:
+        fig.update_xaxes(
+            visible=False,
+        )
+        fig.update_yaxes(
+            visible=False,
+        )
 
     return fig
 

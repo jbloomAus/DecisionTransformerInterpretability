@@ -1,4 +1,6 @@
 from minigrid.core.constants import IDX_TO_COLOR, IDX_TO_OBJECT, STATE_TO_IDX
+import itertools
+import pandas as pd
 
 IDX_TO_STATE = {v: k for k, v in STATE_TO_IDX.items()}
 IDX_TO_ACTION = {
@@ -30,3 +32,22 @@ SPARSE_CHANNEL_NAMES = [twenty_idx_format_func(i) for i in range(20)]
 POSITION_NAMES = [f"{i},{j}" for i in list(range(7)) for j in list(range(7))]
 
 ACTION_NAMES = list(IDX_TO_ACTION.values())
+
+
+all_index_labels = [
+    SPARSE_CHANNEL_NAMES,
+    list(range(7)),
+    list(range(7)),
+]
+
+indices = list(itertools.product(*all_index_labels))
+multi_index = pd.MultiIndex.from_tuples(
+    indices,
+    names=("x", "y", "z"),  # use labels differently if we have index labels
+)
+
+STATE_EMBEDDING_LABELS = (
+    multi_index.to_series()
+    .apply(lambda x: "{0}, ({1},{2})".format(*x))
+    .tolist()
+)
