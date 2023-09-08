@@ -153,14 +153,14 @@ with st.sidebar:
             "OV Circuit",
             "QK Circuit",
             "Parameter Distributions",
-            "Show Dimensionality Reduction",
+            "Dimensionality Reduction",
             "Composition Scores",
         ],
     )
     dynamic_analyses = st.multiselect(
         "Select Dynamic Analyses",
         [
-            "Show RTG Scan",
+            "RTG Scan",
             "Logit Lens",
             "Neuron Activation Analysis",
             "Projection Analysis",
@@ -201,13 +201,13 @@ if "QK Circuit" in analyses:
     show_qk_circuit(dt)
 if "Parameter Distributions" in analyses:
     show_param_statistics(dt)
-if "Show Dimensionality Reduction" in analyses:
+if "Dimensionality Reduction" in analyses:
     show_dimensionality_reduction(dt)
 if "Composition Scores" in analyses:
     show_composition_scores(dt)
 
 # Dynamic Analyses
-if "Show RTG Scan" in analyses:
+if "RTG Scan" in analyses:
     show_rtg_scan(dt, logit_dir=logit_dir)
 if "Logit Lens" in analyses:
     show_logit_lens(dt, cache, logit_dir=logit_dir)
@@ -219,9 +219,9 @@ if "Attention Pattern" in analyses:
     show_attention_pattern(dt, cache)
 if "Observation View" in analyses:
     show_observation_view(dt, tokens, logit_dir)
-if "Cache" in analyses: # Not yet implemented.
+if "Cache" in analyses:  # Not yet implemented.
     show_cache(dt, cache)
-if "GatedMLP" in analyses: # Only appears for DTs with gated MLPs.
+if "GatedMLP" in analyses:  # Only appears for DTs with gated MLPs.
     show_gated_mlp_dynamic(dt, cache)
 
 # Causal Analyses

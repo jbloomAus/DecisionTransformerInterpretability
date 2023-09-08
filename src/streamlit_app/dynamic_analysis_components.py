@@ -585,6 +585,7 @@ def plot_decomposition_dot_product(
 
 #             result  = result[:,0].detach()
 
+
 #             # get cosine similarity matrix
 #             # similarities  = F.cosine_similarity(result.unsqueeze(1), result.unsqueeze(0), dim=-1)
 #             # st.plotly_chart(px.imshow(similarities))
@@ -878,8 +879,18 @@ def show_rtg_scan(dt, logit_dir):
             no_actions=False,
         )
 
-        logit_tab, decomp_tab, neuron_tab, attention_patterns_by_rtg_tab = st.tabs(
-            ["Logit Scan", "Decomposition", "Neurons", "Attention Patterns By RTG"]
+        (
+            logit_tab,
+            decomp_tab,
+            neuron_tab,
+            attention_patterns_by_rtg_tab,
+        ) = st.tabs(
+            [
+                "Logit Scan",
+                "Decomposition",
+                "Neurons",
+                "Attention Patterns By RTG",
+            ]
         )
 
         with logit_tab:
@@ -952,22 +963,59 @@ def show_rtg_scan(dt, logit_dir):
             # fig2 = plot_decomp_scan_corr(df, cluster)
 
         with attention_patterns_by_rtg_tab:
-
-            layertabs = st.tabs(
-                [f"L{i}" for i in range(dt.transformer_config.n_layers)]
+            step_vals = list(
+                np.array(
+                    [
+                        [f"S{i+1}", f"A{i+1}", f"R{i+1}"]
+                        for i in range(1 + dt.transformer_config.n_ctx // 3)
+                    ]
+                ).flatten()
             )
 
-            xs, ys, rows, rtgs = plot_attention_patterns_by_rtg(dt)
+            attention_patterns = torch.stack(
+                [
+                    cache[f"blocks.{layer}.attn.hook_pattern"]
+                    for layer in range(dt.transformer_config.n_layers)
+                ]
+            )
 
-            for l, layer in enumerate(layertabs):
-                    with layertabs[l]:
-                        headtabs = st.tabs([f"H{i}" for i in range(dt.transformer_config.n_heads)])
-                        for h, head in enumerate(headtabs):
-                            with headtabs[h]:
-                                df = pd.DataFrame({'x': xs[l][h], 'y': ys[l][h], 'row': rows[l][h], 'rtg': rtgs[l][h]}) 
-                                fig = px.line(df, x='x', y='y', animation_frame='rtg', color='row', hover_data=['x', 'y'])
-                                fig.update_layout(yaxis=dict(range=[0, 1]))
-                                st.plotly_chart(fig, use_container_width=True)
+            df = tensor_to_long_data_frame(
+                attention_patterns,
+                dimension_names=["Layer", "RTG", "Head", "Query", "Key"],
+            )
+
+            df["RTG"] = df["RTG"].map(lambda x: rtg[x, 0, 0])
+            df["Layer"] = df["Layer"].map(lambda x: f"L{x}")
+            df["Head"] = df["Layer"] + df["Head"].map(lambda x: f"H{x}")
+            df["Key"] = df["Key"].map(lambda x: step_vals[x])
+            df["Query"] = df["Query"].map(lambda x: step_vals[x])
+
+            # check that query and key are correct. Sum over key should be 1.
+            # st.write(df.groupby(['Layer', 'Head', 'RTG', 'Query']).sum())
+
+            # filter for the last query.
+            df = df[df["Query"] == "S9"]
+            # drop the Query Column
+            df = df.drop(columns=["Query"])
+
+            selected_heads = st.multiselect(
+                "Select Heads",
+                options=df["Head"].unique().tolist(),
+                default=["L0H0"],
+                key="head_select",
+            )
+
+            head_tabs = st.tabs(
+                selected_heads,
+            )
+
+            for h in selected_heads:
+                with head_tabs[selected_heads.index(h)]:
+                    fig = px.line(
+                        df[df["Head"] == h], x="RTG", y="Score", color="Key"
+                    )
+
+                    st.plotly_chart(fig, use_container_width=True)
 
 
 # Observation View
