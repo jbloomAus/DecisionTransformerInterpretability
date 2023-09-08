@@ -1430,7 +1430,6 @@ def show_composition_scores(_dt):
         )
 
 
-@st.cache_data(experimental_allow_widgets=True)
 def embedding_projection_onto_svd_component(
     _dt, _reading_svd_projection, key="embeddings"
 ):
@@ -1546,7 +1545,6 @@ def embedding_projection_onto_svd_component(
         st.plotly_chart(fig, use_container_width=True)
 
 
-@st.cache_data(experimental_allow_widgets=True)
 def svd_out_to_svd_in_component(
     _dt, writing_svd_projection, _reading_svd_projection, key="composition type"
 ):
@@ -1644,7 +1642,6 @@ def svd_out_to_svd_in_component(
     )
 
 
-@st.cache_data(experimental_allow_widgets=True)
 def svd_out_to_mlp_in_component(_dt, V_OV):
     right_svd_vectors = st.slider(
         "Number of Singular Directions",
@@ -1715,7 +1712,6 @@ def svd_out_to_mlp_in_component(_dt, V_OV):
     )
 
 
-@st.cache_data(experimental_allow_widgets=True)
 def mlp_out_to_svd_in_component(
     _dt, _reading_svd_projection, key="mlp + composition type"
 ):
@@ -1840,7 +1836,6 @@ def svd_out_to_unembedding_component_top_k_variation(_dt, V_OV, W_U):
     st.plotly_chart(fig, use_container_width=True)
 
 
-@st.cache_data(experimental_allow_widgets=True)
 def svd_out_to_unembedding_component(_dt, V_OV, W_U):
     right_svd_vectors = st.slider(
         "Number of Singular Directions",
@@ -2023,7 +2018,6 @@ def show_dimensionality_reduction(_dt):
                 mlp_out_to_svd_in_component(_dt, V_OV_tmp, key="value")
 
 
-@st.cache_data(experimental_allow_widgets=True)
 def get_ov_circuit(_dt):
     # stack the heads
     W_V = torch.stack([block.attn.W_V for block in _dt.transformer.blocks])
@@ -2035,7 +2029,6 @@ def get_ov_circuit(_dt):
     return W_OV
 
 
-@st.cache_data(experimental_allow_widgets=True)
 def get_qk_circuit(_dt):
     # stack the heads
     W_Q = torch.stack([block.attn.W_Q for block in _dt.transformer.blocks])
