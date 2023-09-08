@@ -9,3 +9,6 @@ COPY . /home
 
 # Set the working directory to /app
 WORKDIR /home
+
+# Set up port forwarding for Streamlit
+EXPOSE 8501

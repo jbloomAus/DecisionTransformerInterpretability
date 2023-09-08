@@ -1,7 +1,9 @@
 import re
 
+import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 import torch
 import torch as t
@@ -16,6 +18,7 @@ from .analysis import get_residual_decomp
 from .components import (
     decomp_configuration_ui,
     get_decomp_scan,
+    plot_attention_patterns_by_rtg,
     plot_decomp_scan_corr,
     plot_decomp_scan_line,
 )
@@ -26,6 +29,7 @@ from .constants import (
     twenty_idx_format_func,
     SPARSE_CHANNEL_NAMES,
 )
+from .environment import get_action_preds_from_app_state
 from .utils import fancy_histogram, fancy_imshow, tensor_to_long_data_frame
 from .visualizations import (
     plot_attention_pattern_single,
@@ -872,8 +876,8 @@ def show_rtg_scan(dt, logit_dir):
             no_actions=False,
         )
 
-        logit_tab, decomp_tab, neuron_tab = st.tabs(
-            ["Logit Scan", "Decomposition", "Neurons"]
+        logit_tab, decomp_tab, neuron_tab, attention_patterns_by_rtg_tab = st.tabs(
+            ["Logit Scan", "Decomposition", "Neurons", "Attention Patterns By RTG"]
         )
 
         with logit_tab:
@@ -944,6 +948,24 @@ def show_rtg_scan(dt, logit_dir):
             # st.plotly_chart(fig, use_container_width=True)
 
             # fig2 = plot_decomp_scan_corr(df, cluster)
+
+        with attention_patterns_by_rtg_tab:
+
+            layertabs = st.tabs(
+                [f"L{i}" for i in range(dt.transformer_config.n_layers)]
+            )
+
+            xs, ys, rows, rtgs = plot_attention_patterns_by_rtg(dt)
+
+            for l, layer in enumerate(layertabs):
+                    with layertabs[l]:
+                        headtabs = st.tabs([f"H{i}" for i in range(dt.transformer_config.n_heads)])
+                        for h, head in enumerate(headtabs):
+                            with headtabs[h]:
+                                df = pd.DataFrame({'x': xs[l][h], 'y': ys[l][h], 'row': rows[l][h], 'rtg': rtgs[l][h]}) 
+                                fig = px.line(df, x='x', y='y', animation_frame='rtg', color='row', hover_data=['x', 'y'])
+                                fig.update_layout(yaxis=dict(range=[0, 1]))
+                                st.plotly_chart(fig, use_container_width=True)
 
 
 # Observation View

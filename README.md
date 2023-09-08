@@ -118,19 +118,21 @@ cd trajectories
 gdown 1UBMuhRrM3aYDdHeJBFdTn1RzXDrCL_sr
 ```
 
-### Running the streamlit app
+### Running the Streamlit app
 
-To run the streamlit app:
+To run the Streamlit app:
 
 ```bash
 streamlit run app.py
 ```
 
+To run the Streamlit app on Docker, see the Development section.
+
 ## Setting up the environment
 
 I haven't been too careful about this yet. Using python 3.9.15 with the requirements.txt file. We're using the V2 branch of transformer lens and Minigrid 2.1.0.
 
-```
+```bash
 conda env create --name decision_transformer_interpretability python=3.9.15
 conda activate decision_transformer_interpretability
 pip install -r requirements.txt
@@ -146,6 +148,39 @@ The docker file should work and we can make use of it more when the project is f
 Then you can ssh into the docker and a good ide will bring credentials etc.
 
 ## Development
+
+### Docker
+
+If you're having trouble making the environment work, I recommend Docker. There's a dockerfile in the main folder - it takes a few minutes the first time, and 10-15 seconds for me when only changing code. If adding requirements it may take a bit longer. I (Jay) use Ubuntu through WSL and Docker Desktop, and it worked pretty easily for me.
+
+To run it, first navigate to your project directory, then:
+
+```bash
+docker build -t IMAGE_NAME .
+docker run -d -it -v $(pwd):/app --name CONTAINER_NAME IMAGE_NAME bash
+```
+
+To reset the container (e.g, you've changed the code, and want to rerun your tests), use:
+
+```bash
+docker stop CONTAINER_NAME
+docker rm CONTAINER_NAME
+docker rmi IMAGE_NAME
+docker build -t IMAGE_NAME .
+docker run -p 8501:8501 -d -it -v $(pwd):/app --name CONTAINER_NAME IMAGE_NAME bash
+```
+
+I recommend setting this all up as a batch command so you can do it easily for a quick iteration time.
+
+Finally, to run a command, use:
+
+`docker exec CONTAINER_NAME COMMAND`
+
+For instance, to run unit tests, you would use `docker exec CONTAINER_NAME pytest tests/unit`.
+
+To run Streamlit on your local browser, you can use the following command:
+
+`docker exec CONTAINER_NAME streamlit run app.py --server.port=8501`
 
 ### Tests:
 
