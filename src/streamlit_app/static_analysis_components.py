@@ -957,312 +957,256 @@ def show_ov_circuit(_dt):
 @st.cache_data(experimental_allow_widgets=True)
 def show_congruence(_dt):
     with st.expander("Show Congruence"):
-        (
-            position_tab,
-            time_tab,
-            w_out_tab,
-            mlp_in_tab,
-            mlp_out_tab,
-        ) = st.tabs(["Position", "Time", "W_O", "MLP_in", "MLP_out"])
-
-    with position_tab:
-        st.write(
-            """
-            We expect position not to have significant congruence with the output logits because
-            if it was valuable information, it would be syntactically processed by the transformer and
-            not used semantically.
-            
-            Nevertheless, this tab answers the question: "How much does the position embedding contribute directly
-            to the output logits?"
-            """
-        )
-
-        position_action_mapping = (
-            _dt.transformer.W_pos @ _dt.action_predictor.weight.T
-        )
-        fig = px.imshow(
-            position_action_mapping.T.detach().numpy(),
-            labels={"x": "Position", "y": "Action"},
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-    with time_tab:
-        st.write(
-            """
-            Like position, we expect time not to have significant congruence with the output logits because
-            syntactic processing is likely not hugely important in grid world tasks. However, unlike position,
-            it's more plausible in general that it could be important especially if the model is using it to
-            memorize behaviors.
-            """
-        )
-
-        time_action_mapping = (
-            _dt.time_embedding.weight[:50, :] @ _dt.action_predictor.weight.T
-        )
-        fig = px.imshow(
-            time_action_mapping.T.detach().numpy(),
-            labels={"x": "Time", "y": "Action"},
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-
-    with w_out_tab:
-        W_0 = torch.stack([block.attn.W_O for block in _dt.transformer.blocks])
-
-        W_0_congruence = W_0 @ _dt.action_predictor.weight.T
-        W_0_congruence = W_0_congruence.permute(0, 1, 3, 2)
-        W_0_congruence = W_0_congruence.detach()
-
-        W_0_congruence_2d = W_0_congruence.reshape(-1)
-        df = pd.DataFrame(W_0_congruence_2d.numpy(), columns=["value"])
-        layers, heads, actions, dims = W_0_congruence.shape
-        indices = pd.MultiIndex.from_tuples(
-            [
-                (i, j, k, l)
-                for i in range(layers)
-                for j in range(heads)
-                for k in range(actions)
-                for l in range(dims)
-            ],
-            names=["layer", "head", "action", "dimension"],
-        )
-        df.index = indices
-        df.reset_index(inplace=True)
-        # ensure action is interpreted as a categorical variable
-        df["action"] = df["action"].map(IDX_TO_ACTION)
-
-        # sort by action
-        df = df.sort_values(by="layer")
-        fig = px.scatter(
-            df,
-            x=df.index,
-            y="value",
-            color="action",
-            hover_data=["layer", "head", "action", "dimension", "value"],
-        )
-
-        # update x axis to hide the tick labels, and remove the label
-        fig.update_xaxes(showticklabels=False, title=None)
-
-        st.plotly_chart(fig, use_container_width=True)
-
-    with mlp_in_tab:
+        W_E_state = _dt.state_embedding.weight
+        W_U = _dt.action_predictor.weight
         MLP_in = torch.stack(
             [block.mlp.W_in for block in _dt.transformer.blocks]
         )
-        # MLP_in = MLP_in / (torch.norm(MLP_in, dim=-1, keepdim=True) + 1e-8)
-        state_tab, action_tab, rtg_tab = st.tabs(["State", "Action", "RTG"])
-
-        with state_tab:
-            state_in = _dt.state_embedding.weight
-
-            # state_in_normalized = state_in / (torch.norm(state_in, dim=-1, keepdim=True) + 1e-8)
-
-            MLP_in_state_congruence = MLP_in.permute(0, 2, 1) @ state_in
-
-            MLP_in_state_congruence = MLP_in_state_congruence.reshape(
-                MLP_in_state_congruence.shape[0:2] + (20, 7, 7)
-            )
-
-            MLP_in_state_congruence = MLP_in_state_congruence.permute(
-                0, 2, 3, 4, 1
-            )
-
-            MLP_in_state_congruence = MLP_in_state_congruence.detach()
-
-            df = tensor_to_long_data_frame(
-                MLP_in_state_congruence,
-                ["layer", "channel", "height", "width", "dimension"],
-            )
-
-            channels = MLP_in_state_congruence.shape[1]
-            if channels == 3:
-                df["channel"] = df["channel"].map(IDX_TO_STATE)
-            elif channels == 20:
-                df["channel"] = df["channel"].map(twenty_idx_format_func)
-            a, b = st.columns(2)
-            with a:
-                # create a multiselect to choose the channels of interest
-                format_func = (
-                    lambda x: three_channel_schema[x]
-                    if channels == 3
-                    else twenty_idx_format_func(x)
-                )
-                selected_channels = st.multiselect(
-                    "Select Observation Channels",
-                    options=list(range(channels)),
-                    format_func=format_func,
-                    key="channels mlp_in",
-                    default=list(range(17)) if channels == 20 else [0, 1, 2],
-                )
-
-                mapped_channels = [
-                    format_func(channel) for channel in selected_channels
-                ]
-                df = df[df["channel"].isin(mapped_channels)]
-
-            df = df.sort_values(by=["layer", "channel"])
-
-            # df = df.sort_values(
-            #     by=["layer"], ascending=True,
-            # )
-            df.reset_index(inplace=True, drop=True)
-
-            fig = px.scatter(
-                df,
-                x=df.index,
-                y="Score",
-                color="channel",
-                # facet_col="layer",
-                opacity=0.5,
-                hover_data=[
-                    "layer",
-                    "height",
-                    "width",
-                    "channel",
-                    "dimension",
-                    "Score",
-                ],
-                labels={"Score": "Congruence"},
-            )
-
-            # update x axis to hide the tick labels, and remove the label
-            fig.update_xaxes(showticklabels=False, title=None)
-
-            st.plotly_chart(fig, use_container_width=True)
-
-            # # group values by height/widt
-
-            # # now show the top 40 and bottom 40
-            # st.write("Top 40")
-            # st.write(top_40)
-
-            # st.write("Bottom 40")
-            # st.write(bottom_40)
-
-        with action_tab:
-            action_in = _dt.action_embedding[0].weight
-            MLP_in_action_congruence = MLP_in.permute(0, 2, 1) @ action_in.T
-
-            MLP_in_action_congruence = MLP_in_action_congruence.permute(
-                0, 2, 1
-            )
-            MLP_in_action_congruence = MLP_in_action_congruence.detach()
-
-            MLP_in_action_congruence_2d = MLP_in_action_congruence.reshape(-1)
-            df = pd.DataFrame(
-                MLP_in_action_congruence_2d.numpy(), columns=["value"]
-            )
-            layers, actions, dims = MLP_in_action_congruence.shape
-            indices = pd.MultiIndex.from_tuples(
-                [
-                    (i, k, l)
-                    for i in range(layers)
-                    for k in range(actions)
-                    for l in range(dims)
-                ],
-                names=["layer", "action", "dimension"],
-            )
-            df.index = indices
-            df.reset_index(inplace=True)
-            # ensure action is interpreted as a categorical variable
-            df["action"] = df["action"].map(IDX_TO_ACTION)
-
-            fig = px.scatter(
-                df,
-                x=df.index,
-                y="value",
-                color="action",
-                # facet_col="layer",
-                hover_data=["layer", "action", "dimension", "value"],
-                labels={"value": "Congruence"},
-            )
-
-            # update x axis to hide the tick labels, and remove the label
-            fig.update_xaxes(showticklabels=False, title=None)
-
-            st.plotly_chart(fig, use_container_width=True)
-
-        with rtg_tab:
-            rtg_in = _dt.reward_embedding[0].weight
-            # rtg_in_normalized =
-
-            st.write(rtg_in.norm())
-            st.write(MLP_in.shape)
-            MLP_in_rtg_congruence = MLP_in.permute(0, 2, 1) @ rtg_in
-
-            # torch.Size([3, 256, 1])
-            MLP_in_rtg_congruence_2d = MLP_in_rtg_congruence.reshape(-1)
-            layers, dims = MLP_in_rtg_congruence.squeeze(-1).shape
-            indices = pd.MultiIndex.from_tuples(
-                [(i, l) for i in range(layers) for l in range(dims)],
-                names=["layer", "dimension"],
-            )
-            df = pd.DataFrame(
-                MLP_in_rtg_congruence_2d.detach().numpy(), columns=["value"]
-            )
-            df.index = indices
-            df.reset_index(inplace=True)
-            df["layer"] = df["layer"].astype("category")
-            fig = px.scatter(
-                df,
-                x=df.index,
-                y="value",
-                color="layer",
-                hover_data=["layer", "dimension", "value"],
-                labels={"value": "Congruence"},
-            )
-
-            # update x axis to hide the tick labels, and remove the label
-            fig.update_xaxes(showticklabels=False, title=None)
-
-            st.plotly_chart(fig, use_container_width=True)
-
-    with mlp_out_tab:
         MLP_out = torch.stack(
             [block.mlp.W_out for block in _dt.transformer.blocks]
         )
 
-        # MLP_out = MLP_out / MLP_out.norm(dim=-1, keepdim=True)
+        a, b = st.columns(2)
+        with a:
+            selected_writer = st.selectbox(
+                "Select Writer",
+                options=["Embeddings", "Neurons"],
+                key="congruence",
+            )
+        with b:
+            st.write("Select the component writing to the residual stream.")
 
-        action_predictor = _dt.action_predictor.weight
-        # action_predictor = action_predictor / action_predictor.norm(
-        #     dim=-1, keepdim=True
-        # )
+        if selected_writer == "Embeddings":
+            (mlp_in_tab, unembedding_tab) = st.tabs(["MLP_in", "Unembeddings"])
 
-        MLP_out_congruence = einsum(
-            "layer d_mlp d_model, d_action d_model -> layer d_mlp d_action",
-            MLP_out,
-            action_predictor,
-        ).detach()
+            with mlp_in_tab:
+                activations = einsum(
+                    "layer d_mlp d_model, d_model n_emb -> layer d_mlp n_emb ",
+                    MLP_in,
+                    W_E_state,
+                )
 
-        congruence_df = tensor_to_long_data_frame(
-            MLP_out_congruence, ["Layer", "Neuron", "Action"]
-        )
+                df = tensor_to_long_data_frame(
+                    activations,
+                    ["Layer", "Neuron", "Embedding"],
+                )
+                df["Layer"] = df["Layer"].map(lambda x: f"L{x}")
+                df["Neuron"] = df["Layer"] + df["Neuron"].map(
+                    lambda x: f"N{x}"
+                )
+                df["Embedding"] = df["Embedding"].map(
+                    lambda x: embedding_labels[x]
+                )
+                df["Channel"] = df["Embedding"].map(lambda x: x.split(",")[0])
+                df = df.sort_values(by=["Layer", "Channel"])
+                df.reset_index(inplace=True, drop=True)
 
-        congruence_df["Layer"] = congruence_df["Layer"].map(lambda x: f"L{x}")
-        congruence_df["Neuron"] = congruence_df["Layer"] + congruence_df[
-            "Neuron"
-        ].map(lambda x: f"N{x}")
+                fig = px.scatter(
+                    df,
+                    x=df.index,
+                    y="Score",
+                    color="Channel",
+                    hover_data=[
+                        "Layer",
+                        "Neuron",
+                        "Embedding",
+                        "Score",
+                    ],
+                    labels={"Score": "Congruence"},
+                )
 
-        # sort by Layer and Action
-        congruence_df = congruence_df.sort_values(
-            by=["Layer", "Action"]
-        ).reset_index(drop=True)
-        congruence_df["Action"] = congruence_df["Action"].map(IDX_TO_ACTION)
+                # update x axis to hide the tick labels, and remove the label
+                fig.update_xaxes(showticklabels=False, title=None)
 
-        fig = px.scatter(
-            congruence_df,
-            x=congruence_df.index,
-            y="Score",
-            color="Action",
-            hover_data=["Layer", "Action", "Neuron", "Score"],
-            labels={"Score": "Congruence"},
-        )
-        # update x axis to hide the tick labels, and remove the label
-        fig.update_xaxes(showticklabels=False, title=None)
+                st.plotly_chart(fig, use_container_width=True)
 
-        st.plotly_chart(fig, use_container_width=True)
+                create_search_component(
+                    df[["Layer", "Neuron", "Embedding", "Score"]],
+                    title="Search MLP to Embeddings",
+                    key="mlp to embeddings",
+                )
+
+            with unembedding_tab:
+                activations = einsum(
+                    "Action d_model, d_model n_emb -> Action n_emb ",
+                    W_U,
+                    W_E_state,
+                )
+
+                df = tensor_to_long_data_frame(
+                    activations,
+                    ["Action", "Embedding"],
+                )
+                df["Action"] = df["Action"].map(IDX_TO_ACTION)
+                df["Embedding"] = df["Embedding"].map(
+                    lambda x: embedding_labels[x]
+                )
+                df["Channel"] = df["Embedding"].map(lambda x: x.split(",")[0])
+                df = df.sort_values(by=["Channel", "Action"])
+                df.reset_index(inplace=True, drop=True)
+
+                fig = px.scatter(
+                    df,
+                    x=df.index,
+                    y="Score",
+                    color="Channel",
+                    hover_data=[
+                        "Action",
+                        "Embedding",
+                        "Score",
+                    ],
+                    labels={"Score": "Congruence"},
+                )
+
+                # update x axis to hide the tick labels, and remove the label
+                fig.update_xaxes(showticklabels=False, title=None)
+
+                st.plotly_chart(fig, use_container_width=True)
+
+                create_search_component(
+                    df,
+                    title="Search Unembedding to Embeddings",
+                    key="unembedding to embeddings",
+                )
+
+        elif selected_writer == "Neurons":
+            (
+                mlp_out_tab,
+                mlp_in_tab,
+            ) = st.tabs(["MLP to Unembeddings", "MLP to MLP"])
+
+            with mlp_out_tab:
+                MLP_out_congruence = einsum(
+                    "layer d_mlp d_model, d_action d_model -> layer d_mlp d_action",
+                    MLP_out,
+                    W_U,
+                ).detach()
+
+                congruence_df = tensor_to_long_data_frame(
+                    MLP_out_congruence, ["Layer", "Neuron", "Action"]
+                )
+
+                congruence_df["Layer"] = congruence_df["Layer"].map(
+                    lambda x: f"L{x}"
+                )
+                congruence_df["Neuron"] = congruence_df[
+                    "Layer"
+                ] + congruence_df["Neuron"].map(lambda x: f"N{x}")
+
+                # sort by Layer and Action
+                congruence_df = congruence_df.sort_values(
+                    by=["Layer", "Action"]
+                ).reset_index(drop=True)
+                congruence_df["Action"] = congruence_df["Action"].map(
+                    IDX_TO_ACTION
+                )
+
+                if st.checkbox("Project into Action space"):
+                    # pivot the table
+                    congruence_df = congruence_df.pivot_table(
+                        index=["Layer", "Neuron"],
+                        columns="Action",
+                        values="Score",
+                    ).reset_index()
+
+                    a, b = st.columns(2)
+                    with a:
+                        action_1 = st.selectbox(
+                            "Select Action 1",
+                            options=IDX_TO_ACTION.values(),
+                            index=1,
+                        )
+                    with b:
+                        action_2 = st.selectbox(
+                            "Select Action 2",
+                            options=IDX_TO_ACTION.values(),
+                            index=0,
+                        )
+
+                    fig = px.scatter(
+                        congruence_df,
+                        x=action_1,
+                        y=action_2,
+                        color="Layer",
+                        hover_data=["Layer", "Neuron", action_1, action_2],
+                        labels={"Score": "Congruence"},
+                    )
+
+                    st.plotly_chart(fig, use_container_width=True)
+
+                else:
+                    fig = px.scatter(
+                        congruence_df,
+                        x=congruence_df.index,
+                        y="Score",
+                        color="Action",
+                        hover_data=["Layer", "Action", "Neuron", "Score"],
+                        labels={"Score": "Congruence"},
+                    )
+
+                    # update x axis to hide the tick labels, and remove the label
+                    fig.update_xaxes(showticklabels=False, title=None)
+
+                    st.plotly_chart(fig, use_container_width=True)
+
+                    create_search_component(
+                        congruence_df,
+                        title="Search MLP to Unembedding",
+                        key="mlp to unembedding",
+                    )
+
+            with mlp_in_tab:
+                mlp_mlp_congruence = einsum(
+                    "layer_out d_mlp_out d_model, layer_in d_mlp_in d_model -> layer_in layer_out d_mlp_in d_mlp_out",
+                    MLP_out,
+                    MLP_in,
+                ).detach()
+
+                df = tensor_to_long_data_frame(
+                    mlp_mlp_congruence,
+                    ["Layer In", "Layer Out", "Neuron In", "Neuron Out"],
+                )
+
+                df = df.sort_values(by=["Layer In", "Layer Out"])
+                df = df.reset_index(drop=True)
+
+                df["Layer Out"] = df["Layer Out"].map(lambda x: f"L{x}")
+                df["Neuron Out"] = df["Layer Out"] + df["Neuron Out"].map(
+                    lambda x: f"N{x}"
+                )
+                df["Layer In"] = df["Layer In"].map(lambda x: f"L{x}")
+                df["Neuron In"] = df["Layer In"] + df["Neuron In"].map(
+                    lambda x: f"N{x}"
+                )
+
+                # remove any rows where the layer out is less than the layer in
+                df = df[df["Layer Out"] < df["Layer In"]]
+                df = df.reset_index(drop=True)
+
+                fig = px.scatter(
+                    df,
+                    x=df.index,
+                    y="Score",
+                    color="Layer In",
+                    hover_data=[
+                        "Layer Out",
+                        "Layer In",
+                        "Neuron Out",
+                        "Neuron In",
+                        "Score",
+                    ],
+                    labels={"Score": "Congruence"},
+                )
+
+                # update x axis to hide the tick labels, and remove the label
+                fig.update_xaxes(showticklabels=False, title=None)
+                st.plotly_chart(fig, use_container_width=True)
+
+                create_search_component(
+                    df,
+                    title="Search MLP to MLP",
+                    key="mlp to mlp",
+                )
 
 
 # TODO: Add st.cache_data here.
@@ -1546,7 +1490,10 @@ def embedding_projection_onto_svd_component(
 
 
 def svd_out_to_svd_in_component(
-    _dt, writing_svd_projection, _reading_svd_projection, key="composition type"
+    _dt,
+    writing_svd_projection,
+    _reading_svd_projection,
+    key="composition type",
 ):
     U = _reading_svd_projection
     V = writing_svd_projection
@@ -1724,7 +1671,9 @@ def mlp_out_to_svd_in_component(
     )
     U_filtered = U[:, :, :left_svd_vectors, :]
 
-    MLP_out = torch.stack([block.mlp.W_out for block in _dt.transformer.blocks])
+    MLP_out = torch.stack(
+        [block.mlp.W_out for block in _dt.transformer.blocks]
+    )
 
     # MLP_out = MLP_out / MLP_out.norm(dim=(-2,-1), keepdim=True)
 
@@ -1942,6 +1891,7 @@ def show_dimensionality_reduction(_dt):
             selected_writer = st.selectbox(
                 "Select Writer",
                 options=["Embeddings", "Head Output", "Neuron Output"],
+                key="svd_virtual_weights",
             )
         with b:
             st.write("Select the component writing to the residual stream.")
@@ -1959,7 +1909,9 @@ def show_dimensionality_reduction(_dt):
                 )
 
             with values_tab:
-                embedding_projection_onto_svd_component(_dt, V_OV, key="values")
+                embedding_projection_onto_svd_component(
+                    _dt, V_OV, key="values"
+                )
 
         if selected_writer == "Head Output":
             (
