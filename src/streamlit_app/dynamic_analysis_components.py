@@ -592,6 +592,8 @@ def plot_decomposition_dot_product(
 #             # plot_heatmap(similarities)
 #             fig = tensor_cosine_similarity_heatmap(result, labels)
 #             st.plotly_chart(fig, use_container_width=True)
+def show_cache(dt, cache):
+    st.warning("Cache not yet implemented")
 
 
 def show_residual_stream_projection_onto_component(dt, cache, logit_dir):
@@ -969,7 +971,7 @@ def show_rtg_scan(dt, logit_dir):
 
 
 # Observation View
-def render_observation_view(dt, tokens, logit_dir):
+def show_observation_view(dt, tokens, logit_dir):
     last_obs = st.session_state.obs[0][-1]
 
     last_obs_reshaped = rearrange(last_obs, "h w c -> c h w")

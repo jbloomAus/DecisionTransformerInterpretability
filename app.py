@@ -18,12 +18,13 @@ from src.streamlit_app.components import (
 
 
 from src.streamlit_app.dynamic_analysis_components import (
-    render_observation_view,
+    show_observation_view,
     show_attention_pattern,
     show_logit_lens,
     show_neuron_activation_decomposition,
     show_residual_stream_projection_onto_component,
     show_rtg_scan,
+    show_cache,
     show_gated_mlp_dynamic,
 )
 
@@ -34,7 +35,7 @@ from src.streamlit_app.static_analysis_components import (
     show_qk_circuit,
     show_congruence,
     show_param_statistics,
-    show_svd_virtual_weights,
+    show_dimensionality_reduction,
     show_composition_scores,
 )
 
@@ -152,7 +153,7 @@ with st.sidebar:
             "OV Circuit",
             "QK Circuit",
             "Parameter Distributions",
-            "SVD of Virtual Weights",
+            "Show Dimensionality Reduction",
             "Composition Scores",
         ],
     )
@@ -187,17 +188,25 @@ with st.sidebar:
 if len(analyses) == 0:
     st.warning("Please select at least one analysis.")
 
+# Static Analyses
 if "Embeddings" in analyses:
     show_embeddings(dt)
-if "Ablation" in analyses:
-    show_ablation(dt, logit_dir=logit_dir, original_cache=cache)
-if "Activation Patching" in analyses:
-    show_activation_patching(dt, logit_dir=logit_dir, original_cache=cache)
-if "Path Patching" in analyses:
-    show_path_patching(dt, logit_dir, clean_cache=cache)
-if "Algebraic Value Editing" in analyses:
-    show_algebraic_value_editing(dt, logit_dir=logit_dir, original_cache=cache)
+if "Neuron Directions" in analyses:
+    show_neuron_directions(dt)
+if "Congruence" in analyses:
+    show_congruence(dt)
+if "OV Circuit" in analyses:
+    show_ov_circuit(dt)
+if "QK Circuit" in analyses:
+    show_qk_circuit(dt)
+if "Parameter Distributions" in analyses:
+    show_param_statistics(dt)
+if "Show Dimensionality Reduction" in analyses:
+    show_dimensionality_reduction(dt)
+if "Composition Scores" in analyses:
+    show_composition_scores(dt)
 
+# Dynamic Analyses
 if "Show RTG Scan" in analyses:
     show_rtg_scan(dt, logit_dir=logit_dir)
 if "Logit Lens" in analyses:
@@ -209,27 +218,21 @@ if "Projection Analysis" in analyses:
 if "Attention Pattern" in analyses:
     show_attention_pattern(dt, cache)
 if "Observation View" in analyses:
-    render_observation_view(dt, tokens, logit_dir)
-
-if "GatedMLP" in analyses:
+    show_observation_view(dt, tokens, logit_dir)
+if "Cache" in analyses: # Not yet implemented.
+    show_cache(dt, cache)
+if "GatedMLP" in analyses: # Only appears for DTs with gated MLPs.
     show_gated_mlp_dynamic(dt, cache)
 
-
-if "Parameter Distributions" in analyses:
-    show_param_statistics(dt)
-if "Neuron Directions" in analyses:
-    show_neuron_directions(dt)
-if "SVD of Virtual Weights" in analyses:
-    show_svd_virtual_weights(dt)
-if "Composition Scores" in analyses:
-    show_composition_scores(dt)
-if "Congruence" in analyses:
-    show_congruence(dt)
-
-if "QK Circuit" in analyses:
-    show_qk_circuit(dt)
-if "OV Circuit" in analyses:
-    show_ov_circuit(dt)
+# Causal Analyses
+if "Ablation" in analyses:
+    show_ablation(dt, logit_dir=logit_dir, original_cache=cache)
+if "Activation Patching" in analyses:
+    show_activation_patching(dt, logit_dir=logit_dir, original_cache=cache)
+if "Path Patching" in analyses:
+    show_path_patching(dt, logit_dir, clean_cache=cache)
+if "Algebraic Value Editing" in analyses:
+    show_algebraic_value_editing(dt, logit_dir=logit_dir, original_cache=cache)
 
 show_history()
 

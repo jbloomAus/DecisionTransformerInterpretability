@@ -14,7 +14,7 @@ from src.decision_transformer.utils import (
 from src.environments.environments import make_env
 
 
-@st.cache(allow_output_mutation=True)
+@st.cache_data
 def get_env_and_dt(model_path):
     # we need to one if the env was one hot encoded. Some tech debt here.
     state_dict = torch.load(model_path)

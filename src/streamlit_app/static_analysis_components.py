@@ -59,9 +59,10 @@ embedding_labels = (
 )
 
 
-def show_param_statistics(dt):
+@st.cache_data(experimental_allow_widgets=True)
+def show_param_statistics(_dt):
     with st.expander("Show Parameter Statistics"):
-        df = get_param_stats(dt)
+        df = get_param_stats(_dt)
         fig_mean, fig_log_std, fig_norm = plot_param_stats(df)
 
         st.plotly_chart(fig_mean, use_container_width=True)
@@ -69,7 +70,8 @@ def show_param_statistics(dt):
         st.plotly_chart(fig_norm, use_container_width=True)
 
 
-def show_embeddings(dt):
+@st.cache_data(experimental_allow_widgets=True)
+def show_embeddings(_dt):
     with st.expander("Embeddings"):
         all_index_labels = [
             SPARSE_CHANNEL_NAMES,
@@ -121,7 +123,7 @@ def show_embeddings(dt):
                             default=[5, 6],
                         )
 
-                embedding = dt.state_embedding.weight.detach().T
+                embedding = _dt.state_embedding.weight.detach().T
 
                 if aggregation_group == "None":
                     fig = tensor_cosine_similarity_heatmap(
@@ -133,7 +135,7 @@ def show_embeddings(dt):
                     st.plotly_chart(fig, use_container_width=True)
 
                 if aggregation_group == "Channels":
-                    image_shape = dt.environment_config.observation_space[
+                    image_shape = _dt.environment_config.observation_space[
                         "image"
                     ].shape
 
@@ -185,7 +187,7 @@ def show_embeddings(dt):
                     st.plotly_chart(fig, use_container_width=True)
 
                 if aggregation_group == "Positions":
-                    image_shape = dt.environment_config.observation_space[
+                    image_shape = _dt.environment_config.observation_space[
                         "image"
                     ].shape
 
@@ -211,7 +213,7 @@ def show_embeddings(dt):
                     st.plotly_chart(fig, use_container_width=True)
 
             with in_action_tab:
-                embedding = dt.action_embedding[0].weight.detach()
+                embedding = _dt.action_embedding[0].weight.detach()
                 fig = tensor_cosine_similarity_heatmap(
                     embedding, labels=ACTION_NAMES
                 )
@@ -219,7 +221,7 @@ def show_embeddings(dt):
                 st.plotly_chart(fig, use_container_width=True)
 
             with out_action_tab:
-                embedding = dt.action_predictor.weight.detach()
+                embedding = _dt.action_predictor.weight.detach()
                 fig = tensor_cosine_similarity_heatmap(
                     embedding, labels=ACTION_NAMES
                 )
@@ -232,7 +234,7 @@ def show_embeddings(dt):
             )
 
             with state_tab:
-                embedding = dt.state_embedding.weight.detach().T
+                embedding = _dt.state_embedding.weight.detach().T
 
                 with st.spinner("Performing PCA..."):
                     # Normalize the data
@@ -271,7 +273,7 @@ def show_embeddings(dt):
                 st.plotly_chart(fig, use_container_width=True)
 
             with in_action_tab:
-                embedding = dt.action_embedding[0].weight.detach()
+                embedding = _dt.action_embedding[0].weight.detach()
 
                 with st.spinner("Performing PCA..."):
                     # Normalize the data
@@ -305,7 +307,7 @@ def show_embeddings(dt):
                 st.plotly_chart(fig, use_container_width=True)
 
             with out_action_tab:
-                embedding = dt.action_predictor.weight.detach()
+                embedding = _dt.action_predictor.weight.detach()
 
                 with st.spinner("Performing PCA..."):
                     # Normalize the data
@@ -339,16 +341,17 @@ def show_embeddings(dt):
                 st.plotly_chart(fig, use_container_width=True)
 
 
-def show_neuron_directions(dt):
+@st.cache_data(experimental_allow_widgets=True)
+def show_neuron_directions(_dt):
     MLP_in = torch.stack(
-        [block.mlp.W_in for block in dt.transformer.blocks]
+        [block.mlp.W_in for block in _dt.transformer.blocks]
     ).detach()
 
     MLP_out = torch.stack(
-        [block.mlp.W_out for block in dt.transformer.blocks]
+        [block.mlp.W_out for block in _dt.transformer.blocks]
     ).detach()
 
-    layers = dt.transformer_config.n_layers
+    layers = _dt.transformer_config.n_layers
 
     with st.expander("Show Neuron In / Out Directions"):
         in_tab, out_tab = st.tabs(["In", "Out"])
@@ -373,7 +376,8 @@ def show_neuron_directions(dt):
     return
 
 
-def show_qk_circuit(dt):
+@st.cache_data(experimental_allow_widgets=True)
+def show_qk_circuit(_dt):
     with st.expander("show QK circuit"):
         st.write(
             """
@@ -414,15 +418,15 @@ def show_qk_circuit(dt):
         #     )
         #     st.write(W_QK_full_reshaped.shape)
 
-        height, width, channels = dt.environment_config.observation_space[
+        height, width, channels = _dt.environment_config.observation_space[
             "image"
         ].shape
-        n_heads = dt.transformer_config.n_heads
-        layers = dt.transformer_config.n_layers
+        n_heads = _dt.transformer_config.n_heads
+        layers = _dt.transformer_config.n_layers
 
         # stack the heads
-        W_Q = torch.stack([block.attn.W_Q for block in dt.transformer.blocks])
-        W_K = torch.stack([block.attn.W_K for block in dt.transformer.blocks])
+        W_Q = torch.stack([block.attn.W_Q for block in _dt.transformer.blocks])
+        W_K = torch.stack([block.attn.W_K for block in _dt.transformer.blocks])
         # inner QK circuits.
         W_QK = einsum(
             "layer head d_model1 d_head, layer head d_model2 d_head -> layer head d_model1 d_model2",
@@ -430,8 +434,8 @@ def show_qk_circuit(dt):
             W_K,
         )
 
-        W_E_rtg = dt.reward_embedding[0].weight
-        W_E_state = dt.state_embedding.weight
+        W_E_rtg = _dt.reward_embedding[0].weight
+        W_E_state = _dt.state_embedding.weight
         with state_state_tab:
             st.write(
                 """
@@ -677,7 +681,7 @@ def show_qk_circuit(dt):
                 st.plotly_chart(fig, use_container_width=True)
 
             layer, heads, selected_channels = layer_head_channel_selector(
-                dt, key="srtg"
+                _dt, key="srtg"
             )
             abs_max_val = W_QK_full_reshaped.abs().max().item()
             abs_max_val = st.slider(
@@ -717,7 +721,8 @@ def show_qk_circuit(dt):
                         )
 
 
-def show_ov_circuit(dt):
+@st.cache_data(experimental_allow_widgets=True)
+def show_ov_circuit(_dt):
     with st.expander("Show OV Circuit"):
         st.subheader("OV circuits")
 
@@ -727,11 +732,11 @@ def show_ov_circuit(dt):
             """
         )
 
-        height, width, channels = dt.environment_config.observation_space[
+        height, width, channels = _dt.environment_config.observation_space[
             "image"
         ].shape
-        n_actions = dt.environment_config.action_space.n
-        n_heads = dt.transformer_config.n_heads
+        n_actions = _dt.environment_config.action_space.n
+        n_heads = _dt.transformer_config.n_heads
 
         if channels == 3:
 
@@ -745,7 +750,7 @@ def show_ov_circuit(dt):
         with selection_columns[0]:
             layer = st.selectbox(
                 "Select Layer",
-                options=list(range(dt.transformer_config.n_layers)),
+                options=list(range(_dt.transformer_config.n_layers)),
             )
 
         with selection_columns[1]:
@@ -774,10 +779,10 @@ def show_ov_circuit(dt):
                 default=[0, 1, 2],
             )
 
-        W_U = dt.action_predictor.weight
-        W_O = dt.transformer.blocks[layer].attn.W_O
-        W_V = dt.transformer.blocks[layer].attn.W_V
-        W_E = dt.state_embedding.weight
+        W_U = _dt.action_predictor.weight
+        W_O = _dt.transformer.blocks[layer].attn.W_O
+        W_V = _dt.transformer.blocks[layer].attn.W_V
+        W_E = _dt.state_embedding.weight
         W_OV = W_V @ W_O
 
         # st.plotly_chart(px.imshow(W_OV.detach().numpy(), facet_col=0), use_container_width=True)
@@ -949,7 +954,8 @@ def show_ov_circuit(dt):
                             )
 
 
-def show_congruence(dt):
+@st.cache_data(experimental_allow_widgets=True)
+def show_congruence(_dt):
     with st.expander("Show Congruence"):
         (
             position_tab,
@@ -972,7 +978,7 @@ def show_congruence(dt):
         )
 
         position_action_mapping = (
-            dt.transformer.W_pos @ dt.action_predictor.weight.T
+            _dt.transformer.W_pos @ _dt.action_predictor.weight.T
         )
         fig = px.imshow(
             position_action_mapping.T.detach().numpy(),
@@ -991,7 +997,7 @@ def show_congruence(dt):
         )
 
         time_action_mapping = (
-            dt.time_embedding.weight[:50, :] @ dt.action_predictor.weight.T
+            _dt.time_embedding.weight[:50, :] @ _dt.action_predictor.weight.T
         )
         fig = px.imshow(
             time_action_mapping.T.detach().numpy(),
@@ -1001,9 +1007,9 @@ def show_congruence(dt):
         st.plotly_chart(fig, use_container_width=True)
 
     with w_out_tab:
-        W_0 = torch.stack([block.attn.W_O for block in dt.transformer.blocks])
+        W_0 = torch.stack([block.attn.W_O for block in _dt.transformer.blocks])
 
-        W_0_congruence = W_0 @ dt.action_predictor.weight.T
+        W_0_congruence = W_0 @ _dt.action_predictor.weight.T
         W_0_congruence = W_0_congruence.permute(0, 1, 3, 2)
         W_0_congruence = W_0_congruence.detach()
 
@@ -1042,13 +1048,13 @@ def show_congruence(dt):
 
     with mlp_in_tab:
         MLP_in = torch.stack(
-            [block.mlp.W_in for block in dt.transformer.blocks]
+            [block.mlp.W_in for block in _dt.transformer.blocks]
         )
         # MLP_in = MLP_in / (torch.norm(MLP_in, dim=-1, keepdim=True) + 1e-8)
         state_tab, action_tab, rtg_tab = st.tabs(["State", "Action", "RTG"])
 
         with state_tab:
-            state_in = dt.state_embedding.weight
+            state_in = _dt.state_embedding.weight
 
             # state_in_normalized = state_in / (torch.norm(state_in, dim=-1, keepdim=True) + 1e-8)
 
@@ -1135,7 +1141,7 @@ def show_congruence(dt):
             # st.write(bottom_40)
 
         with action_tab:
-            action_in = dt.action_embedding[0].weight
+            action_in = _dt.action_embedding[0].weight
             MLP_in_action_congruence = MLP_in.permute(0, 2, 1) @ action_in.T
 
             MLP_in_action_congruence = MLP_in_action_congruence.permute(
@@ -1178,7 +1184,7 @@ def show_congruence(dt):
             st.plotly_chart(fig, use_container_width=True)
 
         with rtg_tab:
-            rtg_in = dt.reward_embedding[0].weight
+            rtg_in = _dt.reward_embedding[0].weight
             # rtg_in_normalized =
 
             st.write(rtg_in.norm())
@@ -1214,12 +1220,12 @@ def show_congruence(dt):
 
     with mlp_out_tab:
         MLP_out = torch.stack(
-            [block.mlp.W_out for block in dt.transformer.blocks]
+            [block.mlp.W_out for block in _dt.transformer.blocks]
         )
 
         # MLP_out = MLP_out / MLP_out.norm(dim=-1, keepdim=True)
 
-        action_predictor = dt.action_predictor.weight
+        action_predictor = _dt.action_predictor.weight
         # action_predictor = action_predictor / action_predictor.norm(
         #     dim=-1, keepdim=True
         # )
@@ -1259,15 +1265,16 @@ def show_congruence(dt):
         st.plotly_chart(fig, use_container_width=True)
 
 
-def show_composition_scores(dt):
+# TODO: Add st.cache_data here.
+def show_composition_scores(_dt):
     with st.expander("Show Composition Scores"):
         st.markdown(
             "Composition Score calculations per [Mathematical Frameworks for Transformer Circuits](https://transformer-circuits.pub/2021/framework/index.html#:~:text=The%20above%20diagram%20shows%20Q%2D%2C%20K%2D%2C%20and%20V%2DComposition)"
         )
 
-        q_scores = dt.transformer.all_composition_scores("Q")
-        k_scores = dt.transformer.all_composition_scores("K")
-        v_scores = dt.transformer.all_composition_scores("V")
+        q_scores = _dt.transformer.all_composition_scores("Q")
+        k_scores = _dt.transformer.all_composition_scores("K")
+        v_scores = _dt.transformer.all_composition_scores("V")
 
         dims = ["L1", "H1", "L2", "H2"]
 
@@ -1424,12 +1431,12 @@ def show_composition_scores(dt):
 
 
 def embedding_projection_onto_svd_component(
-    dt, reading_svd_projection, key="embeddings"
+    _dt, _reading_svd_projection, key="embeddings"
 ):
-    U = reading_svd_projection
-    W_E_state = dt.state_embedding.weight.detach().T
-    W_E_action = dt.action_embedding[0].weight.detach().T
-    W_E_reward = dt.reward_embedding[0].weight.detach().T
+    U = _reading_svd_projection
+    W_E_state = _dt.state_embedding.weight.detach().T
+    W_E_action = _dt.action_embedding[0].weight.detach().T
+    W_E_reward = _dt.reward_embedding[0].weight.detach().T
 
     state_tab, rtg_tab = st.tabs(["State", "RTG"])  # , "Action"]
 
@@ -1437,7 +1444,7 @@ def embedding_projection_onto_svd_component(
         left_svd_vectors = st.slider(
             "Number of Singular Directions",
             min_value=3,
-            max_value=dt.transformer_config.d_head,
+            max_value=_dt.transformer_config.d_head,
             key=f"state out, head svd, {key}",
         )
 
@@ -1487,14 +1494,14 @@ def embedding_projection_onto_svd_component(
         )
 
     with rtg_tab:
-        W_E = dt.reward_embedding[0].weight.T
+        W_E = _dt.reward_embedding[0].weight.T
         # W_pos_e = dt.transformer.W_pos
         # W_E = W_E.T + W_pos_e
 
         left_svd_vectors = st.slider(
             "Number of Singular Directions",
             min_value=3,
-            max_value=dt.transformer_config.d_head,
+            max_value=_dt.transformer_config.d_head,
             key=f"embed rtg, left svd {key}",
         )
 
@@ -1539,9 +1546,9 @@ def embedding_projection_onto_svd_component(
 
 
 def svd_out_to_svd_in_component(
-    dt, writing_svd_projection, reading_svd_projection, key="composition type"
+    _dt, writing_svd_projection, _reading_svd_projection, key="composition type"
 ):
-    U = reading_svd_projection
+    U = _reading_svd_projection
     V = writing_svd_projection
 
     a, b = st.columns(2)
@@ -1549,14 +1556,14 @@ def svd_out_to_svd_in_component(
         left_svd_vectors = st.slider(
             "Number of Singular Directions (out)",
             min_value=3,
-            max_value=dt.transformer_config.d_head,
+            max_value=_dt.transformer_config.d_head,
             key="head head left" + key,
         )
     with b:
         right_svd_vectors = st.slider(
             "Number of Singular Directions (in)",
             min_value=3,
-            max_value=dt.transformer_config.d_head,
+            max_value=_dt.transformer_config.d_head,
             key="head head right" + key,
         )
 
@@ -1635,15 +1642,15 @@ def svd_out_to_svd_in_component(
     )
 
 
-def svd_out_to_mlp_in_component(dt, V_OV):
+def svd_out_to_mlp_in_component(_dt, V_OV):
     right_svd_vectors = st.slider(
         "Number of Singular Directions",
         min_value=3,
-        max_value=dt.transformer_config.d_head,
+        max_value=_dt.transformer_config.d_head,
         key="svd out to mlp in",
     )
 
-    MLP_in = torch.stack([block.mlp.W_in for block in dt.transformer.blocks])
+    MLP_in = torch.stack([block.mlp.W_in for block in _dt.transformer.blocks])
     V_filtered = V_OV[:, :, :right_svd_vectors, :]
     activations = einsum(
         "l1 h1 d_head_out d_head_ext, l2 d_head_ext d_mlp_in -> l2 l1 h1 d_head_out d_mlp_in",
@@ -1706,18 +1713,18 @@ def svd_out_to_mlp_in_component(dt, V_OV):
 
 
 def mlp_out_to_svd_in_component(
-    dt, reading_svd_projection, key="mlp + composition type"
+    _dt, _reading_svd_projection, key="mlp + composition type"
 ):
-    U = reading_svd_projection
+    U = _reading_svd_projection
     left_svd_vectors = st.slider(
         "Number of Singular Directions (in)",
         min_value=3,
-        max_value=dt.transformer_config.d_head,
+        max_value=_dt.transformer_config.d_head,
         key="svd out to mlp in" + key,
     )
     U_filtered = U[:, :, :left_svd_vectors, :]
 
-    MLP_out = torch.stack([block.mlp.W_out for block in dt.transformer.blocks])
+    MLP_out = torch.stack([block.mlp.W_out for block in _dt.transformer.blocks])
 
     # MLP_out = MLP_out / MLP_out.norm(dim=(-2,-1), keepdim=True)
 
@@ -1783,7 +1790,8 @@ def mlp_out_to_svd_in_component(
     )
 
 
-def svd_out_to_unembedding_component_top_k_variation(dt, V_OV, W_U):
+@st.cache_data(experimental_allow_widgets=True)
+def svd_out_to_unembedding_component_top_k_variation(_dt, V_OV, W_U):
     """
     This version of this analysis is based on "The SVD Decomposition is Highly Interpretable"
     Conjecture LessWrong post.
@@ -1800,7 +1808,7 @@ def svd_out_to_unembedding_component_top_k_variation(dt, V_OV, W_U):
     # torch.Size([3, 8, 7, 256])
     # Now we want to select a head/layer and plot the imshow of the activations
     # only for the first n activations
-    layer, head, k, dims = layer_head_k_selector_ui(dt, key="ov")
+    layer, head, k, dims = layer_head_k_selector_ui(_dt, key="ov")
 
     head_v_projections = activations[layer, head, :dims, :].detach()
 
@@ -1828,11 +1836,11 @@ def svd_out_to_unembedding_component_top_k_variation(dt, V_OV, W_U):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def svd_out_to_unembedding_component(dt, V_OV, W_U):
+def svd_out_to_unembedding_component(_dt, V_OV, W_U):
     right_svd_vectors = st.slider(
         "Number of Singular Directions",
         min_value=3,
-        max_value=dt.transformer_config.d_head,
+        max_value=_dt.transformer_config.d_head,
         key="svd out to unembedding",
     )
 
@@ -1919,14 +1927,15 @@ def svd_out_to_unembedding_component(dt, V_OV, W_U):
     # st.plotly_chart(fig, use_container_width=True)
 
 
-def show_svd_virtual_weights(dt):
-    with st.expander("Analysis of Virtual Weights"):
+@st.cache_data(experimental_allow_widgets=True)
+def show_dimensionality_reduction(_dt):
+    with st.expander("Dimensionality Reduction"):
         # get head objects.
-        W_QK = get_qk_circuit(dt)
+        W_QK = get_qk_circuit(_dt)
         U_QK, S_QK, V_QK = torch.linalg.svd(W_QK)
-        W_OV = get_ov_circuit(dt)
+        W_OV = get_ov_circuit(_dt)
         U_OV, S_OV, V_OV = torch.linalg.svd(W_OV)
-        W_U = dt.action_predictor.weight
+        W_U = _dt.action_predictor.weight
 
         a, b = st.columns(2)
         with a:
@@ -1942,15 +1951,15 @@ def show_svd_virtual_weights(dt):
                 ["Keys", "Queries", "Values"]
             )
             with keys_tab:
-                embedding_projection_onto_svd_component(dt, V_QK, key="keys")
+                embedding_projection_onto_svd_component(_dt, V_QK, key="keys")
 
             with queries_tab:
                 embedding_projection_onto_svd_component(
-                    dt, U_QK, key="queries"
+                    _dt, U_QK, key="queries"
                 )
 
             with values_tab:
-                embedding_projection_onto_svd_component(dt, V_OV, key="values")
+                embedding_projection_onto_svd_component(_dt, V_OV, key="values")
 
         if selected_writer == "Head Output":
             (
@@ -1972,25 +1981,25 @@ def show_svd_virtual_weights(dt):
             with key_composition_tab:
                 V_Q_tmp = V_QK.permute(0, 1, 3, 2)
                 svd_out_to_svd_in_component(
-                    dt, U_OV, V_Q_tmp, key="key composition"
+                    _dt, U_OV, V_Q_tmp, key="key composition"
                 )
 
             with query_composition_tab:
                 svd_out_to_svd_in_component(
-                    dt, U_OV, U_QK, key="query composition"
+                    _dt, U_OV, U_QK, key="query composition"
                 )
 
             with value_composition_tab:
                 V_OV_tmp = V_OV.permute(0, 1, 3, 2)
                 svd_out_to_svd_in_component(
-                    dt, U_OV, V_OV_tmp, key="value composition"
+                    _dt, U_OV, V_OV_tmp, key="value composition"
                 )
 
             with mlp_in_tab:
-                svd_out_to_mlp_in_component(dt, V_OV)
+                svd_out_to_mlp_in_component(_dt, V_OV)
 
             with unembedding_tab:
-                svd_out_to_unembedding_component(dt, V_OV, W_U)
+                svd_out_to_unembedding_component(_dt, V_OV, W_U)
 
         if selected_writer == "Neuron Output":
             key_tab, query_tab, value_tab = st.tabs(
@@ -1999,20 +2008,20 @@ def show_svd_virtual_weights(dt):
 
             with key_tab:
                 V_QK_tmp = V_QK.permute(0, 1, 3, 2)
-                mlp_out_to_svd_in_component(dt, V_QK_tmp, key="key")
+                mlp_out_to_svd_in_component(_dt, V_QK_tmp, key="key")
 
             with query_tab:
-                mlp_out_to_svd_in_component(dt, U_QK, key="query")
+                mlp_out_to_svd_in_component(_dt, U_QK, key="query")
 
             with value_tab:
                 V_OV_tmp = V_OV.permute(0, 1, 3, 2)
-                mlp_out_to_svd_in_component(dt, V_OV_tmp, key="value")
+                mlp_out_to_svd_in_component(_dt, V_OV_tmp, key="value")
 
 
-def get_ov_circuit(dt):
+def get_ov_circuit(_dt):
     # stack the heads
-    W_V = torch.stack([block.attn.W_V for block in dt.transformer.blocks])
-    W_0 = torch.stack([block.attn.W_O for block in dt.transformer.blocks])
+    W_V = torch.stack([block.attn.W_V for block in _dt.transformer.blocks])
+    W_0 = torch.stack([block.attn.W_O for block in _dt.transformer.blocks])
 
     # inner OV circuits.
     W_OV = torch.einsum("lhmd,lhdn->lhmn", W_V, W_0)
@@ -2020,10 +2029,10 @@ def get_ov_circuit(dt):
     return W_OV
 
 
-def get_qk_circuit(dt):
+def get_qk_circuit(_dt):
     # stack the heads
-    W_Q = torch.stack([block.attn.W_Q for block in dt.transformer.blocks])
-    W_K = torch.stack([block.attn.W_K for block in dt.transformer.blocks])
+    W_Q = torch.stack([block.attn.W_Q for block in _dt.transformer.blocks])
+    W_K = torch.stack([block.attn.W_K for block in _dt.transformer.blocks])
     # inner QK circuits.
     W_QK = einsum(
         "layer head d_model1 d_head, layer head d_model2 d_head -> layer head d_model1 d_model2",
@@ -2034,12 +2043,13 @@ def get_qk_circuit(dt):
     return W_QK
 
 
-def plot_svd_by_head_layer(dt, S):
-    d_head = dt.transformer_config.d_head
+@st.cache_data(experimental_allow_widgets=True)
+def plot_svd_by_head_layer(_dt, S):
+    d_head = _dt.transformer_config.d_head
     labels = [
         f"L{i}H{j}"
-        for i in range(0, dt.transformer_config.n_layers)
-        for j in range(dt.transformer_config.n_heads)
+        for i in range(0, _dt.transformer_config.n_layers)
+        for j in range(_dt.transformer_config.n_heads)
     ]
     S = einops.rearrange(S, "l h s -> (l h) s")
 
@@ -2055,21 +2065,22 @@ def plot_svd_by_head_layer(dt, S):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def layer_head_k_selector_ui(dt, key=""):
-    n_actions = dt.action_predictor.weight.shape[0]
+@st.cache_data(experimental_allow_widgets=True)
+def layer_head_k_selector_ui(_dt, key=""):
+    n_actions = _dt.action_predictor.weight.shape[0]
     layer_selection, head_selection, k_selection, d_selection = st.columns(4)
 
     with layer_selection:
         layer = st.selectbox(
             "Select Layer",
-            options=list(range(dt.transformer_config.n_layers)),
+            options=list(range(_dt.transformer_config.n_layers)),
             key="layer" + key,
         )
 
     with head_selection:
         head = st.selectbox(
             "Select Head",
-            options=list(range(dt.transformer_config.n_heads)),
+            options=list(range(_dt.transformer_config.n_heads)),
             key="head" + key,
         )
     with k_selection:
@@ -2085,11 +2096,11 @@ def layer_head_k_selector_ui(dt, key=""):
         else:
             k = 3
     with d_selection:
-        if dt.transformer_config.d_model > 3:
+        if _dt.transformer_config.d_model > 3:
             dims = st.slider(
                 "Select Dimensions",
                 min_value=3,
-                max_value=dt.transformer_config.d_head,
+                max_value=_dt.transformer_config.d_head,
                 value=3,
                 step=1,
                 key="dims" + key,
@@ -2100,7 +2111,8 @@ def layer_head_k_selector_ui(dt, key=""):
     return layer, head, k, dims
 
 
-def embedding_matrix_selection_ui(dt):
+@st.cache_data(experimental_allow_widgets=True)
+def embedding_matrix_selection_ui(_dt):
     embedding_matrix_selection = st.columns(2)
     with embedding_matrix_selection[0]:
         embedding_matrix_1 = st.selectbox(
@@ -2115,9 +2127,9 @@ def embedding_matrix_selection_ui(dt):
             key=uuid.uuid4(),
         )
 
-    W_E_state = dt.state_embedding.weight
-    W_E_action = dt.action_embedding[0].weight
-    W_E_rtg = dt.reward_embedding[0].weight
+    W_E_state = _dt.state_embedding.weight
+    W_E_action = _dt.action_embedding[0].weight
+    W_E_rtg = _dt.reward_embedding[0].weight
 
     if embedding_matrix_1 == "State":
         embedding_matrix_1 = W_E_state
@@ -2136,9 +2148,9 @@ def embedding_matrix_selection_ui(dt):
     return embedding_matrix_1, embedding_matrix_2
 
 
-def layer_head_channel_selector(dt, key=""):
-    n_heads = dt.transformer_config.n_heads
-    height, width, channels = dt.environment_config.observation_space[
+def layer_head_channel_selector(_dt, key=""):
+    n_heads = _dt.transformer_config.n_heads
+    height, width, channels = _dt.environment_config.observation_space[
         "image"
     ].shape
     layer_selection, head_selection, other_selection = st.columns(3)
@@ -2146,7 +2158,7 @@ def layer_head_channel_selector(dt, key=""):
     with layer_selection:
         layer = st.selectbox(
             "Select Layer",
-            options=list(range(dt.transformer_config.n_layers)),
+            options=list(range(_dt.transformer_config.n_layers)),
             key="layer" + key,
         )
 
