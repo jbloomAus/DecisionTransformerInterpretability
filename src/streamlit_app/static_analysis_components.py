@@ -2155,7 +2155,6 @@ def embedding_matrix_selection_ui(_dt):
     return embedding_matrix_1, embedding_matrix_2
 
 
-@st.cache_data(experimental_allow_widgets=True)
 def layer_head_channel_selector(_dt, key=""):
     n_heads = _dt.transformer_config.n_heads
     height, width, channels = _dt.environment_config.observation_space[
