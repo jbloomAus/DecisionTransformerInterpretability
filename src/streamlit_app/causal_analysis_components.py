@@ -1254,7 +1254,8 @@ def show_path_patching(dt, logit_dir, clean_cache):
     with st.expander("Path Patching"):
         # 1. Create a corrupted forward pass using the same essential logic as activation
         # patching.
-        corrupted_tokens = get_corrupted_tokens_component(dt, key="path_")
+        corrupted_tokens, patch_type = get_corrupted_tokens_component(dt, key="path_")
+
         (
             corrupt_preds,
             corrupt_x,
