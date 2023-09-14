@@ -1296,11 +1296,11 @@ def show_congruence(_dt):
 
                 df["Layer Out"] = df["Layer Out"].map(lambda x: f"L{x}")
                 df["Neuron Out"] = df["Layer Out"] + df["Neuron Out"].map(
-                    lambda x: f"N{x}"
+                    lambda x: f"N{x}Out"
                 )
                 df["Layer In"] = df["Layer In"].map(lambda x: f"L{x}")
                 df["Neuron In"] = df["Layer In"] + df["Neuron In"].map(
-                    lambda x: f"N{x}"
+                    lambda x: f"N{x}In"
                 )
 
                 # remove any rows where the layer out is less than the layer in
