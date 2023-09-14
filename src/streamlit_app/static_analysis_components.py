@@ -1281,7 +1281,7 @@ def show_congruence(_dt):
 
             with mlp_in_tab:
                 mlp_mlp_congruence = einsum(
-                    "layer_out d_mlp_out d_model, layer_in d_mlp_in d_model -> layer_in layer_out d_mlp_in d_mlp_out",
+                    "layer_out d_mlp_out d_model, layer_in d_model d_mlp_in -> layer_in layer_out d_mlp_in d_mlp_out",
                     MLP_out,
                     MLP_in,
                 ).detach()
