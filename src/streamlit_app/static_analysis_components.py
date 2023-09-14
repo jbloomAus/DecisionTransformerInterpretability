@@ -1012,7 +1012,7 @@ def show_ov_circuit(_dt):
                             )
 
 
-@st.cache_data(experimental_allow_widgets=True)
+# @st.cache_data(experimental_allow_widgets=True)
 def show_congruence(_dt):
     with st.expander("Show Congruence"):
         W_E_state = _dt.state_embedding.weight
@@ -1078,11 +1078,19 @@ def show_congruence(_dt):
 
                 st.plotly_chart(fig, use_container_width=True)
 
-                create_search_component(
-                    df[["Layer", "Neuron", "Embedding", "Score"]],
-                    title="Search MLP to Embeddings",
-                    key="mlp to embeddings",
-                )
+                search_tab, visualization_tab = st.tabs(["search", "gridmap"])
+
+                with search_tab:
+                    create_search_component(
+                        df[["Layer", "Neuron", "Embedding", "Score"]],
+                        title="Search MLP to Embeddings",
+                        key="mlp to embeddings",
+                    )
+
+                with visualization_tab:
+                    neuron_projection_gridmap_component(
+                        df, key="neuron projection"
+                    )
 
             with unembedding_tab:
                 activations = einsum(
@@ -1265,6 +1273,46 @@ def show_congruence(_dt):
                     title="Search MLP to MLP",
                     key="mlp to mlp",
                 )
+
+
+def neuron_projection_gridmap_component(activations, key="neuron projection"):
+    a, b, c = st.columns(3)
+
+    with a:
+        neurons = st.multiselect(
+            "Neuron",
+            options=activations.Neuron.unique(),
+            default=["L0N0"],
+            key=f"gridmap neuron {key}",
+        )
+    with b:
+        channels = st.multiselect(
+            "Select Channels",
+            options=SPARSE_CHANNEL_NAMES,
+            default=["key", "ball"],
+            key=f"gridmap channel state in, svd {key}",
+        )
+    with c:
+        abs_col_max = st.slider(
+            "Max Absolute Value Color",
+            min_value=activations.Score.abs().max().item() / 2,
+            max_value=activations.Score.abs().max().item(),
+            value=activations.Score.abs().max().item(),
+        )
+
+    directions_tabs = st.tabs(neurons)
+    for i in range(len(neurons)):
+        with directions_tabs[i]:
+            columns = st.columns(len(channels))
+            for j in range(len(columns)):
+                with columns[j]:
+                    # given some specific head, I want to project onto some channels.
+                    fig = plot_gridmap_from_embedding_congruence(
+                        activations[activations.Neuron == neurons[i]],
+                        channels[j],
+                        abs_col_max=abs_col_max,
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
 
 
 # TODO: Add st.cache_data here.
@@ -1499,44 +1547,7 @@ def embedding_projection_onto_svd_component(
             )
 
         with visualization_tab:
-            a, b, c = st.columns(3)
-
-            with a:
-                directions = st.multiselect(
-                    "Select Directions",
-                    options=activations["Direction"].unique(),
-                    default=["L0H0D0"],
-                    key=f"gridmap direction state in, svd {key}",
-                )
-            with b:
-                channels = st.multiselect(
-                    "Select Channels",
-                    options=SPARSE_CHANNEL_NAMES,
-                    default=["key", "ball"],
-                    key=f"gridmap channel state in, svd {key}",
-                )
-            with c:
-                abs_col_max = st.slider(
-                    "Max Absolute Value Color",
-                    min_value=activations.Score.abs().max().item() / 2,
-                    max_value=activations.Score.abs().max().item(),
-                    value=activations.Score.abs().max().item(),
-                )
-
-            directions_tabs = st.tabs(directions)
-            for i in range(len(directions)):
-                with directions_tabs[i]:
-                    columns = st.columns(len(channels))
-                    for j in range(len(columns)):
-                        with columns[j]:
-                            # given some specific head, I want to project onto some channels.
-                            fig = plot_gridmap_from_embedding_congruence(
-                                activations,
-                                directions[i],
-                                channels[j],
-                                abs_col_max=abs_col_max,
-                            )
-                            st.plotly_chart(fig, use_container_width=True)
+            svd_projection_gridmap_component(activations, key="state in" + key)
 
     with rtg_tab:
         W_E = _dt.reward_embedding[0].weight.T
@@ -1590,13 +1601,48 @@ def embedding_projection_onto_svd_component(
         st.plotly_chart(fig, use_container_width=True)
 
 
-def plot_gridmap_from_embedding_congruence(
-    activations, direction, channel, abs_col_max
-):
-    activations_head = activations[activations.Direction == direction]
-    activations_head = activations_head[
-        activations_head.Embedding.str.contains(channel)
-    ]
+def svd_projection_gridmap_component(activations, key="embeddings"):
+    a, b, c = st.columns(3)
+
+    with a:
+        directions = st.multiselect(
+            "Select Directions",
+            options=activations["Direction"].unique(),
+            default=["L0H0D0"],
+            key=f"gridmap direction state in, svd {key}",
+        )
+    with b:
+        channels = st.multiselect(
+            "Select Channels",
+            options=SPARSE_CHANNEL_NAMES,
+            default=["key", "ball"],
+            key=f"gridmap channel state in, svd {key}",
+        )
+    with c:
+        abs_col_max = st.slider(
+            "Max Absolute Value Color",
+            min_value=activations.Score.abs().max().item() / 2,
+            max_value=activations.Score.abs().max().item(),
+            value=activations.Score.abs().max().item(),
+        )
+
+    directions_tabs = st.tabs(directions)
+    for i in range(len(directions)):
+        with directions_tabs[i]:
+            columns = st.columns(len(channels))
+            for j in range(len(columns)):
+                with columns[j]:
+                    # given some specific head, I want to project onto some channels.
+                    fig = plot_gridmap_from_embedding_congruence(
+                        activations[activations.Direction == directions[i]],
+                        channels[j],
+                        abs_col_max=abs_col_max,
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+
+
+def plot_gridmap_from_embedding_congruence(activations, channel, abs_col_max):
+    activations_head = activations[activations.Embedding.str.contains(channel)]
 
     scores = torch.tensor(activations_head.Score.values).reshape(7, 7).T
 
