@@ -1488,12 +1488,55 @@ def embedding_projection_onto_svd_component(
 
         st.plotly_chart(fig, use_container_width=True)
 
-        # add search box
-        create_search_component(
-            activations[["Direction", "Embedding", "Score"]],
-            "Search Bar (eg: L0H1)",
-            key=f"search bar  state in, svd {key}",
-        )
+        search_tab, visualization_tab = st.tabs(["search", "gridmap"])
+
+        with search_tab:
+            # add search box
+            create_search_component(
+                activations[["Direction", "Embedding", "Score"]],
+                "Search Bar (eg: L0H1)",
+                key=f"search bar  state in, svd {key}",
+            )
+
+        with visualization_tab:
+            a, b, c = st.columns(3)
+
+            with a:
+                directions = st.multiselect(
+                    "Select Directions",
+                    options=activations["Direction"].unique(),
+                    default=["L0H0D0"],
+                    key=f"gridmap direction state in, svd {key}",
+                )
+            with b:
+                channels = st.multiselect(
+                    "Select Channels",
+                    options=SPARSE_CHANNEL_NAMES,
+                    default=["key", "ball"],
+                    key=f"gridmap channel state in, svd {key}",
+                )
+            with c:
+                abs_col_max = st.slider(
+                    "Max Absolute Value Color",
+                    min_value=activations.Score.abs().max().item() / 2,
+                    max_value=activations.Score.abs().max().item(),
+                    value=activations.Score.abs().max().item(),
+                )
+
+            directions_tabs = st.tabs(directions)
+            for i in range(len(directions)):
+                with directions_tabs[i]:
+                    columns = st.columns(len(channels))
+                    for j in range(len(columns)):
+                        with columns[j]:
+                            # given some specific head, I want to project onto some channels.
+                            fig = plot_gridmap_from_embedding_congruence(
+                                activations,
+                                directions[i],
+                                channels[j],
+                                abs_col_max=abs_col_max,
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
 
     with rtg_tab:
         W_E = _dt.reward_embedding[0].weight.T
@@ -1545,6 +1588,35 @@ def embedding_projection_onto_svd_component(
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+
+def plot_gridmap_from_embedding_congruence(
+    activations, direction, channel, abs_col_max
+):
+    activations_head = activations[activations.Direction == direction]
+    activations_head = activations_head[
+        activations_head.Embedding.str.contains(channel)
+    ]
+
+    scores = torch.tensor(activations_head.Score.values).reshape(7, 7).T
+
+    fig = px.imshow(
+        scores,
+        color_continuous_midpoint=0,
+        color_continuous_scale="RdBu",
+        zmin=-abs_col_max,
+        zmax=abs_col_max,
+    )
+
+    # update hover template
+    fig.update_traces(
+        hovertemplate=f"{channel}, " + "(%{x},%{y})<br>Congruence: %{z:.2f}"
+    )
+
+    # remove color legend
+    fig.update_layout(coloraxis_showscale=False)
+
+    return fig
 
 
 def svd_out_to_svd_in_component(
@@ -1992,7 +2064,7 @@ def svd_out_to_unembedding_component(_dt, V_OV, W_U):
     # st.plotly_chart(fig, use_container_width=True)
 
 
-@st.cache_data(experimental_allow_widgets=True)
+# @st.cache_data(experimental_allow_widgets=True)
 def show_dimensionality_reduction(_dt):
     with st.expander("Dimensionality Reduction"):
         # get head objects.
@@ -2091,6 +2163,10 @@ def get_ov_circuit(_dt):
     W_V = torch.stack([block.attn.W_V for block in _dt.transformer.blocks])
     W_0 = torch.stack([block.attn.W_O for block in _dt.transformer.blocks])
 
+    # centre
+    # W_0 = W_0 - W_0.mean(2, keepdim=True)
+    # W_V = W_V - W_V.mean(2, keepdim=True)
+
     # inner OV circuits.
     W_OV = torch.einsum("lhmd,lhdn->lhmn", W_V, W_0)
 
@@ -2101,6 +2177,14 @@ def get_qk_circuit(_dt):
     # stack the heads
     W_Q = torch.stack([block.attn.W_Q for block in _dt.transformer.blocks])
     W_K = torch.stack([block.attn.W_K for block in _dt.transformer.blocks])
+
+    # # centre
+    # W_K = W_K - W_K.mean(2, keepdim=True)
+    # W_Q = W_Q - W_Q.mean(2, keepdim=True)
+
+    # st.write(W_Q.shape)
+    # st.write(W_Q.mean(2).shape)
+
     # inner QK circuits.
     W_QK = einsum(
         "layer head d_model1 d_head, layer head d_model2 d_head -> layer head d_model1 d_model2",
