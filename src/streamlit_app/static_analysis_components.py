@@ -37,6 +37,7 @@ from .constants import (
     POSITION_NAMES,
     ACTION_NAMES,
     STATE_EMBEDDING_LABELS,
+    get_all_neuron_labels,
 )
 from .visualizations import plot_heatmap
 
@@ -305,8 +306,8 @@ def show_embeddings(_dt):
                     pca_df["Channel"] = pca_df["State"].apply(
                         lambda x: x.split(",")[0]
                     )
-                
-                states = set(pca_df['State'].values)
+
+                states = set(pca_df["State"].values)
                 selected_channels = st.multiselect(
                     "Select Observation Channels",
                     options=list(states),
@@ -314,7 +315,9 @@ def show_embeddings(_dt):
 
                 states_to_filter = [state for state in selected_channels]
                 if states_to_filter:
-                    pca_df_filtered = pca_df[pca_df['State'].isin(states_to_filter)]
+                    pca_df_filtered = pca_df[
+                        pca_df["State"].isin(states_to_filter)
+                    ]
                 else:
                     pca_df_filtered = pca_df
 
@@ -399,37 +402,92 @@ def show_embeddings(_dt):
                 st.plotly_chart(fig, use_container_width=True)
 
 
-@st.cache_data(experimental_allow_widgets=True)
 def show_neuron_directions(_dt):
-    MLP_in = torch.stack(
-        [block.mlp.W_in for block in _dt.transformer.blocks]
-    ).detach()
-
-    MLP_out = torch.stack(
-        [block.mlp.W_out for block in _dt.transformer.blocks]
-    ).detach()
-
-    layers = _dt.transformer_config.n_layers
-
     with st.expander("Show Neuron In / Out Directions"):
-        in_tab, out_tab = st.tabs(["In", "Out"])
+        layers = _dt.transformer_config.n_layers
+        all_neuron_labels = get_all_neuron_labels(
+            layers, _dt.transformer_config.d_mlp
+        )
 
-        with in_tab:
-            tabs = st.tabs(["MLP" + str(layer) for layer in range(layers)])
-            for i, tab in enumerate(tabs):
-                with tab:
-                    df = get_cosine_sim_df(MLP_in[i])
-                    fig = plot_heatmap(df, cluster=False)
-                    st.plotly_chart(fig, use_container_width=True)
+        MLP_in = (
+            torch.concat(
+                [block.mlp.W_in for block in _dt.transformer.blocks], dim=1
+            )
+            .detach()
+            .T
+        )
 
-        with out_tab:
-            tabs = st.tabs(["MLP" + str(layer) for layer in range(layers)])
-            for i, tab in enumerate(tabs):
-                with tab:
-                    df = get_cosine_sim_df(MLP_out[i])
-                    fig = plot_heatmap(df, cluster=False)
-                    st.plotly_chart(fig, use_container_width=True)
-    # dt.transformer.
+        st.write(MLP_in.shape)
+
+        MLP_out = torch.concat(
+            [block.mlp.W_out for block in _dt.transformer.blocks],
+            dim=0,
+        ).detach()
+
+        # not sure what default should be...
+        a, b = st.columns(2)
+        with a:
+            selected_in_neurons_directions = st.multiselect(
+                "Select In Neuron Directions",
+                options=range(len(all_neuron_labels)),
+                key="in neuron directions",
+                default=[0],
+                format_func=lambda x: all_neuron_labels[x],
+            )
+
+        with b:
+            selected_out_neurons_directions = st.multiselect(
+                "Select Out Neuron Directions",
+                options=range(len(all_neuron_labels)),
+                key="out neuron directions",
+                default=[0],
+                format_func=lambda x: all_neuron_labels[x],
+            )
+
+        filtered_in_neurons = MLP_in[selected_in_neurons_directions, :].T
+        in_labels = [
+            all_neuron_labels[i] + "In" for i in selected_in_neurons_directions
+        ]
+
+        filtered_out_neurons = MLP_out[selected_out_neurons_directions, :].T
+        out_labels = [
+            all_neuron_labels[i] + "Out"
+            for i in selected_out_neurons_directions
+        ]
+
+        all_neurons = torch.concat(
+            [filtered_in_neurons, filtered_out_neurons], dim=1
+        )
+
+        residual_stream_space_tab, action_space_tab = st.tabs(
+            ["Residual Stream Space", "Action Space"]
+        )
+
+        with residual_stream_space_tab:
+            df = get_cosine_sim_df(all_neurons.T)
+            df.columns = in_labels + out_labels
+            df.index = in_labels + out_labels
+
+            fig = plot_heatmap(df, cluster=True)
+            st.plotly_chart(fig, use_container_width=True)
+
+        with action_space_tab:
+            W_U = _dt.action_predictor.weight.detach()
+            W_U_normalized = W_U / torch.norm(W_U, dim=1, keepdim=True)
+            st.write(W_U_normalized.shape)
+            st.write()
+            all_neurons = einsum(
+                "Action d_model, d_model n_emb -> Action n_emb ",
+                W_U_normalized,
+                all_neurons.detach(),
+            )
+
+            df = get_cosine_sim_df(all_neurons.T)
+            df.columns = in_labels + out_labels
+            df.index = in_labels + out_labels
+
+            fig = plot_heatmap(df, cluster=True)
+            st.plotly_chart(fig, use_container_width=True)
 
     return
 

@@ -51,3 +51,11 @@ STATE_EMBEDDING_LABELS = (
     .apply(lambda x: "{0}, ({1},{2})".format(*x))
     .tolist()
 )
+
+
+def get_all_neuron_labels(n_layers, d_mlp):
+    labels = [
+        [f"L{layer}N{neuron}" for neuron in range(d_mlp)]
+        for layer in range(n_layers)
+    ]
+    return list(itertools.chain(*labels))
