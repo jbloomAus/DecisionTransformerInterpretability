@@ -259,10 +259,22 @@ def show_embeddings(_dt):
                     pca_df["Channel"] = pca_df["State"].apply(
                         lambda x: x.split(",")[0]
                     )
+                
+                states = set(pca_df['State'].values)
+                selected_channels = st.multiselect(
+                    "Select Observation Channels",
+                    options=list(states),
+                )
+
+                states_to_filter = [state for state in selected_channels]
+                if states_to_filter:
+                    pca_df_filtered = pca_df[pca_df['State'].isin(states_to_filter)]
+                else:
+                    pca_df_filtered = pca_df
 
                 # Create the plot
                 fig = px.scatter(
-                    pca_df,
+                    pca_df_filtered,
                     x="PC1",
                     y="PC2",
                     title="PCA on Embeddings",
