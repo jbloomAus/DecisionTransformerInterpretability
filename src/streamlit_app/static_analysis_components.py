@@ -258,13 +258,14 @@ def show_embeddings(dt):
                         lambda x: x.split(",")[0]
                     )
                 
-                st.text('Inputs are of the form: "channel,(x,y)" and separated by | characters.')
-                user_input = st.text_input("Enter one or more states:", "")
+                states = set(pca_df['State'].values)
+                selected_channels = st.multiselect(
+                    "Select Observation Channels",
+                    options=list(states),
+                )
 
-                # Ugly, ugly workaround for Streamlit not accepting spaces. So, channel,(x,y) becomes channel, (x,y) as desired.
-                states_to_filter = [state.replace('(', ' (') for state in user_input.split('|')]
-
-                if user_input:  # If the user has entered something
+                states_to_filter = [state for state in selected_channels]
+                if states_to_filter:
                     pca_df_filtered = pca_df[pca_df['State'].isin(states_to_filter)]
                 else:
                     pca_df_filtered = pca_df
