@@ -1,7 +1,4 @@
-import uuid
-
 import einops
-import numpy as np
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -40,6 +37,32 @@ from .constants import (
     get_all_neuron_labels,
 )
 from .visualizations import plot_heatmap
+
+from src.streamlit_app.static_analysis.gridmaps import (
+    ov_gridmap_component,
+    qk_gridmap_component,
+    neuron_projection_gridmap_component,
+)
+
+from src.streamlit_app.static_analysis.svd_projection import (
+    embedding_projection_onto_svd_component,
+    mlp_out_to_svd_in_component,
+    svd_out_to_unembedding_component,
+    svd_out_to_svd_in_component,
+    svd_out_to_mlp_in_component,
+)
+
+from src.streamlit_app.static_analysis.virtual_weights import (
+    get_qk_circuit,
+    get_ov_circuit,
+    get_full_qk_state_state,
+)
+
+from src.streamlit_app.static_analysis.ui import (
+    layer_head_k_selector_ui,
+    embedding_matrix_selection_ui,
+    layer_head_channel_selector,
+)
 
 
 all_index_labels = [
@@ -492,7 +515,7 @@ def show_neuron_directions(_dt):
     return
 
 
-@st.cache_data(experimental_allow_widgets=True)
+# @st.cache_data(experimental_allow_widgets=True)
 def show_qk_circuit(_dt):
     with st.expander("show QK circuit"):
         st.write(
@@ -504,10 +527,6 @@ def show_qk_circuit(_dt):
             r"""
             QK_{circuit} = W_{E(i)}^T W_Q^T W_K W_{E(j)} \text{ for } i,j \in \{rtg, state\, \text{or} \, action\}
             """
-        )
-
-        st.write(
-            "This component is currently in active development. For now we are only showing the Q (State) to K (RTG) visualizations"
         )
 
         state_state_tab, state_rtg_tab = st.tabs(
@@ -540,215 +559,141 @@ def show_qk_circuit(_dt):
         n_heads = _dt.transformer_config.n_heads
         layers = _dt.transformer_config.n_layers
 
-        # stack the heads
-        W_Q = torch.stack([block.attn.W_Q for block in _dt.transformer.blocks])
-        W_K = torch.stack([block.attn.W_K for block in _dt.transformer.blocks])
-        # inner QK circuits.
-        W_QK = einsum(
-            "layer head d_model1 d_head, layer head d_model2 d_head -> layer head d_model1 d_model2",
-            W_Q,
-            W_K,
-        )
-
+        W_QK = get_qk_circuit(_dt)
         W_E_rtg = _dt.reward_embedding[0].weight
         W_E_state = _dt.state_embedding.weight
         with state_state_tab:
-            st.write(
-                """
-                State->State attention is made up of 980*980 coefficients representing each channel\
-                and position attending in the key matched up with every channel and position in the\
-                query. In order to make this more tractable, let's do two things:
-
-                1. only work on one head at a time.
-                2. aggregate first accross channels and then pick only key-query
-                    channel combinations that seem important.
-                """
+            select_via_k_tab, select_via_q_tab = st.tabs(
+                ["Select via K", "Select via Q"]
             )
 
-            a, b, c = st.columns(3)
-            with a:
-                layer = st.selectbox("Select a layer", list(range(layers)))
-            with b:
-                head = st.selectbox("Select a head", list(range(n_heads)))
-            with c:
-                show_std_channel_channel = st.checkbox(
-                    "Show std of coefficient by query-key channel"
+            with select_via_k_tab:
+                selected_key_state_features = st.multiselect(
+                    "Select Key Vocabulary Items",
+                    options=range(len(STATE_EMBEDDING_LABELS)),
+                    format_func=lambda x: STATE_EMBEDDING_LABELS[x],
+                    key="key state features",
+                    default=[265],
                 )
 
-            W_QK_full = W_E_state.T @ W_QK[layer, head] @ W_E_state
-
-            W_QK_full_reshaped = W_QK_full.reshape(
-                channels, height, width, channels, height, width
-            )
-
-            all_scores_df = tensor_to_long_data_frame(
-                W_QK_full_reshaped,
-                dimension_names=[
-                    "Channel-Q",
-                    "X-Q",
-                    "Y-Q",
-                    "Channel-K",
-                    "X-K",
-                    "Y-K",
-                ],
-            )
-
-            # order by channe then reset index
-            all_scores_df = all_scores_df.sort_values(
-                by=["Channel-Q", "Channel-K"],
-            )
-
-            # aggregate by channels
-            all_scores_df = (
-                all_scores_df.groupby(["Channel-Q", "Channel-K"])
-                .std()
-                .reset_index()
-            )
-
-            all_scores_df["Channel-K"] = all_scores_df["Channel-K"].map(
-                twenty_idx_format_func
-            )
-
-            all_scores_df["Channel-Q"] = all_scores_df["Channel-Q"].map(
-                twenty_idx_format_func
-            )
-
-            channel_names = [twenty_idx_format_func(i) for i in range(20)]
-            if show_std_channel_channel:
-                channel_channel_attn_coeff_std = torch.tensor(
-                    all_scores_df.Score
-                ).reshape(20, 20)
-
-                df = pd.DataFrame(
-                    channel_channel_attn_coeff_std,
-                    index=channel_names,
-                    columns=channel_names,
-                )
-                fig = px.imshow(
-                    df,
-                    color_continuous_midpoint=0,
-                    color_continuous_scale="RdBu",
+                W_QK_q_filtered_df = get_full_qk_state_state(
+                    _dt, k_filter=selected_key_state_features
                 )
 
-                # xticks and yticks are the channel values
-                fig.update_xaxes(
-                    showgrid=False,
-                    ticks="",
-                    tickmode="linear",
-                    automargin=True,
-                    ticktext=channel_names,
+                # now sum over the selected key state features (So we're seeing how much
+                # collective attention is paid to the selected key state features)
+
+                W_QK_q_filtered_df = (
+                    W_QK_q_filtered_df.groupby(
+                        [
+                            "Layer",
+                            "Head",
+                            "Embedding-Q",
+                            "Channel_Q",
+                            "X_Q",
+                            "Y_Q",
+                        ]
+                    )
+                    .sum()
+                    .reset_index()
                 )
 
-                fig.update_yaxes(
-                    showgrid=False,
-                    ticks="",
-                    tickangle=0,
-                    tickmode="linear",
-                    automargin=True,
-                    tickvals=np.arange(len(channel_names)),
-                    ticktext=channel_names,
+                # rename Embedding-Q to Embedding
+                W_QK_q_filtered_df.rename(
+                    columns={
+                        "Embedding-Q": "Embedding",
+                        "Channel_Q": "Channel",
+                        "X_Q": "X",
+                        "Y_Q": "Y",
+                    },
+                    inplace=True,
                 )
 
+                # # now make a strip plot
+                fig = px.scatter(
+                    W_QK_q_filtered_df.sort_values(
+                        by=["Layer", "Head", "Channel"]
+                    ).reset_index(drop=True),
+                    y="Score",
+                    color="Head",
+                    hover_data=["Head", "Embedding"],
+                )
+
+                # # unstructured view
                 st.plotly_chart(fig, use_container_width=True)
 
-                st.write(
-                    "These charts remind me a lot of a kth rank approximation to a matrix."
+                # make a gridmap:
+                qk_gridmap_component(
+                    W_QK_q_filtered_df,
+                    facet_col="Channel",
+                    key="embeddings Q, QK",
                 )
 
-            a, b, c = st.columns(3)
-            with a:
-                query_channel = st.selectbox(
-                    "Query Channel",
-                    list(range(20)),
-                    index=5,
-                    format_func=twenty_idx_format_func,
+                # # it might be nice to make use of states from the current trajectory later.
+
+            with select_via_q_tab:
+                selected_query_state_features = st.multiselect(
+                    "Select Query Vocabulary Items",
+                    options=range(len(STATE_EMBEDDING_LABELS)),
+                    format_func=lambda x: STATE_EMBEDDING_LABELS[x],
+                    key="query selection features",
+                    default=[258, 335],
                 )
-            with b:
-                key_channel = st.selectbox(
-                    "Key Channel",
-                    list(range(20)),
-                    index=6,
-                    format_func=twenty_idx_format_func,
+
+                W_QK_k_filtered_df = get_full_qk_state_state(
+                    _dt, q_filter=selected_query_state_features
                 )
-            with c:
-                show_query_filter = st.checkbox("Show Query filter?")
 
-            st.write(
-                """
-                In order to make this much easier/faster, I've configured the current final state\
-                to get the 'active' position in query channel and then we'll sum all the corresponding\
-                maps in query values. The result shows us a map of the key channel states which the\
-                current state should attend to.
-                """
-            )
+                # now sum over the selected key state features (So we're seeing how much
+                # collective attention is paid to the selected key state features)
 
-            st.write(st.session_state.obs[0, -1, :, :, query_channel].shape)
-            query_filter = st.session_state.obs[0, -1, :, :, query_channel].T
-            query_filter = query_filter.to(torch.bool)
+                W_QK_k_filtered_df = (
+                    W_QK_k_filtered_df.groupby(
+                        [
+                            "Layer",
+                            "Head",
+                            "Embedding-K",
+                            "Channel_K",
+                            "X_K",
+                            "Y_K",
+                        ]
+                    )
+                    .sum()
+                    .reset_index()
+                )
 
-            if show_query_filter:
-                fig = px.imshow(query_filter)
-                st.plotly_chart(fig)
+                # rename Embedding-Q to Embedding
+                W_QK_k_filtered_df.rename(
+                    columns={
+                        "Embedding-K": "Embedding",
+                        "Channel_K": "Channel",
+                        "X_K": "X",
+                        "Y_K": "Y",
+                    },
+                    inplace=True,
+                )
 
-            key_map = W_QK_full_reshaped[
-                query_channel, :, :, key_channel, :, :
-            ]
-            key_map = key_map * query_filter.T[:, :, None, None]
-            key_map = key_map.sum(dim=(0, 1)).T.detach()
+                # # now make a strip plot
+                fig = px.scatter(
+                    W_QK_k_filtered_df.sort_values(
+                        by=["Layer", "Head", "Channel"]
+                    ).reset_index(drop=True),
+                    y="Score",
+                    color="Head",
+                    hover_data=["Head", "Embedding"],
+                )
 
-            fig = px.imshow(
-                key_map,
-                color_continuous_midpoint=0,
-                color_continuous_scale="RdBu",
-            )
-            st.plotly_chart(fig)
+                # # unstructured view
+                st.plotly_chart(fig, use_container_width=True)
 
-            st.write(
-                """
-                The intensity of a color here, represents how much the query
-                will attend more to a state who's key state for that 
-                channel at that position is firing. 
+                # make a gridmap:
+                qk_gridmap_component(
+                    W_QK_k_filtered_df,
+                    facet_col="Channel",
+                    key="embeddings K, QK",
+                )
 
-                Note that for now the color range isn't normalized which is not great.
-
-                Last step: We can use channel activation on any given prior state to get a filter,
-                apply it to the map and see how much this channel-query, key-query
-                contribute to the attention from the current position to the previous position.
-
-                To do: Validate this works by generating the key filter map as well and showing the 
-                selected attention contributing terms.
-                """
-            )
-
-            # indexes = list(range(len(st.session_state.labels)))[1::3]
-            # index_to_label = {i:st.session_state.labels[i] for i in indexes}
-            # key_pos = st.selectbox(
-            #     "Select a previous state",
-            #     indexes,
-            #     format_func=index_to_label.get)
-
-            # query_filter = st.session_state.obs[0,-1, :,:,query_channel].T
-
-            # previous_pos = st.selectbox()
-
-            # we can the use the can
-
-            # # make a strip plot
-            # fig = px.scatter(
-            #     all_scores_df,
-            #     x=all_scores_df.index,
-            #     y="Score",
-            #     # facet_col="Channel-Q",
-            #     color="Channel-K",
-            #     hover_data=["Channel-Q", "Channel-K"],
-            #     labels={"value": "Congruence", "Score":"Std of Score in Channel-Channel Group"},
-            # )
-
-            # # update x axis to hide the tick labels, and remove the label
-            # fig.update_xaxes(showticklabels=False, title=None)
-            # st.plotly_chart(fig, use_container_width=True)
-
-            # st.write("Use the above graph to work out which channels to K ")
+                # # it might be nice to make use of states from the current trajectory later.
 
         with state_rtg_tab:
             # st.write(W_QK.shape)
@@ -1053,58 +998,6 @@ def show_ov_circuit(_dt):
         #                     )
 
 
-def ov_gridmap_component(activations, key="embeddings"):
-    a, b, c, d = st.columns(4)
-
-    with a:
-        heads = st.multiselect(
-            "Select Head",
-            options=activations["Head"].unique(),
-            default=["L0H0"],
-            key=f"gridmap direction state in, ov {key}",
-        )
-    with b:
-        channels = st.multiselect(
-            "Select Channels",
-            options=SPARSE_CHANNEL_NAMES,
-            default=["key", "ball"],
-            key=f"gridmap channel state in, ov {key}",
-        )
-    with c:
-        selected_actions = st.multiselect(
-            "Select Actions",
-            options=activations.Action.unique(),
-            default=["left", "right"],
-            key=f"gridmap action state in, ov {key}",
-        )
-
-    with d:
-        abs_col_max = st.slider(
-            "Max Absolute Value Color",
-            min_value=activations.Score.abs().max().item() / 2,
-            max_value=activations.Score.abs().max().item(),
-            value=activations.Score.abs().max().item(),
-        )
-
-    head_tabs = st.tabs(heads)
-    for i in range(len(heads)):
-        with head_tabs[i]:
-            for j in range(len(channels)):
-                # given some specific head, I want to project onto some channels.
-                fig = plot_gridmap_from_embedding_congruence(
-                    activations[activations.Head == heads[i]][
-                        activations.Action.isin(selected_actions)
-                    ],
-                    channels[j],
-                    abs_col_max=abs_col_max,
-                    facet_col="Action",
-                )
-                # add channel to title
-                fig.update_layout(title=f"Channel {channels[j]}")
-
-                st.plotly_chart(fig, use_container_width=True)
-
-
 # @st.cache_data(experimental_allow_widgets=True)
 def show_congruence(_dt):
     with st.expander("Show Congruence"):
@@ -1368,46 +1261,6 @@ def show_congruence(_dt):
                 )
 
 
-def neuron_projection_gridmap_component(activations, key="neuron projection"):
-    a, b, c = st.columns(3)
-
-    with a:
-        neurons = st.multiselect(
-            "Neuron",
-            options=activations.Neuron.unique(),
-            default=["L0N0"],
-            key=f"gridmap neuron {key}",
-        )
-    with b:
-        channels = st.multiselect(
-            "Select Channels",
-            options=SPARSE_CHANNEL_NAMES,
-            default=["key", "ball"],
-            key=f"gridmap channel state in, svd {key}",
-        )
-    with c:
-        abs_col_max = st.slider(
-            "Max Absolute Value Color",
-            min_value=activations.Score.abs().max().item() / 2,
-            max_value=activations.Score.abs().max().item(),
-            value=activations.Score.abs().max().item(),
-        )
-
-    directions_tabs = st.tabs(neurons)
-    for i in range(len(neurons)):
-        with directions_tabs[i]:
-            columns = st.columns(len(channels))
-            for j in range(len(columns)):
-                with columns[j]:
-                    # given some specific head, I want to project onto some channels.
-                    fig = plot_gridmap_from_embedding_congruence(
-                        activations[activations.Neuron == neurons[i]],
-                        channels[j],
-                        abs_col_max=abs_col_max,
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-
-
 # TODO: Add st.cache_data here.
 def show_composition_scores(_dt):
     with st.expander("Show Composition Scores"):
@@ -1573,690 +1426,6 @@ def show_composition_scores(_dt):
         )
 
 
-def embedding_projection_onto_svd_component(
-    _dt, _reading_svd_projection, key="embeddings"
-):
-    U = _reading_svd_projection
-    W_E_state = _dt.state_embedding.weight.detach().T
-    W_E_action = _dt.action_embedding[0].weight.detach().T
-    W_E_reward = _dt.reward_embedding[0].weight.detach().T
-
-    state_tab, rtg_tab = st.tabs(["State", "RTG"])  # , "Action"]
-
-    with state_tab:
-        left_svd_vectors = st.slider(
-            "Number of Singular Directions",
-            min_value=3,
-            max_value=_dt.transformer_config.d_head,
-            key=f"state out, head svd, {key}",
-        )
-
-        U_filtered = U[:, :, :left_svd_vectors, :]
-
-        activations = einsum(
-            "n_emb d_model, layer head d_head_in d_model -> layer head n_emb d_head_in",
-            W_E_state,
-            U_filtered,
-        )
-
-        activations = tensor_to_long_data_frame(
-            activations,
-            [
-                "Layer",
-                "Head",
-                "Embedding",
-                "Direction",
-            ],
-        )
-        activations["Head"] = activations["Layer"].map(
-            lambda x: f"L{x}"
-        ) + activations["Head"].map(lambda x: f"H{x}")
-        activations["Embedding"] = activations["Embedding"].map(
-            lambda x: embedding_labels[x]
-        )
-        activations["Direction"] = activations["Head"] + activations[
-            "Direction"
-        ].map(lambda x: f"D{x}")
-        fig = px.scatter(
-            activations.sort_values(by="Direction"),
-            x=activations.index,
-            color="Head",
-            y="Score",
-            hover_data=["Embedding", "Direction"],
-            labels={"Score": "Congruence"},
-            render_mode="webgl",
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-
-        search_tab, visualization_tab = st.tabs(["search", "gridmap"])
-
-        with search_tab:
-            # add search box
-            create_search_component(
-                activations[["Direction", "Embedding", "Score"]],
-                "Search Bar (eg: L0H1)",
-                key=f"search bar  state in, svd {key}",
-            )
-
-        with visualization_tab:
-            svd_projection_gridmap_component(activations, key="state in" + key)
-
-    with rtg_tab:
-        W_E = _dt.reward_embedding[0].weight.T
-        # W_pos_e = dt.transformer.W_pos
-        # W_E = W_E.T + W_pos_e
-
-        left_svd_vectors = st.slider(
-            "Number of Singular Directions",
-            min_value=3,
-            max_value=_dt.transformer_config.d_head,
-            key=f"embed rtg, left svd {key}",
-        )
-
-        U_filtered = U[:, :, :left_svd_vectors, :]
-        activations = einsum(
-            "n_emb d_model, layer head d_head_in d_model -> layer head n_emb d_head_in",
-            W_E,
-            U_filtered,
-        )
-
-        activations = tensor_to_long_data_frame(
-            activations,
-            [
-                "Layer",
-                "Head",
-                "Embedding",
-                "Direction",
-            ],
-        )
-        activations["Head"] = activations["Layer"].map(
-            lambda x: f"L{x}"
-        ) + activations["Head"].map(lambda x: f"H{x}")
-        activations["Embedding"] = activations["Embedding"].map(
-            lambda x: embedding_labels[x]
-        )
-
-        activations["Direction"] = activations["Head"] + activations[
-            "Direction"
-        ].map(lambda x: f"D{x}")
-
-        fig = px.scatter(
-            activations,
-            x=activations.index,
-            color="Head",
-            y="Score",
-            hover_data=["Direction"],
-            labels={"Score": "Congruence"},
-            render_mode="webgl",
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-
-
-def svd_projection_gridmap_component(activations, key="embeddings"):
-    a, b, c = st.columns(3)
-
-    with a:
-        directions = st.multiselect(
-            "Select Directions",
-            options=activations["Direction"].unique(),
-            default=["L0H0D0"],
-            key=f"gridmap direction state in, svd {key}",
-        )
-    with b:
-        channels = st.multiselect(
-            "Select Channels",
-            options=SPARSE_CHANNEL_NAMES,
-            default=["key", "ball"],
-            key=f"gridmap channel state in, svd {key}",
-        )
-    with c:
-        abs_col_max = st.slider(
-            "Max Absolute Value Color",
-            min_value=activations.Score.abs().max().item() / 2,
-            max_value=activations.Score.abs().max().item(),
-            value=activations.Score.abs().max().item(),
-        )
-
-    directions_tabs = st.tabs(directions)
-    for i in range(len(directions)):
-        with directions_tabs[i]:
-            columns = st.columns(len(channels))
-            for j in range(len(columns)):
-                with columns[j]:
-                    # given some specific head, I want to project onto some channels.
-                    fig = plot_gridmap_from_embedding_congruence(
-                        activations[activations.Direction == directions[i]],
-                        channels[j],
-                        abs_col_max=abs_col_max,
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
-
-
-def plot_gridmap_from_embedding_congruence(
-    activations, channel, abs_col_max, facet_col=None
-):
-    activations_head = activations[activations.Embedding.str.contains(channel)]
-
-    if not facet_col:
-        scores = torch.tensor(activations_head.Score.values).reshape(7, 7).T
-        fig = px.imshow(
-            scores,
-            color_continuous_midpoint=0,
-            color_continuous_scale="RdBu",
-            zmin=-abs_col_max,
-            zmax=abs_col_max,
-        )
-
-        # update hover template
-        fig.update_traces(
-            hovertemplate=f"{channel}, "
-            + "(%{x},%{y})<br>Congruence: %{z:.2f}"
-        )
-
-        # remove color legend
-        fig.update_layout(coloraxis_showscale=False)
-
-    else:
-        n_facets = len(activations_head[facet_col].unique())
-        activations_head = activations_head.sort_values([facet_col, "Y", "X"])
-        scores = torch.tensor(activations_head.Score.values).reshape(
-            n_facets, 7, 7
-        )
-
-        fig = px.imshow(
-            scores,
-            color_continuous_midpoint=0,
-            color_continuous_scale="RdBu",
-            facet_col=0,
-            zmin=-abs_col_max,
-            zmax=abs_col_max,
-        )
-
-        # update hover template
-        fig.update_traces(
-            hovertemplate=f"{channel}, "
-            + "(%{x},%{y})<br>Congruence: %{z:.2f}<br>",
-        )
-
-        # rename facet titles to be the facet col value
-        actions = activations_head[facet_col].unique()
-        fig.for_each_annotation(
-            lambda a: a.update(text=actions[int(a.text.split("=")[1])])
-        )
-
-        # make x-ticks at every value, remove the tick but keep text
-        fig.update_xaxes(
-            tickmode="array",
-            tickvals=list(range(7)),
-            ticktext=list(range(7)),
-            showticklabels=True,
-            title=None,
-        )
-
-        # do same for y but only for first facet
-        fig.update_yaxes(
-            tickmode="array",
-            tickvals=list(range(7)),
-            ticktext=list(range(7)),
-            showticklabels=True,
-            title=None,
-            row=1,
-            col=1,
-        )
-
-        # remove color legend
-        fig.update_layout(coloraxis_showscale=False)
-
-    return fig
-
-
-def svd_out_to_svd_in_component(
-    _dt,
-    writing_svd_projection,
-    _reading_svd_projection,
-    key="composition type",
-):
-    U = _reading_svd_projection
-    V = writing_svd_projection
-
-    a, b = st.columns(2)
-    with a:
-        left_svd_vectors = st.slider(
-            "Number of Singular Directions (out)",
-            min_value=3,
-            max_value=_dt.transformer_config.d_head,
-            key="head head left" + key,
-        )
-    with b:
-        right_svd_vectors = st.slider(
-            "Number of Singular Directions (in)",
-            min_value=3,
-            max_value=_dt.transformer_config.d_head,
-            key="head head right" + key,
-        )
-
-    U_filtered = U[:, :, :left_svd_vectors, :]
-    V_filtered = V[:, :, :right_svd_vectors, :]
-
-    activations = einsum(
-        "l1 h1 d_head_out d_res, l2 h2 d_head_in d_res  -> l2 l1 h1 h2 d_head_out d_head_in",
-        V_filtered,
-        U_filtered,
-    )
-
-    activations = tensor_to_long_data_frame(
-        activations,
-        [
-            "head_layer_in",
-            "head_layer_out",
-            "head_in",
-            "head_out",
-            "Direction In",
-            "Direction Out",
-        ],
-    )
-
-    # remove rows where head in layer is <= head out layer
-    activations = activations[
-        activations["head_layer_in"] > activations["head_layer_out"]
-    ].reset_index(drop=True)
-
-    activations["Head Out"] = activations["head_layer_out"].map(
-        lambda x: f"L{x}"
-    ) + activations["head_out"].map(lambda x: f"H{x}")
-
-    activations["Head In"] = activations["head_layer_in"].map(
-        lambda x: f"L{x}"
-    ) + activations["head_in"].map(lambda x: f"H{x}")
-
-    activations["Direction Out"] = activations["Head Out"] + activations[
-        "Direction Out"
-    ].map(lambda x: f"D{x}")
-
-    activations["Direction In"] = activations["Head In"] + activations[
-        "Direction In"
-    ].map(lambda x: f"D{x}")
-
-    activations = activations[
-        ["Head Out", "Direction Out", "Head In", "Direction In", "Score"]
-    ]
-
-    group_by = st.selectbox(
-        "Group By", options=["Head Out", "Head In"], key="head in out" + key
-    )
-    if group_by == "Head Out":
-        # reorder rows
-        activations = activations.sort_values(
-            by=["Head Out", "Head In", "Direction Out", "Direction In"]
-        ).reset_index(drop=True)
-
-    fig = px.scatter(
-        activations,
-        x=activations.index,
-        color=group_by,
-        y="Score",
-        hover_data=["Head Out", "Direction Out", "Head In", "Direction In"],
-        labels={"Score": "Congruence"},
-        render_mode="webgl",
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
-    # add search box
-    create_search_component(
-        activations,
-        "Head Out Singular Value Projections onto Head In",
-        key="svd, head head" + key,
-    )
-
-
-def svd_out_to_mlp_in_component(_dt, V_OV):
-    right_svd_vectors = st.slider(
-        "Number of Singular Directions",
-        min_value=3,
-        max_value=_dt.transformer_config.d_head,
-        key="svd out to mlp in",
-    )
-
-    MLP_in = torch.stack([block.mlp.W_in for block in _dt.transformer.blocks])
-    V_filtered = V_OV[:, :, :right_svd_vectors, :]
-    activations = einsum(
-        "l1 h1 d_head_out d_head_ext, l2 d_head_ext d_mlp_in -> l2 l1 h1 d_head_out d_mlp_in",
-        V_filtered,
-        MLP_in,
-    )
-
-    activations = tensor_to_long_data_frame(
-        activations,
-        [
-            "mlp_layer",
-            "head_layer",
-            "Head",
-            "Direction",
-            "Neuron",
-        ],
-    )
-
-    # remove rows where mlp_layer < head_layer
-    activations = activations[
-        activations["mlp_layer"] >= activations["head_layer"]
-    ]
-
-    activations["Head"] = activations["head_layer"].map(
-        lambda x: f"L{x}"
-    ) + activations["Head"].map(lambda x: f"H{x}")
-
-    activations["Neuron"] = activations["mlp_layer"].map(
-        lambda x: f"L{x}"
-    ) + activations["Neuron"].map(lambda x: f"N{x}")
-    activations["Direction"] = activations["Head"] + activations[
-        "Direction"
-    ].map(lambda x: f"D{x}")
-
-    # drop head head_layer, mlp_layer, head_out_dim
-    activations.drop(["head_layer", "mlp_layer"], axis=1, inplace=True)
-
-    activations = activations.sort_values(
-        ["Head", "Direction", "Neuron", "Score"]
-    )
-
-    activations.reset_index(drop=True, inplace=True)
-    fig = px.scatter(
-        activations,
-        x=activations.index,
-        color="Head",
-        y="Score",
-        hover_data=["Head", "Neuron", "Direction"],
-        labels={"Score": "Congruence"},
-        render_mode="webgl",
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
-    # add search box
-    create_search_component(
-        activations[["Neuron", "Direction", "Score"]],
-        "Head Out Singular Value Projections onto MLP",
-    )
-
-
-def mlp_out_to_svd_in_component(
-    _dt, _reading_svd_projection, key="mlp + composition type"
-):
-    U = _reading_svd_projection
-    left_svd_vectors = st.slider(
-        "Number of Singular Directions (in)",
-        min_value=3,
-        max_value=_dt.transformer_config.d_head,
-        key="svd out to mlp in" + key,
-    )
-    U_filtered = U[:, :, :left_svd_vectors, :]
-
-    MLP_out = torch.stack(
-        [block.mlp.W_out for block in _dt.transformer.blocks]
-    )
-
-    # MLP_out = MLP_out / MLP_out.norm(dim=(-2,-1), keepdim=True)
-
-    activations = einsum(
-        "mlp_layer d_model Neuron, head_layer Head d_head_in d_res -> mlp_layer head_layer Neuron Head d_head_in",
-        MLP_out,
-        U_filtered,
-    )
-
-    activations = tensor_to_long_data_frame(
-        activations,
-        [
-            "mlp_layer",
-            "head_layer",
-            "Neuron",
-            "Head",
-            "Direction",
-        ],
-    )
-
-    # since this is neuron out to head in, we want to remove any rows where
-    # mlp_layer < head_layer (neurons can only write to heads in later layers)
-    activations = activations[
-        activations["mlp_layer"] < activations["head_layer"]
-    ]
-
-    activations["Head"] = activations["head_layer"].map(
-        lambda x: f"L{x}"
-    ) + activations["Head"].map(lambda x: f"H{x}")
-
-    activations["Neuron"] = activations["mlp_layer"].map(
-        lambda x: f"L{x}"
-    ) + activations["Neuron"].map(lambda x: f"N{x}")
-    activations["Direction"] = activations["Head"] + activations[
-        "Direction"
-    ].map(lambda x: f"D{x}")
-
-    # drop head head_layer, mlp_layer, head_out_dim
-    activations.drop(["head_layer", "mlp_layer"], axis=1, inplace=True)
-
-    activations = activations.sort_values(
-        ["Head", "Direction", "Neuron", "Score"]
-    )
-
-    activations.reset_index(drop=True, inplace=True)
-    fig = px.scatter(
-        activations,
-        x=activations.index,
-        color="Head",
-        y="Score",
-        hover_data=["Head", "Neuron", "Direction"],
-        labels={"Score": "Congruence"},
-        render_mode="webgl",
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
-    # add search box
-    create_search_component(
-        activations[["Neuron", "Direction", "Score"]],
-        "Head Out Singular Value Projections onto MLP",
-        key="search: mlp out to svd in " + key,
-    )
-
-
-@st.cache_data(experimental_allow_widgets=True)
-def svd_out_to_unembedding_component_top_k_variation(_dt, V_OV, W_U):
-    """
-    This version of this analysis is based on "The SVD Decomposition is Highly Interpretable"
-    Conjecture LessWrong post.
-
-    It doesn't work as nicely when your output dimension is much smaller or not super orthogonal.
-    A better alternative here is to use a strip plot, or a scatter plot to
-    show all the scores.
-
-    """
-    # Unembedding Values
-    # shape d_action, d_mod
-    activations = einsum("l h d1 d2, a d1 -> l h d2 a", V_OV, W_U)
-
-    # torch.Size([3, 8, 7, 256])
-    # Now we want to select a head/layer and plot the imshow of the activations
-    # only for the first n activations
-    layer, head, k, dims = layer_head_k_selector_ui(_dt, key="ov")
-
-    head_v_projections = activations[layer, head, :dims, :].detach()
-
-    st.write(head_v_projections.shape)
-    # get top k activations per column
-    topk_values, topk_indices = torch.topk(head_v_projections, k, dim=1)
-
-    # put indices into a heat map then replace with the IDX_TO_ACTION string
-    df = pd.DataFrame(topk_indices.T.detach().numpy())
-    fig = px.imshow(
-        topk_values.T,
-        color_continuous_midpoint=0,
-        color_continuous_scale="RdBu",
-        labels={
-            "y": "Output Token Rank",
-            "x": "Singular vector",
-        },
-    )
-
-    fig = fig.update_traces(
-        text=df.applymap(lambda x: IDX_TO_ACTION[x]).values,
-        texttemplate="%{text}",
-        hovertemplate=None,
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-
-def svd_out_to_unembedding_component(_dt, V_OV, W_U):
-    right_svd_vectors = st.slider(
-        "Number of Singular Directions",
-        min_value=3,
-        max_value=_dt.transformer_config.d_head,
-        key="svd out to unembedding",
-    )
-
-    V_OV = V_OV[:, :, :right_svd_vectors, :]
-
-    activations = einsum(
-        "l1 h1 d_head_out d_head_ext, a d_head_ext -> l1 h1 d_head_out a",
-        V_OV,
-        W_U,
-    )
-
-    # convert to long df
-    activations = tensor_to_long_data_frame(
-        activations,
-        [
-            "Layer",
-            "Head",
-            "Direction",
-            "Action",
-        ],
-    )
-    activations["Head"] = activations["Layer"].map(
-        lambda x: f"L{x}"
-    ) + activations["Head"].map(lambda x: f"H{x}")
-
-    activations["Direction"] = activations["Head"] + activations[
-        "Direction"
-    ].map(lambda x: f"D{x}")
-
-    activations["Action"] = activations["Action"].map(
-        lambda x: IDX_TO_ACTION[x]
-    )
-
-    # remove layer column
-    activations.drop(["Layer"], axis=1, inplace=True)
-
-    if st.checkbox("Project into Action space"):
-        # pivot the table
-        activations = activations.pivot_table(
-            index=["Head", "Direction"],
-            columns=["Action"],
-            values=["Score"],
-        )
-        activations.columns = activations.columns.droplevel(0)
-        activations.reset_index(inplace=True)
-        a, b = st.columns(2)
-        with a:
-            action_1 = st.selectbox(
-                "Select Action 1",
-                options=IDX_TO_ACTION.values(),
-                index=1,
-            )
-        with b:
-            action_2 = st.selectbox(
-                "Select Action 2",
-                options=IDX_TO_ACTION.values(),
-                index=0,
-            )
-
-        fig = px.scatter(
-            activations,
-            x=action_1,
-            y=action_2,
-            color="Head",
-            hover_data=["Head", "Direction", action_1, action_2],
-            labels={"Score": "Congruence"},
-        )
-        # centre plot on 0,0
-        y_abs_max = (
-            max(
-                abs(activations[action_1].min()),
-                abs(activations[action_1].max()),
-            )
-            + 0.1
-        )
-        x_abs_max = (
-            max(
-                abs(activations[action_2].min()),
-                abs(activations[action_2].max()),
-            )
-            + 0.1
-        )
-        fig.update_xaxes(range=[-x_abs_max, x_abs_max])
-        fig.update_yaxes(range=[-y_abs_max, y_abs_max])
-
-        st.plotly_chart(fig, use_container_width=True)
-
-        # add search box
-        create_search_component(
-            activations,
-            title="Head Out Singular Value Projections onto Unembedding",
-            key="Head Out Singular Value Projections onto Unembedding",
-        )
-    else:
-        fig = px.scatter(
-            activations,
-            x=activations.index,
-            y="Score",
-            color="Head",
-            # facet_col="layer",
-            # opacity=0.5,
-            hover_data=["Head", "Direction", "Action"],
-            labels={"value": "Congruence"},
-        )
-
-        # update x axis to hide the tick labels, and remove the label
-        fig.update_xaxes(showticklabels=False, title=None)
-
-        st.plotly_chart(fig, use_container_width=True)
-
-        # add search box
-        create_search_component(
-            activations[["Head", "Direction", "Action", "Score"]],
-            title="Head Out Singular Value Projections onto Unembedding",
-            key="Head Out Singular Value Projections onto Unembedding",
-        )
-
-    # quick experiment, let's see what happens if we plot two actions against each other.
-
-    # # make the df wide
-    # activations_wide = activations.pivot_table(
-    #     index = ["Head", "Direction"],
-    #     columns = ["Action"],
-    #     values = ["Score"]
-    # )
-    # # remove the multi index
-    # activations_wide.columns = activations_wide.columns.droplevel(0)
-    # activations_wide.reset_index(inplace=True)
-    # st.write(activations_wide.head())
-
-    # fig = px.scatter(
-    #     activations_wide,
-    #     x="left",
-    #     y="right",
-    #     color="Head",
-    #     # facet_col="layer",
-    #     # opacity=0.5,
-    #     hover_data=["Head", "Direction"],
-    #     labels={"value": "Congruence"},
-    # )
-
-    # st.plotly_chart(fig, use_container_width=True)
-
-
 # @st.cache_data(experimental_allow_widgets=True)
 def show_dimensionality_reduction(_dt):
     with st.expander("Dimensionality Reduction"):
@@ -2351,43 +1520,6 @@ def show_dimensionality_reduction(_dt):
                 mlp_out_to_svd_in_component(_dt, V_OV_tmp, key="value")
 
 
-def get_ov_circuit(_dt):
-    # stack the heads
-    W_V = torch.stack([block.attn.W_V for block in _dt.transformer.blocks])
-    W_0 = torch.stack([block.attn.W_O for block in _dt.transformer.blocks])
-
-    # centre
-    # W_0 = W_0 - W_0.mean(2, keepdim=True)
-    # W_V = W_V - W_V.mean(2, keepdim=True)
-
-    # inner OV circuits.
-    W_OV = torch.einsum("lhmd,lhdn->lhmn", W_V, W_0)
-
-    return W_OV
-
-
-def get_qk_circuit(_dt):
-    # stack the heads
-    W_Q = torch.stack([block.attn.W_Q for block in _dt.transformer.blocks])
-    W_K = torch.stack([block.attn.W_K for block in _dt.transformer.blocks])
-
-    # # centre
-    # W_K = W_K - W_K.mean(2, keepdim=True)
-    # W_Q = W_Q - W_Q.mean(2, keepdim=True)
-
-    # st.write(W_Q.shape)
-    # st.write(W_Q.mean(2).shape)
-
-    # inner QK circuits.
-    W_QK = einsum(
-        "layer head d_model1 d_head, layer head d_model2 d_head -> layer head d_model1 d_model2",
-        W_Q,
-        W_K,
-    )
-
-    return W_QK
-
-
 @st.cache_data(experimental_allow_widgets=True)
 def plot_svd_by_head_layer(_dt, S):
     d_head = _dt.transformer_config.d_head
@@ -2408,131 +1540,6 @@ def plot_svd_by_head_layer(_dt, S):
     # add a vertical white dotted line at x = d_head
     fig.add_vline(x=d_head, line_dash="dash", line_color="white")
     st.plotly_chart(fig, use_container_width=True)
-
-
-@st.cache_data(experimental_allow_widgets=True)
-def layer_head_k_selector_ui(_dt, key=""):
-    n_actions = _dt.action_predictor.weight.shape[0]
-    layer_selection, head_selection, k_selection, d_selection = st.columns(4)
-
-    with layer_selection:
-        layer = st.selectbox(
-            "Select Layer",
-            options=list(range(_dt.transformer_config.n_layers)),
-            key="layer" + key,
-        )
-
-    with head_selection:
-        head = st.selectbox(
-            "Select Head",
-            options=list(range(_dt.transformer_config.n_heads)),
-            key="head" + key,
-        )
-    with k_selection:
-        if n_actions > 3:
-            k = st.slider(
-                "Select K",
-                min_value=3,
-                max_value=n_actions,
-                value=3,
-                step=1,
-                key="k" + key,
-            )
-        else:
-            k = 3
-    with d_selection:
-        if _dt.transformer_config.d_model > 3:
-            dims = st.slider(
-                "Select Dimensions",
-                min_value=3,
-                max_value=_dt.transformer_config.d_head,
-                value=3,
-                step=1,
-                key="dims" + key,
-            )
-        else:
-            dims = 3
-
-    return layer, head, k, dims
-
-
-@st.cache_data(experimental_allow_widgets=True)
-def embedding_matrix_selection_ui(_dt):
-    embedding_matrix_selection = st.columns(2)
-    with embedding_matrix_selection[0]:
-        embedding_matrix_1 = st.selectbox(
-            "Select Q Embedding Matrix",
-            options=["State", "Action", "RTG"],
-            key=uuid.uuid4(),
-        )
-    with embedding_matrix_selection[1]:
-        embedding_matrix_2 = st.selectbox(
-            "Select K Embedding Matrix",
-            options=["State", "Action", "RTG"],
-            key=uuid.uuid4(),
-        )
-
-    W_E_state = _dt.state_embedding.weight
-    W_E_action = _dt.action_embedding[0].weight
-    W_E_rtg = _dt.reward_embedding[0].weight
-
-    if embedding_matrix_1 == "State":
-        embedding_matrix_1 = W_E_state
-    elif embedding_matrix_1 == "Action":
-        embedding_matrix_1 = W_E_action
-    elif embedding_matrix_1 == "RTG":
-        embedding_matrix_1 = W_E_rtg
-
-    if embedding_matrix_2 == "State":
-        embedding_matrix_2 = W_E_state
-    elif embedding_matrix_2 == "Action":
-        embedding_matrix_2 = W_E_action
-    elif embedding_matrix_2 == "RTG":
-        embedding_matrix_2 = W_E_rtg
-
-    return embedding_matrix_1, embedding_matrix_2
-
-
-def layer_head_channel_selector(_dt, key=""):
-    n_heads = _dt.transformer_config.n_heads
-    height, width, channels = _dt.environment_config.observation_space[
-        "image"
-    ].shape
-    layer_selection, head_selection, other_selection = st.columns(3)
-
-    with layer_selection:
-        layer = st.selectbox(
-            "Select Layer",
-            options=list(range(_dt.transformer_config.n_layers)),
-            key="layer" + key,
-        )
-
-    with head_selection:
-        heads = st.multiselect(
-            "Select Heads",
-            options=list(range(n_heads)),
-            key="head qk" + key,
-            default=[0],
-        )
-
-    if channels == 3:
-
-        def format_func(x):
-            return three_channel_schema[x]
-
-    else:
-        format_func = twenty_idx_format_func
-
-    with other_selection:
-        selected_channels = st.multiselect(
-            "Select Observation Channels",
-            options=list(range(channels)),
-            format_func=format_func,
-            key="channels qk" + key,
-            default=[0, 1, 2],
-        )
-
-    return layer, heads, selected_channels
 
 
 # def show_time_embeddings(dt, logit_dir):

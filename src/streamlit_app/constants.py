@@ -34,23 +34,32 @@ POSITION_NAMES = [f"{i},{j}" for i in list(range(7)) for j in list(range(7))]
 ACTION_NAMES = list(IDX_TO_ACTION.values())
 
 
-all_index_labels = [
-    SPARSE_CHANNEL_NAMES,
-    list(range(7)),
-    list(range(7)),
-]
+def get_state_embedding_labels():
+    all_index_labels = [
+        SPARSE_CHANNEL_NAMES,
+        list(range(7)),
+        list(range(7)),
+    ]
 
-indices = list(itertools.product(*all_index_labels))
-multi_index = pd.MultiIndex.from_tuples(
-    indices,
-    names=("x", "y", "z"),  # use labels differently if we have index labels
-)
+    indices = list(itertools.product(*all_index_labels))
+    multi_index = pd.MultiIndex.from_tuples(
+        indices,
+        names=(
+            "x",
+            "y",
+            "z",
+        ),  # use labels differently if we have index labels
+    )
 
-STATE_EMBEDDING_LABELS = (
-    multi_index.to_series()
-    .apply(lambda x: "{0}, ({1},{2})".format(*x))
-    .tolist()
-)
+    STATE_EMBEDDING_LABELS = (
+        multi_index.to_series()
+        .apply(lambda x: "{0}, ({1},{2})".format(*x))
+        .tolist()
+    )
+    return STATE_EMBEDDING_LABELS
+
+
+STATE_EMBEDDING_LABELS = get_state_embedding_labels()
 
 
 def get_all_neuron_labels(n_layers, d_mlp):
