@@ -2,7 +2,12 @@ import streamlit as st
 import torch
 from fancy_einsum import einsum
 
-from src.streamlit_app.constants import STATE_EMBEDDING_LABELS
+from src.streamlit_app.constants import (
+    STATE_EMBEDDING_LABELS,
+    IDX_TO_ACTION,
+    twenty_idx_format_func,
+    three_channel_schema,
+)
 from src.streamlit_app.utils import tensor_to_long_data_frame
 
 
@@ -41,6 +46,93 @@ def get_qk_circuit(_dt):
     )
 
     return W_QK
+
+
+def get_full_ov_state_action(_dt):
+    W_OV = get_ov_circuit(_dt)
+    W_U = _dt.action_predictor.weight
+    W_E = _dt.state_embedding.weight
+
+    height, width, channels = _dt.environment_config.observation_space[
+        "image"
+    ].shape
+    n_layers = _dt.transformer_config.n_layers
+    n_actions = _dt.environment_config.action_space.n
+    n_heads = _dt.transformer_config.n_heads
+
+    format_func = (
+        lambda x: three_channel_schema(x)
+        if channels == 3
+        else twenty_idx_format_func(x)
+    )
+
+    # st.plotly_chart(px.imshow(W_OV.detach().numpy(), facet_col=0), use_container_width=True)
+    OV_circuit_full = einsum(
+        "d_res_in emb, layer head d_res_in d_res_out, action d_res_out -> layer head emb action",
+        W_E,
+        W_OV,
+        W_U,
+    )
+
+    OV_circuit_full = OV_circuit_full.reshape(
+        n_layers, n_heads, channels, height, width, n_actions
+    )
+
+    df = tensor_to_long_data_frame(
+        OV_circuit_full,
+        dimension_names=["Layer", "Head", "Channel", "X", "Y", "Action"],
+    )
+    df = df.sort_values(by=["Layer", "Head", "Action"])
+    df["Channel"] = df["Channel"].map(format_func)
+    df["Layer"] = df["Layer"].map(lambda x: f"L{x}")
+    df["Head"] = df["Layer"] + df["Head"].map(lambda x: f"H{x}")
+    df["Action"] = df["Action"].map(IDX_TO_ACTION)
+    df["Embedding"] = (
+        df["Channel"]
+        + ", ("
+        + df["X"].astype(str)
+        + ", "
+        + df["Y"].astype(str)
+        + ")"
+    )
+
+    return df
+
+
+def get_full_ov_action_action(_dt):
+    W_OV = get_ov_circuit(_dt)
+    W_U = _dt.action_predictor.weight
+    W_E = _dt.action_embedding[0].weight[:-1, :]
+
+    W_OV_full = einsum(
+        "action_out d_model_a, layer head d_model_a d_model_b, action_in d_model_b -> layer head action_out action_in",
+        W_U,
+        W_OV,
+        W_E,
+    )
+
+    W_OV_full_df = tensor_to_long_data_frame(
+        W_OV_full,
+        dimension_names=[
+            "Layer",
+            "Head",
+            "Action-Out",
+            "Action-In",
+        ],
+    )
+
+    W_OV_full_df["Layer"] = W_OV_full_df["Layer"].map(lambda x: f"L{x}")
+    W_OV_full_df["Head"] = W_OV_full_df["Layer"] + W_OV_full_df["Head"].map(
+        lambda x: f"H{x}"
+    )
+    W_OV_full_df["Action-Out"] = W_OV_full_df["Action-Out"].map(
+        lambda x: IDX_TO_ACTION[x]
+    )
+    W_OV_full_df["Action-In"] = W_OV_full_df["Action-In"].map(
+        lambda x: IDX_TO_ACTION[x]
+    )
+
+    return W_OV_full_df
 
 
 def get_full_qk_state_state(_dt, q_filter=None, k_filter=None):

@@ -27,7 +27,6 @@ from src.visualization import (
 
 from .constants import (
     IDX_TO_ACTION,
-    IDX_TO_STATE,
     three_channel_schema,
     twenty_idx_format_func,
     SPARSE_CHANNEL_NAMES,
@@ -56,6 +55,8 @@ from src.streamlit_app.static_analysis.virtual_weights import (
     get_qk_circuit,
     get_ov_circuit,
     get_full_qk_state_state,
+    get_full_ov_state_action,
+    get_full_ov_action_action,
 )
 
 from src.streamlit_app.static_analysis.ui import (
@@ -789,181 +790,155 @@ def show_ov_circuit(_dt):
 
         st.latex(
             r"""
-            OV_{circuit} = W_{U(action)} W_O W_V W_{E(State)}
+            OV_{circuit} = W_{U(action)} W_O W_V W_{E(i)}  \text{ for } i \in \{rtg, state\, \text{or} \, action\, position\, time\}
             """
         )
 
-        height, width, channels = _dt.environment_config.observation_space[
-            "image"
-        ].shape
-        n_layers = _dt.transformer_config.n_layers
-        n_actions = _dt.environment_config.action_space.n
-        n_heads = _dt.transformer_config.n_heads
-
-        format_func = (
-            lambda x: three_channel_schema(x)
-            if channels == 3
-            else twenty_idx_format_func(x)
+        state_tab, action_tab, rtg_tab = st.tabs(
+            ["OV(state)", "OV(action)", "OV(rtg)"]
         )
 
-        W_OV = get_ov_circuit(_dt)
-        W_U = _dt.action_predictor.weight
-        W_E = _dt.state_embedding.weight
+        with state_tab:
+            df = get_full_ov_state_action(_dt)
 
-        # st.plotly_chart(px.imshow(W_OV.detach().numpy(), facet_col=0), use_container_width=True)
-        OV_circuit_full = einsum(
-            "d_res_in emb, layer head d_res_in d_res_out, action d_res_out -> layer head emb action",
-            W_E,
-            W_OV,
-            W_U,
-        )
-
-        OV_circuit_full = OV_circuit_full.reshape(
-            n_layers, n_heads, channels, height, width, n_actions
-        )
-
-        df = tensor_to_long_data_frame(
-            OV_circuit_full,
-            dimension_names=["Layer", "Head", "Channel", "X", "Y", "Action"],
-        )
-        df = df.sort_values(by=["Layer", "Head", "Action"])
-        df["Channel"] = df["Channel"].map(format_func)
-        df["Layer"] = df["Layer"].map(lambda x: f"L{x}")
-        df["Head"] = df["Layer"] + df["Head"].map(lambda x: f"H{x}")
-        df["Action"] = df["Action"].map(IDX_TO_ACTION)
-        df["Embedding"] = (
-            df["Channel"]
-            + ", ("
-            + df["X"].astype(str)
-            + ", "
-            + df["Y"].astype(str)
-            + ")"
-        )
-
-        abs_max_val = df.Score.abs().max().item()
-
-        abs_max_val = st.slider(
-            "Max Absolute Value Color",
-            min_value=abs_max_val / 10,
-            max_value=abs_max_val,
-            value=abs_max_val,
-        )
-
-        search_tab, comparison_tab, minimize = st.tabs(
-            ["Unstructured", "Comparison View", "Minimize"]
-        )
-
-        with search_tab:
-            # reset index
-            df = df.reset_index(drop=True)
-
-            # make a strip plot
-            fig = px.scatter(
-                df,
-                x=df.index,
-                y="Score",
-                color="Action",
-                hover_data=["Head", "Channel", "X", "Y", "Action"],
-                labels={"value": "Congruence"},
+            unstructured_tab, comparison_tab = st.tabs(
+                ["Unstructured", "Comparison View"]
             )
 
-            # update x axis to hide the tick labels, and remove the label
-            fig.update_xaxes(showticklabels=False, title=None)
-            st.plotly_chart(fig, use_container_width=True)
+            with unstructured_tab:
+                # reset index
+                df = df.reset_index(drop=True)
 
-        with comparison_tab:
-            # for one of the heads selected, and a pair of the actins selected,
-            # we want a scatter plot of score vs score
-            # use a multiselect for each, but them in three  columns
-
-            b, c, d, a = st.columns(4)
-
-            with b:
-                action_1 = st.selectbox(
-                    "Select Action 1",
-                    options=df.Action.unique(),
-                    index=0,
-                )
-            with c:
-                action_2 = st.selectbox(
-                    "Select Action 2",
-                    options=df.Action.unique(),
-                    index=1,
-                )
-            with d:
-                # channel selection
-                selected_channels_2 = st.multiselect(
-                    "Select Channels",
-                    options=df.Channel.unique(),
-                    key="channels ov comparison",
-                    default=["key", "ball"],
-                )
-
-            with a:
-                use_small_multiples = st.checkbox("Use Small Multiples")
-
-            # filter the dataframe
-            filtered_df = df[
-                (df["Action"].isin([action_1, action_2]))
-                & (df["Channel"].isin(selected_channels_2))
-            ]
-
-            # reshape the df so we have the scores of one action in one column and the scores of the other in another
-            filtered_df = filtered_df.pivot_table(
-                index=["Head", "Embedding"],
-                columns="Action",
-                values="Score",
-            ).reset_index()
-            # rename the columns
-
-            filtered_df.columns = [
-                "Head",
-                "Embedding",
-                action_1,
-                action_2,
-            ]
-
-            if use_small_multiples:
-                # make a scatter plot of the two scores
+                # make a strip plot
                 fig = px.scatter(
-                    filtered_df,
-                    x=action_1,
-                    y=action_2,
+                    df.sort_values(by=["Layer", "Head", "Channel"]),
+                    y="Score",
                     color="Head",
-                    hover_data=["Head", "Embedding"],
-                    facet_col="Head",
-                    facet_col_wrap=4,
-                    labels={
-                        "value": "Congruence",
-                    },
-                )
-                # make plot taller
-                fig.update_layout(height=800)
-            else:
-                fig = px.scatter(
-                    filtered_df,
-                    x=action_1,
-                    y=action_2,
-                    color="Head",
-                    hover_data=["Head", "Embedding"],
-                    labels={
-                        "value": "Congruence",
-                    },
+                    hover_data=["Head", "Channel", "X", "Y", "Action"],
+                    labels={"value": "Congruence"},
                 )
 
-            st.plotly_chart(fig, use_container_width=True)
+                # update x axis to hide the tick labels, and remove the label
+                fig.update_xaxes(showticklabels=False, title=None)
+                st.plotly_chart(fig, use_container_width=True)
 
-        gridmap_tab, search_tab = st.tabs(["Gridmap", "Search"])
+            with comparison_tab:
+                # for one of the heads selected, and a pair of the actins selected,
+                # we want a scatter plot of score vs score
+                # use a multiselect for each, but them in three  columns
 
-        with search_tab:
-            create_search_component(
-                df[["Head", "Embedding", "Score"]],
-                title="Search Full OV Circuit",
-                key="Search Full OV Circuit",
+                b, c, d, a = st.columns(4)
+
+                with b:
+                    action_1 = st.selectbox(
+                        "Select Action 1",
+                        options=df.Action.unique(),
+                        index=0,
+                    )
+                with c:
+                    action_2 = st.selectbox(
+                        "Select Action 2",
+                        options=df.Action.unique(),
+                        index=1,
+                    )
+                with d:
+                    # channel selection
+                    selected_channels_2 = st.multiselect(
+                        "Select Channels",
+                        options=df.Channel.unique(),
+                        key="channels ov comparison",
+                        default=["key", "ball"],
+                    )
+
+                with a:
+                    use_small_multiples = st.checkbox("Use Small Multiples")
+
+                # filter the dataframe
+                filtered_df = df[
+                    (df["Action"].isin([action_1, action_2]))
+                    & (df["Channel"].isin(selected_channels_2))
+                ]
+
+                # reshape the df so we have the scores of one action in one column and the scores of the other in another
+                filtered_df = filtered_df.pivot_table(
+                    index=["Head", "Embedding"],
+                    columns="Action",
+                    values="Score",
+                ).reset_index()
+                # rename the columns
+
+                filtered_df.columns = [
+                    "Head",
+                    "Embedding",
+                    action_1,
+                    action_2,
+                ]
+
+                if use_small_multiples:
+                    # make a scatter plot of the two scores
+                    fig = px.scatter(
+                        filtered_df,
+                        x=action_1,
+                        y=action_2,
+                        color="Head",
+                        hover_data=["Head", "Embedding"],
+                        facet_col="Head",
+                        facet_col_wrap=4,
+                        labels={
+                            "value": "Congruence",
+                        },
+                    )
+                    # make plot taller
+                    fig.update_layout(height=800)
+                else:
+                    fig = px.scatter(
+                        filtered_df,
+                        x=action_1,
+                        y=action_2,
+                        color="Head",
+                        hover_data=["Head", "Embedding"],
+                        labels={
+                            "value": "Congruence",
+                        },
+                    )
+
+                st.plotly_chart(fig, use_container_width=True)
+
+            gridmap_tab, search_tab = st.tabs(["Gridmap", "Search"])
+
+            with search_tab:
+                create_search_component(
+                    df[["Head", "Embedding", "Score"]],
+                    title="Search Full OV Circuit",
+                    key="Search Full OV Circuit",
+                )
+
+            with gridmap_tab:
+                ov_gridmap_component(df, key="ov")
+
+        with action_tab:
+            df = get_full_ov_action_action(_dt)
+
+            unstructured_tab, comparison_tab = st.tabs(
+                ["Unstructured", "Comparison View"]
             )
 
-        with gridmap_tab:
-            ov_gridmap_component(df, key="ov")
+            with unstructured_tab:
+                # reset index
+                df = df.reset_index(drop=True)
+
+                # make a strip plot
+                fig = px.scatter(
+                    df.sort_values(by=["Layer", "Head", "Action-Out"]),
+                    y="Score",
+                    color="Head",
+                    hover_data=["Head", "Action-In", "Action-Out"],
+                    labels={"value": "Congruence"},
+                )
+
+                # update x axis to hide the tick labels, and remove the label
+                fig.update_xaxes(showticklabels=False, title=None)
+                st.plotly_chart(fig, use_container_width=True)
 
         # # create streamlit tabs for each head:
         # head_tabs = st.tabs([f"L{layer}H{head}" for head in heads])
