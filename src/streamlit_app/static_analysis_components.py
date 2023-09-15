@@ -837,7 +837,7 @@ def show_qk_circuit(_dt):
                         )
 
 
-@st.cache_data(experimental_allow_widgets=True)
+# @st.cache_data(experimental_allow_widgets=True)
 def show_ov_circuit(_dt):
     with st.expander("Show OV Circuit"):
         st.subheader("OV circuits")
@@ -851,182 +851,71 @@ def show_ov_circuit(_dt):
         height, width, channels = _dt.environment_config.observation_space[
             "image"
         ].shape
+        n_layers = _dt.transformer_config.n_layers
         n_actions = _dt.environment_config.action_space.n
         n_heads = _dt.transformer_config.n_heads
 
-        if channels == 3:
+        format_func = (
+            lambda x: three_channel_schema(x)
+            if channels == 3
+            else twenty_idx_format_func(x)
+        )
 
-            def format_func(x):
-                return three_channel_schema[x]
-
-        else:
-            format_func = twenty_idx_format_func
-
-        selection_columns = st.columns(2)
-        with selection_columns[0]:
-            layer = st.selectbox(
-                "Select Layer",
-                options=list(range(_dt.transformer_config.n_layers)),
-            )
-
-        with selection_columns[1]:
-            heads = st.multiselect(
-                "Select Heads",
-                options=list(range(n_heads)),
-                key="head ov",
-                default=[0],
-            )
-        selection_columns = st.columns(2)
-        with selection_columns[0]:
-            selected_channels = st.multiselect(
-                "Select Observation Channels",
-                options=list(range(channels)),
-                format_func=format_func,
-                key="channels ov",
-                default=[5, 6] if channels == 20 else [0, 1, 2],
-            )
-
-        with selection_columns[1]:
-            selected_actions = st.multiselect(
-                "Select Actions",
-                options=list(range(n_actions)),
-                key="actions ov",
-                format_func=lambda x: IDX_TO_ACTION[x],
-                default=[0, 1, 2],
-            )
-
+        W_OV = get_ov_circuit(_dt)
         W_U = _dt.action_predictor.weight
-        W_O = _dt.transformer.blocks[layer].attn.W_O
-        W_V = _dt.transformer.blocks[layer].attn.W_V
         W_E = _dt.state_embedding.weight
-        W_OV = W_V @ W_O
 
         # st.plotly_chart(px.imshow(W_OV.detach().numpy(), facet_col=0), use_container_width=True)
-        OV_circuit_full = W_E.T @ W_OV @ W_U.T
-        OV_circuit_full_reshaped = OV_circuit_full.reshape(
-            n_heads, channels, height, width, n_actions
-        ).detach()
+        OV_circuit_full = einsum(
+            "d_res_in emb, layer head d_res_in d_res_out, action d_res_out -> layer head emb action",
+            W_E,
+            W_OV,
+            W_U,
+        )
 
-        def write_schema():
-            columns = st.columns(len(selected_channels))
-            for i, channel in enumerate(selected_channels):
-                with columns[i]:
-                    if channels == 3:
-                        st.write(three_channel_schema[channel])
-                    elif channels == 20:
-                        st.write(twenty_idx_format_func(channel))
+        OV_circuit_full = OV_circuit_full.reshape(
+            n_layers, n_heads, channels, height, width, n_actions
+        )
 
-        abs_max_val = OV_circuit_full_reshaped.abs().max().item()
-        # st.plotly_chart(px.histogram(OV_circuit_full_reshaped.flatten()), use_container_width=True)
+        df = tensor_to_long_data_frame(
+            OV_circuit_full,
+            dimension_names=["Layer", "Head", "Channel", "X", "Y", "Action"],
+        )
+        df = df.sort_values(by=["Layer", "Head", "Action"])
+        df["Channel"] = df["Channel"].map(format_func)
+        df["Layer"] = df["Layer"].map(lambda x: f"L{x}")
+        df["Head"] = df["Layer"] + df["Head"].map(lambda x: f"H{x}")
+        df["Action"] = df["Action"].map(IDX_TO_ACTION)
+        df["Embedding"] = (
+            df["Channel"]
+            + ", ("
+            + df["X"].astype(str)
+            + ", "
+            + df["Y"].astype(str)
+            + ")"
+        )
 
-        selection_columns = st.columns(2)
-        with selection_columns[0]:
-            abs_max_val = st.slider(
-                "Max Absolute Value Color",
-                min_value=abs_max_val / 10,
-                max_value=abs_max_val,
-                value=abs_max_val,
-            )
+        abs_max_val = df.Score.abs().max().item()
 
-        with selection_columns[1]:
-            st.write("Selecting the color range to control sensitivity.")
-            st.write("Defaults to max value in the OV circuit.")
-            st.write("This is a pretty high bar for output.")
+        abs_max_val = st.slider(
+            "Max Absolute Value Color",
+            min_value=abs_max_val / 10,
+            max_value=abs_max_val,
+            value=abs_max_val,
+        )
 
         search_tab, comparison_tab, minimize = st.tabs(
-            ["Unstructured View", "Comparison tab", "Minimize"]
+            ["Unstructured", "Comparison View", "Minimize"]
         )
-
-        all_scores_df = tensor_to_long_data_frame(
-            OV_circuit_full_reshaped,
-            dimension_names=["Head", "Channel", "X", "Y", "Action"],
-        )
-
-        with comparison_tab:
-            # for one of the heads selected, and a pair of the actins selected,
-            # we want a scatter plot of score vs score
-            # use a multiselect for each, but them in three  columns
-
-            a, b, c, d = st.columns(4)
-
-            with a:
-                head = st.selectbox("Select Head", options=heads)
-            with b:
-                action_1 = st.selectbox(
-                    "Select Action 1",
-                    options=selected_actions,
-                    format_func=lambda x: IDX_TO_ACTION[x],
-                    index=0,
-                )
-            with c:
-                action_2 = st.selectbox(
-                    "Select Action 2",
-                    options=selected_actions,
-                    format_func=lambda x: IDX_TO_ACTION[x],
-                    index=1,
-                )
-            with d:
-                # channel selection
-                selected_channels_2 = st.multiselect(
-                    "Select Channels",
-                    options=list(range(channels)),
-                    format_func=format_func,
-                    key="channels ov comparison",
-                    default=[0],
-                )
-
-            # filter the dataframe
-            filtered_df = all_scores_df[
-                (all_scores_df["Head"] == head)
-                & (all_scores_df["Action"].isin([action_1, action_2]))
-                & (all_scores_df["Channel"].isin(selected_channels_2))
-            ]
-
-            # reshape the df so we have the scores of one action in one column and the scores of the other in another
-            filtered_df = filtered_df.pivot_table(
-                index=["Head", "Channel", "X", "Y"],
-                columns="Action",
-                values="Score",
-            ).reset_index()
-            # rename the columns
-            filtered_df.columns = [
-                "Head",
-                "Channel",
-                "X",
-                "Y",
-                IDX_TO_ACTION[action_1],
-                IDX_TO_ACTION[action_2],
-            ]
-
-            # make a scatter plot of the two scores
-            fig = px.scatter(
-                filtered_df,
-                x=IDX_TO_ACTION[action_1],
-                y=IDX_TO_ACTION[action_2],
-                hover_data=["Head", "Channel", "X", "Y"],
-                labels={
-                    "value": "Congruence",
-                    "x": IDX_TO_ACTION[action_1],
-                    "y": IDX_TO_ACTION[action_2],
-                },
-            )
-
-            st.plotly_chart(fig, use_container_width=True)
 
         with search_tab:
-            # sort by layer, head, action
-            all_scores_df = all_scores_df.sort_values(by=["Head", "Action"])
-            # map actions
-            all_scores_df["Action"] = all_scores_df["Action"].map(
-                IDX_TO_ACTION
-            )
             # reset index
-            all_scores_df = all_scores_df.reset_index(drop=True)
+            df = df.reset_index(drop=True)
 
             # make a strip plot
             fig = px.scatter(
-                all_scores_df,
-                x=all_scores_df.index,
+                df,
+                x=df.index,
                 y="Score",
                 color="Action",
                 hover_data=["Head", "Channel", "X", "Y", "Action"],
@@ -1037,37 +926,183 @@ def show_ov_circuit(_dt):
             fig.update_xaxes(showticklabels=False, title=None)
             st.plotly_chart(fig, use_container_width=True)
 
-        # create streamlit tabs for each head:
-        head_tabs = st.tabs([f"L{layer}H{head}" for head in heads])
+        with comparison_tab:
+            # for one of the heads selected, and a pair of the actins selected,
+            # we want a scatter plot of score vs score
+            # use a multiselect for each, but them in three  columns
 
-        for i, head in enumerate(heads):
-            with head_tabs[i]:
-                write_schema()
-                for action in selected_actions:
-                    columns = st.columns(len(selected_channels))
-                    for i, channel in enumerate(selected_channels):
-                        with columns[i]:
-                            st.write("Head", head, "-", IDX_TO_ACTION[action])
-                            fig = px.imshow(
-                                OV_circuit_full_reshaped[
-                                    head, channel, :, :, action
-                                ].T,
-                                color_continuous_midpoint=0,
-                                zmax=abs_max_val,
-                                zmin=-abs_max_val,
-                                color_continuous_scale=px.colors.diverging.RdBu,
-                                labels={"x": "X", "y": "Y"},
-                            )
-                            fig.update_layout(
-                                coloraxis_showscale=False,
-                                margin=dict(l=0, r=0, t=0, b=0),
-                            )
-                            fig.update_layout(height=180, width=400)
-                            fig.update_xaxes(showgrid=False, ticks="")
-                            fig.update_yaxes(showgrid=False, ticks="")
-                            st.plotly_chart(
-                                fig, use_container_width=True, autosize=True
-                            )
+            b, c, d, a = st.columns(4)
+
+            with b:
+                action_1 = st.selectbox(
+                    "Select Action 1",
+                    options=df.Action.unique(),
+                    index=0,
+                )
+            with c:
+                action_2 = st.selectbox(
+                    "Select Action 2",
+                    options=df.Action.unique(),
+                    index=1,
+                )
+            with d:
+                # channel selection
+                selected_channels_2 = st.multiselect(
+                    "Select Channels",
+                    options=df.Channel.unique(),
+                    key="channels ov comparison",
+                    default=["key", "ball"],
+                )
+
+            with a:
+                use_small_multiples = st.checkbox("Use Small Multiples")
+
+            # filter the dataframe
+            filtered_df = df[
+                (df["Action"].isin([action_1, action_2]))
+                & (df["Channel"].isin(selected_channels_2))
+            ]
+
+            # reshape the df so we have the scores of one action in one column and the scores of the other in another
+            filtered_df = filtered_df.pivot_table(
+                index=["Head", "Embedding"],
+                columns="Action",
+                values="Score",
+            ).reset_index()
+            # rename the columns
+
+            filtered_df.columns = [
+                "Head",
+                "Embedding",
+                action_1,
+                action_2,
+            ]
+
+            if use_small_multiples:
+                # make a scatter plot of the two scores
+                fig = px.scatter(
+                    filtered_df,
+                    x=action_1,
+                    y=action_2,
+                    color="Head",
+                    hover_data=["Head", "Embedding"],
+                    facet_col="Head",
+                    facet_col_wrap=4,
+                    labels={
+                        "value": "Congruence",
+                    },
+                )
+                # make plot taller
+                fig.update_layout(height=800)
+            else:
+                fig = px.scatter(
+                    filtered_df,
+                    x=action_1,
+                    y=action_2,
+                    color="Head",
+                    hover_data=["Head", "Embedding"],
+                    labels={
+                        "value": "Congruence",
+                    },
+                )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+        gridmap_tab, search_tab = st.tabs(["Gridmap", "Search"])
+
+        with search_tab:
+            create_search_component(
+                df[["Head", "Embedding", "Score"]],
+                title="Search Full OV Circuit",
+                key="Search Full OV Circuit",
+            )
+
+        with gridmap_tab:
+            ov_gridmap_component(df, key="ov")
+
+        # # create streamlit tabs for each head:
+        # head_tabs = st.tabs([f"L{layer}H{head}" for head in heads])
+
+        # for i, head in enumerate(heads):
+        #     with head_tabs[i]:
+        #         write_schema()
+        #         for action in selected_actions:
+        #             columns = st.columns(len(selected_channels))
+        #             for i, channel in enumerate(selected_channels):
+        #                 with columns[i]:
+        #                     st.write("Head", head, "-", IDX_TO_ACTION[action])
+        #                     fig = px.imshow(
+        #                         OV_circuit_full_reshaped[
+        #                             head, channel, :, :, action
+        #                         ].T,
+        #                         color_continuous_midpoint=0,
+        #                         zmax=abs_max_val,
+        #                         zmin=-abs_max_val,
+        #                         color_continuous_scale=px.colors.diverging.RdBu,
+        #                         labels={"x": "X", "y": "Y"},
+        #                     )
+        #                     fig.update_layout(
+        #                         coloraxis_showscale=False,
+        #                         margin=dict(l=0, r=0, t=0, b=0),
+        #                     )
+        #                     fig.update_layout(height=180, width=400)
+        #                     fig.update_xaxes(showgrid=False, ticks="")
+        #                     fig.update_yaxes(showgrid=False, ticks="")
+        #                     st.plotly_chart(
+        #                         fig, use_container_width=True, autosize=True
+        #                     )
+
+
+def ov_gridmap_component(activations, key="embeddings"):
+    a, b, c, d = st.columns(4)
+
+    with a:
+        heads = st.multiselect(
+            "Select Head",
+            options=activations["Head"].unique(),
+            default=["L0H0"],
+            key=f"gridmap direction state in, ov {key}",
+        )
+    with b:
+        channels = st.multiselect(
+            "Select Channels",
+            options=SPARSE_CHANNEL_NAMES,
+            default=["key", "ball"],
+            key=f"gridmap channel state in, ov {key}",
+        )
+    with c:
+        selected_actions = st.multiselect(
+            "Select Actions",
+            options=activations.Action.unique(),
+            default=["left", "right"],
+            key=f"gridmap action state in, ov {key}",
+        )
+
+    with d:
+        abs_col_max = st.slider(
+            "Max Absolute Value Color",
+            min_value=activations.Score.abs().max().item() / 2,
+            max_value=activations.Score.abs().max().item(),
+            value=activations.Score.abs().max().item(),
+        )
+
+    head_tabs = st.tabs(heads)
+    for i in range(len(heads)):
+        with head_tabs[i]:
+            for j in range(len(channels)):
+                # given some specific head, I want to project onto some channels.
+                fig = plot_gridmap_from_embedding_congruence(
+                    activations[activations.Head == heads[i]][
+                        activations.Action.isin(selected_actions)
+                    ],
+                    channels[j],
+                    abs_col_max=abs_col_max,
+                    facet_col="Action",
+                )
+                # add channel to title
+                fig.update_layout(title=f"Channel {channels[j]}")
+
+                st.plotly_chart(fig, use_container_width=True)
 
 
 # @st.cache_data(experimental_allow_widgets=True)
@@ -1699,26 +1734,80 @@ def svd_projection_gridmap_component(activations, key="embeddings"):
                     st.plotly_chart(fig, use_container_width=True)
 
 
-def plot_gridmap_from_embedding_congruence(activations, channel, abs_col_max):
+def plot_gridmap_from_embedding_congruence(
+    activations, channel, abs_col_max, facet_col=None
+):
     activations_head = activations[activations.Embedding.str.contains(channel)]
 
-    scores = torch.tensor(activations_head.Score.values).reshape(7, 7).T
+    if not facet_col:
+        scores = torch.tensor(activations_head.Score.values).reshape(7, 7).T
+        fig = px.imshow(
+            scores,
+            color_continuous_midpoint=0,
+            color_continuous_scale="RdBu",
+            zmin=-abs_col_max,
+            zmax=abs_col_max,
+        )
 
-    fig = px.imshow(
-        scores,
-        color_continuous_midpoint=0,
-        color_continuous_scale="RdBu",
-        zmin=-abs_col_max,
-        zmax=abs_col_max,
-    )
+        # update hover template
+        fig.update_traces(
+            hovertemplate=f"{channel}, "
+            + "(%{x},%{y})<br>Congruence: %{z:.2f}"
+        )
 
-    # update hover template
-    fig.update_traces(
-        hovertemplate=f"{channel}, " + "(%{x},%{y})<br>Congruence: %{z:.2f}"
-    )
+        # remove color legend
+        fig.update_layout(coloraxis_showscale=False)
 
-    # remove color legend
-    fig.update_layout(coloraxis_showscale=False)
+    else:
+        n_facets = len(activations_head[facet_col].unique())
+        activations_head = activations_head.sort_values([facet_col, "Y", "X"])
+        scores = torch.tensor(activations_head.Score.values).reshape(
+            n_facets, 7, 7
+        )
+
+        fig = px.imshow(
+            scores,
+            color_continuous_midpoint=0,
+            color_continuous_scale="RdBu",
+            facet_col=0,
+            zmin=-abs_col_max,
+            zmax=abs_col_max,
+        )
+
+        # update hover template
+        fig.update_traces(
+            hovertemplate=f"{channel}, "
+            + "(%{x},%{y})<br>Congruence: %{z:.2f}<br>",
+        )
+
+        # rename facet titles to be the facet col value
+        actions = activations_head[facet_col].unique()
+        fig.for_each_annotation(
+            lambda a: a.update(text=actions[int(a.text.split("=")[1])])
+        )
+
+        # make x-ticks at every value, remove the tick but keep text
+        fig.update_xaxes(
+            tickmode="array",
+            tickvals=list(range(7)),
+            ticktext=list(range(7)),
+            showticklabels=True,
+            title=None,
+        )
+
+        # do same for y but only for first facet
+        fig.update_yaxes(
+            tickmode="array",
+            tickvals=list(range(7)),
+            ticktext=list(range(7)),
+            showticklabels=True,
+            title=None,
+            row=1,
+            col=1,
+        )
+
+        # remove color legend
+        fig.update_layout(coloraxis_showscale=False)
 
     return fig
 
