@@ -17,7 +17,7 @@ import plotly.express as px
 from .gridmaps import ov_gridmap_component
 
 
-def show_ov_state_state_component(_dt):
+def show_ov_state_action_component(_dt):
     df = get_full_ov_state_action(_dt)
 
     unstructured_tab, comparison_tab = st.tabs(
@@ -134,6 +134,138 @@ def show_ov_state_state_component(_dt):
 
     with gridmap_tab:
         ov_gridmap_component(df, key="ov")
+
+
+def show_ov_action_action_component(_dt):
+    df = get_full_ov_action_action(_dt)
+
+    unstructured_tab, comparison_tab = st.tabs(
+        ["Unstructured", "Comparison View"]
+    )
+
+    with unstructured_tab:
+        # reset index
+        df = df.reset_index(drop=True)
+
+        # make a strip plot
+        fig = px.scatter(
+            df.sort_values(by=["Layer", "Head", "Action_Out"]),
+            y="Score",
+            color="Head",
+            hover_data=["Head", "Action_In", "Action_Out"],
+            labels={"value": "Congruence"},
+        )
+
+        # update x axis to hide the tick labels, and remove the label
+        fig.update_xaxes(showticklabels=False, title=None)
+        st.plotly_chart(fig, use_container_width=True)
+
+    with comparison_tab:
+        # for one of the heads selected, and a pair of the actins selected,
+        # we want a scatter plot of score vs score
+        # use a multiselect for each, but them in three  columns
+
+        b, c, d = st.columns(3)
+
+        with b:
+            action_1 = st.selectbox(
+                "Select Out Action 1",
+                options=df.Action_Out.unique(),
+                index=0,
+                key="action 1 ov comparison",
+            )
+        with c:
+            action_2 = st.selectbox(
+                "Select Out Action 2",
+                options=df.Action_Out.unique(),
+                index=1,
+                key="action 2 ov comparison",
+            )
+        with d:
+            use_small_multiples = st.checkbox(
+                "Use Small Multiples",
+                key="small multiples ov comparison action",
+            )
+
+        # filter the dataframe
+        filtered_df = df[(df["Action_Out"].isin([action_1, action_2]))]
+
+        # reshape the df so we have the scores of one action in one column and the scores of the other in another
+        filtered_df = filtered_df.pivot_table(
+            index=["Head", "Action_In"],
+            columns="Action_Out",
+            values="Score",
+        ).reset_index()
+        # rename the columns
+
+        filtered_df.columns = [
+            "Head",
+            "Action_In",
+            action_1,
+            action_2,
+        ]
+
+        if use_small_multiples:
+            # make a scatter plot of the two scores
+            fig = px.scatter(
+                filtered_df,
+                x=action_1,
+                y=action_2,
+                color="Head",
+                hover_data=["Head", "Action_In"],
+                facet_col="Head",
+                facet_col_wrap=4,
+                labels={
+                    "value": "Congruence",
+                },
+            )
+            # make plot taller
+            fig.update_layout(height=800)
+        else:
+            fig = px.scatter(
+                filtered_df,
+                x=action_1,
+                y=action_2,
+                color="Head",
+                hover_data=["Head", "Action_In"],
+                labels={
+                    "value": "Congruence",
+                },
+            )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+
+def show_ov_rtg_action_component(_dt):
+    df = get_full_ov_rtg_action(_dt)
+
+    fig = px.scatter(
+        df,
+        y="Score",
+        color="Head",
+        hover_data=["Head", "Action"],
+        labels={
+            "value": "Congruence",
+        },
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def show_ov_pos_action_component(_dt):
+    df = get_full_ov_pos_action(_dt)
+
+    fig = px.scatter(
+        df,
+        y="Score",
+        color="Head",
+        hover_data=["Head", "Action"],
+        labels={
+            "value": "Congruence",
+        },
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
 
 
 def get_ov_circuit(_dt):
@@ -254,6 +386,73 @@ def get_full_ov_action_action(_dt):
         lambda x: IDX_TO_ACTION[x]
     )
     W_OV_full_df["Action_In"] = W_OV_full_df["Action_In"].map(
+        lambda x: IDX_TO_ACTION[x]
+    )
+
+    return W_OV_full_df
+
+
+def get_full_ov_rtg_action(_dt):
+    W_OV = get_ov_circuit(_dt)
+    W_U = _dt.action_predictor.weight
+    W_E = _dt.reward_embedding[0].weight
+
+    W_OV_full = einsum(
+        "d_model_a position, layer head d_model_a d_model_b, action d_model_b -> layer head action",
+        W_E,
+        W_OV,
+        W_U,
+    )
+
+    st.write(W_OV_full.shape)
+
+    W_OV_full_df = tensor_to_long_data_frame(
+        W_OV_full,
+        dimension_names=[
+            "Layer",
+            "Head",
+            "Action",
+        ],
+    )
+
+    W_OV_full_df["Layer"] = W_OV_full_df["Layer"].map(lambda x: f"L{x}")
+    W_OV_full_df["Head"] = W_OV_full_df["Layer"] + W_OV_full_df["Head"].map(
+        lambda x: f"H{x}"
+    )
+    W_OV_full_df["Action"] = W_OV_full_df["Action"].map(
+        lambda x: IDX_TO_ACTION[x]
+    )
+
+    return W_OV_full_df
+
+
+def get_full_ov_pos_action(_dt):
+    W_OV = get_ov_circuit(_dt)
+    W_U = _dt.action_predictor.weight
+    W_E = _dt.transformer.W_pos
+
+    W_OV_full = einsum(
+        "position d_model_a, layer head d_model_a d_model_b, action d_model_b -> layer head position action",
+        W_E,
+        W_OV,
+        W_U,
+    )
+
+    W_OV_full_df = tensor_to_long_data_frame(
+        W_OV_full,
+        dimension_names=[
+            "Layer",
+            "Head",
+            "Position",
+            "Action",
+        ],
+    )
+
+    W_OV_full_df["Layer"] = W_OV_full_df["Layer"].map(lambda x: f"L{x}")
+    W_OV_full_df["Head"] = W_OV_full_df["Layer"] + W_OV_full_df["Head"].map(
+        lambda x: f"H{x}"
+    )
+    W_OV_full_df["Action"] = W_OV_full_df["Action"].map(
         lambda x: IDX_TO_ACTION[x]
     )
 
