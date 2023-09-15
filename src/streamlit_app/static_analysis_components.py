@@ -57,6 +57,7 @@ from src.streamlit_app.static_analysis.virtual_weights import (
     get_full_qk_state_state,
     get_full_ov_state_action,
     get_full_ov_action_action,
+    show_ov_state_state_component,
 )
 
 from src.streamlit_app.static_analysis.ui import (
@@ -799,122 +800,7 @@ def show_ov_circuit(_dt):
         )
 
         with state_tab:
-            df = get_full_ov_state_action(_dt)
-
-            unstructured_tab, comparison_tab = st.tabs(
-                ["Unstructured", "Comparison View"]
-            )
-
-            with unstructured_tab:
-                # reset index
-                df = df.reset_index(drop=True)
-
-                # make a strip plot
-                fig = px.scatter(
-                    df.sort_values(by=["Layer", "Head", "Channel"]),
-                    y="Score",
-                    color="Head",
-                    hover_data=["Head", "Channel", "X", "Y", "Action"],
-                    labels={"value": "Congruence"},
-                )
-
-                # update x axis to hide the tick labels, and remove the label
-                fig.update_xaxes(showticklabels=False, title=None)
-                st.plotly_chart(fig, use_container_width=True)
-
-            with comparison_tab:
-                # for one of the heads selected, and a pair of the actins selected,
-                # we want a scatter plot of score vs score
-                # use a multiselect for each, but them in three  columns
-
-                b, c, d, a = st.columns(4)
-
-                with b:
-                    action_1 = st.selectbox(
-                        "Select Action 1",
-                        options=df.Action.unique(),
-                        index=0,
-                    )
-                with c:
-                    action_2 = st.selectbox(
-                        "Select Action 2",
-                        options=df.Action.unique(),
-                        index=1,
-                    )
-                with d:
-                    # channel selection
-                    selected_channels_2 = st.multiselect(
-                        "Select Channels",
-                        options=df.Channel.unique(),
-                        key="channels ov comparison",
-                        default=["key", "ball"],
-                    )
-
-                with a:
-                    use_small_multiples = st.checkbox("Use Small Multiples")
-
-                # filter the dataframe
-                filtered_df = df[
-                    (df["Action"].isin([action_1, action_2]))
-                    & (df["Channel"].isin(selected_channels_2))
-                ]
-
-                # reshape the df so we have the scores of one action in one column and the scores of the other in another
-                filtered_df = filtered_df.pivot_table(
-                    index=["Head", "Embedding"],
-                    columns="Action",
-                    values="Score",
-                ).reset_index()
-                # rename the columns
-
-                filtered_df.columns = [
-                    "Head",
-                    "Embedding",
-                    action_1,
-                    action_2,
-                ]
-
-                if use_small_multiples:
-                    # make a scatter plot of the two scores
-                    fig = px.scatter(
-                        filtered_df,
-                        x=action_1,
-                        y=action_2,
-                        color="Head",
-                        hover_data=["Head", "Embedding"],
-                        facet_col="Head",
-                        facet_col_wrap=4,
-                        labels={
-                            "value": "Congruence",
-                        },
-                    )
-                    # make plot taller
-                    fig.update_layout(height=800)
-                else:
-                    fig = px.scatter(
-                        filtered_df,
-                        x=action_1,
-                        y=action_2,
-                        color="Head",
-                        hover_data=["Head", "Embedding"],
-                        labels={
-                            "value": "Congruence",
-                        },
-                    )
-
-                st.plotly_chart(fig, use_container_width=True)
-
-            gridmap_tab, search_tab = st.tabs(["Gridmap", "Search"])
-
-            with search_tab:
-                create_search_component(
-                    df[["Head", "Embedding", "Score"]],
-                    title="Search Full OV Circuit",
-                    key="Search Full OV Circuit",
-                )
-
-            with gridmap_tab:
-                ov_gridmap_component(df, key="ov")
+            show_ov_state_state_component(_dt)
 
         with action_tab:
             df = get_full_ov_action_action(_dt)
@@ -929,10 +815,10 @@ def show_ov_circuit(_dt):
 
                 # make a strip plot
                 fig = px.scatter(
-                    df.sort_values(by=["Layer", "Head", "Action-Out"]),
+                    df.sort_values(by=["Layer", "Head", "Action_Out"]),
                     y="Score",
                     color="Head",
-                    hover_data=["Head", "Action-In", "Action-Out"],
+                    hover_data=["Head", "Action_In", "Action_Out"],
                     labels={"value": "Congruence"},
                 )
 
@@ -940,37 +826,80 @@ def show_ov_circuit(_dt):
                 fig.update_xaxes(showticklabels=False, title=None)
                 st.plotly_chart(fig, use_container_width=True)
 
-        # # create streamlit tabs for each head:
-        # head_tabs = st.tabs([f"L{layer}H{head}" for head in heads])
+            with comparison_tab:
+                # for one of the heads selected, and a pair of the actins selected,
+                # we want a scatter plot of score vs score
+                # use a multiselect for each, but them in three  columns
 
-        # for i, head in enumerate(heads):
-        #     with head_tabs[i]:
-        #         write_schema()
-        #         for action in selected_actions:
-        #             columns = st.columns(len(selected_channels))
-        #             for i, channel in enumerate(selected_channels):
-        #                 with columns[i]:
-        #                     st.write("Head", head, "-", IDX_TO_ACTION[action])
-        #                     fig = px.imshow(
-        #                         OV_circuit_full_reshaped[
-        #                             head, channel, :, :, action
-        #                         ].T,
-        #                         color_continuous_midpoint=0,
-        #                         zmax=abs_max_val,
-        #                         zmin=-abs_max_val,
-        #                         color_continuous_scale=px.colors.diverging.RdBu,
-        #                         labels={"x": "X", "y": "Y"},
-        #                     )
-        #                     fig.update_layout(
-        #                         coloraxis_showscale=False,
-        #                         margin=dict(l=0, r=0, t=0, b=0),
-        #                     )
-        #                     fig.update_layout(height=180, width=400)
-        #                     fig.update_xaxes(showgrid=False, ticks="")
-        #                     fig.update_yaxes(showgrid=False, ticks="")
-        #                     st.plotly_chart(
-        #                         fig, use_container_width=True, autosize=True
-        #                     )
+                b, c, d = st.columns(3)
+
+                with b:
+                    action_1 = st.selectbox(
+                        "Select Out Action 1",
+                        options=df.Action_Out.unique(),
+                        index=0,
+                        key="action 1 ov comparison",
+                    )
+                with c:
+                    action_2 = st.selectbox(
+                        "Select Out Action 2",
+                        options=df.Action_Out.unique(),
+                        index=1,
+                        key="action 2 ov comparison",
+                    )
+                with d:
+                    use_small_multiples = st.checkbox(
+                        "Use Small Multiples",
+                        key="small multiples ov comparison action",
+                    )
+
+                # filter the dataframe
+                filtered_df = df[(df["Action_Out"].isin([action_1, action_2]))]
+
+                # reshape the df so we have the scores of one action in one column and the scores of the other in another
+                filtered_df = filtered_df.pivot_table(
+                    index=["Head", "Action_In"],
+                    columns="Action_Out",
+                    values="Score",
+                ).reset_index()
+                # rename the columns
+
+                filtered_df.columns = [
+                    "Head",
+                    "Action_In",
+                    action_1,
+                    action_2,
+                ]
+
+                if use_small_multiples:
+                    # make a scatter plot of the two scores
+                    fig = px.scatter(
+                        filtered_df,
+                        x=action_1,
+                        y=action_2,
+                        color="Head",
+                        hover_data=["Head", "Action_In"],
+                        facet_col="Head",
+                        facet_col_wrap=4,
+                        labels={
+                            "value": "Congruence",
+                        },
+                    )
+                    # make plot taller
+                    fig.update_layout(height=800)
+                else:
+                    fig = px.scatter(
+                        filtered_df,
+                        x=action_1,
+                        y=action_2,
+                        color="Head",
+                        hover_data=["Head", "Action_In"],
+                        labels={
+                            "value": "Congruence",
+                        },
+                    )
+
+                st.plotly_chart(fig, use_container_width=True)
 
 
 # @st.cache_data(experimental_allow_widgets=True)

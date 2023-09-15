@@ -9,6 +9,131 @@ from src.streamlit_app.constants import (
     three_channel_schema,
 )
 from src.streamlit_app.utils import tensor_to_long_data_frame
+from src.streamlit_app.components import create_search_component
+
+# from src.streamlit_app
+import plotly.express as px
+
+from .gridmaps import ov_gridmap_component
+
+
+def show_ov_state_state_component(_dt):
+    df = get_full_ov_state_action(_dt)
+
+    unstructured_tab, comparison_tab = st.tabs(
+        ["Unstructured", "Comparison View"]
+    )
+
+    with unstructured_tab:
+        # reset index
+        df = df.reset_index(drop=True)
+
+        # make a strip plot
+        fig = px.scatter(
+            df.sort_values(by=["Layer", "Head", "Channel"]),
+            y="Score",
+            color="Head",
+            hover_data=["Head", "Channel", "X", "Y", "Action"],
+            labels={"value": "Congruence"},
+        )
+
+        # update x axis to hide the tick labels, and remove the label
+        fig.update_xaxes(showticklabels=False, title=None)
+        st.plotly_chart(fig, use_container_width=True)
+
+    with comparison_tab:
+        # for one of the heads selected, and a pair of the actins selected,
+        # we want a scatter plot of score vs score
+        # use a multiselect for each, but them in three  columns
+
+        b, c, d, a = st.columns(4)
+
+        with b:
+            action_1 = st.selectbox(
+                "Select Action 1",
+                options=df.Action.unique(),
+                index=0,
+            )
+        with c:
+            action_2 = st.selectbox(
+                "Select Action 2",
+                options=df.Action.unique(),
+                index=1,
+            )
+        with d:
+            # channel selection
+            selected_channels_2 = st.multiselect(
+                "Select Channels",
+                options=df.Channel.unique(),
+                key="channels ov comparison",
+                default=["key", "ball"],
+            )
+
+        with a:
+            use_small_multiples = st.checkbox("Use Small Multiples")
+
+        # filter the dataframe
+        filtered_df = df[
+            (df["Action"].isin([action_1, action_2]))
+            & (df["Channel"].isin(selected_channels_2))
+        ]
+
+        # reshape the df so we have the scores of one action in one column and the scores of the other in another
+        filtered_df = filtered_df.pivot_table(
+            index=["Head", "Embedding"],
+            columns="Action",
+            values="Score",
+        ).reset_index()
+        # rename the columns
+
+        filtered_df.columns = [
+            "Head",
+            "Embedding",
+            action_1,
+            action_2,
+        ]
+
+        if use_small_multiples:
+            # make a scatter plot of the two scores
+            fig = px.scatter(
+                filtered_df,
+                x=action_1,
+                y=action_2,
+                color="Head",
+                hover_data=["Head", "Embedding"],
+                facet_col="Head",
+                facet_col_wrap=4,
+                labels={
+                    "value": "Congruence",
+                },
+            )
+            # make plot taller
+            fig.update_layout(height=800)
+        else:
+            fig = px.scatter(
+                filtered_df,
+                x=action_1,
+                y=action_2,
+                color="Head",
+                hover_data=["Head", "Embedding"],
+                labels={
+                    "value": "Congruence",
+                },
+            )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    gridmap_tab, search_tab = st.tabs(["Gridmap", "Search"])
+
+    with search_tab:
+        create_search_component(
+            df[["Head", "Embedding", "Score"]],
+            title="Search Full OV Circuit",
+            key="Search Full OV Circuit",
+        )
+
+    with gridmap_tab:
+        ov_gridmap_component(df, key="ov")
 
 
 def get_ov_circuit(_dt):
@@ -116,8 +241,8 @@ def get_full_ov_action_action(_dt):
         dimension_names=[
             "Layer",
             "Head",
-            "Action-Out",
-            "Action-In",
+            "Action_Out",
+            "Action_In",
         ],
     )
 
@@ -125,10 +250,10 @@ def get_full_ov_action_action(_dt):
     W_OV_full_df["Head"] = W_OV_full_df["Layer"] + W_OV_full_df["Head"].map(
         lambda x: f"H{x}"
     )
-    W_OV_full_df["Action-Out"] = W_OV_full_df["Action-Out"].map(
+    W_OV_full_df["Action_Out"] = W_OV_full_df["Action_Out"].map(
         lambda x: IDX_TO_ACTION[x]
     )
-    W_OV_full_df["Action-In"] = W_OV_full_df["Action-In"].map(
+    W_OV_full_df["Action_In"] = W_OV_full_df["Action_In"].map(
         lambda x: IDX_TO_ACTION[x]
     )
 
