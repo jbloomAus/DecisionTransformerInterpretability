@@ -188,9 +188,14 @@ def svd_projection_gridmap_component(activations, key="embeddings"):
             for j in range(len(columns)):
                 with columns[j]:
                     # given some specific head, I want to project onto some channels.
+                    activations_tmp = activations[
+                        activations.Direction == directions[i]
+                    ]
+                    activations_tmp = activations_tmp[
+                        activations_tmp.Embedding.str.contains(channels[j])
+                    ]
                     fig = plot_gridmap_from_embedding_congruence(
-                        activations[activations.Direction == directions[i]],
-                        channels[j],
+                        activations_tmp,
                         abs_col_max=abs_col_max,
                     )
                     st.plotly_chart(fig, use_container_width=True)
