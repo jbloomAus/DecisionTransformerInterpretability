@@ -813,7 +813,7 @@ def show_ov_circuit(_dt):
             show_ov_pos_action_component(_dt)
 
 
-# @st.cache_data(experimental_allow_widgets=True)
+@st.cache_data(experimental_allow_widgets=True)
 def show_congruence(_dt):
     with st.expander("Show Congruence"):
         W_E_state = _dt.state_embedding.weight

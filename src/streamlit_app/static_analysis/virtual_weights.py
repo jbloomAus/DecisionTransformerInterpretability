@@ -1,13 +1,14 @@
 import streamlit as st
 import torch
 from fancy_einsum import einsum
-
+import numpy as np
 from src.streamlit_app.constants import (
     STATE_EMBEDDING_LABELS,
     IDX_TO_ACTION,
     twenty_idx_format_func,
     three_channel_schema,
 )
+
 from src.streamlit_app.utils import tensor_to_long_data_frame
 from src.streamlit_app.components import create_search_component
 
@@ -259,7 +260,7 @@ def show_ov_pos_action_component(_dt):
         df,
         y="Score",
         color="Head",
-        hover_data=["Head", "Action"],
+        hover_data=["Head", "Position", "Action"],
         labels={
             "value": "Congruence",
         },
@@ -404,8 +405,6 @@ def get_full_ov_rtg_action(_dt):
         W_U,
     )
 
-    st.write(W_OV_full.shape)
-
     W_OV_full_df = tensor_to_long_data_frame(
         W_OV_full,
         dimension_names=[
@@ -454,6 +453,19 @@ def get_full_ov_pos_action(_dt):
     )
     W_OV_full_df["Action"] = W_OV_full_df["Action"].map(
         lambda x: IDX_TO_ACTION[x]
+    )
+
+    position_names = list(
+        np.array(
+            [
+                [f"R{i+1}", f"S{i+1}", f"A{i+1}"]
+                for i in range(1 + _dt.transformer_config.n_ctx // 3)
+            ]
+        ).flatten()
+    )[:-1]
+
+    W_OV_full_df["Position"] = W_OV_full_df["Position"].map(
+        lambda x: position_names[x]
     )
 
     return W_OV_full_df
