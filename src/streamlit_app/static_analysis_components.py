@@ -291,6 +291,7 @@ def show_embeddings(_dt):
                         "x": "Principal Components",
                         "y": "Percent Variance Explained",
                     },
+                    text=[f"{p:.2f}%" for p in percent_variance],
                 )
 
                 fig.update_layout(
