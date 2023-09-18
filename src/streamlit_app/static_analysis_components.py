@@ -13,14 +13,20 @@ from fancy_einsum import einsum
 
 # create a pyvis network
 from pyvis.network import Network
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
 
 from src.streamlit_app.static_analysis.gridmaps import (
     neuron_projection_gridmap_component,
-    ov_gridmap_component,
     qk_gridmap_component,
 )
+
+from src.streamlit_app.static_analysis.pca import (
+    get_pca,
+    get_2d_scatter_plot,
+    get_3d_scatter_plot,
+    get_scree_plot,
+    get_loadings_plot,
+)
+
 from src.streamlit_app.static_analysis.svd_projection import (
     embedding_projection_onto_svd_component,
     mlp_out_to_svd_in_component,
@@ -139,35 +145,9 @@ def show_embeddings(_dt):
             st.plotly_chart(fig, use_container_width=True)
 
         with pca_tab:
-            # construct a PCA
-            normalized_embedding = torch.tensor(
-                StandardScaler().fit_transform(df.values), dtype=torch.float32
+            pca_df, percent_variance, loadings = get_pca(
+                df.values, selected_embeddings_labels
             )
-
-            # Perform PCA
-            n_components = len(selected_embeddings_labels)
-            pca = PCA(n_components=n_components)
-            # pca_results = pca.fit_transform(normalized_embedding)
-            fitted_pca = pca.fit(normalized_embedding)
-            pca_results = fitted_pca.transform(normalized_embedding)
-
-            # project the embedding onto the principal components
-
-            # st.write(pd.DataFrame(contributions))
-
-            # Create a dataframe for the results
-            pca_df = pd.DataFrame(
-                data=pca_results,
-                index=selected_embeddings_labels,
-                columns=[f"PC{i+1}" for i in range(n_components)],
-            )
-            pca_df.reset_index(inplace=True, names="State")
-            pca_df["Channel"] = pca_df["State"].apply(
-                lambda x: x.split(",")[0]
-            )
-
-            # get the percent variance explained
-            percent_variance = pca.explained_variance_ratio_ * 100
 
             (
                 scatter_2d_tab,
@@ -177,152 +157,21 @@ def show_embeddings(_dt):
             ) = st.tabs(["2D-Scatter", "3D-Scatter", "Scree Plot", "Loadings"])
 
             with scatter_2d_tab:
-                # Create the plot
-                fig = px.scatter(
-                    pca_df,
-                    x="PC1",
-                    y="PC2",
-                    hover_data=["State", "PC1", "PC2", "Channel"],
-                    color="Channel",
-                    opacity=0.9,
-                    text="State",
-                    labels={
-                        "PC1": "PC1 ({:.2f}%)".format(percent_variance[0]),
-                        "PC2": "PC2 ({:.2f}%)".format(percent_variance[1]),
-                    },
-                )
-
-                # move text up
-                fig.update_traces(textposition="top center")
-
-                # increase point size
-                fig.update_traces(marker=dict(size=10))
-
-                for _, row in pca_df.iterrows():
-                    fig.add_shape(
-                        type="line",
-                        x0=0,
-                        y0=0,
-                        x1=row["PC1"],
-                        y1=row["PC2"],
-                        line=dict(color="white", width=2),
-                    )
-
-                # increase font size
-                fig.update_layout(
-                    font=dict(
-                        size=18,
-                    ),
-                )
-
-                fig.update_layout(height=800)
+                fig = get_2d_scatter_plot(pca_df, percent_variance)
                 st.plotly_chart(fig, use_container_width=True)
 
             with scatter_3d_tab:
-                fig = px.scatter_3d(
-                    pca_df,
-                    x="PC1",
-                    y="PC2",
-                    z="PC3",
-                    hover_data=["State", "PC1", "PC2", "PC3", "State"],
-                    color="Channel",
-                    text="State",
-                    labels={
-                        "PC1": "PC1 ({:.2f}%)".format(percent_variance[0]),
-                        "PC2": "PC2 ({:.2f}%)".format(percent_variance[1]),
-                        "PC3": "PC3 ({:.2f}%)".format(percent_variance[2]),
-                    },
-                    opacity=0.9,
-                )
-
-                # increase point size
-                fig.update_traces(marker=dict(size=10))
-
-                for _, row in pca_df.iterrows():
-                    trace = go.Scatter3d(
-                        x=[0, row["PC1"]],
-                        y=[0, row["PC2"]],
-                        z=[0, row["PC3"]],
-                        mode="lines",
-                        line=dict(color="RoyalBlue", width=3),
-                        # remove from legend
-                        showlegend=False,
-                        # remove hover
-                        hoverinfo="skip",
-                    )
-                    fig.add_trace(trace)
-
-                # reduce tick frequency
-                fig.update_layout(
-                    scene=dict(
-                        xaxis=dict(
-                            tickmode="linear",
-                            tick0=0,
-                            dtick=1,
-                        ),
-                        yaxis=dict(
-                            tickmode="linear",
-                            tick0=0,
-                            dtick=1,
-                        ),
-                        zaxis=dict(
-                            tickmode="linear",
-                            tick0=0,
-                            dtick=1,
-                        ),
-                    )
-                )
-                # increase height
-                # Modify the font size in the layout
-                fig.update_layout(
-                    font=dict(
-                        size=18,
-                    ),
-                    height=800,
-                )
+                fig = get_3d_scatter_plot(pca_df, percent_variance)
                 st.plotly_chart(fig, use_container_width=True)
 
             with scree_plot_tab:
-                fig = px.bar(
-                    x=[f"PC{i+1}" for i in range(n_components)],
-                    y=percent_variance,
-                    title="Scree Plot",
-                    labels={
-                        "x": "Principal Components",
-                        "y": "Percent Variance Explained",
-                    },
-                    text=[f"{p:.2f}%" for p in percent_variance],
-                )
-
-                fig.update_layout(
-                    font=dict(
-                        size=18,
-                    ),
+                fig = get_scree_plot(
+                    percent_variance, selected_embeddings_labels
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
             with loadings_tab:
-                loadings = torch.tensor(fitted_pca.components_.T)
-                # normalize row norm
-                loadings = loadings / loadings.norm(dim=1, keepdim=True)
-
-                loadings_df = pd.DataFrame(
-                    data=fitted_pca.components_.T,
-                    index=selected_embeddings_labels,
-                    columns=[f"PC{i+1}" for i in range(n_components)],
-                )
-                fig = px.imshow(
-                    loadings_df,
-                    color_continuous_midpoint=0,
-                    color_continuous_scale="RdBu",
-                    text_auto=True,
-                )
-                fig.update_layout(
-                    coloraxis_showscale=False,
-                    margin=dict(l=0, r=0, t=0, b=0),
-                )
-                fig.update_layout(height=800, width=800)
-
+                fig = get_loadings_plot(loadings, selected_embeddings_labels)
                 st.plotly_chart(fig, use_container_width=True)
 
         # with in_action_tab:
