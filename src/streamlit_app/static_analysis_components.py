@@ -2,6 +2,7 @@ import itertools
 
 import einops
 import networkx as nx
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -139,7 +140,9 @@ def show_embeddings(_dt):
 
         with pca_tab:
             # construct a PCA
-            normalized_embedding = StandardScaler().fit_transform(df.values)
+            normalized_embedding = torch.tensor(
+                StandardScaler().fit_transform(df.values), dtype=torch.float32
+            )
 
             # Perform PCA
             n_components = len(selected_embeddings_labels)
@@ -147,7 +150,10 @@ def show_embeddings(_dt):
             # pca_results = pca.fit_transform(normalized_embedding)
             fitted_pca = pca.fit(normalized_embedding)
             pca_results = fitted_pca.transform(normalized_embedding)
-            st.write(fitted_pca)
+
+            # project the embedding onto the principal components
+
+            # st.write(pd.DataFrame(contributions))
 
             # Create a dataframe for the results
             pca_df = pd.DataFrame(
@@ -163,9 +169,12 @@ def show_embeddings(_dt):
             # get the percent variance explained
             percent_variance = pca.explained_variance_ratio_ * 100
 
-            scatter_2d_tab, scatter_3d_tab, scree_plot = st.tabs(
-                ["2D-Scatter", "3D-Scatter", "Scree Plot"]
-            )
+            (
+                scatter_2d_tab,
+                scatter_3d_tab,
+                scree_plot_tab,
+                loadings_tab,
+            ) = st.tabs(["2D-Scatter", "3D-Scatter", "Scree Plot", "Loadings"])
 
             with scatter_2d_tab:
                 # Create the plot
@@ -173,7 +182,6 @@ def show_embeddings(_dt):
                     pca_df,
                     x="PC1",
                     y="PC2",
-                    title="PCA on Embeddings",
                     hover_data=["State", "PC1", "PC2", "Channel"],
                     color="Channel",
                     opacity=0.9,
@@ -197,8 +205,15 @@ def show_embeddings(_dt):
                         y0=0,
                         x1=row["PC1"],
                         y1=row["PC2"],
-                        line=dict(color="RoyalBlue", width=1),
+                        line=dict(color="white", width=2),
                     )
+
+                # increase font size
+                fig.update_layout(
+                    font=dict(
+                        size=18,
+                    ),
+                )
 
                 fig.update_layout(height=800)
                 st.plotly_chart(fig, use_container_width=True)
@@ -209,7 +224,6 @@ def show_embeddings(_dt):
                     x="PC1",
                     y="PC2",
                     z="PC3",
-                    title="PCA on Embeddings",
                     hover_data=["State", "PC1", "PC2", "PC3", "State"],
                     color="Channel",
                     text="State",
@@ -268,7 +282,7 @@ def show_embeddings(_dt):
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
-            with scree_plot:
+            with scree_plot_tab:
                 fig = px.bar(
                     x=[f"PC{i+1}" for i in range(n_components)],
                     y=percent_variance,
@@ -284,6 +298,30 @@ def show_embeddings(_dt):
                         size=18,
                     ),
                 )
+                st.plotly_chart(fig, use_container_width=True)
+
+            with loadings_tab:
+                loadings = torch.tensor(fitted_pca.components_.T)
+                # normalize row norm
+                loadings = loadings / loadings.norm(dim=1, keepdim=True)
+
+                loadings_df = pd.DataFrame(
+                    data=fitted_pca.components_.T,
+                    index=selected_embeddings_labels,
+                    columns=[f"PC{i+1}" for i in range(n_components)],
+                )
+                fig = px.imshow(
+                    loadings_df,
+                    color_continuous_midpoint=0,
+                    color_continuous_scale="RdBu",
+                    text_auto=True,
+                )
+                fig.update_layout(
+                    coloraxis_showscale=False,
+                    margin=dict(l=0, r=0, t=0, b=0),
+                )
+                fig.update_layout(height=800, width=800)
+
                 st.plotly_chart(fig, use_container_width=True)
 
         # with in_action_tab:
