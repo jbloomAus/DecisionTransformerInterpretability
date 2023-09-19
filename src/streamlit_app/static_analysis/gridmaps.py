@@ -149,8 +149,7 @@ def neuron_projection_gridmap_component(activations, key="neuron projection"):
                 with columns[j]:
                     # given some specific head, I want to project onto some channels.
                     fig = plot_gridmap_from_embedding_congruence(
-                        activations[activations.Neuron == neurons[i]],
-                        channels[j],
+                        activations[(activations.Neuron == neurons[i]) & (activations.Channel == channels[j])],
                         abs_col_max=abs_col_max,
                     )
                     st.plotly_chart(fig, use_container_width=True)
@@ -189,8 +188,7 @@ def svd_projection_gridmap_component(activations, key="embeddings"):
                 with columns[j]:
                     # given some specific head, I want to project onto some channels.
                     fig = plot_gridmap_from_embedding_congruence(
-                        activations[activations.Direction == directions[i]],
-                        channels[j],
+                        activations[(activations.Direction == directions[i]) & (activations.Channel == channels[j])],
                         abs_col_max=abs_col_max,
                     )
                     st.plotly_chart(fig, use_container_width=True)
