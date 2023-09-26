@@ -114,7 +114,7 @@ with st.sidebar:
         positive_action_direction = st.selectbox(
             "Positive Action Direction",
             ["left", "right", "forward", "pickup", "drop", "toggle", "done"],
-            index=2,
+            index=0,
         )
         negative_action_direction = st.selectbox(
             "Negative Action Direction",
