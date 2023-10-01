@@ -6,6 +6,7 @@ from minigrid.core.grid import Grid
 from minigrid.core.mission import MissionSpace
 from minigrid.core.world_object import Ball, Key, Wall
 from minigrid.minigrid_env import MiniGridEnv
+from typing import Literal
 
 
 class MemoryEnv(MiniGridEnv):
@@ -98,7 +99,13 @@ class MemoryEnv(MiniGridEnv):
     def _gen_mission():
         return "go to the matching object at the end of the hallway"
 
-    def _gen_grid(self, width, height):
+    def _gen_grid(
+        self,
+        width,
+        height,
+        target_obj: Literal["key", "ball", None] = None,
+        target_pos: Literal["top", "bottom", None] = None,
+    ):
         self.grid = Grid(width, height)
 
         # Generate the surrounding walls
@@ -147,10 +154,34 @@ class MemoryEnv(MiniGridEnv):
             self.agent_dir = 0
 
         # Place objects
-        start_room_obj = self._rand_elem([Key, Ball])
+        if target_obj is None:
+            start_room_obj = self._rand_elem([Key, Ball])
+        elif target_obj == "key":
+            start_room_obj = Key
+        elif target_obj == "ball":
+            start_room_obj = Ball
+        else:
+            raise ValueError(f"Unknown goal object: {target_obj}")
         self.grid.set(1, height // 2 - 1, start_room_obj("green"))
+        self.target_obj = start_room_obj().type
 
-        other_objs = self._rand_elem([[Ball, Key], [Key, Ball]])
+        if target_pos is None:
+            other_objs = self._rand_elem([[Ball, Key], [Key, Ball]])
+        elif target_pos == "top":
+            if target_obj == "key":
+                other_objs = [Key, Ball]
+            else:
+                other_objs = [Ball, Key]
+        elif target_pos == "bottom":
+            if target_obj == "key":
+                other_objs = [Ball, Key]
+            else:
+                other_objs = [Key, Ball]
+        else:
+            raise ValueError(f"Unknown goal position: {target_pos}")
+        self.target_pos = (
+            "top" if other_objs[0] == start_room_obj else "bottom"
+        )
         pos0 = (hallway_end + 1, height // 2 - 2)
         pos1 = (hallway_end + 1, height // 2 + 2)
         self.grid.set(*pos0, other_objs[0]("green"))
