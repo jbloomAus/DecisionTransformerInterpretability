@@ -10,6 +10,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 import torch
 from fancy_einsum import einsum
+from sklearn.preprocessing import StandardScaler
 
 # create a pyvis network
 from pyvis.network import Network
@@ -34,11 +35,7 @@ from src.streamlit_app.static_analysis.svd_projection import (
     svd_out_to_svd_in_component,
     svd_out_to_unembedding_component,
 )
-from src.streamlit_app.static_analysis.ui import (
-    embedding_matrix_selection_ui,
-    layer_head_channel_selector,
-    layer_head_k_selector_ui,
-)
+from src.streamlit_app.static_analysis.ui import layer_head_channel_selector
 from src.streamlit_app.static_analysis.virtual_weights import (
     get_full_qk_state_state,
     get_ov_circuit,
@@ -100,24 +97,11 @@ def show_param_statistics(_dt):
 
 
 # @st.cache_data(experimental_allow_widgets=True)
-def show_embeddings(_dt):
+def show_embeddings(_dt, cache):
     with st.expander("Embeddings"):
-        b, d = st.columns(2)
+        a, b = st.columns(2)
 
-        embedding = _dt.state_embedding.weight.detach().T
-
-        with d:
-            cluster = st.checkbox("Cluster")
-            centre_embeddings = st.checkbox("Centre Embeddings")
-
-        if centre_embeddings:
-            embedding = embedding - embedding.mean(dim=0)
-
-        df = get_cosine_sim_df(embedding)
-        df.columns = STATE_EMBEDDING_LABELS
-        df.index = STATE_EMBEDDING_LABELS
-
-        with b:
+        with a:
             selected_embeddings = st.multiselect(
                 "Select Embeddings",
                 options=range(len(STATE_EMBEDDING_LABELS)),
@@ -126,29 +110,49 @@ def show_embeddings(_dt):
                 default=[263, 312, 258, 307],
             )
 
-            if selected_embeddings:
-                df = df.iloc[selected_embeddings, selected_embeddings]
-                selected_embeddings_labels = [
-                    STATE_EMBEDDING_LABELS[i] for i in selected_embeddings
-                ]
-            else:
-                return
+        with b:
+            cluster = st.checkbox("Cluster")
+            centre_embeddings = st.checkbox("Centre Embeddings")
+
+        embeddings = _dt.state_embedding.weight.detach().T
+
+        if not selected_embeddings:
+            return
+
+        # filter labels
+        selected_embeddings_labels = [
+            STATE_EMBEDDING_LABELS[i] for i in selected_embeddings
+        ]
+
+        # filter embeddings
+        embeddings = embeddings[selected_embeddings, :]
+
+        # centre
+        if centre_embeddings:
+            embeddings = embeddings - embeddings.mean(dim=0)
+
+        # normalise
+        embeddings = embeddings / embeddings.norm(dim=1, keepdim=True)
+        df = get_cosine_sim_df(
+            embeddings, selected_embeddings_labels, selected_embeddings_labels
+        )
+
+        pca_df, percent_variance, loadings, fitted_pca = get_pca(
+            embeddings, selected_embeddings_labels
+        )
 
         pca_tab, heatmap_tab = st.tabs(["PCA", "Heatmap"])
 
         with heatmap_tab:
             fig = plot_heatmap(
                 df,
-                cluster,
+                color_continuous_midpoint=0,
+                cluster=cluster,
                 show_labels=df.shape[0] < 20,
             )
             st.plotly_chart(fig, use_container_width=True)
 
         with pca_tab:
-            pca_df, percent_variance, loadings = get_pca(
-                df.values, selected_embeddings_labels
-            )
-
             (
                 scatter_2d_tab,
                 scatter_3d_tab,
@@ -174,7 +178,7 @@ def show_embeddings(_dt):
                 fig = get_loadings_plot(loadings, selected_embeddings_labels)
                 st.plotly_chart(fig, use_container_width=True)
 
-        # with in_action_tab:
+        # with in_action_tab:≠
         #     embedding = _dt.action_embedding[0].weight.detach()[:-1, :]
 
         #     df = get_cosine_sim_df(embedding)

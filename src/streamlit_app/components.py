@@ -185,17 +185,17 @@ def decomp_configuration_ui(key=""):
 def get_decomp_scan(rtg, cache, logit_dir, decomp_level, normalize=False):
     if decomp_level == "Reduced":
         results, labels = cache.decompose_resid(
-            apply_ln=True, return_labels=True
+            apply_ln=False, return_labels=True
         )
     elif decomp_level == "Full":
         results, labels = cache.get_full_resid_decomposition(
-            apply_ln=True,
+            apply_ln=False,
             return_labels=True,
             expand_neurons=False,  # if you don't set this, you'll crash your browser.
         )
     elif decomp_level == "MLP":
         results, labels = cache.get_full_resid_decomposition(
-            apply_ln=True, return_labels=True, expand_neurons=True
+            apply_ln=False, return_labels=True, expand_neurons=True
         )
 
     attribution = results[:, :, -1, :] @ logit_dir
@@ -204,10 +204,10 @@ def get_decomp_scan(rtg, cache, logit_dir, decomp_level, normalize=False):
     df.index = rtg[:, -1].squeeze(1).detach().cpu().numpy()
 
     if normalize:
-        # divide each column by its max:
-        df = df / df.abs().max()
         # center around zero
-        df = df - df.mean()
+        df = df - df.min(axis=0)
+        # divide each column by its norm:
+        df = df / (df.max(axis=0) - df.min(axis=0))
 
     return df
 
@@ -240,51 +240,88 @@ def plot_decomp_scan_line(
 
 
 def plot_decomp_scan_corr(df, cluster=False, x="RTG"):
-    fig2 = plot_heatmap(df.corr(), cluster=cluster)
+    # drop the column "embed"
+    df = df.drop(columns=["embed", "bias", "pos_embed"], errors="ignore")
+    df_corr = df.corr()
+    # find any NaNs and remove those rows
+    fig2 = plot_heatmap(df_corr, cluster=cluster)
 
     return fig2
 
 
 def plot_attention_patterns_by_rtg(dt, rtgs=11):
-
-    x = [[[] for _ in range(dt.transformer_config.n_heads)] for _ in range(dt.transformer_config.n_layers)]
-    y = [[[] for _ in range(dt.transformer_config.n_heads)] for _ in range(dt.transformer_config.n_layers)]
-    lines = [[[] for _ in range(dt.transformer_config.n_heads)] for _ in range(dt.transformer_config.n_layers)]
-    rtg_labels = [[[] for _ in range(dt.transformer_config.n_heads)] for _ in range(dt.transformer_config.n_layers)]
+    x = [
+        [[] for _ in range(dt.transformer_config.n_heads)]
+        for _ in range(dt.transformer_config.n_layers)
+    ]
+    y = [
+        [[] for _ in range(dt.transformer_config.n_heads)]
+        for _ in range(dt.transformer_config.n_layers)
+    ]
+    lines = [
+        [[] for _ in range(dt.transformer_config.n_heads)]
+        for _ in range(dt.transformer_config.n_layers)
+    ]
+    rtg_labels = [
+        [[] for _ in range(dt.transformer_config.n_heads)]
+        for _ in range(dt.transformer_config.n_layers)
+    ]
 
     initial_rtg = st.session_state.rtg
-    rtgs = max(2, rtgs) # RTG should be a minimum of 2, for [0, 1].
+    rtgs = max(2, rtgs)  # RTG should be a minimum of 2, for [0, 1].
     rtg_caches = []
 
     # [S1, A1, R1, S2, A2, R2, ... Sn, An, Rn]. Rn won't be used.
-    step_vals = list(np.array([[f"S{i+1}", f"A{i+1}", f"R{i+1}"] for i in range(1 + dt.transformer_config.n_ctx // 3)]).flatten())
-    
+    step_vals = list(
+        np.array(
+            [
+                [f"S{i+1}", f"A{i+1}", f"R{i+1}"]
+                for i in range(1 + dt.transformer_config.n_ctx // 3)
+            ]
+        ).flatten()
+    )
+
     # Run the model for each RTG value and collect its cache.
-    for r in [i/(rtgs-1) for i in range(rtgs)]:
+    for r in [i / (rtgs - 1) for i in range(rtgs)]:
         _, _, cache, _ = get_action_preds_from_app_state(dt)
         cumulative_reward = st.session_state.reward.cumsum(dim=1)
         rtg = r * torch.ones(
             (1, cumulative_reward.shape[1], 1), dtype=torch.float
         )
         st.session_state.rtg = rtg - cumulative_reward
-        cache = torch.stack([cache[f"blocks.{str(layer)}.attn.hook_pattern"] for layer in range(dt.transformer_config.n_layers)])
-        rtg_caches.append(cache.squeeze(1)) # (layers, heads, n_ctx, n_ctx)
+        cache = torch.stack(
+            [
+                cache[f"blocks.{str(layer)}.attn.hook_pattern"]
+                for layer in range(dt.transformer_config.n_layers)
+            ]
+        )
+        rtg_caches.append(cache.squeeze(1))  # (layers, heads, n_ctx, n_ctx)
 
-    rtg_cache = torch.stack(rtg_caches) # (rtgs, layers, heads, n_ctx, n_ctx)
+    rtg_cache = torch.stack(rtg_caches)  # (rtgs, layers, heads, n_ctx, n_ctx)
 
-    st.session_state.rtg = initial_rtg # Set RTG back to original value.
+    st.session_state.rtg = initial_rtg  # Set RTG back to original value.
 
     layers = range(dt.transformer_config.n_layers)
     heads = range(dt.transformer_config.n_heads)
     rtg_nums = range(rtg_cache.shape[0])
     rows = range(rtg_cache.shape[-1])
 
-    for (layer, head, rtg, row) in itertools.product(layers, heads, rtg_nums, rows):
-        data = rtg_cache[rtg, layer, head, row, :].detach().cpu().numpy() # Values of a given row.
-        x[layer][head].extend([step_vals[i] for i in range(len(data))]) # 0-(num_rows-1)
+    for layer, head, rtg, row in itertools.product(
+        layers, heads, rtg_nums, rows
+    ):
+        data = (
+            rtg_cache[rtg, layer, head, row, :].detach().cpu().numpy()
+        )  # Values of a given row.
+        x[layer][head].extend(
+            [step_vals[i] for i in range(len(data))]
+        )  # 0-(num_rows-1)
         y[layer][head].extend(data)
-        lines[layer][head].extend([step_vals[row] for _ in range(len(data))]) # Frame is based on row number.
-        rtg_labels[layer][head].extend(round(rtg/(rtgs-1), 3) for _ in range(len(data))) # Get RTG vals to 3 digits only.
+        lines[layer][head].extend(
+            [step_vals[row] for _ in range(len(data))]
+        )  # Frame is based on row number.
+        rtg_labels[layer][head].extend(
+            round(rtg / (rtgs - 1), 3) for _ in range(len(data))
+        )  # Get RTG vals to 3 digits only.
 
     return x, y, lines, rtg_labels
 

@@ -907,60 +907,60 @@ def show_rtg_scan(dt, logit_dir):
             fig2 = plot_decomp_scan_corr(df, cluster)
             st.plotly_chart(fig2, use_container_width=True)
 
-        with neuron_tab:
-            st.write(
-                "We may want to look for families of equivarient neurons."
-            )
+        # with neuron_tab:
+        #     st.write(
+        #         "We may want to look for families of equivarient neurons."
+        #     )
 
-            layer = st.selectbox(
-                "Layer",
-                options=range(dt.transformer_config.n_layers),
-                index=dt.transformer_config.n_layers - 1,
-            )
+        #     layer = st.selectbox(
+        #         "Layer",
+        #         options=range(dt.transformer_config.n_layers),
+        #         index=dt.transformer_config.n_layers - 1,
+        #     )
 
-            weights = dt.transformer.blocks[layer].mlp.W_in
-            activations = cache[f"blocks.{layer}.mlp.hook_pre"][:, -1]
+        #     weights = dt.transformer.blocks[layer].mlp.W_in
+        #     activations = cache[f"blocks.{layer}.mlp.hook_pre"][:, -1]
 
-            neuron_activations = einsum(
-                "d_model d_mlp, batch d_model -> batch d_mlp",
-                weights,
-                activations,
-            )
+        #     neuron_activations = einsum(
+        #         "d_model d_mlp, batch d_model -> batch d_mlp",
+        #         weights,
+        #         activations,
+        #     )
 
-            # st.write(neuron_activations.shape)
+        #     # st.write(neuron_activations.shape)
 
-            # cast it to df with columns for each neuron
-            df = pd.DataFrame(
-                neuron_activations.detach().cpu().numpy(),
-                index=rtg[:, 0, 0].detach().cpu().numpy(),
-                columns=[
-                    f"L{layer}N{i}" for i in range(neuron_activations.shape[1])
-                ],
-            )
+        #     # cast it to df with columns for each neuron
+        #     df = pd.DataFrame(
+        #         neuron_activations.detach().cpu().numpy(),
+        #         index=rtg[:, 0, 0].detach().cpu().numpy(),
+        #         columns=[
+        #             f"L{layer}N{i}" for i in range(neuron_activations.shape[1])
+        #         ],
+        #     )
 
-            fig = plot_decomp_scan_line(df, title="")
-            fig.update_traces(opacity=0.3)
-            # hide legend
-            fig.update_layout(showlegend=False)
-            st.plotly_chart(fig, use_container_width=True)
+        #     fig = plot_decomp_scan_line(df, title="")
+        #     fig.update_traces(opacity=0.3)
+        #     # hide legend
+        #     fig.update_layout(showlegend=False)
+        #     st.plotly_chart(fig, use_container_width=True)
 
-            # fig2 = plot_decomp_scan_corr(df, True)
-            # st.plotly_chart(fig2, use_container_width=True)
+        # fig2 = plot_decomp_scan_corr(df, True)
+        # st.plotly_chart(fig2, use_container_width=True)
 
-            # fig = px.line(
-            #     df,
-            #     x=df.index,
-            #     y=df.columns,
-            #     title=f"Layer {layer} Neuron Activations",
-            # )
+        # fig = px.line(
+        #     df,
+        #     x=df.index,
+        #     y=df.columns,
+        #     title=f"Layer {layer} Neuron Activations",
+        # )
 
-            # # reduce opacity on lines
+        # # reduce opacity on lines
 
-            # # hide legend
-            # fig.update_layout(showlegend=False)
-            # st.plotly_chart(fig, use_container_width=True)
+        # # hide legend
+        # fig.update_layout(showlegend=False)
+        # st.plotly_chart(fig, use_container_width=True)
 
-            # fig2 = plot_decomp_scan_corr(df, cluster)
+        # fig2 = plot_decomp_scan_corr(df, cluster)
 
         with attention_patterns_by_rtg_tab:
             step_vals = list(
@@ -976,8 +976,8 @@ def show_rtg_scan(dt, logit_dir):
             with a:
                 score_or_pattern = st.radio(
                     "Show Attention Score or Pattern",
-                    ["Scores", "Pattern"],
-                    index=0,
+                    ["Value-Weighted Pattern", "Pattern", "Scores"],
+                    index=1,
                     key="score_or_pattern",
                 )
 
@@ -994,6 +994,21 @@ def show_rtg_scan(dt, logit_dir):
                         cache[f"blocks.{layer}.attn.hook_pattern"]
                         for layer in range(dt.transformer_config.n_layers)
                     ]
+                )
+
+            if score_or_pattern == "Value-Weighted Pattern":
+                values = torch.stack(
+                    [
+                        cache[f"blocks.{layer}.attn.hook_v"]
+                        for layer in range(dt.transformer_config.n_layers)
+                    ]
+                )
+                value_norm = torch.norm(values, dim=-1)
+                value_norm = value_norm.permute(0, 1, 3, 2)
+                st.write("value norm", value_norm.shape)
+                st.write("attention patterns", attention_patterns.shape)
+                attention_patterns = attention_patterns * value_norm.unsqueeze(
+                    -1
                 )
 
             df = tensor_to_long_data_frame(

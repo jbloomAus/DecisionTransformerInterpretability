@@ -130,3 +130,41 @@ def layer_head_channel_selector(_dt, key=""):
         )
 
     return layer, heads, selected_channels
+
+
+# Add to other PCA component later.
+# if test_for_mimicry:
+
+#     st.write("Mimicry!")
+
+#     # get head output vectors from cache.
+
+#     result, labels = cache.get_full_resid_decomposition(
+#         apply_ln=True, return_labels=True, expand_neurons=False
+#     )
+#     result = result[:,0,-1].detach()
+
+#     with b:
+#         selected_component = st.multiselect(
+#             label="Select Component",
+#             options=range(len(labels)),
+#             format_func=lambda x: labels[x],
+#             key = [0,]
+#         )
+
+#         # get the corresponding labels
+#         selected_component_label = [
+#             labels[i] for i in selected_component
+#         ]
+#         # get the corresponding vectors
+#         selected_component_vectors = torch.stack([
+#             result[i] for i in selected_component
+#         ])
+
+
+# if test_for_mimicry:
+#     # append vectors to embeddings and labels to labels
+#     st.write(selected_component_vectors.norm(dim=1))
+#     # normalize the vectors
+#     selected_component_vectors = selected_component_vectors / selected_component_vectors.norm(dim=1, keepdim=True)
+#     embeddings = torch.cat([embeddings, selected_component_vectors], dim=0)

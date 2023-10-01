@@ -54,7 +54,7 @@ def render_minigrid_observations(env, observations):
     )
 
 
-def get_cosine_sim_df(tensor):
+def get_cosine_sim_df(tensor, column_labels=None, row_labels=None):
     # Normalize each row in the tensor
     row_norms = torch.norm(tensor, dim=1, keepdim=True)
     normalized_tensor = tensor / row_norms
@@ -66,6 +66,11 @@ def get_cosine_sim_df(tensor):
 
     # Convert the resulting tensor to a Pandas DataFrame
     df = pd.DataFrame(cosine_similarity_matrix.numpy())
+    if column_labels is not None:
+        df.columns = column_labels
+    if row_labels is not None:
+        df.index = row_labels
+
     return df
 
 

@@ -6,17 +6,19 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 
-def get_pca(data, labels):
+def get_pca(data, labels, n_components=None):
     normalized_embedding = torch.tensor(
-        StandardScaler().fit_transform(data), dtype=torch.float32
+        StandardScaler().fit_transform(data.T), dtype=torch.float32
     )
 
     # Perform PCA
-    n_components = len(labels)
+    if not n_components:
+        n_components = len(labels)
+
     pca = PCA(n_components=n_components)
     # pca_results = pca.fit_transform(normalized_embedding)
-    fitted_pca = pca.fit(normalized_embedding)
-    pca_results = fitted_pca.transform(normalized_embedding)
+    fitted_pca = pca.fit(normalized_embedding.T)
+    pca_results = fitted_pca.transform(normalized_embedding.T)
 
     # Create a dataframe for the results
     pca_df = pd.DataFrame(
@@ -30,9 +32,9 @@ def get_pca(data, labels):
     # get the percent variance explained
     percent_variance = pca.explained_variance_ratio_ * 100
 
-    loadings = torch.tensor(fitted_pca.components_.T)
+    loadings = torch.tensor(fitted_pca.components_.T, dtype=torch.float32)
 
-    return pca_df, percent_variance, loadings
+    return pca_df, percent_variance, loadings, fitted_pca
 
 
 def get_2d_scatter_plot(pca_df, percent_variance):
@@ -113,26 +115,6 @@ def get_3d_scatter_plot(pca_df, percent_variance):
         )
         fig.add_trace(trace)
 
-    # reduce tick frequency
-    fig.update_layout(
-        scene=dict(
-            xaxis=dict(
-                tickmode="linear",
-                tick0=0,
-                dtick=1,
-            ),
-            yaxis=dict(
-                tickmode="linear",
-                tick0=0,
-                dtick=1,
-            ),
-            zaxis=dict(
-                tickmode="linear",
-                tick0=0,
-                dtick=1,
-            ),
-        )
-    )
     # increase height
     # Modify the font size in the layout
     fig.update_layout(
@@ -172,8 +154,8 @@ def get_loadings_plot(loadings, labels):
 
     loadings_df = pd.DataFrame(
         data=loadings,
-        index=labels,
-        columns=[f"PC{i+1}" for i in range(len(labels))],
+        # index=labels,
+        # columns=[f"PC{i+1}" for i in range(len(labels))],
     )
     fig = px.imshow(
         loadings_df,

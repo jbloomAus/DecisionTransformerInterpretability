@@ -190,7 +190,7 @@ if len(analyses) == 0:
 
 # Static Analyses
 if "Embeddings" in analyses:
-    show_embeddings(dt)
+    show_embeddings(dt, cache)  # breaks pattern but whatever
 if "Neuron Directions" in analyses:
     show_neuron_directions(dt)
 if "Congruence" in analyses:

@@ -1126,7 +1126,9 @@ def show_algebraic_value_editing(dt, logit_dir, original_cache):
 
         # 1. Create a corrupted forward pass using the same essential logic as activation
         # patching.
-        corrupted_tokens = get_corrupted_tokens_component(dt, key="avec")
+        corrupted_tokens, noise_or_denoise = get_corrupted_tokens_component(
+            dt, key="avec"
+        )
         (
             corrupted_preds,
             corrupted_x,
@@ -1246,7 +1248,7 @@ def get_ave_hook(component, coeff: Tensor, act_diff: Tensor, **kwargs):
     return ave_hook
 
 
-# Path Patching using code from Callum McDougal.
+# Path Patching using code from Callum McDougall.
 from src.patch_transformer_lens.patching import path_patch
 
 
@@ -1254,7 +1256,9 @@ def show_path_patching(dt, logit_dir, clean_cache):
     with st.expander("Path Patching"):
         # 1. Create a corrupted forward pass using the same essential logic as activation
         # patching.
-        corrupted_tokens, patch_type = get_corrupted_tokens_component(dt, key="path_")
+        corrupted_tokens, patch_type = get_corrupted_tokens_component(
+            dt, key="path_"
+        )
 
         (
             corrupt_preds,
