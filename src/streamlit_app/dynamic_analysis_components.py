@@ -792,7 +792,7 @@ def rtg_scan_configuration_ui(dt):
             "RTG Range",
             min_value=min_value,
             max_value=max_value,
-            value=(-1, 1),
+            value=(0, 1),
             step=1,
         )
         min_rtg = rtg_range[0]
