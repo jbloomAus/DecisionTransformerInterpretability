@@ -23,6 +23,10 @@ from .visualizations import plot_logit_scan
 
 from .analysis import get_residual_decomp
 from .constants import IDX_TO_ACTION, IDX_TO_OBJECT
+from .dynamic_analysis_components import (
+    show_logit_lens,
+    show_rtg_scan,
+)
 from .environment import (
     get_action_preds_from_app_state,
     get_action_preds_from_tokens,
@@ -416,6 +420,16 @@ def show_activation_patching(dt, logit_dir, original_cache):
                 kwargs,
                 apply_metric_to_cache=True,
             )
+        
+        if st.checkbox(
+            "Analyse corrupted pass (slightly expensive)", key="corrupted-checkbox"
+        ):
+            corrupt_rtg_scan_tab, corrupt_logit_lens_tab = st.tabs(["RTG Scan", "Logit Lens"])
+            with corrupt_rtg_scan_tab:
+                show_rtg_scan(dt, logit_dir=logit_dir)
+            with corrupt_logit_lens_tab:
+                show_logit_lens(dt, corrupt_cache, logit_dir=logit_dir)
+            
 
 
 def get_corrupted_tokens_component(dt, key=""):
