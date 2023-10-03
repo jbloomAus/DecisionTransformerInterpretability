@@ -569,9 +569,8 @@ def get_corrupted_tokens_component(dt, key=""):
                 fig = px.imshow(image, animation_frame=0)
                 st.plotly_chart(fig, use_container_width=True)
 
-    assert not torch.all(
-        corrupted_tokens == previous_tokens
-    ), "corrupted tokens are the same!"
+    if torch.all(corrupted_tokens == previous_tokens):
+        st.warning("Corrupted tokens are the same as previous tokens. Please make a change to the environment.")
 
     return corrupted_tokens, noise_or_denoise
 
