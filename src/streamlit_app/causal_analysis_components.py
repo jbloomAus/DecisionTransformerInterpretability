@@ -593,23 +593,15 @@ def get_corrupt_obs_instructions(key=""):
                 index=max(0, max_len - current_len),
                 key=key + "timestep_selector",
             )
+
     with b:
-        x_position_to_update = st.selectbox(
-            "X Position (Rel to Agent)",
-            range(8),
-            format_func=lambda x: f"{x-3}",
-            index=2,
-            key=key + "x_position_selector",
-        )
+        position = st.selectbox("Select a position", 
+                                [f"{i},{j}" for i in range(7) for j in range(7)],
+                                key = key + "position_selector")
+        x_position, y_position = position.split(',')
+        x_position_to_update, y_position_to_update = int(x_position), int(y_position)
+
     with c:
-        y_position_to_update = st.selectbox(
-            "Y Position (Rel to Agent)",
-            range(8),
-            format_func=lambda x: f"{6-x}",
-            index=6,
-            key=key + "y_position_selector",
-        )
-    with d:
         object_to_update = st.selectbox(
             "Select an object",
             list(IDX_TO_OBJECT.keys()),
