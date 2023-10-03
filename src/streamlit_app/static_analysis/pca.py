@@ -37,7 +37,7 @@ def get_pca(data, labels, n_components=None):
     return pca_df, percent_variance, loadings, fitted_pca
 
 
-def get_2d_scatter_plot(pca_df, percent_variance):
+def get_2d_scatter_plot(pca_df, percent_variance, light_mode):
     # Create the plot
     fig = px.scatter(
         pca_df,
@@ -66,7 +66,7 @@ def get_2d_scatter_plot(pca_df, percent_variance):
             y0=0,
             x1=row["PC1"],
             y1=row["PC2"],
-            line=dict(color="white", width=2),
+            line=dict(color="black" if light_mode else "white", width=2),
         )
 
     # increase font size
@@ -81,7 +81,7 @@ def get_2d_scatter_plot(pca_df, percent_variance):
     return fig
 
 
-def get_3d_scatter_plot(pca_df, percent_variance):
+def get_3d_scatter_plot(pca_df, percent_variance, light_mode):
     fig = px.scatter_3d(
         pca_df,
         x="PC1",
@@ -107,7 +107,7 @@ def get_3d_scatter_plot(pca_df, percent_variance):
             y=[0, row["PC2"]],
             z=[0, row["PC3"]],
             mode="lines",
-            line=dict(color="RoyalBlue", width=3),
+            line=dict(color="black" if light_mode else "white", width=3),
             # remove from legend
             showlegend=False,
             # remove hover
