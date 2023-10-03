@@ -69,6 +69,7 @@ def plot_attention_pattern_single(
     specific_heads: List = None,
     method="Plotly",
     scale_by_value=False,
+    key="",
 ):
     labels = st.session_state.labels
 
@@ -126,7 +127,7 @@ def plot_attention_pattern_single(
                 fig.update_xaxes(ticktext=labels)
                 fig.update_yaxes(ticktext=labels)
 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key=key + "attention-pattern")
 
         return
 

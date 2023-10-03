@@ -60,24 +60,23 @@ embedding_labels = (
 )
 
 
-def show_attention_pattern(dt, cache):
-    with st.expander("Attention Pattern at at current Reward-to-Go"):
-        st.latex(
-            r"""
-            h(x)=\left(A \otimes W_O W_V\right) \cdot x \newline
-            """
-        )
+def show_attention_pattern(dt, cache, key=""):
+    st.latex(
+        r"""
+        h(x)=\left(A \otimes W_O W_V\right) \cdot x \newline
+        """
+    )
 
-        st.latex(
-            r"""
-            A=\operatorname{softmax}\left(x^T W_Q^T W_K x\right)
-            """
-        )
+    st.latex(
+        r"""
+        A=\operatorname{softmax}\left(x^T W_Q^T W_K x\right)
+        """
+    )
 
-        visualize_attention_pattern(dt, cache)
+    visualize_attention_pattern(dt, cache, key)
 
 
-def visualize_attention_pattern(dt, cache):
+def visualize_attention_pattern(dt, cache, key=""):
     n_layers = dt.transformer_config.n_layers
     n_heads = dt.transformer_config.n_heads
 
@@ -90,11 +89,13 @@ def visualize_attention_pattern(dt, cache):
         layer = st.selectbox(
             "Layer",
             options=list(range(n_layers)),
+            key=key + "layer"
         )
         score_or_softmax = st.selectbox(
             "Score or Softmax",
             options=["Score", "Softmax"],
             index=1,
+            key = key + "score-or-softmax"
         )
         softmax = score_or_softmax == "Softmax"
 
@@ -103,12 +104,14 @@ def visualize_attention_pattern(dt, cache):
             "Scale by value",
             options=[True, False],
             index=0,
+            key=key + "scale-by-value"
         )
 
         if score_or_softmax != "Value Weighted Softmax":
             method = st.selectbox(
                 "Select plotting method",
                 options=["Plotly", "CircuitsVis"],
+                key=key + "plotting-method"
             )
         else:
             method = "Plotly"
@@ -120,107 +123,106 @@ def visualize_attention_pattern(dt, cache):
         specific_heads=heads,
         method=method,
         scale_by_value=scale_by_value,
+        key=key,
     )
 
 
 # Attribution / Logit Lens
-def show_logit_lens(dt, cache, logit_dir):
-    with st.expander("Show Logit Lens"):
-        layertab, componenttab, headtab, neurontab = st.tabs(
-            ["Layer", "Component", "Head", "Neuron"]
+def show_logit_lens(dt, cache, logit_dir, key=""):
+    layertab, componenttab, headtab, neurontab = st.tabs(
+        ["Layer", "Component", "Head", "Neuron"]
+    )
+
+    with layertab:
+        tab1, tab2 = st.tabs(["Layerwise", "Accumulated"])
+        with tab1:
+            fig = plot_decomposition_dot_product(
+                cache, logit_dir, -1, mlp_input=False
+            )
+            fig.update_yaxes(title_text="Logit Difference")
+            st.plotly_chart(fig, use_container_width=True, key=key + "layerwise-logit-diff")
+
+        with tab2:
+            fig = plot_decomposition_dot_product(
+                cache, logit_dir, -1, mlp_input=False, accumulated=True
+            )
+            fig.update_yaxes(title_text="Logit Difference")
+            st.plotly_chart(fig, use_container_width=True, key=key + "accumulated-logit-diff")
+
+    with componenttab:
+        result, labels = cache.get_full_resid_decomposition(
+            apply_ln=True, return_labels=True, expand_neurons=False
+        )
+        attribution = result[:, 0, -1] @ logit_dir
+        plot_logit_diff(attribution, labels)
+
+    with headtab:
+        result, labels = cache.stack_head_results(
+            apply_ln=True, return_labels=True
+        )
+        heads = dt.transformer_config.n_heads
+        attribution = result[:, 0, -1] @ logit_dir
+        k = t.topk(attribution, max(5, dt.transformer_config.n_heads))
+        attribution = attribution.reshape(-1, heads)
+        fig = px.imshow(
+            attribution.detach(),
+            color_continuous_midpoint=0,
+            color_continuous_scale="RdBu",
+            title="Logit Difference From Each Head",
+            labels={"x": "Head", "y": "Layer"},
+        )
+        st.plotly_chart(fig, use_container_width=True, key=key + "head-logit-diff")
+
+        st.write(
+            f"Top 5 Heads: {', '.join([f'{labels[k.indices[i]]}: {round(k.values[i].item(), 3)}' for i in range(5)])}"
         )
 
-        with layertab:
-            tab1, tab2 = st.tabs(["Layerwise", "Accumulated"])
-            with tab1:
-                fig = plot_decomposition_dot_product(
-                    cache, logit_dir, -1, mlp_input=False
+    with neurontab:
+        result, labels = cache.get_full_resid_decomposition(
+            apply_ln=True, return_labels=True, expand_neurons=True
+        )
+
+        attribution = result[:, 0, -1] @ logit_dir
+
+        # use regex to look for the L {number} N {number} pattern in labels
+        neuron_attribution_mask = [
+            True if re.search(r"L\d+N\d+", label) else False
+            for label in labels
+        ]
+
+        neuron_attribution = attribution[neuron_attribution_mask]
+        neuron_labels = [
+            label for label in labels if re.search(r"L\d+N\d+", label)
+        ]
+
+        df = pd.DataFrame(
+            {
+                "Neuron": neuron_labels,
+                "Logit Difference": neuron_attribution.detach().numpy(),
+            }
+        )
+        df["Layer"] = df["Neuron"].apply(
+            lambda x: int(x.split("L")[1].split("N")[0])
+        )
+
+        layertabs = st.tabs(
+            ["L" + str(layer) for layer in df["Layer"].unique().tolist()]
+        )
+
+        for i, layer in enumerate(df["Layer"].unique().tolist()):
+            with layertabs[i]:
+                fig = px.scatter(
+                    df[df["Layer"] == layer],
+                    x="Neuron",
+                    y="Logit Difference",
+                    hover_data=["Layer"],
+                    title="Logit Difference From Each Neuron",
+                    color="Logit Difference",
                 )
-                fig.update_yaxes(title_text="Logit Difference")
-                st.plotly_chart(fig, use_container_width=True)
-
-            with tab2:
-                fig = plot_decomposition_dot_product(
-                    cache, logit_dir, -1, mlp_input=False, accumulated=True
-                )
-                fig.update_yaxes(title_text="Logit Difference")
-                st.plotly_chart(fig, use_container_width=True)
-
-        with componenttab:
-            result, labels = cache.get_full_resid_decomposition(
-                apply_ln=True, return_labels=True, expand_neurons=False
-            )
-            attribution = result[:, 0, -1] @ logit_dir
-            plot_logit_diff(attribution, labels)
-
-        with headtab:
-            result, labels = cache.stack_head_results(
-                apply_ln=True, return_labels=True
-            )
-            heads = dt.transformer_config.n_heads
-            attribution = result[:, 0, -1] @ logit_dir
-            k = t.topk(attribution, max(5, dt.transformer_config.n_heads))
-            attribution = attribution.reshape(-1, heads)
-            fig = px.imshow(
-                attribution.detach(),
-                color_continuous_midpoint=0,
-                color_continuous_scale="RdBu",
-                title="Logit Difference From Each Head",
-                labels={"x": "Head", "y": "Layer"},
-            )
-            st.plotly_chart(fig, use_container_width=True)
-
-            st.write(
-                f"Top 5 Heads: {', '.join([f'{labels[k.indices[i]]}: {round(k.values[i].item(), 3)}' for i in range(5)])}"
-            )
-
-        with neurontab:
-            result, labels = cache.get_full_resid_decomposition(
-                apply_ln=True, return_labels=True, expand_neurons=True
-            )
-
-            attribution = result[:, 0, -1] @ logit_dir
-
-            # use regex to look for the L {number} N {number} pattern in labels
-            neuron_attribution_mask = [
-                True if re.search(r"L\d+N\d+", label) else False
-                for label in labels
-            ]
-
-            neuron_attribution = attribution[neuron_attribution_mask]
-            neuron_labels = [
-                label for label in labels if re.search(r"L\d+N\d+", label)
-            ]
-
-            df = pd.DataFrame(
-                {
-                    "Neuron": neuron_labels,
-                    "Logit Difference": neuron_attribution.detach().numpy(),
-                }
-            )
-            df["Layer"] = df["Neuron"].apply(
-                lambda x: int(x.split("L")[1].split("N")[0])
-            )
-
-            layertabs = st.tabs(
-                ["L" + str(layer) for layer in df["Layer"].unique().tolist()]
-            )
-
-            for i, layer in enumerate(df["Layer"].unique().tolist()):
-                with layertabs[i]:
-                    fig = px.scatter(
-                        df[df["Layer"] == layer],
-                        x="Neuron",
-                        y="Logit Difference",
-                        hover_data=["Layer"],
-                        title="Logit Difference From Each Neuron",
-                        color="Logit Difference",
-                    )
-                    # color_continuous_scale="RdBu",
-                    # don't label xtick
-                    fig.update_xaxes(showticklabels=False)
-                    st.plotly_chart(fig, use_container_width=True)
-
+                # color_continuous_scale="RdBu",
+                # don't label xtick
+                fig.update_xaxes(showticklabels=False)
+                st.plotly_chart(fig, use_container_width=True, key=key + f"neuron-logit-diff-{layer}")
     return
 
 

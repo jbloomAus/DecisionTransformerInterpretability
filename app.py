@@ -210,13 +210,15 @@ if "Composition Scores" in analyses:
 if "RTG Scan" in analyses:
     show_rtg_scan(dt, logit_dir=logit_dir)
 if "Logit Lens" in analyses:
-    show_logit_lens(dt, cache, logit_dir=logit_dir)
+    with st.expander("Show Logit Lens"):
+        show_logit_lens(dt, cache, logit_dir=logit_dir)
 if "Neuron Activation Analysis" in analyses:
     show_neuron_activation_decomposition(dt, cache, logit_dir)
 if "Projection Analysis" in analyses:
     show_residual_stream_projection_onto_component(dt, cache, logit_dir)
 if "Attention Pattern" in analyses:
-    show_attention_pattern(dt, cache)
+    with st.expander("Attention Pattern at at current Reward-to-Go"):
+        show_attention_pattern(dt, cache)
 if "Observation View" in analyses:
     show_observation_view(dt, tokens, logit_dir)
 if "Cache" in analyses:  # Not yet implemented.

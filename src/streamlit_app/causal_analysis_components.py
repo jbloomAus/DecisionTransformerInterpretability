@@ -23,6 +23,10 @@ from .visualizations import plot_logit_scan
 
 from .analysis import get_residual_decomp
 from .constants import IDX_TO_ACTION, IDX_TO_OBJECT
+from .dynamic_analysis_components import (
+    show_attention_pattern,
+    show_logit_lens,
+)
 from .environment import (
     get_action_preds_from_app_state,
     get_action_preds_from_tokens,
@@ -324,6 +328,13 @@ def show_activation_patching(dt, logit_dir, original_cache):
         if st.checkbox("show corrupted action predictions"):
             plot_action_preds(corrupt_preds)
 
+        if st.checkbox("Show corrupted analyses (slightly expensive)", key="corrupt_analysis"):
+            corrupt_attention_pattern_tab, corrupt_logit_lens_tab = st.tabs(["Attention Pattern", "Logit Lens"])
+            with corrupt_attention_pattern_tab:
+                show_attention_pattern(dt, corrupt_cache, key="corrupt-")
+            with corrupt_logit_lens_tab:
+                show_logit_lens(dt, corrupt_cache, logit_dir, key="corrupt-")
+
         clean_logit_dif = clean_x[0, -1] @ logit_dir
         corrupted_logit_dif = corrupt_x[0, -1] @ logit_dir
 
@@ -417,7 +428,7 @@ def show_activation_patching(dt, logit_dir, original_cache):
                 apply_metric_to_cache=True,
             )
 
-
+      
 def get_corrupted_tokens_component(dt, key=""):
     a, b, c = st.columns(3)
     with a:
@@ -1277,6 +1288,13 @@ def show_path_patching(dt, logit_dir, clean_cache):
 
         if st.checkbox("show corrupted action predictions", key="path"):
             plot_action_preds(corrupt_preds)
+
+        if st.checkbox("Show corrupted analyses (slightly expensive)", key="corrupt_analysis_path"):
+            corrupt_attention_pattern_tab, corrupt_logit_lens_tab = st.tabs(["Attention Pattern", "Logit Lens"])
+            with corrupt_attention_pattern_tab:
+                show_attention_pattern(dt, corrupted_cache, key="corrupt-path-")
+            with corrupt_logit_lens_tab:
+                show_logit_lens(dt, corrupted_cache, logit_dir, key="corrupt-path-")
 
         # rewrite previous line but with nicer formatting
         st.write(
