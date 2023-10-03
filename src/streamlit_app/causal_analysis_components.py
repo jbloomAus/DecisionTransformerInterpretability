@@ -1290,12 +1290,12 @@ def show_path_patching(dt, logit_dir, clean_cache):
         if st.checkbox("show corrupted action predictions", key="path"):
             plot_action_preds(corrupt_preds)
 
-        if st.checkbox("Show corrupted analyses (expensive)", key="corrupt_analysis_path"):
+        if st.checkbox("Show corrupted analyses (slightly expensive)", key="corrupt_analysis_path"):
             corrupt_attention_pattern_tab, corrupt_logit_lens_tab = st.tabs(["Attention Pattern", "Logit Lens"])
             with corrupt_attention_pattern_tab:
-                show_attention_pattern(dt, corrupted_cache)
+                show_attention_pattern(dt, corrupted_cache, key="corrupt-path-")
             with corrupt_logit_lens_tab:
-                show_logit_lens(dt, corrupted_cache)
+                show_logit_lens(dt, corrupted_cache, logit_dir, key="corrupt-path-")
 
         # rewrite previous line but with nicer formatting
         st.write(
