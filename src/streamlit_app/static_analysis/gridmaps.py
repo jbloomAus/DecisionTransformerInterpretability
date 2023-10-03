@@ -220,11 +220,19 @@ def plot_gridmap_from_embedding_congruence(
             zmax=abs_col_max,
         )
 
-        # update hover template
-        fig.update_traces(
-            hovertemplate=f"{channel}, "
-            + "(%{x},%{y})<br>Congruence: %{z:.2f}"
-        )
+        for i in range(7):
+            for j in range(7):
+                fig.add_annotation(
+                    x=j,
+                    y=i,
+                    text=str(round(scores[i][j].item(), 2)),
+                    showarrow=False,
+                    font=dict(
+                        family="Courier New, monospace",
+                        size=12,
+                        color="black"
+                    ),
+                )
 
         # remove color legend
         fig.update_layout(coloraxis_showscale=False)
