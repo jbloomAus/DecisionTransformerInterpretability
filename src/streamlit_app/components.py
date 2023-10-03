@@ -37,7 +37,7 @@ def hyperpar_side_bar():
         st.subheader("Hyperparameters")
         initial_rtg = st.slider(
             "Initial RTG",
-            min_value=-1.0,
+            min_value=0.0,
             max_value=1.0,
             value=0.9,
             step=0.01,
@@ -170,7 +170,7 @@ def decomp_configuration_ui(key=""):
     with cola:
         decomp_level = st.selectbox(
             "Decomposition Level",
-            ["Reduced", "Full", "MLP"],
+            ["Full", "MLP"],
             key=key + "decomp_level",
         )
     with colb:
