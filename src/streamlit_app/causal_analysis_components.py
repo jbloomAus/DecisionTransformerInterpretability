@@ -595,7 +595,7 @@ def get_corrupt_obs_instructions(key=""):
             )
 
     with b:
-        position = st.selectbox("Select a position", 
+        position = st.selectbox("Select a position (x,y)", 
                                 [f"{i},{j}" for i in range(7) for j in range(7)],
                                 key = key + "position_selector")
         x_position, y_position = position.split(',')
