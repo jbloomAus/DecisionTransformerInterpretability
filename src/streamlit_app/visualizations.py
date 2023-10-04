@@ -250,7 +250,6 @@ def plot_heatmap(
         df = df.iloc[reordered_ind, reordered_ind]
         data_array = df.to_numpy()
 
-    print(data_array.shape)
     fig = px.imshow(
         df,
         color_continuous_midpoint=color_continuous_midpoint,
