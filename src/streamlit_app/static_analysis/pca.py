@@ -7,9 +7,8 @@ import plotly.graph_objects as go
 
 
 def get_pca(data, labels, n_components=None):
-    normalized_embedding = torch.tensor(
-        StandardScaler().fit_transform(data.T), dtype=torch.float32
-    )
+    # Normalize the data
+    normalized_embedding = torch.tensor(data.T, dtype=torch.float32)
 
     # Perform PCA
     if not n_components:

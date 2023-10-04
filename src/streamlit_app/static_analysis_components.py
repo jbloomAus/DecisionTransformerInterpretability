@@ -18,6 +18,7 @@ from pyvis.network import Network
 from src.streamlit_app.static_analysis.gridmaps import (
     neuron_projection_gridmap_component,
     qk_gridmap_component,
+    pc_df_component,
 )
 
 from src.streamlit_app.static_analysis.pca import (
@@ -102,7 +103,7 @@ def show_embeddings(_dt, cache):
         a, b = st.columns(2)
 
         with a:
-            selected_embeddings = st.multiselect(
+            selected_embeddings_idx = st.multiselect(
                 "Select Embeddings",
                 options=range(len(STATE_EMBEDDING_LABELS)),
                 key="embedding",
@@ -112,35 +113,38 @@ def show_embeddings(_dt, cache):
             light_mode_friendly = st.checkbox("Make graphs Light Mode friendly")
 
         with b:
-            cluster = st.checkbox("Cluster")
+            cluster = st.checkbox("Cluster", value=True)
             centre_embeddings = st.checkbox("Centre Embeddings")
 
         embeddings = _dt.state_embedding.weight.detach().T
 
-        if not selected_embeddings:
+        if not selected_embeddings_idx:
             return
 
         # filter labels
         selected_embeddings_labels = [
-            STATE_EMBEDDING_LABELS[i] for i in selected_embeddings
+            STATE_EMBEDDING_LABELS[i] for i in selected_embeddings_idx
         ]
-
-        # filter embeddings
-        embeddings = embeddings[selected_embeddings, :]
 
         # centre
         if centre_embeddings:
             embeddings = embeddings - embeddings.mean(dim=0)
-
         # normalise
         embeddings = embeddings / embeddings.norm(dim=1, keepdim=True)
+
+        # filter embeddings
+        selected_embeddings = embeddings[selected_embeddings_idx, :]
+
         df = get_cosine_sim_df(
-            embeddings, selected_embeddings_labels, selected_embeddings_labels
+            selected_embeddings,
+            selected_embeddings_labels,
+            selected_embeddings_labels,
         )
 
         pca_df, percent_variance, loadings, fitted_pca = get_pca(
-            embeddings, selected_embeddings_labels
+            selected_embeddings, selected_embeddings_labels
         )
+        all_embeddings_projection = fitted_pca.transform(embeddings)
 
         pca_tab, heatmap_tab = st.tabs(["PCA", "Heatmap"])
 
@@ -158,9 +162,7 @@ def show_embeddings(_dt, cache):
             (
                 scatter_2d_tab,
                 scatter_3d_tab,
-                scree_plot_tab,
-                loadings_tab,
-            ) = st.tabs(["2D-Scatter", "3D-Scatter", "Scree Plot", "Loadings"])
+            ) = st.tabs(["2D-Scatter", "3D-Scatter"])
 
             with scatter_2d_tab:
                 fig = get_2d_scatter_plot(pca_df, percent_variance, light_mode_friendly)
@@ -170,15 +172,91 @@ def show_embeddings(_dt, cache):
                 fig = get_3d_scatter_plot(pca_df, percent_variance, light_mode_friendly)
                 st.plotly_chart(fig, use_container_width=True)
 
+            (
+                scree_plot_tab,
+                barchart_tab,
+                gridmap_tab,
+            ) = st.tabs(["Scree Plot", "Bar chart", "Gridmap"])
+
             with scree_plot_tab:
                 fig = get_scree_plot(
                     percent_variance, selected_embeddings_labels
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
-            with loadings_tab:
-                fig = get_loadings_plot(loadings, selected_embeddings_labels)
+            with barchart_tab:
+                # use fitted pca on all embeddings:
+
+                a, b = st.columns(2)
+                with a:
+                    pc_selected = st.slider(
+                        "Select PC",
+                        min_value=0,
+                        max_value=all_embeddings_projection.shape[1] - 1,
+                    )
+                    selected_pc_label = f"PC{pc_selected+1}"
+
+                with b:
+                    show_full_distribution = st.checkbox(
+                        "Show Full Distribution",
+                        value=False,
+                    )
+
+                pc_df = pd.DataFrame(
+                    data=all_embeddings_projection,
+                    columns=[
+                        f"PC{i+1}"
+                        for i in range(all_embeddings_projection.shape[1])
+                    ],
+                    index=STATE_EMBEDDING_LABELS,
+                )
+
+                if not show_full_distribution:
+                    # only include the top 10/bottom 10
+                    pc_df_filtered = pc_df.sort_values(
+                        by=selected_pc_label, ascending=False
+                    )
+                    pc_df_filtered = pd.concat(
+                        [pc_df_filtered.head(10), pc_df_filtered.tail(10)]
+                    ).sort_values(by=selected_pc_label, ascending=False)
+
+                else:
+                    pc_df_filtered = pc_df
+
+                # add column to df for if in selected_embeddings_labels
+                pc_df_filtered["in_selected"] = pc_df_filtered.index.isin(
+                    selected_embeddings_labels
+                )
+                pc_df_filtered = pc_df_filtered.sort_values(
+                    by=selected_pc_label, ascending=False
+                )
+
+                fig = px.bar(
+                    pc_df_filtered,
+                    x=pc_df_filtered.index,
+                    y=selected_pc_label,
+                    text_auto=True,
+                    hover_data=[selected_pc_label, "in_selected"],
+                    orientation="v",
+                )
+                # set color of bar to in_selected without changing order
+                # get hex codes for plotly default categorical colors (for dark mode)
+                categorical_colour_hexes = px.colors.qualitative.Plotly
+                fig.update_traces(
+                    marker_color=pc_df_filtered["in_selected"].map(
+                        {
+                            True: categorical_colour_hexes[0],
+                            False: categorical_colour_hexes[1],
+                        }
+                    )
+                )
+
                 st.plotly_chart(fig, use_container_width=True)
+
+            with gridmap_tab:
+                pc_df_component(
+                    pc_df, all_embeddings_projection, embedding_labels
+                )
 
         # with in_action_tab:≠
         #     embedding = _dt.action_embedding[0].weight.detach()[:-1, :]

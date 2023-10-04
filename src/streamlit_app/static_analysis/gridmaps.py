@@ -14,7 +14,55 @@ from src.streamlit_app.constants import (
     get_all_neuron_labels,
 )
 
+
 # gridmap variants
+def pc_df_component(pc_df, all_embeddings_projection, embedding_labels):
+    a, b = st.columns(2)
+    with a:
+        pc_selected = st.slider(
+            "Select PC",
+            min_value=0,
+            max_value=all_embeddings_projection.shape[1] - 1,
+            key="embedding_pc_gridmap",
+        )
+        selected_pc_label = f"PC{pc_selected+1}"
+
+    with b:
+        selected_channels = st.multiselect(
+            "Select Channel",
+            options=SPARSE_CHANNEL_NAMES,
+            key="embedding_channel_gridmap",
+            default=["key", "ball"],
+        )
+    # we need to pick a channel.
+
+    # add embedding channel to pc_df
+    embedding_channels = [i.split(",")[0] for i in embedding_labels]
+
+    pc_df["embedding_channel"] = embedding_channels
+
+    # filter by channel
+    pc_df_filtered = pc_df[pc_df.embedding_channel.isin(selected_channels)]
+
+    n_selected_channels = len(selected_channels)
+    data = (
+        pc_df_filtered[selected_pc_label]
+        .values.reshape(n_selected_channels, 7, 7)
+        .transpose(0, 2, 1)
+    )
+
+    fig = px.imshow(
+        data,
+        color_continuous_midpoint=0,
+        color_continuous_scale="RdBu",
+        facet_col=0,
+    )
+
+    # rename facets
+    for i in range(n_selected_channels):
+        fig.layout.annotations[i].text = selected_channels[i]
+
+    st.plotly_chart(fig, use_container_width=True)
 
 
 def ov_gridmap_component(activations, key="embeddings"):
