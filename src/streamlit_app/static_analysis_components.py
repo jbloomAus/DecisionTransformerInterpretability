@@ -149,6 +149,7 @@ def show_embeddings(_dt, cache):
                 color_continuous_midpoint=0,
                 cluster=cluster,
                 show_labels=df.shape[0] < 20,
+                max_labels=10,
             )
             st.plotly_chart(fig, use_container_width=True)
 
