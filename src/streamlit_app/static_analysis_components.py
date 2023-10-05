@@ -110,7 +110,9 @@ def show_embeddings(_dt, cache):
                 format_func=lambda x: STATE_EMBEDDING_LABELS[x],
                 default=[263, 312, 258, 307],
             )
-            light_mode_friendly = st.checkbox("Make graphs Light Mode friendly")
+            light_mode_friendly = st.checkbox(
+                "Make graphs Light Mode friendly"
+            )
 
         with b:
             cluster = st.checkbox("Cluster", value=True)
@@ -165,11 +167,15 @@ def show_embeddings(_dt, cache):
             ) = st.tabs(["2D-Scatter", "3D-Scatter"])
 
             with scatter_2d_tab:
-                fig = get_2d_scatter_plot(pca_df, percent_variance, light_mode_friendly)
-                st.plotly_chart(fig, use_container_width=True)
+                fig = get_2d_scatter_plot(
+                    pca_df, percent_variance, light_mode_friendly
+                )
+                st.plotly_chart(fig, use_container_width=True, theme=None)
 
             with scatter_3d_tab:
-                fig = get_3d_scatter_plot(pca_df, percent_variance, light_mode_friendly)
+                fig = get_3d_scatter_plot(
+                    pca_df, percent_variance, light_mode_friendly
+                )
                 st.plotly_chart(fig, use_container_width=True)
 
             (
@@ -249,37 +255,6 @@ def show_embeddings(_dt, cache):
                             False: categorical_colour_hexes[1],
                         }
                     )
-                )
-
-                st.plotly_chart(fig, use_container_width=True)
-
-                projection_onto_pc1_magnitude = (
-                    embeddings @ loadings[:, pc_selected]
-                ).T
-
-                # multiply pc1 by these magnitudes
-                pc1 = (
-                    loadings[:, 0]
-                    .view(1, -1)
-                    .repeat(projection_onto_pc1_magnitude.shape[0], 1)
-                    .T
-                    * projection_onto_pc1_magnitude
-                )
-
-                # Compute the orthogonal components in parallel
-                orthogonal_components = embeddings - pc1.T
-
-                # add this to pc_df
-                pc_df["orthogonality"] = torch.linalg.norm(
-                    orthogonal_components, dim=1
-                )
-                tmp = pc_df.sort_values(by="orthogonality", ascending=True)
-                # get only rows in pc_df_filtered
-                tmp = tmp[tmp.index.isin(pc_df_filtered.index)]
-
-                fig = px.bar(
-                    tmp,
-                    y="orthogonality",
                 )
 
                 st.plotly_chart(fig, use_container_width=True)

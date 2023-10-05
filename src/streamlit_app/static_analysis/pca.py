@@ -52,6 +52,21 @@ def get_2d_scatter_plot(pca_df, percent_variance, light_mode):
         },
     )
 
+    # if light mode use simple white theme
+    if light_mode:
+        fig.update_layout(template="plotly")
+
+    # set range to be -1.2 to 1.2 for x and y
+    fig.update_xaxes(range=[-1.2, 1.2])
+    fig.update_yaxes(range=[-1.2, 1.2])
+
+    # remove horizontal and vertical guides, but make axis lines thicker and dashed
+    fig.update_xaxes(showgrid=False, zeroline=True, zerolinewidth=3)
+    fig.update_yaxes(showgrid=False, zeroline=True, zerolinewidth=3)
+
+    # remove legend
+    fig.update_layout(showlegend=False)
+
     # move text up
     fig.update_traces(textposition="top center")
 
@@ -66,16 +81,20 @@ def get_2d_scatter_plot(pca_df, percent_variance, light_mode):
             x1=row["PC1"],
             y1=row["PC2"],
             line=dict(color="black" if light_mode else "white", width=2),
+            layer="below",
         )
 
     # increase font size
     fig.update_layout(
         font=dict(
-            size=18,
+            size=20,
         ),
     )
+    # increase font size for axis labels
+    fig.update_xaxes(title_font=dict(size=24))
+    fig.update_yaxes(title_font=dict(size=24))
 
-    fig.update_layout(height=800)
+    fig.update_layout(height=550, width=550)
 
     return fig
 
