@@ -58,10 +58,36 @@ def pc_df_component(pc_df, all_embeddings_projection, embedding_labels):
         facet_col=0,
     )
 
+    # show ticks every 1 x and y value
+    fig.update_xaxes(
+        tickmode="array",
+        tickvals=list(range(7)),
+        ticktext=list(range(7)),
+        showticklabels=True,
+        title=None,
+    )
+
+    fig.update_yaxes(
+        tickmode="array",
+        tickvals=list(range(7)),
+        ticktext=list(range(7)),
+        showticklabels=True,
+        title=None,
+        row=1,
+        col=1,
+    )
+
     # rename facets
     for i in range(n_selected_channels):
         fig.layout.annotations[i].text = selected_channels[i]
 
+    # increase facet col label font size
+    fig.update_annotations(font_size=20)
+
+    # update hover template for each facet with channel
+    fig.update_traces(
+        hovertemplate="(%{x},%{y}), PC: %{z:.2f}<br>",
+    )
     st.plotly_chart(fig, use_container_width=True)
 
 

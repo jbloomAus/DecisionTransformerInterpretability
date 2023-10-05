@@ -253,6 +253,37 @@ def show_embeddings(_dt, cache):
 
                 st.plotly_chart(fig, use_container_width=True)
 
+                projection_onto_pc1_magnitude = (
+                    embeddings @ loadings[:, pc_selected]
+                ).T
+
+                # multiply pc1 by these magnitudes
+                pc1 = (
+                    loadings[:, 0]
+                    .view(1, -1)
+                    .repeat(projection_onto_pc1_magnitude.shape[0], 1)
+                    .T
+                    * projection_onto_pc1_magnitude
+                )
+
+                # Compute the orthogonal components in parallel
+                orthogonal_components = embeddings - pc1.T
+
+                # add this to pc_df
+                pc_df["orthogonality"] = torch.linalg.norm(
+                    orthogonal_components, dim=1
+                )
+                tmp = pc_df.sort_values(by="orthogonality", ascending=True)
+                # get only rows in pc_df_filtered
+                tmp = tmp[tmp.index.isin(pc_df_filtered.index)]
+
+                fig = px.bar(
+                    tmp,
+                    y="orthogonality",
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+
             with gridmap_tab:
                 pc_df_component(
                     pc_df, all_embeddings_projection, embedding_labels
