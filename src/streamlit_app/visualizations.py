@@ -235,6 +235,7 @@ def plot_heatmap(
     color_continuous_scale="RdBu",
     cluster=True,
     show_labels=True,
+    max_labels=0,
 ):
     # Convert dataframe to numpy array
     data_array = df.to_numpy()
@@ -283,6 +284,21 @@ def plot_heatmap(
         fig.update_yaxes(
             visible=False,
         )
+
+    if max_labels >= data_array.shape[0]:
+        for i in range(data_array.shape[0]):
+            for j in range(data_array.shape[0]):
+                fig.add_annotation(
+                    x=j,
+                    y=i,
+                    text=str(round(data_array[i][j].item(), 2)),
+                    showarrow=False,
+                    font=dict(
+                        family="Courier New, monospace",
+                        size=14,
+                        color="white" if data_array[i][j].item() > 0.5 else "black"
+                    ),
+                )
 
     return fig
 

@@ -229,7 +229,7 @@ def plot_gridmap_from_embedding_congruence(
                     showarrow=False,
                     font=dict(
                         family="Courier New, monospace",
-                        size=12,
+                        size=14,
                         color="black"
                     ),
                 )
