@@ -109,6 +109,7 @@ def show_embeddings(_dt, cache):
                 format_func=lambda x: STATE_EMBEDDING_LABELS[x],
                 default=[263, 312, 258, 307],
             )
+            light_mode_friendly = st.checkbox("Make graphs Light Mode friendly")
 
         with b:
             cluster = st.checkbox("Cluster")
@@ -161,11 +162,11 @@ def show_embeddings(_dt, cache):
             ) = st.tabs(["2D-Scatter", "3D-Scatter", "Scree Plot", "Loadings"])
 
             with scatter_2d_tab:
-                fig = get_2d_scatter_plot(pca_df, percent_variance)
+                fig = get_2d_scatter_plot(pca_df, percent_variance, light_mode_friendly)
                 st.plotly_chart(fig, use_container_width=True)
 
             with scatter_3d_tab:
-                fig = get_3d_scatter_plot(pca_df, percent_variance)
+                fig = get_3d_scatter_plot(pca_df, percent_variance, light_mode_friendly)
                 st.plotly_chart(fig, use_container_width=True)
 
             with scree_plot_tab:
