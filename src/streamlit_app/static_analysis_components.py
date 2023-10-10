@@ -1,5 +1,6 @@
 import itertools
 import json
+import os
 
 import einops
 import networkx as nx
@@ -271,6 +272,7 @@ def show_embeddings(_dt, cache):
             with save_directions_tab:
 
                 a, b, c = st.columns(3)
+                folder_name = "features"
                 with a:
                     save_embeddings_idx = st.multiselect(
                         "Select Directions to Save",
@@ -298,11 +300,14 @@ def show_embeddings(_dt, cache):
                     if not save_directions_name:
                         st.warning("Please enter a name for the savefile under 'Name of Directions'")
                     else:
-                        pt_filename = save_directions_name + ".pt"
-                        json_filename = save_directions_name + ".json"
+                        pt_filename = os.path.join(folder_name, save_directions_name + ".pt")
+                        json_filename = os.path.join(folder_name, save_directions_name + ".json")
 
                         embeddings = _dt.state_embedding.weight.detach().T
                         selected_embeddings = embeddings[save_embeddings_idx, :]
+
+                        if not os.path.exists(folder_name):
+                            os.makedirs(folder_name)
                         torch.save(selected_embeddings, pt_filename)
 
                         # save json file
