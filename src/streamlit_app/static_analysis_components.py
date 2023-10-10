@@ -1,4 +1,5 @@
 import itertools
+import json
 
 import einops
 import networkx as nx
@@ -20,6 +21,8 @@ from src.streamlit_app.static_analysis.gridmaps import (
     qk_gridmap_component,
     pc_df_component,
 )
+
+from src.streamlit_app.model_index import model_index
 
 from src.streamlit_app.static_analysis.pca import (
     get_pca,
@@ -263,6 +266,52 @@ def show_embeddings(_dt, cache):
                 pc_df_component(
                     pc_df, all_embeddings_projection, embedding_labels
                 )
+
+            with save_directions_tab:
+
+                a, b, c = st.columns(3)
+                with a:
+                    save_embeddings_idx = st.multiselect(
+                        "Select Directions to Save",
+                        options=range(len(STATE_EMBEDDING_LABELS)),
+                        key="save_directions_multiselect",
+                        format_func=lambda x: STATE_EMBEDDING_LABELS[x],
+                        default=[263, 312, 258, 307],
+                    )
+                with b:
+                    save_directions_name = st.text_input("Name of Directions")
+                    save_directions_button = st.button("Save Directions")
+                with c:
+                    num_directions = st.slider("Number of Directions", 1, 256, 256)
+
+                    # Will we ever really need more than 16 named directions?
+                    named_directions = st.slider("Number of Named Directions", 1, 16, 1, 
+                                            key="save_directions_slider")
+
+                direction_names = []
+                for i in range(named_directions):
+                    direction_names.append(st.text_input(f"Direction {i+1} Name", placeholder=f"PC{i+1}"))
+
+                if save_directions_button:
+                    if not save_directions_name:
+                        st.warning("Please enter a name for the savefile under 'Name of Directions'")
+                    else:
+                        pt_filename = save_directions_name + ".pt"
+                        json_filename = save_directions_name + ".json"
+
+                        embeddings = _dt.state_embedding.weight.detach().T
+                        selected_embeddings = embeddings[save_embeddings_idx, :]
+                        torch.save(selected_embeddings, pt_filename)
+
+                        # save json file
+                        json_dict = {"name": save_directions_name, 
+                                     "model": model_index[st.session_state.model_selector], 
+                                     "embeddings": [STATE_EMBEDDING_LABELS[x] for x in selected_embeddings_idx], 
+                                     "direction_names": direction_names + [f"PC{i+1}" for i in range(named_directions, num_directions)],
+                                     }
+                        with open(json_filename, 'w') as f:
+                           json.dump(json_dict, f)
+                        st.write("Saved to ", save_directions_name, ".pt, ", save_directions_name, ".json")
 
         # with in_action_tab:≠
         #     embedding = _dt.action_embedding[0].weight.detach()[:-1, :]
