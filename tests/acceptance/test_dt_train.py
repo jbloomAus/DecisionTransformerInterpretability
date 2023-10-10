@@ -79,7 +79,7 @@ def online_config():
         max_grad_norm=2,
         trajectory_path=None,
         fully_observed=False,
-        device=torch.device("cpu"),
+        device="cpu",
     )
 
     return online_config
