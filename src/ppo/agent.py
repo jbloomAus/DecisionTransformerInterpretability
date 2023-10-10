@@ -212,7 +212,7 @@ class FCAgent(PPOAgent):
         """
 
         device = memory.device
-        cuda = device.type == "cuda"
+        cuda = device == "cuda"
         obs = memory.next_obs
         done = memory.next_done
 
@@ -407,9 +407,9 @@ class TransformerPPOAgent(PPOAgent):
         actions_timesteps = obs_timesteps - 1
         action_pad_token = self.actor.environment_config.action_space.n
         n_envs = envs.num_envs
-        if isinstance(device, str):
-            device = t.device(device)
-        cuda = device.type == "cuda"
+        if isinstance(device, t.device):
+            device = str(device)
+        cuda = device == "cuda"
 
         obss = t.zeros((n_envs, obs_timesteps, *obs.shape[1:]), device=device)
         acts = (
@@ -662,8 +662,8 @@ class LSTMPPOAgent(PPOAgent):
         sampling_method="basic",
         **kwargs,
     ) -> None:
-        device = memory.device
-        cuda = device.type == "cuda"
+        device = str(memory.device)
+        cuda = device == "cuda"
         obs = memory.next_obs
         done = memory.next_done
         self.recurrence_memory = t.zeros(
