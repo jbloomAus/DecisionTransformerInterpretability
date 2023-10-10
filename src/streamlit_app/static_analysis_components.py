@@ -291,7 +291,8 @@ def show_embeddings(_dt, cache):
 
                 direction_names = []
                 for i in range(named_directions):
-                    direction_names.append(st.text_input(f"Direction {i+1} Name", placeholder=f"PC{i+1}"))
+                    text_input = st.text_input(f"Direction {i+1} Name", placeholder=f"PC{i+1}")
+                    direction_names.append(text_input if text_input else f"PC{i+1}")
 
                 if save_directions_button:
                     if not save_directions_name:
@@ -299,9 +300,6 @@ def show_embeddings(_dt, cache):
                     else:
                         pt_filename = save_directions_name + ".pt"
                         json_filename = save_directions_name + ".json"
-
-                        import os
-                        st.write("Current working directory:", os.getcwd())
 
                         embeddings = _dt.state_embedding.weight.detach().T
                         selected_embeddings = embeddings[save_embeddings_idx, :]
@@ -311,7 +309,7 @@ def show_embeddings(_dt, cache):
                         json_dict = {"name": save_directions_name, 
                                      "model": model_index[st.session_state.model_selector], 
                                      "embeddings": [STATE_EMBEDDING_LABELS[x] for x in selected_embeddings_idx], 
-                                     "direction_names": direction_names + [f"PC{i+1}" for i in range(named_directions, num_directions)],
+                                     "direction_names": direction_names + [f"PC{i+1}" for i in range(len(direction_names), num_directions)],
                                      }
                         with open(json_filename, 'w') as f:
                            json.dump(json_dict, f)
