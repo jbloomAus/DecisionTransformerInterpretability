@@ -185,7 +185,8 @@ def show_embeddings(_dt, cache):
                 scree_plot_tab,
                 barchart_tab,
                 gridmap_tab,
-            ) = st.tabs(["Scree Plot", "Bar chart", "Gridmap"])
+                save_directions_tab
+            ) = st.tabs(["Scree Plot", "Bar chart", "Gridmap", "Save Directions"])
 
             with scree_plot_tab:
                 fig = get_scree_plot(
@@ -298,6 +299,9 @@ def show_embeddings(_dt, cache):
                     else:
                         pt_filename = save_directions_name + ".pt"
                         json_filename = save_directions_name + ".json"
+
+                        import os
+                        st.write("Current working directory:", os.getcwd())
 
                         embeddings = _dt.state_embedding.weight.detach().T
                         selected_embeddings = embeddings[save_embeddings_idx, :]
