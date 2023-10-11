@@ -11,6 +11,7 @@ from src.streamlit_app.constants import (
 
 from src.streamlit_app.utils import tensor_to_long_data_frame
 from src.streamlit_app.components import create_search_component
+from src.streamlit_app.features import load_features
 
 # from src.streamlit_app
 import plotly.express as px
@@ -267,6 +268,108 @@ def show_ov_pos_action_component(_dt):
     )
 
     st.plotly_chart(fig, use_container_width=True)
+
+
+def show_ov_feature_action_component(_dt):
+    df = get_full_ov_feature_action(_dt)
+
+    unstructured_tab, comparison_tab = st.tabs(
+        ["Unstructured", "Comparison View"]
+    )
+
+    st.write(df)
+
+    with unstructured_tab:
+        fig = px.scatter(
+            df,
+            y="Score",
+            color="Head",
+            hover_data=["Head", "Feature", "Action"],
+            labels={
+                "value": "Congruence",
+            },
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    with comparison_tab:
+        b, c, d, a = st.columns(4)
+
+        with b:
+            action_1 = st.selectbox(
+                "Select Action 1",
+                options=df.Action.unique(),
+                index=0,
+                key="action 1 ov comparison, feature",
+            )
+        with c:
+            action_2 = st.selectbox(
+                "Select Action 2",
+                options=df.Action.unique(),
+                index=1,
+                key="action 2 ov comparison, feature",
+            )
+        with d:
+            use_small_multiples = st.checkbox(
+                "Use Small Multiples",
+                key="small multiples ov comparison, feature",
+            )
+        with a:
+            color_by_feature = st.checkbox(
+                "Color by Feature", key="color by feature"
+            )
+
+        # # filter the dataframe
+        # filtered_df = df[
+        #     (df["Action"].isin([action_1, action_2]))
+        #     & (df["Channel"].isin(selected_channels_2))
+        # ]
+        filtered_df = df[(df["Action"].isin([action_1, action_2]))]
+
+        # reshape the df so we have the scores of one action in one column and the scores of the other in another
+        filtered_df = filtered_df.pivot_table(
+            index=["Head", "Feature"],
+            columns="Action",
+            values="Score",
+        ).reset_index()
+        # rename the columns
+
+        filtered_df.columns = [
+            "Head",
+            "Feature",
+            action_1,
+            action_2,
+        ]
+
+        if use_small_multiples:
+            # make a scatter plot of the two scores
+            fig = px.scatter(
+                filtered_df,
+                x=action_1,
+                y=action_2,
+                color="Head" if not color_by_feature else "Feature",
+                hover_data=["Head", "Feature"],
+                facet_col="Head",
+                facet_col_wrap=4,
+                labels={
+                    "value": "Congruence",
+                },
+            )
+            # make plot taller
+            fig.update_layout(height=800)
+        else:
+            fig = px.scatter(
+                filtered_df,
+                x=action_1,
+                y=action_2,
+                color="Head" if not color_by_feature else "Feature",
+                hover_data=["Head", "Feature"],
+                labels={
+                    "value": "Congruence",
+                },
+            )
+
+        st.plotly_chart(fig, use_container_width=True)
 
 
 def get_ov_circuit(_dt):
@@ -537,3 +640,31 @@ def get_full_qk_state_state(_dt, q_filter=None, k_filter=None):
     )
 
     return W_QK_full_df
+
+
+def get_full_ov_feature_action(_dt):
+    features, feature_metadata = load_features()
+
+    W_OV = get_ov_circuit(_dt)
+    W_U = _dt.action_predictor.weight
+    W_E = features
+
+    OV_circuit_full = einsum(
+        "emb d_res_in, layer head d_res_in d_res_out, action d_res_out -> layer head emb action",
+        W_E,
+        W_OV,
+        W_U,
+    )
+
+    df = tensor_to_long_data_frame(
+        OV_circuit_full,
+        dimension_names=["Layer", "Head", "Feature", "Action"],
+    )
+    df = df.sort_values(by=["Layer", "Head", "Action"])
+    df["Layer"] = df["Layer"].map(lambda x: f"L{x}")
+    df["Head"] = df["Layer"] + df["Head"].map(lambda x: f"H{x}")
+    df["Action"] = df["Action"].map(IDX_TO_ACTION)
+    df["Feature"] = df["Feature"].map(
+        lambda x: feature_metadata.feature_names[x]
+    )
+    return df
