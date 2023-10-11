@@ -16,6 +16,8 @@ from src.streamlit_app.components import (
     show_history,
 )
 
+from src.streamlit_app.features import show_saved_features
+
 
 from src.streamlit_app.dynamic_analysis_components import (
     show_observation_view,
@@ -155,6 +157,7 @@ with st.sidebar:
             "Parameter Distributions",
             "Dimensionality Reduction",
             "Composition Scores",
+            "Features",
         ],
     )
     dynamic_analyses = st.multiselect(
@@ -205,6 +208,8 @@ if "Dimensionality Reduction" in analyses:
     show_dimensionality_reduction(dt)
 if "Composition Scores" in analyses:
     show_composition_scores(dt)
+if "Features" in analyses:
+    show_saved_features()
 
 # Dynamic Analyses
 if "RTG Scan" in analyses:
