@@ -236,7 +236,7 @@ def maths_help():
 
             st.latex(
                 r"""
-                s_t = W_E^{state} s_t = \sum_{i=1}^{980} e_{state}^{i} o_{t}^{i}
+                o_t = \sum_{i} \sum_{j} \sum_{c} I(i,j,c) f_{i,j,c} \\
                 """
             )
 

@@ -127,7 +127,11 @@ def plot_attention_pattern_single(
                 fig.update_xaxes(ticktext=labels)
                 fig.update_yaxes(ticktext=labels)
 
-                st.plotly_chart(fig, use_container_width=True, key=key + "attention-pattern")
+                st.plotly_chart(
+                    fig,
+                    use_container_width=True,
+                    key=key + "attention-pattern",
+                )
 
         return
 
@@ -256,7 +260,11 @@ def plot_heatmap(
         color_continuous_scale=color_continuous_scale,
         height=600,
         width=600,
+        text_auto=".2f" if max_labels >= data_array.shape[0] else False,
     )
+
+    # make text auto font size larger
+    fig.update_traces(textfont_size=18)
 
     # remove ticks and colorbar, rotate labels and make sure every one is shown, reduce font size
     fig.update_xaxes(
@@ -277,6 +285,10 @@ def plot_heatmap(
     # hide the colorbar
     fig.update_layout(coloraxis_showscale=False)
 
+    # make the x and y axis tick font larger
+    fig.update_xaxes(tickfont=dict(size=18))
+    fig.update_yaxes(tickfont=dict(size=18))
+
     if not show_labels:
         fig.update_xaxes(
             visible=False,
@@ -284,21 +296,6 @@ def plot_heatmap(
         fig.update_yaxes(
             visible=False,
         )
-
-    if max_labels >= data_array.shape[0]:
-        for i in range(data_array.shape[0]):
-            for j in range(data_array.shape[0]):
-                fig.add_annotation(
-                    x=j,
-                    y=i,
-                    text=str(round(data_array[i][j].item(), 2)),
-                    showarrow=False,
-                    font=dict(
-                        family="Courier New, monospace",
-                        size=14,
-                        color="white" if data_array[i][j].item() > 0.5 else "black"
-                    ),
-                )
 
     return fig
 
