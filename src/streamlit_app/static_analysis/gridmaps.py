@@ -56,7 +56,10 @@ def pc_df_component(pc_df, all_embeddings_projection, embedding_labels):
         color_continuous_midpoint=0,
         color_continuous_scale="RdBu",
         facet_col=0,
+        text_auto=".2f",
     )
+
+    fig.update_traces(textfont_size=14)
 
     # show ticks every 1 x and y value
     fig.update_xaxes(
@@ -77,12 +80,30 @@ def pc_df_component(pc_df, all_embeddings_projection, embedding_labels):
         col=1,
     )
 
+    # # add values
+    # for i in range(data.shape[0]):
+    #     for j in range(data.shape[0]):
+    #         fig.add_annotation(
+    #             x=j,
+    #             y=i,
+    #             text=str(round(data[i][j].item(), 2)),
+    #             showarrow=False,
+    #             font=dict(
+    #                 size=14,
+    #                 color="white" if data[i][j].item() > 0.5 else "black"
+    #             ),
+    #         )
+
     # rename facets
     for i in range(n_selected_channels):
         fig.layout.annotations[i].text = selected_channels[i]
 
     # increase facet col label font size
     fig.update_annotations(font_size=20)
+
+    # increase tick font size
+    fig.update_xaxes(tickfont_size=20)
+    fig.update_yaxes(tickfont_size=20)
 
     # update hover template for each facet with channel
     fig.update_traces(
@@ -301,11 +322,7 @@ def plot_gridmap_from_embedding_congruence(
                     y=i,
                     text=str(round(scores[i][j].item(), 2)),
                     showarrow=False,
-                    font=dict(
-                        family="Courier New, monospace",
-                        size=14,
-                        color="black"
-                    ),
+                    font=dict(size=14, color="black"),
                 )
 
         # remove color legend
