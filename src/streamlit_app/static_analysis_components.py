@@ -49,6 +49,7 @@ from src.streamlit_app.static_analysis.virtual_weights import (
     show_ov_pos_action_component,
     show_ov_rtg_action_component,
     show_ov_state_action_component,
+    show_ov_feature_action_component,
 )
 from src.visualization import (
     get_cosine_sim_df,
@@ -890,8 +891,8 @@ def show_ov_circuit(_dt):
             """
         )
 
-        state_tab, action_tab, rtg_tab, pos_tab = st.tabs(
-            ["OV(state)", "OV(action)", "OV(rtg)", "OV(pos)"]
+        state_tab, action_tab, rtg_tab, pos_tab, feature_tab = st.tabs(
+            ["OV(state)", "OV(action)", "OV(rtg)", "OV(pos)", "OV(feature)"]
         )
 
         with state_tab:
@@ -905,6 +906,9 @@ def show_ov_circuit(_dt):
 
         with pos_tab:
             show_ov_pos_action_component(_dt)
+
+        with feature_tab:
+            show_ov_feature_action_component(_dt)
 
 
 @st.cache_data(experimental_allow_widgets=True)
