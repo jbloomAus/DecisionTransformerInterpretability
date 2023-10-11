@@ -59,8 +59,8 @@ class EnvironmentConfig:
         self.observation_space = (
             self.observation_space or env.observation_space
         )
-        if isinstance(self.device, str):
-            self.device = torch.device(self.device)
+        if isinstance(self.device, torch.device):
+            self.device = str(self.device)
 
 
 @dataclass
@@ -114,8 +114,8 @@ class TransformerModelConfig:
         )
 
         assert self.time_embedding_type in ["embedding", "linear"]
-        if isinstance(self.device, str):
-            self.device = torch.device(self.device)
+        if isinstance(self.device, torch.device):
+            self.device = str(self.device)
 
 
 @dataclass
@@ -163,8 +163,8 @@ class LSTMModelConfig:
         assert self.lang_model in ["gru", "bigru", "attgru"]
         # self.observation_space = self.environment_config.observation_space
         # self.action_space = self.environment_config.action_space
-        if isinstance(self.device, str):
-            self.device = torch.device(self.device)
+        if isinstance(self.device, torch.device):
+            self.device = str(self.device)
 
 
 @dataclass
@@ -199,8 +199,8 @@ class OfflineTrainConfig:
 
     def __post_init__(self):
         assert self.model_type in ["decision_transformer", "clone_transformer"]
-        if isinstance(self.device, str):
-            self.device = torch.device(self.device)
+        if isinstance(self.device, torch.device):
+            self.device = str(self.device)
 
 
 @dataclass
@@ -239,8 +239,8 @@ class OnlineTrainConfig:
                 "trajectories", str(uuid.uuid4()) + ".gz"
             )
 
-        if isinstance(self.device, str):
-            self.device = torch.device(self.device)
+        if isinstance(self.device, torch.device):
+            self.device = str(self.device)
 
 
 @dataclass
@@ -257,8 +257,8 @@ class RunConfig:
     wandb_entity: str = None
 
     def __post_init__(self):
-        if isinstance(self.device, str):
-            self.device = torch.device(self.device)
+        if isinstance(self.device, torch.device):
+            self.device = str(self.device)
 
 
 class ConfigJsonEncoder(json.JSONEncoder):
@@ -285,8 +285,8 @@ class ConfigJsonEncoder(json.JSONEncoder):
         # check if new config is a dataclass
         if dataclasses.is_dataclass(new_config):
             return dataclasses.asdict(new_config)
-        elif isinstance(new_config, torch.device):
-            return str(new_config)
+        if isinstance(new_config, torch.device):
+            self.device = str(new_config)
         elif isinstance(new_config, gym.spaces.Space):
             return None  # don't save observation space and action space if they are named other stuff
         else:
