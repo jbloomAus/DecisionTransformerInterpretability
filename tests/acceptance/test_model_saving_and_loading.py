@@ -75,7 +75,7 @@ def online_config() -> OnlineTrainConfig:
         ent_coef=0.25,
         vf_coef=0.5,
         max_grad_norm=2,
-        trajectory_path="trajectories/MiniGrid-DoorKey-8x8-trajectories.pkl",
+        trajectory_path="trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl",
     )
     return online_config
 
@@ -101,7 +101,7 @@ def transformer_config() -> TransformerModelConfig:
 @pytest.fixture()
 def offline_config() -> OfflineTrainConfig:
     offline_config = OfflineTrainConfig(
-        trajectory_path="trajectories/MiniGrid-DoorKey-8x8-trajectories.pkl",
+        trajectory_path="trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl",
         batch_size=128,
         lr=0.0001,
         weight_decay=0.0,
@@ -109,14 +109,14 @@ def offline_config() -> OfflineTrainConfig:
         prob_go_from_end=0.0,
         device="cpu",
         track=False,
-        train_epochs=100,
+        train_epochs=10,
         test_epochs=10,
         test_frequency=10,
         eval_frequency=10,
         eval_episodes=10,
         model_type="decision_transformer",
         initial_rtg=[0.0, 1.0],
-        eval_max_time_steps=100,
+        eval_max_time_steps=10,
         eval_num_envs=8,
     )
     return offline_config
@@ -142,7 +142,7 @@ def test_load_decision_transformer(
 
     new_model = load_decision_transformer(path)
 
-    assert_state_dicts_are_equal(new_model.state_dict(), model.state_dict())
+    assert are_state_dicts_equal(new_model.state_dict(), model.state_dict())
 
     assert new_model.transformer_config == transformer_config
     assert new_model.environment_config == environment_config
@@ -188,9 +188,6 @@ def test_decision_transformer_checkpoint_training(
         environment_config=environment_config,
         transformer_config=transformer_config
     )
-    checkpoint_artifact = wandb.Artifact(
-        f"{run_config.exp_name}_checkpoints", type="model"
-    )
 
     env = make_env(environment_config, seed=0, idx=0, run_name="dev")
     env = env()
@@ -212,19 +209,27 @@ def test_decision_transformer_checkpoint_training(
         preprocess_observations=preprocess_observations,
     )
 
-    train(model, trajectory_data_set, offline_config, env, make_env)
+    try:
+        train(model, trajectory_data_set, env, make_env, offline_config, track=True, exp_name='test')
 
-    for i in range(offline_config.num_checkpoints):
-        assert os.path.exists(f"models/{run_config.exp_name}_{i+1:0>2}.pt")
+        for i in range(offline_config.num_checkpoints):
+            assert os.path.exists(f"models/test_{i+1:0>2}.pt")
+        assert not os.path.exists(f"models/test_{offline_config.num_checkpoints+1:0>2}.pt")
 
-    early_model = load_decision_transformer(f"models/{run_config.exp_name}_01.pt")
-    late_model = load_decision_transformer(f"models/{run_config.exp_name}_05.pt")
+        early_model = load_decision_transformer(f"models/test_01.pt")
+        late_model = load_decision_transformer(f"models/test_05.pt")
 
-    assert not are_state_dicts_equal(early_model.state_dict(), model.state_dict())
-    assert are_state_dicts_equal(late_model.state_dict(), model.state_dict())
+        assert not are_state_dicts_equal(early_model.state_dict(), model.state_dict())
+        assert are_state_dicts_equal(late_model.state_dict(), model.state_dict())
 
-    assert early_model.transformer_config == late_model.transformer_config == transformer_config
-    assert early_model.environment_config == late_model.environment_config == environment_config
+        assert early_model.transformer_config == late_model.transformer_config == transformer_config
+        assert early_model.environment_config == late_model.environment_config == environment_config
+
+    finally:
+        for i in range(offline_config.num_checkpoints):
+            model_path = f"models/test_{i+1:0>2}.pt"
+            if os.path.exists(model_path):
+                os.remove(model_path)
 
 def are_state_dicts_equal(dict1, dict2):
     keys1 = sorted(dict1.keys())
