@@ -328,8 +328,13 @@ def show_activation_patching(dt, logit_dir, original_cache):
         if st.checkbox("show corrupted action predictions"):
             plot_action_preds(corrupt_preds)
 
-        if st.checkbox("Show corrupted analyses (slightly expensive)", key="corrupt_analysis"):
-            corrupt_attention_pattern_tab, corrupt_logit_lens_tab = st.tabs(["Attention Pattern", "Logit Lens"])
+        if st.checkbox(
+            "Show corrupted analyses (slightly expensive)",
+            key="corrupt_analysis",
+        ):
+            corrupt_attention_pattern_tab, corrupt_logit_lens_tab = st.tabs(
+                ["Attention Pattern", "Logit Lens"]
+            )
             with corrupt_attention_pattern_tab:
                 show_attention_pattern(dt, corrupt_cache, key="corrupt-")
             with corrupt_logit_lens_tab:
@@ -428,7 +433,7 @@ def show_activation_patching(dt, logit_dir, original_cache):
                 apply_metric_to_cache=True,
             )
 
-      
+
 def get_corrupted_tokens_component(dt, key=""):
     a, b, c = st.columns(3)
     with a:
@@ -581,7 +586,9 @@ def get_corrupted_tokens_component(dt, key=""):
                 st.plotly_chart(fig, use_container_width=True)
 
     if torch.all(corrupted_tokens == previous_tokens):
-        st.warning("Corrupted tokens are the same as previous tokens. Please make a change to the environment.")
+        st.warning(
+            "Corrupted tokens are the same as previous tokens. Please make a change to the environment."
+        )
 
     return corrupted_tokens, noise_or_denoise
 
@@ -605,11 +612,15 @@ def get_corrupt_obs_instructions(key=""):
             )
 
     with b:
-        position = st.selectbox("Select a position (x,y)", 
-                                [f"{i},{j}" for i in range(7) for j in range(7)],
-                                key = key + "position_selector")
-        x_position, y_position = position.split(',')
-        x_position_to_update, y_position_to_update = int(x_position), int(y_position)
+        position = st.selectbox(
+            "Select a position (x,y)",
+            [f"{i},{j}" for i in range(7) for j in range(7)],
+            key=key + "position_selector",
+        )
+        x_position, y_position = position.split(",")
+        x_position_to_update, y_position_to_update = int(x_position), int(
+            y_position
+        )
 
     with c:
         object_to_update = st.selectbox(
@@ -1152,8 +1163,8 @@ def show_algebraic_value_editing(dt, logit_dir, original_cache):
         with c:
             coeff_min, coeff_max = st.slider(
                 "Coefficient",
-                min_value=-2.0,
-                max_value=3.0,
+                min_value=-10.0,
+                max_value=10.0,
                 value=[0.0, 1.0],
             )
 
@@ -1281,12 +1292,21 @@ def show_path_patching(dt, logit_dir, clean_cache):
         if st.checkbox("show corrupted action predictions", key="path"):
             plot_action_preds(corrupt_preds)
 
-        if st.checkbox("Show corrupted analyses (slightly expensive)", key="corrupt_analysis_path"):
-            corrupt_attention_pattern_tab, corrupt_logit_lens_tab = st.tabs(["Attention Pattern", "Logit Lens"])
+        if st.checkbox(
+            "Show corrupted analyses (slightly expensive)",
+            key="corrupt_analysis_path",
+        ):
+            corrupt_attention_pattern_tab, corrupt_logit_lens_tab = st.tabs(
+                ["Attention Pattern", "Logit Lens"]
+            )
             with corrupt_attention_pattern_tab:
-                show_attention_pattern(dt, corrupted_cache, key="corrupt-path-")
+                show_attention_pattern(
+                    dt, corrupted_cache, key="corrupt-path-"
+                )
             with corrupt_logit_lens_tab:
-                show_logit_lens(dt, corrupted_cache, logit_dir, key="corrupt-path-")
+                show_logit_lens(
+                    dt, corrupted_cache, logit_dir, key="corrupt-path-"
+                )
 
         # rewrite previous line but with nicer formatting
         st.write(

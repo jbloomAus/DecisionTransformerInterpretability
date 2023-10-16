@@ -69,15 +69,15 @@ def delete_features():
         os.remove(f)
 
 
-def load_features():
+def load_features(feature_path=DEFAULT_FEATURE_DIR):
     feature_jsons = [
-        os.path.join(DEFAULT_FEATURE_DIR, f)
-        for f in os.listdir(DEFAULT_FEATURE_DIR)
+        os.path.join(feature_path, f)
+        for f in os.listdir(feature_path)
         if f.endswith(".json")
     ]
     feature_pts = [
-        os.path.join(DEFAULT_FEATURE_DIR, f)
-        for f in os.listdir(DEFAULT_FEATURE_DIR)
+        os.path.join(feature_path, f)
+        for f in os.listdir(feature_path)
         if f.endswith(".pt")
     ]
 
