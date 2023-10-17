@@ -17,6 +17,7 @@
 
 <head>
   <script src="https://distill.pub/template.v2.js"></script>
+  <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta charset="utf8" />  
   <style>
@@ -135,10 +136,86 @@
 
     <p><em>MemoryDL</em> is trained to predict actions in trajectories produced by a policy that solves the <strong>MiniGrid Memory</strong> task. In this task, the agent is spawned next to an object (a ball or a key) and is rewarded for walking to the matching object at the end of the corridor. Due to partial observability, the instruction can’t be seen without facing it. <strong>Figure 1</strong> shows all 4 variations on the environment. We refer to the first object as the “instruction” and the latter two objects as the “targets”. The action space is made up of the actions “Left”, “Right” and “Forward” along with 4 other actions not useful in this environment.</p>
 
-    <img src="path_to_combined_image.jpg" alt="All 4 starting positions of the MiniGrid Memory Task">
+    <img src="path_to_combined_image.jpg" alt="All 4 Variations of the MiniGrid Memory Task as seen from the starting position">
     <img src="path_to_combined_gif.gif" alt="A recording of high performing trajectories">
 
     <p><strong>Figure 1: MiniGrid Memory Task Partial Observations.</strong> Above: All 4 Variations of the MiniGrid Memory Task as seen from the starting position. Below: A recording of high performing trajectories.</p>
+
+    <p>This task is interesting for 3 reasons:</p>
+
+    <ol>
+        <li>
+            <strong>The optimal policy is well described as learning a simple underlying algorithm described by the boolean expression A XOR B.</strong> The optimal trajectory shown in figure 1 involves walking forward 4 times, and turning left or right, followed by forward. However, labelling the instruction and target as boolean variables, the optimal policy is turn left if A XOR B and right otherwise. The XOR operation is particularly nice for interpretability since it is symmetric in A and B, and changing A or B will always change the correct decision. Therefore, all beliefs about the instruction/targets should be action guiding.
+        </li>
+        <li>
+            <strong>Observations generated in this task include redundant, correlated and anti-correlated features, encouraging the use of abstractions.</strong> The gridworld environment makes this true in many ways:
+            <ul>
+                <li>The target configuration is detectable via the left or right position alone or via any one observation in a trajectory.</li>
+                <li>The presence of a key at a position implies the absence of a ball at the same position (<em>hence instructions/targets becoming binary variables</em>).</li>
+                <li>Since the instruction does not change mid-episode, observations of the same object are redundant between observations.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>A partially observable environment forces use of the transformer’s context window.</strong> The optimal trajectory involves only seeing the instruction once, forcing use of the context window. This is important since it adds complexity which justifies the use of a transformer, which we are interested in studying.
+        </li>
+    </ol>
+
+    <p><strong>Figure 2</strong> shows how the decision transformer architecture interacts with the gridworld observations and the central decision. We discuss tokenization of the observation in the next section.</p>
+
+    <img src="path-to-figure2-image.jpg" alt="Decision Transformer Diagram with Gridworld Observations">
+    <strong>Figure 2:</strong> Decision Transformer Diagram with Gridworld Observations. R corresponds to the tokenized Reward-to-Go, S stands in for state (replaced with O in practice we have partial observations). A corresponds to actions tokens.
+    
+    <h3>MemoryDT Observation Embeddings are constructed via a Compositional Code.</h3>
+    
+    <p>
+    In order to adapt the Decision Transformer architecture to gridworld tasks we tokenize the observations using a <a href="path-to-compositional-code-link.html">compositional code</a> whose components are “objects at (x,y)” or colour at (x,y). For example, Key at (2,3) will have its own embedding and so will Green (2,3) etc. <strong>Figure 3</strong> shows example observations with important vocabulary items shown.
+    </p>
+
+    <figure>
+        <img src="path-to-figure3-image.jpg" alt="Example Observations with annotated target/instruction vocabulary items">
+        <figcaption>
+            <strong>Figure 3:</strong> Example Observations with annotated target/instruction vocabulary items.
+        </figcaption>
+    </figure>
+    
+    <p>
+    For each present vocabulary item, we learn an embedding vector. The token is then the sum of the embeddings for any present vocabulary items:
+    </p>
+    
+    <div class="mathjax-content">
+    \[
+    o_t = \sum_i \sum_j \sum_c I(i,j,c) f_{i,j,c}
+    \]
+    </div>
+    
+    <p>
+    Where \( o_t \) is the observation embedding (which is a vector of length 256), \( i \) is the horizontal position, \( j \) is the vertical position, \( c \) is the channel (colour, object or state), and \( f_{i,j,c} \) is the corresponding learned token embedding with the same dimension as the observation embedding. \( I(i,j,c) \) is an indicator function. For example \( I(2,6, \text{key}) \) means that there is a key at position (2,6).
+    </p>
+    
+    <img src="path-to-figure4-image.jpg" alt="Illustration of how the observation tokens are made of embeddings">
+    <strong>Figure 4:</strong> Illustrates how the observation tokens are made of embeddings, which might themselves be made of features, which match the task relevant concepts.
+
+    <p><strong>A few notes on this setup:</strong></p>
+
+    <ol>
+        <li>
+            Our observation tokenization method is intentionally linear and is therefore decomposable into embeddings (which are linear feature representations). By constructing it like this we make it harder for the model to memorise the observations since it must create them from a linear sum of fundamentally (more) <a href="#">generalising features</a>. Furthermore, the function A XOR B can’t be solved using a linear classifier stopping the model from solving the entire task in the first observation.
+        </li>
+        <li>
+            Our observation tokenization method is compositional with respect to vocabulary items but not task relevant concepts. The underlying “instruction feature” isn’t itself a member of the vocabulary.
+        </li>
+        <li>
+            The task-relevant concepts have a many-to-many relationship with vocabulary items. There are different positions from which the instruction/targets might be seen.
+        </li>
+        <li>
+            Some vocabulary items are much more important for predicting the optimal action than others. Keys/Balls are clearly more important, and especially so at positions from which the instruction/targets are visible.
+        </li>
+        <li>
+            Vocabulary item embeddings will have lots of correlation structure due to partial observability of the environment.
+        </li>
+    </ol>
+
+    <h2>Results</h2>
 
   <d-appendix>
     <h3>TBD</h3>
