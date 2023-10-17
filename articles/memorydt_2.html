@@ -1,0 +1,148 @@
+<!--
+  Copyright 2018 The Distill Template Authors
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<!DOCTYPE html>
+
+<head>
+  <script src="https://distill.pub/template.v2.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf8" />  
+  <style>
+    d-article li {
+        margin-bottom: 0em;
+    }
+</style>
+
+</head>
+
+
+
+<body>
+  <distill-header></distill-header>
+  <d-front-matter>
+    <script id="distill-front-matter" type="text/json">
+      {
+        "title": "Finding Features and Adversarial Inputs for MemoryDT",
+        "description": "We analyse the embedding space of a gridworld decision transformer showing that it has developed extensive structure which reflects properties of the model, the gridworld environment and the task. We’re able to extract features and corresponding linear feature representations. Finding that one of these feature representations is present in many different embeddings, we predicted several adversarial inputs  (observations with “distractor” items) that trick the model about what it is seeing. We show that these adversaries work as effectively as changing the feature (in the environment), but that we can also intervene directly on the underlying linear feature representation to achieve the same effects. Whilst methodologically simple, this analysis shows that mechanistic investigation of gridworld models are tractable and may support fundamental mechanistic interpretability research and its application to AI alignment. ",
+        "published": "Oct 30, 2023",
+        "authors": [
+          {
+            "author": "Joseph Bloom",
+            "authorURL": "https://www.jbloomaus.com/",
+            "affiliations": [{ "name": "Independent" }]
+          },
+          {
+            "author": "Jay Bailey",
+            "authorURL": "https://www.lesswrong.com/users/jay-bailey",
+            "affiliations": [{ "name": "Independent" }]
+          }
+        ],
+        "katex": {
+          "delimiters": [{ "left": "$$", "right": "$$", "display": false }]
+        }
+      }
+    </script>
+  </d-front-matter>
+  <d-title>
+    <figure style="grid-column: page; margin: 1rem 0">
+      <p><h1>Finding Features and Adversarial Inputs for MemoryDT</h1></p>
+    </figure>
+    <p>
+      Code: <a href="https://github.com/jbloomAus/DecisionTransformerInterpretability">repository</a>, 
+      Model/Training: <a href="https://wandb.ai/jbloom/DecisionTransformerInterpretability/reports/A-Mechanistic-Analysis-of-a-GridWorld-Agent-Simulator--Vmlldzo0MzY2OTAy">here</a>. 
+      Task: <a href="https://minigrid.farama.org/environments/minigrid/MemoryEnv/#memory">here</a>.<br><br> 
+      Epistemic status: I think the basic results are pretty solid, but I’m less sure 
+      about howthese results relate to broader phenomena such as superposition or other
+      modalities such as language models.
+    </p>
+  </d-title>
+  <d-byline></d-byline>
+  <d-article>
+    <a class="marker" href="#section-1" id="section-1"><span>1</span></a>
+    <h2>TL;DR</h2>
+    <p>
+      We analyse the embedding space of a gridworld decision transformer showing that it has developed extensive structure which reflects properties of the model, the gridworld environment and the task. We’re able to extract features and corresponding linear feature representations. Finding that one of these feature representations is present in many different embeddings, we predicted several adversarial inputs  (observations with “distractor” items) that trick the model about what it is seeing. We show that these adversaries work as effectivelye as changing the feature (in the environment), but that we can also intervene directly on the underlying linear feature representation to achieve the same effects. Whilst methodologically simple, this analysis shows that mechanistic investigation of gridworld models are tractable and may support fundamental mechanistic interpretability research and its application to AI alignment. <br><br> 
+
+      For readers short on time, we recommend reading the following sections:
+      <ol>
+        <li>Read the Introduction sections on the <a href="https://docs.google.com/document/d/1FNd4KbYRRPbs1YVLlsDUGpshZ68AIdDKYyI5uQz3TQM/edit#heading=h.51aamf6oc3nl">task</a> and <a href="https://docs.google.com/document/d/1FNd4KbYRRPbs1YVLlsDUGpshZ68AIdDKYyI5uQz3TQM/edit#heading=h.tuc933b72sek">observation embeddings.</a></li> 
+        <li>Read the section describing extraction of the <a href="https://docs.google.com/document/d/1FNd4KbYRRPbs1YVLlsDUGpshZ68AIdDKYyI5uQz3TQM/edit#heading=h.tkhty7ij90vs">via pca.</a></li>
+        <li>Read the results sections describing <a href="https://docs.google.com/document/d/1FNd4KbYRRPbs1YVLlsDUGpshZ68AIdDKYyI5uQz3TQM/edit#heading=h.rz4da79oapdk">using adversaries to change the instruction feature</a> and <a href="https://docs.google.com/document/d/1FNd4KbYRRPbs1YVLlsDUGpshZ68AIdDKYyI5uQz3TQM/edit#heading=h.47f7eki4y2s6">comparing adversaries to direct intervention.</a></li>
+      </ol> 
+    </p>
+    <h2>Key Results</h2>
+    <ul>
+        <li>
+            <strong>We show that our observation space has extensive <a href="#geometric_structure">geometric structure</a>.</strong>
+            <ul>
+                <li>We think this structure is induced by properties of experimental set up (partial observations), architectural design (compositional embedding schema) and nature of the RL task.</li>
+                <li>The learned structure included the use of clustered embeddings and antipodal pairs.</li>
+                <li>We see examples of <a href="#isotropic">isotropic</a> and <a href="#anisotropic">anisotropic superposition</a>.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>We identify <a href="#linear_feature_representations">interpretable linear feature representations</a> in MemoryDI’s observation embedding space.</strong>
+            <ul>
+                <li>We find that Principal Component Analysis of a Subset of Embedding vectors produces vectors that linearly classify the input space according to task relevant concepts.</li>
+                <li>Calling some of these directions linear feature representations, we find that the underlying features appear “smeared” across many embeddings which we interpret as a form of equivariance.</li>
+            </ul>
+        </li>
+        <li>
+            <strong>We causally validate one of these features, the “<a href="#instruction_feature">instruction feature</a>” using <a href="#adversarial_inputs">adversarial inputs/embedding arithmetic</a> and <a href="#direct_interventions">direct interventions</a>.</strong>
+            <ul>
+                <li>Adversarial examples provide a clear demonstration that the instruction feature can be leveraged.</li>
+                <li>Due to how we embed observations, this experiment can be related to embedding arithmetic/steering vectors.</li>
+                <li>To provide more detail/rigour, we directly intervene on the instruction feature to show it is causal.</li>
+                <li>We also show that the adversaries transfer to a different model trained on the same training data.</li>
+            </ul>
+        </li>
+    </ul>
+    <h2>Introduction</h2>
+
+    <h3>Why study Decision Transformers?</h3>
+
+    <p><strong>Decision Transformers</strong> are a form of offline RL (reinforcement learning) which enable us to use Transformers to solve traditional RL tasks. While traditional “online” RL trains a model to receive reward by completing a task, offline RL is analogous to language model training with the model being rewarded for predicting the next token.</p>
+
+    <p>Decision Transformers are trained on recorded trajectories which are labelled with the reward achieved, Reward-to-Go (RTG), which enables them to condition on performance quality.</p>
+
+    <p>They are interesting for two reasons:</p>
+    <ul>
+        <li><strong>We can study transformers that are solving much simpler tasks than language models.</strong> Even small models like GPT-1? language models can be <em>quite complicated</em>, but SOTA <a href="#">large language models</a> are transformers so we’d prefer insights that apply to transformers. Working with transformers also gives us the ability to use existing ideas and techniques such as a <a href="#">Mathematical Framework for Transformer Circuits</a>.</li>
+        <li><strong>We might be able to study alignment relevant phenomena in decision transformers.</strong> Previous work has studied alignment relevant phenomena (such as goal misalignment) in the absence of <em>interpretability</em>, or with non-transformer architectures.</li>
+    </ul>
+
+    <h3>The Linear Feature Hypothesis</h3>
+
+    <p>Linear feature representations are a hot topic in Mechanistic interpretability <strong>because they represent a best case scenario for interpretability</strong>. Efforts have been made to find linear feature representations in the residual stream with techniques such as <a href="#">sparse auto-encoders</a> or <a href="#">sparse linear probing</a>. These techniques seek to find a sparse, over-complete linear solution to <strong>superposition</strong>/lack of an <strong>interpretable basis</strong> in the residual stream.</p>
+
+    <p><em>In simple English, if the linear feature hypothesis is true and we’re able to find the corresponding directions in deep neural networks, we may be able to read the thoughts of AI systems directly.</em></p>
+
+    <p>Anthropic’s most recent publication <a href="#">Towards Monosemanticity: Decomposing Language Models With Dictionary Learning</a>, shows convincing evidence that is possible to find and interpret such a basis in the residual stream. Among other results, they found that some features clump together in groups (<strong>anisotropic superposition</strong>) as opposed to repelling and spreading as far as possible (<strong>isotropic superposition</strong>). They also conjecture that features clumping together may correspond to features that are likely to produce similar behaviours in the model.</p>
+
+    <h2>The MiniGrid Memory Task</h2>
+
+    <p><em>MemoryDL</em> is trained to predict actions in trajectories produced by a policy that solves the <strong>MiniGrid Memory</strong> task. In this task, the agent is spawned next to an object (a ball or a key) and is rewarded for walking to the matching object at the end of the corridor. Due to partial observability, the instruction can’t be seen without facing it. <strong>Figure 1</strong> shows all 4 variations on the environment. We refer to the first object as the “instruction” and the latter two objects as the “targets”. The action space is made up of the actions “Left”, “Right” and “Forward” along with 4 other actions not useful in this environment.</p>
+
+    <img src="path_to_combined_image.jpg" alt="All 4 starting positions of the MiniGrid Memory Task">
+    <img src="path_to_combined_gif.gif" alt="A recording of high performing trajectories">
+
+    <p><strong>Figure 1: MiniGrid Memory Task Partial Observations.</strong> Above: All 4 Variations of the MiniGrid Memory Task as seen from the starting position. Below: A recording of high performing trajectories.</p>
+
+  <d-appendix>
+    <h3>TBD</h3>
+  </d-appendix>
+
+  <distill-footer></distill-footer>
+</body>
