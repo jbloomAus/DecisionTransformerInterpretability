@@ -172,8 +172,8 @@
 
     <p><em>MemoryDT</em> is trained to predict actions in trajectories produced by a policy that solves the <strong>MiniGrid Memory</strong> task. In this task, the agent is spawned next to an object (a ball or a key) and is rewarded for walking to the matching object at the end of the corridor. Due to partial observability, the instruction can’t be seen without facing it. <strong>Figure 1</strong> shows all 4 variations on the environment. We refer to the first object as the “instruction” and the latter two objects as the “targets”. The action space is made up of the actions “Left”, “Right” and “Forward” along with 4 other actions not useful in this environment.</p>
 
-    <img src="path_to_combined_image.jpg" alt="All 4 Variations of the MiniGrid Memory Task as seen from the starting position">
-    <img src="path_to_combined_gif.gif" alt="A recording of high performing trajectories">
+    <img src="images/memory_dt2/image1.png" alt="All 4 Variations of the MiniGrid Memory Task as seen from the starting position">
+    <img src="images/memory_dt2/image2.gif" alt="A recording of high performing trajectories">
 
     <p><strong>Figure 1: MiniGrid Memory Task Partial Observations.</strong> Above: All 4 Variations of the MiniGrid Memory Task as seen from the starting position. Below: A recording of high performing trajectories.</p>
 
@@ -198,7 +198,7 @@
 
     <p><strong>Figure 2</strong> shows how the decision transformer architecture interacts with the gridworld observations and the central decision. We discuss tokenization of the observation in the next section.</p>
 
-    <img src="path-to-figure2-image.jpg" alt="Decision Transformer Diagram with Gridworld Observations">
+    <img src="images/memory_dt2/image3.png" alt="Decision Transformer Diagram with Gridworld Observations">
     <strong>Figure 2:</strong> Decision Transformer Diagram with Gridworld Observations. R corresponds to the tokenized Reward-to-Go, S stands in for state (replaced with O in practice we have partial observations). A corresponds to actions tokens.
     
     <h3>MemoryDT Observation Embeddings are constructed via a Compositional Code.</h3>
@@ -208,7 +208,7 @@
     </p>
 
     <figure>
-        <img src="path-to-figure3-image.jpg" alt="Example Observations with annotated target/instruction vocabulary items">
+        <img src="images/memory_dt2/image4.png" alt="Example Observations with annotated target/instruction vocabulary items">
         <figcaption>
             <strong>Figure 3:</strong> Example Observations with annotated target/instruction vocabulary items.
         </figcaption>
@@ -228,8 +228,9 @@
     Where \( o_t \) is the observation embedding (which is a vector of length 256), \( i \) is the horizontal position, \( j \) is the vertical position, \( c \) is the channel (colour, object or state), and \( f_{i,j,c} \) is the corresponding learned token embedding with the same dimension as the observation embedding. \( I(i,j,c) \) is an indicator function. For example \( I(2,6, \text{key}) \) means that there is a key at position (2,6).
     </p>
     
-    <img src="path-to-figure4-image.jpg" alt="Illustration of how the observation tokens are made of embeddings">
-    <strong>Figure 4:</strong> Illustrates how the observation tokens are made of embeddings, which might themselves be made of features, which match the task relevant concepts.
+    <p><strong>Figure 4</strong> Illustrates how the observation tokens are made of embeddings, which might themselves be made of features, which match the task relevant concepts.</p>
+    <img src="images/memory_dt2/image5.png" alt="Illustration of how the observation tokens are made of embeddings">
+    <p><strong>Figure 4: Diagram showing how concepts, features, vocabulary item embeddings and token embeddings are related.</strong> We learn embeddings for each vocabulary item but the model can treat those independently or use them to represent other features if desired. </p>
 
     <p><strong>A few notes on this setup:</strong></p>
 
@@ -266,19 +267,19 @@
     <b>Channels likely to be activated and likely to be important to the task such as keys/balls appeared to have the largest norms</b>, along with “green” and other channels which may encode useful information. Some of the largest embedding vectors corresponded to vocabulary items that were understandable important such as Ball (2,6), the ball as seen from the starting position, whilst others were less obvious Ball (0,6) which shouldn’t appear unless the agent moves the ball (it can do that). Embedding vectors are initialised with L2 norms of approximately 0.32, but these vectors weren’t subject to weight decay and clearly some grew during training.
     </p>
 
-    <img src="path-to-figureX-image.jpg" alt="Strip Plot of L2 Norms of embedding vectors in MemoryDT’s Observation Space.">
-    <strong>Figure 4:</strong> Strip Plot of L2 Norms of embedding vectors in MemoryDT’s Observation Space.
+    <img src="images/memory_dt2/image6.png" alt="Strip Plot of L2 Norms of embedding vectors in MemoryDT’s Observation Space.">
+    <strong>Figure 5:</strong> Strip Plot of L2 Norms of embedding vectors in MemoryDT’s Observation Space.
 
     <h3>Cosine Similarity Heatmaps reveal Geometric Structure</h3>
 
-    <p>We initially attempted PCA / U-Map for dimensionality reduction, however neither were particularly informative. However, we were able to borrow the concept of a <a href="#">clustergram</a> from systems biology. The idea is to plot a heatmap of the adjacency matrix, in this case the cosine similarity matrix of the embeddings and reorder rows according to a clustering algorithm. The resulting cosine similarity heatmaps were interesting with and without reordering of rows for clustering (<strong>Figure 5</strong>).</p>
+    <p>We initially attempted PCA / U-Map for dimensionality reduction, however neither were particularly informative. However, we were able to borrow the concept of a <a href="#">clustergram</a> from systems biology. The idea is to plot a heatmap of the adjacency matrix, in this case the cosine similarity matrix of the embeddings and reorder rows according to a clustering algorithm. The resulting cosine similarity heatmaps were interesting with and without reordering of rows for clustering (<strong>Figure 6</strong>).</p>
 
-    <img src="placeholder_image.jpg" alt="Cosine Similarity Heatmaps" />
-    <strong>Figure 5:</strong> Cosine Similarity Heatmap of Embeddings for Key/Ball Channels. LHS: Order of rows/columns is determined by descending order given channel, y-position, x-position. The first row is Key (0,0), the next is Key (0,1) and so forth. RHS: Order of rows/columns is determined by agglomerative clustering. <strong>Figure 5</strong> is best understood via interactions (zooming/panning).
+    <img src="images/memory_dt2/image7.png" alt="Cosine Similarity Heatmaps" />
+    <strong>Figure 6:</strong> Cosine Similarity Heatmap of Embeddings for Key/Ball Channels. LHS: Order of rows/columns is determined by descending order given channel, y-position, x-position. The first row is Key (0,0), the next is Key (0,1) and so forth. RHS: Order of rows/columns is determined by agglomerative clustering. <strong>Figure 6</strong> is best understood via interactions (zooming/panning).
 
-    <p>There were a number of possible stories which might explain the structural features observed in <strong>Figure 5</strong>. Many embeddings clearly don’t have very high cosine similarity with any others. These were the embeddings with low norms and weren’t updated much or at all during training. There were two effects which may be interpreted with respect to correlation or anti-correlation:</p>
+    <p>There were a number of possible stories which might explain the structural features observed in <strong>Figure 6</strong>. Many embeddings clearly don’t have very high cosine similarity with any others. These were the embeddings with low norms and weren’t updated much or at all during training. There were two effects which may be interpreted with respect to correlation or anti-correlation:</p>
 
-    <p>There were a number of possible stories which might explain the structural features observed in <strong>Figure 5</strong>. Many embeddings clearly don’t have very high cosine similarity with any others. These were the embeddings with low norms and weren’t updated much or at all during training. There were two effects which may be interpreted with respect to correlation or anti-correlation:</p>
+    <p>There were a number of possible stories which might explain the structural features observed in <strong>Figure 6</strong>. Many embeddings clearly don’t have very high cosine similarity with any others. These were the embeddings with low norms and weren’t updated much or at all during training. There were two effects which may be interpreted with respect to correlation or anti-correlation:</p>
 
     <ol>
         <li><strong>Spatial Exclusivity/Anti-correlation</strong> was associated with <strong>antipodality</strong>: Without reordering, we can see off-center lines of negative cosine similarity which correspond to keys/balls at the same positions. This may suggest that the mutual exclusivity of keys/balls at the same position induced anti-correlation which led to antipodality in these representations.</li>
@@ -286,19 +287,19 @@
         <li><strong>Correlated Vocabulary</strong> items had higher cosine similarity: Some vocabulary items have particularly high cosine similarity with each other. For example, vocabulary items associated with one variation of the target configuration as seen from the starting position: key (1,2) and ball (5,2).</li>
     </ol>
 
-    <p>To address these ideas more directly, we plotted cosine similarity as a function of whether the two vocabulary items shared the same channel (key or ball) or position (<strong>Figure 6</strong>).</p>
+    <p>To address these ideas more directly, we plotted cosine similarity as a function of whether the two vocabulary items shared the same channel (key or ball) or position (<strong>Figure 7</strong>).</p>
 
-    <img src="placeholder_image.jpg" alt="Cosine Similarity Distribution" />
-    <strong>Figure 6:</strong> Distribution of Cosine Similarity of pairs of embeddings/vocabulary items (limited to Key/Ball channels), filtered to have L2 norm above 0.8.
+    <img src="images/memory_dt2/image8.png" alt="Cosine Similarity Distribution" />
+    <strong>Figure 7:</strong> Distribution of Cosine Similarity of pairs of embeddings/vocabulary items (limited to Key/Ball channels), filtered to have L2 norm above 0.8.
 
-    <p>Even though channel/position are not a perfect proxy for correlation beyond the anti-correlation induced by spatial exclusivity, <strong>Figure 6</strong> shows some general trends better than <strong>Figure 5</strong>. Beyond potentially interesting trends (which aren’t trivial to interpret), we can see many outliers who embedding directions relative to each other can’t easily be interpreted without reference to the training distribution.</p>
+    <p>Even though channel/position are not a perfect proxy for correlation beyond the anti-correlation induced by spatial exclusivity, <strong>Figure 7</strong> shows some general trends better than <strong>Figure 6</strong>. Beyond potentially interesting trends (which aren’t trivial to interpret), we can see many outliers who embedding directions relative to each other can’t easily be interpreted without reference to the training distribution.</p>
 
-    <p>This leads us to the hypothesis that <strong>semantic similarity</strong> may also be affecting <strong>geometric structure</strong>. By “semantic similarity”, we mean that maybe some vocabulary items may be related not just by when they are likely to occur, but by the actions which the decision transformer should make having observed them. To provide evidence for such a hypothesis, we focus on groups of vocabulary items with particularly absolute cosine similarity and clusters. For example, we observed clusters corresponding to vocabulary items in a single channel at multiple positions such as Keys at (0,5), (2,6) and (4,2). Interpreting these clusters was possible with reference to the training distribution, specifically, look at which positions the agent might be in when those channels activated (figure 7).</p>
+    <p>This leads us to the hypothesis that <strong>semantic similarity</strong> may also be affecting <strong>geometric structure</strong>. By “semantic similarity”, we mean that maybe some vocabulary items may be related not just by when they are likely to occur, but by the actions which the decision transformer should make having observed them. To provide evidence for such a hypothesis, we focus on groups of vocabulary items with particularly absolute cosine similarity and clusters. For example, we observed clusters corresponding to vocabulary items in a single channel at multiple positions such as Keys at (0,5), (2,6) and (4,2). Interpreting these clusters was possible with reference to the training distribution, specifically, look at which positions the agent might be in when those channels activated (Figure 8).</p>
 
-    <img src="placeholder_image_1.jpg" alt="Observations" />
-    <strong>Figure 7:</strong> Reference Observations to assist interpretation of Feature Maps. Agent is always in position (3,6).
+    <img src="images/memory_dt2/image9.png" alt="Observations" />
+    <strong>Figure 8:</strong> Reference Observations to assist interpretation of Feature Maps. Agent is always in position (3,6).
 
-    <p>By combining the clusters observed in figure 7 with the distribution of possible observations in the training dataset, it's possible to see several semantically interpretable groups:</p>
+    <p>By combining the clusters observed in Figure 8 with the distribution of possible observations in the training dataset, it's possible to see several semantically interpretable groups:</p>
     <ol>
         <li>Targets seen from the end-of-corridor and the “look-back” position. These included Keys and Balls at (1,6) and (5,6).</li>
         <li>Targets as seen from the start. These included Keys and Balls at (1,2) and (5,2).</li>
@@ -314,63 +315,62 @@
     <p>To interpret the principal component directions, we show heatmaps of the dot product between the PC and each embedding vector, arranging these values to match the corresponding positions in the visualisations of gridworld partial observations. These heatmaps, which I call “feature maps”, have much in common with heatmaps of convolutional layers in vision models and represent virtual weights between each embedding the underlying principal component.</p>
 
     <h3>The Primary Instruction Feature</h3>
-    <img src="path/to/heatmap-image.png" alt="Heatmap illustrating the Primary Instruction Feature" />
-    <p><strong>Figure 8: Exploratory Analysis of the “Instruction” subset of Observation Embeddings. Left) Cosine Similarity Heatmap of the Instruction Embeddings. Right) 2D Scatter Plot of the first 2 Principal Components of a PCA generated from the embedding subset.</strong></p>
+    <img src="images/memory_dt2/image10.png" alt="Heatmap illustrating the Primary Instruction Feature" />
+    <p><strong>Figure 9: Exploratory Analysis of the “Instruction” subset of Observation Embeddings. Left) Cosine Similarity Heatmap of the Instruction Embeddings. Right) 2D Scatter Plot of the first 2 Principal Components of a PCA generated from the embedding subset.</strong></p>
 
-    <p>Previously, we identified that keys/balls at positions (4,2), (4,3), (0,5) and (2,6) as clustering and hypothesised that this may be due to an underlying “instruction feature”. The first 2 principal components of the PCA explain 85.12% of the variance in those embeddings and the first two dimensions create a space in which keys/balls appear in antipodal pairs (Figure 8). This projection is reminiscent of <em>feature splitting/anisotropic superposition</em> which is thought to occur when highly correlated features have similar output actions and <em>antiadditivity found in toy models</em>.</p>
+    <p>Previously, we identified that keys/balls at positions (4,2), (4,3), (0,5) and (2,6) as clustering and hypothesised that this may be due to an underlying “instruction feature”. The first 2 principal components of the PCA explain 85.12% of the variance in those embeddings and the first two dimensions create a space in which keys/balls appear in antipodal pairs (Figure 9). This projection is reminiscent of <em>feature splitting/anisotropic superposition</em> which is thought to occur when highly correlated features have similar output actions and <em>antiadditivity found in toy models</em>.</p>
 
     <p>Clearly, PC1 separates keys from balls independently of position, making it a candidate for a linear representation of an instruction feature. One way to interpret this is a very simple form of <em>equivariance</em>, where each vocabulary item is an (in-built, not learned) feature detector akin to a neuron firing only when the feature is present.</p>
 
-    <p>To visualise this instruction feature, we generate a feature map for PC1 (Figure 9), which shows that this feature is present to varying degrees in embeddings for keys/balls at many different positions where the instruction might be seen. We note that the instruction feature tends to be present at similar absolute values but opposite signs between keys and balls suggesting a broader symmetry in the instruction feature between keys and balls.</p>
+    <p>To visualise this instruction feature, we generate a feature map for PC1 (Figure 10), which shows that this feature is present to varying degrees in embeddings for keys/balls at many different positions where the instruction might be seen. We note that the instruction feature tends to be present at similar absolute values but opposite signs between keys and balls suggesting a broader symmetry in the instruction feature between keys and balls.</p>
 
-    <img src="path/to/feature-map-image.png" alt="Feature Map showing Instruction PC1 Values" />
-    <strong>Figure 9: Feature Map showing Instruction PC1 Values for all embeddings corresponding to Keys/Ball.</strong>
+    <img src="images/memory_dt2/image11.png" alt="Feature Map showing Instruction PC1 Values" />
+    <strong>Figure 10: Feature Map showing Instruction PC1 Values for all embeddings corresponding to Keys/Ball.</strong>
 
     <h2>Another Instruction Feature?</h2>
 
-    <p>PC2 in the Instruction subset PCA is less easy to interpret. Figure 8 appears to distinguish whether the has been identified from “look-back” and “starting” positions. However, it appears to “flip” the effect it has for embeddings which correspond to “instruction is key” vs “instruction is ball”. Moreover, the feature map for PC2 (Figure 10) shows keys and balls at (3,4) as having noticeable cosine similarity with this direction which doesn’t fit that interpretation. Nor does this explanation predict that keys/balls at (4,3), a position similar to the look-back feature barely projects onto PC2.</p>
+    <p>PC2 in the Instruction subset PCA is less easy to interpret. Figure 9 appears to distinguish whether the has been identified from “look-back” and “starting” positions. However, it appears to “flip” the effect it has for embeddings which correspond to “instruction is key” vs “instruction is ball”. Moreover, the feature map for PC2 (Figure 11) shows keys and balls at (3,4) as having noticeable cosine similarity with this direction which doesn’t fit that interpretation. Nor does this explanation predict that keys/balls at (4,3), a position similar to the look-back feature barely projects onto PC2.</p>
 
     <p>One explanation might be that because PCA finds orthogonal directions, it fails at finding a second interpretable feature direction.</p>
 
-    <img src="path/to/feature-map-image2.png" alt="Feature Map showing Instruction PC2 Values" />
-    <strong>Figure 10: Feature Map showing Instruction PC2 Values for all embeddings corresponding to Keys/Ball.</strong>
+    <img src="images/memory_dt2/image12.png" alt="Feature Map showing Instruction PC2 Values" />
+    <strong>Figure 11: Feature Map showing Instruction PC2 Values for all embeddings corresponding to Keys/Ball.</strong>
 
     <h3>Target Features</h3>
 
-    <img src="path/to/target-features-image.png" alt="Target Features Visualization" />
-    <p><strong>Figure 11: Exploratory Analysis of the Target Embeddings.Left: Cosine Similarity Heatmap of the Target Embeddings. Right: 2D Scatter Plot of the first 2 Principal Components.</strong></p>
+    <img src="images/memory_dt2/image13.png" alt="Target Features Visualization" />
+    <p><strong>Figure 12: Exploratory Analysis of the Target Embeddings.Left: Cosine Similarity Heatmap of the Target Embeddings. Right: 2D Scatter Plot of the first 2 Principal Components.</strong></p>
 
-    <p>For the target feature, we identified two separate clusters each made up of two sets of almost antipodal pairs (Figure 11). The geometry here is much closer to isotropic <a href="#">suppression / toy model results</a>. The faint-checkerboard pattern suggests the slightest hint of a more general target feature which we suspect may be learnt if we trained MemoryDT for long enough.</p>
+    <p>For the target feature, we identified two separate clusters each made up of two sets of almost antipodal pairs (Figure 12). The geometry here is much closer to isotropic <a href="#">suppression / toy model results</a>. The faint-checkerboard pattern suggests the slightest hint of a more general target feature which we suspect may be learnt if we trained MemoryDT for long enough.</p>
 
-    <p>The first two principal components of the resulting PCA explain 83.69% of the variance in those embeddings and produced interpretable feature maps (Figure 12):</p>
+    <p>The first two principal components of the resulting PCA explain 83.69% of the variance in those embeddings and produced interpretable feature maps (Figure 13):</p>
 
     <ol>
         <li><strong>Starting Target Feature:</strong> PC1 can be interpreted as reflecting the configuration of the targets as seen from the starting position \( (1,2) \) and \( (5,2) \). There's slight evidence that targets seen at intermediate positions while walking up to the targets \( (1,3) \) and \( (1,4) \).</li>
         <li><strong>End Target Feature:</strong> PC2 can be interpreted as reflecting the configuration of the targets as seen from the end of the corridor position \( (1,2) \) and \( (5,2) \).</li>
     </ol>
 
-    <img src="path/to/heatmap-image.png" alt="Cosine Similarity Heatmap of the Target Embeddings" />
-    <strong>Figure 12: Feature map showing Instruction PC1 Values (above) and PC2 embedding (below) for all embeddings corresponding to Keys/Ball. </strong>
+    <img src="images/memory_dt2/image14.png" alt="Cosine Similarity Heatmap of the PC1 Values" />
+    <img src="images/memory_dt2/image15.png" alt="Cosine Similarity Heatmap of the PC2 Embeddings">
+    <strong>Figure 13: Feature map showing Instruction PC1 Values (above) and PC2 embedding (below) for all embeddings corresponding to Keys/Ball. </strong>
 
     <h3>Using Embedding Arithmetic to Reverse Detected Features</h3>
 
     <h4>Embedding Arithmetic with the Instruction Feature</h4>
 
-    <h2>Embedding Arithmetic with the Instruction Feature</h2>
-
     <p>We previously observed that the group of vocabulary items associated with the instruction concept were separated cleanly into Keys and Balls by a single principal component explaining 60% of the total variance associated with 6 vectors included. From this, we hypothesised that this principal component reflects an underlying “instruction feature”. To validate this interpretation, we want to show that we can leverage this prediction in non-trivial ways such as by generating adversarial examples.</p>
 
-    <p>Based on the previous result, we predicted that if we added two vocabulary items matching the opposite instruction (ie: if the instruction is a key, seen at (2,6), we can add a ball to (0,5) and a ball to (4,2)) and this would induce the model to behave as if the instruction were flipped. I've drawn a diagram below to explain the concept (Figure 13).</p>
+    <p>Based on the previous result, we predicted that if we added two vocabulary items matching the opposite instruction (ie: if the instruction is a key, seen at (2,6), we can add a ball to (0,5) and a ball to (4,2)) and this would induce the model to behave as if the instruction were flipped. I've drawn a diagram below to explain the concept (Figure 14).</p>
 
-    <img src="path_to_image_1_placeholder.png" alt="Diagram explaining concept of instruction feature">
-    <strong>Figure 13: Diagram showing the basic inspiration behind “instruction adversaries”.</strong>
+    <img src="images/memory_dt2/image16.png" alt="Diagram explaining concept of instruction feature">
+    <strong>Figure 14: Diagram showing the basic inspiration behind “instruction adversaries”.</strong>
 
     <h4>Effectiveness of Instruction Feature Adversaries</h4>
-    <img src="path_to_image_placeholder_ball_keyball.png" alt="Ball, Key-Ball sequence">
+    <img src="images/memory_dt2/image17.gif" alt="Ball, Key-Ball sequence">
 
-    <p><strong>Figure 14: Animation showing the trajectory associated with the Instruction Reversal Experiment.</strong></p>
+    <p><strong>Figure 15: Animation showing the trajectory associated with the Instruction Reversal Experiment.</strong></p>
 
-    <p>To test adversarial features / embedding arithmetic hypothesis, we generated a set of prompts/trajectories ending in a position where the model’s action preference is directly determined by the observation of the instruction being a key/ball (<strong>Figure 14</strong>). For each of the target/instruction configurations in <strong>Figure 14</strong>, we generate 5 different edits (<strong>Figure 13</strong>) to the first frame:</p>
+    <p>To test adversarial features / embedding arithmetic hypothesis, we generated a set of prompts/trajectories ending in a position where the model’s action preference is directly determined by the observation of the instruction being a key/ball (<strong>Figure 15</strong>). For each of the target/instruction configurations in <strong>Figure 15</strong>, we generate 5 different edits (<strong>Figure 14</strong>) to the first frame:</p>
 
     <ul>
         <li><strong>The original first frame</strong>: This is our negative control.</li>
@@ -384,20 +384,20 @@
 
     <p><em>Note: I’m using the word “complement” because if the original instruction was a key, add a ball to reverse it and vice versa.</em></p>
 
-    <img src="path_to_image_placeholder_adversarial_token_variations.png" alt="Adversarial Observation Token Variations">
+    <img src="images/memory_dt2/image18.png" alt="Adversarial Observation Token Variations">
 
-    <p><strong>Figure 15:</strong> Adversarial Observation Token Variations. Added objects are shown red though only the object embedding is added.</p>
+    <p><strong>Figure 16:</strong> Adversarial Observation Token Variations. Added objects are shown red though only the object embedding is added.</p>
 
-    <p><strong>Figure 16</strong> shows us the restored logit difference for each of the three test cases Complement (0,5), Complement (4,2) and Complement (0,5), (4,2) using the original frame as our negative control or “clean” input and Instruction Flipped as our “corrupt”/positive control.</p>
+    <p><strong>Figure 17</strong> shows us the restored logit difference for each of the three test cases Complement (0,5), Complement (4,2) and Complement (0,5), (4,2) using the original frame as our negative control or “clean” input and Instruction Flipped as our “corrupt”/positive control.</p>
 
     <!-- Placeholder for the restored logit difference image -->
-    <img src="path_to_image_placeholder_restored_logit_difference.png" alt="Restored Logit Difference">
+    <img src="images/memory_dt2/image19.png" alt="Restored Logit Difference">
 
-    <p><strong>Figure 16:</strong> Restored Logit Difference between left/right for instruction feature adversaries in scenario 1. (MemoryDT). 8 facet images correspond to each target, instruction and RTG combination. (RTG = 0.892 corresponds to the highest possible reward which an optimal policy would receive. RTG = 0 corresponds to no reward, often achieved by going to the wrong target)</p>
+    <p><strong>Figure 17:</strong> Restored Logit Difference between left/right for instruction feature adversaries in scenario 1. (MemoryDT). 8 facet images correspond to each target, instruction and RTG combination. (RTG = 0.892 corresponds to the highest possible reward which an optimal policy would receive. RTG = 0 corresponds to no reward, often achieved by going to the wrong target)</p>
 
     <p>These results are quite exciting! We were able to predict very particular adversaries in the training data that would cause the model to behave (almost) as if it had seen the opposite instruction and did so from the feature-map (an interpretability tool).</p>
 
-    <p>Let's break the results in <strong>Figure 16</strong> down further:</p>
+    <p>Let's break the results in <strong>Figure 17</strong> down further:</p>
 
     <ol>
         <li>Adding two decoys <strong>isn't as effective as reverse the original instruction</strong>. We expected that adding two “decoy” instructions will work as well as flipping the original instruction but the best result attained is 0.92 and most results are around 0.80-0.90.</li>
@@ -416,7 +416,7 @@
 
     <h4>The adversarial inputs are genuinely changing the presence of the instruction feature</h4>
 
-    <p>For each of the forward passes in the experiment above, we plot the dot product of the instruction feature with the observation embedding against the difference between the logits for turning left and right <em>(Figure 17)</em>. We see that:</p>
+    <p>For each of the forward passes in the experiment above, we plot the dot product of the instruction feature with the observation embedding against the difference between the logits for turning left and right <em>(Figure 18)</em>. We see that:</p>
 
     <ol>
         <li>The dot product of the instruction feature with the observation embedding ranges from about -2 to 2 in each scenario.</li>
@@ -424,25 +424,25 @@
         <li>Whilst flipping the sign on the instruction feature flips the action preference in most cases. However, it fails to do so when the target configuration is “Key-Ball” and R1TG = 0.892. We think that MemoryDT mostly wants to predict “A XOR B” at high R1TG and its complement at low R1TG, but it doesn’t quite do this. This will be discussed in later posts.</li>
     </ol>
 
-    <img src="path/to/figure-15-image.png" alt="Measuring the projection of the S5 observation embeddings" />
-    <figcaption>Figure 17: Measuring the projection of the S5 observation embeddings into the Instruction PC0 direction (x-axis) and showing the logit difference between left / right (y-axis).</figcaption>
+    <img src="images/memory_dt2/image20.png" alt="Measuring the projection of the S5 observation embeddings" />
+    <figcaption>Figure 18: Measuring the projection of the S5 observation embeddings into the Instruction PC0 direction (x-axis) and showing the logit difference between left / right (y-axis).</figcaption>
 
     <h4>Direct Interventions on the Instruction Feature</h4>
-    <p>We directly intervene on the instruction feature on the instruction feature in each of the scenarios tested above, again plotting the logit difference for the final left minus right direction <em>(Figure 18)</em>.</p>
+    <p>We directly intervene on the instruction feature on the instruction feature in each of the scenarios tested above, again plotting the logit difference for the final left minus right direction <em>(Figure 19)</em>.</p>
 
-    <p><strong>This similarity in the functions mapped by the adversarial intervention (Figure 17) and the direct intervention are striking!</strong> They show a very similar functional mapping from the instruction feature sign/magnitude to the logit difference suggesting the instruction feature entirely explains our adversarial results.</p>
+    <p><strong>This similarity in the functions mapped by the adversarial intervention (Figure 18) and the direct intervention are striking!</strong> They show a very similar functional mapping from the instruction feature sign/magnitude to the logit difference suggesting the instruction feature entirely explains our adversarial results.</p>
 
-    <img src="path/to/figure-16-image.png" alt="Intervened Instruction PC0 direction and logit difference" />
-    <figcaption>Figure 18: Intervened Instruction PC0 direction (x-axis) and showing the logit difference between left / right (y-axis).</figcaption>
+    <img src="images/memory_dt2/image21.png" alt="Intervened Instruction PC0 direction and logit difference" />
+    <p><strong>Figure 19:</strong> Intervened Instruction PC0 direction (x-axis) and showing the logit difference between left / right (y-axis).</p>
 
     <h3>Do the Instruction Feature Adversaries Transfer?</h3>
+    <p>Finally, since our explanation of the instruction feature suggests that it represents a meaningful property of the data and that our embedding arithmetic can be interpreted as adversaries, it is reasonable to test if those adversaries transfer to another model trained on the same data. MemoryDT-GatedMLP is a variant of MemoryDT which is vulnerable to the same adversarial features <strong>(Figure 20).</strong> </p>
 
-    <img src="path/to/figure-17-grid.png" alt="Restored Logit Difference between left/right for instruction feature adversaries" />
-    <figcaption>Figure 19: Restored Logit Difference between left/right for instruction feature adversaries. MemoryDT+GatedMLP (RTG = 0.892).</figcaption>
+    <img src="images/memory_dt2/image22.png" alt="Restored Logit Difference between left/right for instruction feature adversaries" />
+    <p><strong>Figure 20:</strong> Restored Logit Difference between left/right for instruction feature adversaries. MemoryDT+GatedMLP (RTG = 0.892).</p>
 
-    <h3>Figure 19 suggests the following:</h3>
-
-    <p>Finally, since our explanation of the instruction feature suggests that it represents a meaningful property of the data and that our embedding arithmetic can be interpreted as adversaries, it is reasonable to test if those adversaries transfer to another model trained on the same data. MemoryDT-GatedMLP is a variant of MemoryDT which is vulnerable to the same adversarial features <strong>(Figure 19).</strong> </p>
+    <p><strong>Figure 20</strong> suggests the following:</p>
+    
     <ol>
       <li><strong>Reversing the instruction feature was more effective.</strong> The effect of adding two keys or two balls to flip the instruction was closer to the effect of flipping the original instruction and in some cases exceeded it.</li>
       <li><strong>Inconsistent effect sizes and asymmetric effect sizes also appeared.</strong> As with MemoryDT, single complements varied in the strength of their effect on the logit difference and the same case of Ball, Ball-Key RTG 0 showed an effect for adding a key at (0,5) was more effective than adding a key at (4,2).</li>
@@ -454,6 +454,38 @@
 
     <h3>Feature Representations in GridWorld Observation Embeddings</h3>
 
+    <h4>Reasoning about MemoryDT’s Observation Embeddings</h4>
+
+    <p>There are a number of ways to explain our results and connect them to previous work. At the broadest level, it’s not surprising to see structure in our embeddings. Highly structured embeddings have been <a href="#">previously linked</a> to generalisation and grokking in toy models and the presence of composable linear features in token embeddings has been <a href="#">known</a> for a long time.</p>
+
+    <p>Moreover, there’s a fairly simple story which can be told to explain many of our observations:</p>
+
+    <ol>
+        <li>Our observation embeddings correspond to features (like a ball at (0,5)) at some level of abstraction in the gridworld/task. A symbolic representation shortcuts the process whereby a convolutional model would first detect a ball at (0,5) with our chosen architecture.</li>
+        <li>These embedding-features had non-trivial patterns of cosine similarity due to partial observability and spatial restraints as well as correlation induced by the specific task. That correlation meant that frequently occurring vocabulary items tended to have embedding vectors that were larger and either aligned or antipodal with other vectors as determined by similar effects to those studied in <a href="#">Anthropic’s Toy Models of Superposition investigation</a>.</li>
+        <li>However, clearly features like ball (0,5) don’t correspond directly to the most useful underlying concepts, which we think are the instruction and “targets”. Thus the model eventually learned to assign directions that represent features like “the instruction is a key” and since these were representing binary variables, MemoryDT made use of antipodal representations for the observations pertaining to instruction/target vocabulary items.</li>
+        <li>We then saw different variations on the relationship between the embeddings and the representations of higher level features:
+            <ul>
+                <li>For the instruction feature, we saw embeddings with pairs of antipodal embedding with high cosine similarity. PCA of these embeddings suggests underlying geometry similar to <a href="#">anisotropic superposition</a>. It seems possible, but unclear whether lower order principal components were meaningful there, but clear that the first component is a meaningful feature that is present in many different embeddings.</li>
+                <li>For the target features, we saw two features (possibility with some overlap) representing the targets as seen from different positions in close to isotropic superposition.</li>
+            </ul>
+        </li>
+    </ol>
+  
+  <h3>WIP: Intervening in the World Model as a type of Eval Tool</h3>
+  
+  <p>Previous work with adversaries and embeddings: <a href="#">Transformer visualization via dictionary learning: contextualized embedding as a linear superposition of transformer factors</a></p>
+  
+  <p>More theoretically, my results add to a body of evidence suggesting that intervening on features may be akin to changing what a model "believes" which would be an incredibly powerful tool for evals. This is a bit subtle but my interventions make the model act as if a particular fact was different. This is very different from just making one action more likely. To apply this, imagine you finetune your model to the point where you can't jailbreak it anymore but want to keep going, making it even more unlikely for the model to ever take hostile or power-seeking actions. One way to do this is to use latent perturbations. Intervene on features to simulate if the model had been jailbroken and then make it so even that wouldn't work. This could be honeypotting on steroids. Not just useful because you can create situations you might not know how to prompt yourself into, but might be a much more efficient way to explore the space of "states of mind the AI could be in" rather than "situations it could be in".</p>
+  
+
+    <p>However, many pertinent questions are still unanswered:</p>
+
+    <ol>
+        <li>To the extent that some embeddings were represented almost antipodally, why weren’t more antipodal? It could be the model was simply undertrained or there could be more to it.</li>
+        <li>How precisely do the feature directions representing the instructions or target formation end up present in so many different embeddings? Did the instruction feature first form in association with more frequently observed vocabulary items and then undergo a <a href="#">phase change</a> in which they spread to other embeddings or was it more continuous?</li>
+        <li>What are the circuits making use of each of these features? Can we understand the learned embedding directions better with reference to the circuits that make use of them or by <a href="#">comparing the directions we find to optimal causal directions</a>?</li>
+    </ol>
 
     <h2>Adversarial Inputs</h2>
     <p>To validate our understanding of the instruction feature, we used both adversarial inputs as well as direct intervention on the instruction feature. We were able to correctly predict which embeddings could be used to trick the model and show that this effect was mediated entirely via the feature we identified.</p>
@@ -479,7 +511,7 @@
 
     <ol>
         <li><strong>The need for counterbalanced additions is tied to antipodality.</strong> Adding a single activation rather than an activation difference was less effective than adding a difference. When reversing the instruction feature, we found that simply adding a single complement was insufficient to reverse the logit difference as compared to two. In both cases, we must overcome the presence of the feature/features contained in the original forward pass that are antipodal with the feature representations in the steering vector. This is why flipping a bell to a key is approximately twice as strong as adding one new key.</li>
-        <li><strong>Coefficient strength may correspond to heterogeneous feature presence.</strong> During steering, it was found that a coefficient was useful for creating stronger steering effects. There are two ways the MemoryDT results may help us understand why this is necessary. It may be that language models activations also contain the same features but at varying magnitudes, akin to the distribution of dot products between embedding vectors and the instruction direction (represented in Mathjax or as an image for Figure 9) which results in different degrees of projection onto the instruction feature in our adversarial prompts (represented in Mathjax or as an image for Figure 19).</li>
+        <li><strong>Coefficient strength may correspond to heterogeneous feature presence.</strong> During steering, it was found that a coefficient was useful for creating stronger steering effects. There are two ways the MemoryDT results may help us understand why this is necessary. It may be that language models activations also contain the same features but at varying magnitudes, akin to the distribution of dot products between embedding vectors and the instruction direction (represented in Mathjax or as an image for Figure 10) which results in different degrees of projection onto the instruction feature in our adversarial prompts (represented in Mathjax or as an image for Figure 20).</li>
     </ol>
 
     <p>Whilst it's possible that common explanations or correspondences here are superficial, this seems unlikely to me (Joseph) and I suspect that for understanding and experimenting with steering vectors, gridworld tasks may be quite informative.</p>
