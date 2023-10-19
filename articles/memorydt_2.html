@@ -98,7 +98,7 @@
             </ul>
         </li>
         <li>
-            <strong>We identify <a href="#linear_feature_representations">interpretable linear feature representations</a> in MemoryDI’s observation embedding space.</strong>
+            <strong>We identify <a href="#linear_feature_representations">interpretable linear feature representations</a> in MemoryDT’s observation embedding space.</strong>
             <ul>
                 <li>We find that Principal Component Analysis of a Subset of Embedding vectors produces vectors that linearly classify the input space according to task relevant concepts.</li>
                 <li>Calling some of these directions linear feature representations, we find that the underlying features appear “smeared” across many embeddings which we interpret as a form of equivariance.</li>
@@ -140,17 +140,19 @@
 
     <h2>Introduction</h2>
 
-    <h3>Why study Decision Transformers?</h3>
+    <h2>Why study GridWorld Decision Transformers?</h2>
 
-    <p><strong>Decision Transformers</strong> are a form of offline RL (reinforcement learning) which enable us to use Transformers to solve traditional RL tasks. While traditional “online” RL trains a model to receive reward by completing a task, offline RL is analogous to language model training with the model being rewarded for predicting the next token.</p>
-
-    <p>Decision Transformers are trained on recorded trajectories which are labelled with the reward achieved, Reward-to-Go (RTG), which enables them to condition on performance quality.</p>
-
-    <p>They are interesting for two reasons:</p>
-    <ul>
-        <li><strong>We can study transformers that are solving much simpler tasks than language models.</strong> Even small models like GPT-1? language models can be <em>quite complicated</em>, but SOTA <a href="#">large language models</a> are transformers so we’d prefer insights that apply to transformers. Working with transformers also gives us the ability to use existing ideas and techniques such as a <a href="#">Mathematical Framework for Transformer Circuits</a>.</li>
-        <li><strong>We might be able to study alignment relevant phenomena in decision transformers.</strong> Previous work has studied alignment relevant phenomena (such as goal misalignment) in the absence of <em>interpretability</em>, or with non-transformer architectures.</li>
-    </ul>
+    <p><a href="#">Decision Transformers</a> are a form of offline RL (reinforcement learning) which enable us to use Transformers to solve traditional RL tasks. While traditional “online” RL trains a model to receive reward by completing a task, offline RL is analogous to language model training with the model being rewarded for predicting the next token.</p>
+    
+    <p>Decision Transformers are trained on recorded trajectories which are labelled with the reward achieved. Reward-to-Go (RIG). RIG is the time-discounted reward stream that the agent should be getting, i.e., if it’s set close to 1 then the model will be incentivised to do well, because it will be taking actions consistent with the reference class of other agents which got this reward. RIG isn’t critical to this post, but will be discussed in more detail in subsequent posts.</p>
+    
+    <p>We’re interested in gridworld decision transformers for the following reasons:</p>
+    <ol>
+        <li>Decision Transformers are smaller/simpler to the language models we want to understand and align. Decision Transformers are transformers, the training trajectories operate a lot like a training corpus and RIG works a lot like an instruction/goal prompting. It may be the case that various phenomena associated with <a href="#">large language models</a> are also present in these models and can be studied.</li>
+        <li>We might be able to study alignment relevant phenomena in decision transformers. Previous work has studied alignment relevant phenomena (such as goal misgeneralization) in the absence of interpretability, or with non-transformer architectures. Decision transformers are more analogous to pre-trained language models or instruction-tuned language models by default, but we could conceivably train them with online learning analogous to RLHF.</li>
+        <li>We’re working with gridworld tasks because they’re simpler and easier to write. Gridworld RL tasks have been used to study <a href="#">alignment relevant properties</a> in the past and we’re able to avoid training convolutional layers to process images which speeds up training.</li>
+    </ol>
+    
 
     <h3>AI Alignment and the Linear Representation Hypothesis</h3>
 
@@ -158,9 +160,9 @@
 
     <p>This post focuses on linear representations for 3 reasons:</p>
     <ol>
-        <li><strong>The Linear Representation Hypothesis seems likely to be true.</strong> Evidence on many fronts suggest that some version of the <a href="#">linear representation hypothesis holds</a>. Also, <a href="#">recent publications</a> show evidence that is possible to find and interpret linear representations in the residual stream. Therefore, it's likely that MemoryDI and other gridworld / decision transformers will make use of linear representations.</li>
+        <li><strong>The Linear Representation Hypothesis seems likely to be true.</strong> Evidence on many fronts suggest that some version of the <a href="#">linear representation hypothesis holds</a>. Also, <a href="#">recent publications</a> show evidence that is possible to find and interpret linear representations in the residual stream. Therefore, it's likely that MemoryDT and other gridworld / decision transformers will make use of linear representations.</li>
         
-        <li><strong>The Linear Representation Hypothesis seems likely to be useful.</strong> If the linear representation hypothesis is true and we're able to find the corresponding directions in deep neural networks, then we may be able to read the thoughts of AI systems directly. Such a feat would not only be step one in <a href="#">retargeting the search</a>, but a huge win for interpretability and many other alignment agendas. Showing that we can retarget the search on MemoryDI is one of various win-scenarios for our work.</li>
+        <li><strong>The Linear Representation Hypothesis seems likely to be useful.</strong> If the linear representation hypothesis is true and we're able to find the corresponding directions in deep neural networks, then we may be able to read the thoughts of AI systems directly. Such a feat would not only be step one in <a href="#">retargeting the search</a>, but a huge win for interpretability and many other alignment agendas. Showing that we can retarget the search on MemoryDT is one of various win-scenarios for our work.</li>
         
         <li>Our results seem interesting from the perspective of <a href="#">superposition</a>, a phenomena which represents a significant obstacle in interpretability. Previously, it was thought that finding meaningful directions in a residual stream would be very difficult due to superposition / entanglement (the property whereby linear features are represented in shared dimensions). Results from recent work with sparse autoencoders found interpretable features which clump together in groups (<a href="#">anisotropic superposition</a>) as opposed to repelling and spreading as far as possible (<a href="#">isotropic superposition</a>).</li>
     </ol>
@@ -168,7 +170,7 @@
 
     <h2>The MiniGrid Memory Task</h2>
 
-    <p><em>MemoryDL</em> is trained to predict actions in trajectories produced by a policy that solves the <strong>MiniGrid Memory</strong> task. In this task, the agent is spawned next to an object (a ball or a key) and is rewarded for walking to the matching object at the end of the corridor. Due to partial observability, the instruction can’t be seen without facing it. <strong>Figure 1</strong> shows all 4 variations on the environment. We refer to the first object as the “instruction” and the latter two objects as the “targets”. The action space is made up of the actions “Left”, “Right” and “Forward” along with 4 other actions not useful in this environment.</p>
+    <p><em>MemoryDT</em> is trained to predict actions in trajectories produced by a policy that solves the <strong>MiniGrid Memory</strong> task. In this task, the agent is spawned next to an object (a ball or a key) and is rewarded for walking to the matching object at the end of the corridor. Due to partial observability, the instruction can’t be seen without facing it. <strong>Figure 1</strong> shows all 4 variations on the environment. We refer to the first object as the “instruction” and the latter two objects as the “targets”. The action space is made up of the actions “Left”, “Right” and “Forward” along with 4 other actions not useful in this environment.</p>
 
     <img src="path_to_combined_image.jpg" alt="All 4 Variations of the MiniGrid Memory Task as seen from the starting position">
     <img src="path_to_combined_gif.gif" alt="A recording of high performing trajectories">
@@ -253,7 +255,7 @@
     <h3>Geometric Structure in Embedding Space</h3>
 
     <p>
-    In order to determine whether MemoryD1 has learned to represent the underlying task-relevant concepts, we start by looking at the observation embedding space.
+    In order to determine whether MemoryDT has learned to represent the underlying task-relevant concepts, we start by looking at the observation embedding space.
     </p>
 
     <p>
@@ -264,10 +266,10 @@
     <b>Channels likely to be activated and likely to be important to the task such as keys/balls appeared to have the largest norms</b>, along with “green” and other channels which may encode useful information. Some of the largest embedding vectors corresponded to vocabulary items that were understandable important such as Ball (2,6), the ball as seen from the starting position, whilst others were less obvious Ball (0,6) which shouldn’t appear unless the agent moves the ball (it can do that). Embedding vectors are initialised with L2 norms of approximately 0.32, but these vectors weren’t subject to weight decay and clearly some grew during training.
     </p>
 
-    <img src="path-to-figureX-image.jpg" alt="Strip Plot of L2 Norms of embedding vectors in MemoryD1’s Observation Space.">
-    <strong>Figure X:</strong> Strip Plot of L2 Norms of embedding vectors in MemoryD1’s Observation Space.
+    <img src="path-to-figureX-image.jpg" alt="Strip Plot of L2 Norms of embedding vectors in MemoryDT’s Observation Space.">
+    <strong>Figure 4:</strong> Strip Plot of L2 Norms of embedding vectors in MemoryDT’s Observation Space.
 
-    <h2>Cosine Similarity Heatmaps reveal Geometric Structure</h2>
+    <h3>Cosine Similarity Heatmaps reveal Geometric Structure</h3>
 
     <p>We initially attempted PCA / U-Map for dimensionality reduction, however neither were particularly informative. However, we were able to borrow the concept of a <a href="#">clustergram</a> from systems biology. The idea is to plot a heatmap of the adjacency matrix, in this case the cosine similarity matrix of the embeddings and reorder rows according to a clustering algorithm. The resulting cosine similarity heatmaps were interesting with and without reordering of rows for clustering (<strong>Figure 5</strong>).</p>
 
@@ -313,6 +315,7 @@
 
     <h3>The Primary Instruction Feature</h3>
     <img src="path/to/heatmap-image.png" alt="Heatmap illustrating the Primary Instruction Feature" />
+    <p><strong>Figure 8: Exploratory Analysis of the “Instruction” subset of Observation Embeddings. Left) Cosine Similarity Heatmap of the Instruction Embeddings. Right) 2D Scatter Plot of the first 2 Principal Components of a PCA generated from the embedding subset.</strong></p>
 
     <p>Previously, we identified that keys/balls at positions (4,2), (4,3), (0,5) and (2,6) as clustering and hypothesised that this may be due to an underlying “instruction feature”. The first 2 principal components of the PCA explain 85.12% of the variance in those embeddings and the first two dimensions create a space in which keys/balls appear in antipodal pairs (Figure 8). This projection is reminiscent of <em>feature splitting/anisotropic superposition</em> which is thought to occur when highly correlated features have similar output actions and <em>antiadditivity found in toy models</em>.</p>
 
@@ -335,11 +338,9 @@
     <h3>Target Features</h3>
 
     <img src="path/to/target-features-image.png" alt="Target Features Visualization" />
+    <p><strong>Figure 11: Exploratory Analysis of the Target Embeddings.Left: Cosine Similarity Heatmap of the Target Embeddings. Right: 2D Scatter Plot of the first 2 Principal Components.</strong></p>
 
-    <h2>Figure 11: Exploratory Analysis of the Target Embeddings.</h2>
-    <p>Left: Cosine Similarity Heatmap of the Target Embeddings. Right: 2D Scatter Plot of the first 2 Principal Components.</p>
-
-    <p>For the target feature, we identified two separate clusters each made up of two sets of almost antipodal pairs (Figure 11). The geometry here is much closer to isotropic <a href="#">suppression / toy model results</a>. The faint-checkerboard pattern suggests the slightest hint of a more general target feature which we suspect may be learnt if we trained MemoryD1 for long enough.</p>
+    <p>For the target feature, we identified two separate clusters each made up of two sets of almost antipodal pairs (Figure 11). The geometry here is much closer to isotropic <a href="#">suppression / toy model results</a>. The faint-checkerboard pattern suggests the slightest hint of a more general target feature which we suspect may be learnt if we trained MemoryDT for long enough.</p>
 
     <p>The first two principal components of the resulting PCA explain 83.69% of the variance in those embeddings and produced interpretable feature maps (Figure 12):</p>
 
@@ -349,16 +350,60 @@
     </ol>
 
     <img src="path/to/heatmap-image.png" alt="Cosine Similarity Heatmap of the Target Embeddings" />
-    <strong>Figure 12: Feature Maps showing Target Embeddings</strong>
-
-    <h2>Figure 12: Feature map showing Instruction PC1 Values (above) and PC2 embedding (below) for embeddings corresponding to Keys/Ball.</h2>
+    <strong>Figure 12: Feature map showing Instruction PC1 Values (above) and PC2 embedding (below) for all embeddings corresponding to Keys/Ball. </strong>
 
     <h3>Using Embedding Arithmetic to Reverse Detected Features</h3>
 
+    <h4>Embedding Arithmetic with the Instruction Feature</h4>
+
+    <h2>Embedding Arithmetic with the Instruction Feature</h2>
+
+    <p>We previously observed that the group of vocabulary items associated with the instruction concept were separated cleanly into Keys and Balls by a single principal component explaining 60% of the total variance associated with 6 vectors included. From this, we hypothesised that this principal component reflects an underlying “instruction feature”. To validate this interpretation, we want to show that we can leverage this prediction in non-trivial ways such as by generating adversarial examples.</p>
+
+    <p>Based on the previous result, we predicted that if we added two vocabulary items matching the opposite instruction (ie: if the instruction is a key, seen at (2,6), we can add a ball to (0,5) and a ball to (4,2)) and this would induce the model to behave as if the instruction were flipped. I've drawn a diagram below to explain the concept (Figure 13).</p>
+
+    <img src="path_to_image_1_placeholder.png" alt="Diagram explaining concept of instruction feature">
+    <strong>Figure 13: Diagram showing the basic inspiration behind “instruction adversaries”.</strong>
+
+    <h4>Effectiveness of Instruction Feature Adversaries</h4>
+    <img src="path_to_image_placeholder_ball_keyball.png" alt="Ball, Key-Ball sequence">
+
+    <p><strong>Figure 14: Animation showing the trajectory associated with the Instruction Reversal Experiment.</strong></p>
+
+    <p>To test adversarial features / embedding arithmetic hypothesis, we generated a set of prompts/trajectories ending in a position where the model’s action preference is directly determined by the observation of the instruction being a key/ball (<strong>Figure 14</strong>). For each of the target/instruction configurations in <strong>Figure 14</strong>, we generate 5 different edits (<strong>Figure 13</strong>) to the first frame:</p>
+
     <ul>
-        <li>Embedding Arithmetic with the Instruction Feature</li>
-        <li>Effectiveness of Instruction Feature Adversaries</li>
+        <li><strong>The original first frame</strong>: This is our negative control.</li>
+        <li><strong>S5 with the instruction flipped</strong>: This is our positive control. Changing the instruction from a key to a ball or vice versa at S5 makes the model flip its left/right preference.</li>
+        <li><strong>S5 complement* instruction added at (0,5)</strong>. We expect this to partially reduce the left-right preference but not flip it. (Unless we also removed the original instruction)</li>
+        <li><strong>S5 with the complement instruction added at (2,4)</strong>. Same as the previous one.</li>
+        <li><strong>S5 with the complement instruction added at (0,5) and (2,4)</strong>. Even though this frame was not present in the training data, we expect it to override the detection of original instruction.</li>
     </ul>
+
+    <p>Note that due to the tokenization of the observation, we can think of adding these vocabulary items to the input as adding adversarial features.</p>
+
+    <p><em>Note: I’m using the word “complement” because if the original instruction was a key, add a ball to reverse it and vice versa.</em></p>
+
+    <img src="path_to_image_placeholder_adversarial_token_variations.png" alt="Adversarial Observation Token Variations">
+
+    <p><strong>Figure 15:</strong> Adversarial Observation Token Variations. Added objects are shown red though only the object embedding is added.</p>
+
+    <p><strong>Figure 16</strong> shows us the restored logit difference for each of the three test cases Complement (0,5), Complement (4,2) and Complement (0,5), (4,2) using the original frame as our negative control or “clean” input and Instruction Flipped as our “corrupt”/positive control.</p>
+
+    <!-- Placeholder for the restored logit difference image -->
+    <img src="path_to_image_placeholder_restored_logit_difference.png" alt="Restored Logit Difference">
+
+    <p><strong>Figure 16:</strong> Restored Logit Difference between left/right for instruction feature adversaries in scenario 1. (MemoryDT). 8 facet images correspond to each target, instruction and RTG combination. (RTG = 0.892 corresponds to the highest possible reward which an optimal policy would receive. RTG = 0 corresponds to no reward, often achieved by going to the wrong target)</p>
+
+    <p>These results are quite exciting! We were able to predict very particular adversaries in the training data that would cause the model to behave (almost) as if it had seen the opposite instruction and did so from the feature-map (an interpretability tool).</p>
+
+    <p>Let's break the results in <strong>Figure 16</strong> down further:</p>
+
+    <ol>
+        <li>Adding two decoys <strong>isn't as effective as reverse the original instruction</strong>. We expected that adding two “decoy” instructions will work as well as flipping the original instruction but the best result attained is 0.92 and most results are around 0.80-0.90.</li>
+        <li>Adding a single decoy <strong>isn't consistently additive</strong>. If the effects were linear, we would expect that adding each single decoy would restore ~half the logit difference. This appears to be roughly the case half the time. If the effect was non-linear and we needed both to achieve the result, adding each alone would achieve a negligible effect. This also happens in some cases.</li>
+        <li>The effect of individual decoys should be symmetric in their effects under our theory but they <strong>aren’t always</strong>. In the case of Ball, Ball-Key at RTG 0. Adding a key at (0,5) alone achieves 0.43 of the logits difference of both complements but adding a key at (4,2) achieves 0.03.</li>
+    </ol>
 
     <h3>Proving that Instruction Feature Adversaries operate only via the Instruction Feature.</h3>
 
@@ -369,42 +414,41 @@
         <li>We show that we can <strong>directly intervene on the instruction feature</strong> to induce the same effects as the adversaries or flipping the instruction.</li>
     </ol>
 
-    <p>The adversarial inputs are genuinely changing the presence of the instruction feature</p>
+    <h4>The adversarial inputs are genuinely changing the presence of the instruction feature</h4>
 
-    <p>For each of the forward passes in the experiment above, we plot the dot product of the instruction feature with the observation embedding against the difference between the logits for turning left and right <em>(Figure 15)</em>. We see that:</p>
+    <p>For each of the forward passes in the experiment above, we plot the dot product of the instruction feature with the observation embedding against the difference between the logits for turning left and right <em>(Figure 17)</em>. We see that:</p>
 
     <ol>
         <li>The dot product of the instruction feature with the observation embedding ranges from about -2 to 2 in each scenario.</li>
         <li>Complement (0,5), (4,2) isn’t projecting as strongly into the instruction feature direction as the Instruction Flipped observation. This may explain why our restored logit differences weren’t stronger before. We weren’t flipping the instruction feature hard enough.</li>
-        <li>Whilst flipping the sign on the instruction feature flips the action preference in most cases. However, it fails to do so when the target configuration is “Key-Ball” and R1TG = 0.892. We think that MemoryD1 mostly wants to predict “A XOR B” at high R1TG and its complement at low R1TG, but it doesn’t quite do this. This will be discussed in later posts.</li>
+        <li>Whilst flipping the sign on the instruction feature flips the action preference in most cases. However, it fails to do so when the target configuration is “Key-Ball” and R1TG = 0.892. We think that MemoryDT mostly wants to predict “A XOR B” at high R1TG and its complement at low R1TG, but it doesn’t quite do this. This will be discussed in later posts.</li>
     </ol>
 
     <img src="path/to/figure-15-image.png" alt="Measuring the projection of the S5 observation embeddings" />
-    <figcaption>Figure 15: Measuring the projection of the S5 observation embeddings into the Instruction PC0 direction (x-axis) and showing the logit difference between left / right (y-axis).</figcaption>
+    <figcaption>Figure 17: Measuring the projection of the S5 observation embeddings into the Instruction PC0 direction (x-axis) and showing the logit difference between left / right (y-axis).</figcaption>
 
-    <h3>Direct Interventions on the Instruction Feature</h3>
-    <p>We directly intervene on the instruction feature on the instruction feature in each of the scenarios tested above, again plotting the logit difference for the final left minus right direction <em>(Figure 16)</em>.</p>
+    <h4>Direct Interventions on the Instruction Feature</h4>
+    <p>We directly intervene on the instruction feature on the instruction feature in each of the scenarios tested above, again plotting the logit difference for the final left minus right direction <em>(Figure 18)</em>.</p>
 
-    <p><strong>This similarity in the functions mapped by the adversarial intervention (Figure 15) and the direct intervention are striking!</strong> They show a very similar functional mapping from the instruction feature sign/magnitude to the logit difference suggesting the instruction feature entirely explains our adversarial results.</p>
+    <p><strong>This similarity in the functions mapped by the adversarial intervention (Figure 17) and the direct intervention are striking!</strong> They show a very similar functional mapping from the instruction feature sign/magnitude to the logit difference suggesting the instruction feature entirely explains our adversarial results.</p>
 
     <img src="path/to/figure-16-image.png" alt="Intervened Instruction PC0 direction and logit difference" />
-    <figcaption>Figure 16: Intervened Instruction PC0 direction (x-axis) and showing the logit difference between left / right (y-axis).</figcaption>
+    <figcaption>Figure 18: Intervened Instruction PC0 direction (x-axis) and showing the logit difference between left / right (y-axis).</figcaption>
 
     <h3>Do the Instruction Feature Adversaries Transfer?</h3>
 
-    <!-- Placeholder for the Figure 17 grid of images -->
     <img src="path/to/figure-17-grid.png" alt="Restored Logit Difference between left/right for instruction feature adversaries" />
-    <figcaption>Figure 17: Restored Logit Difference between left/right for instruction feature adversaries. MemoryDI+GatedMLP (RTG = 0.892).</figcaption>
+    <figcaption>Figure 19: Restored Logit Difference between left/right for instruction feature adversaries. MemoryDT+GatedMLP (RTG = 0.892).</figcaption>
 
-    <h3>Figure 17 suggests the following:</h3>
+    <h3>Figure 19 suggests the following:</h3>
 
-    <p>Finally, since our explanation of the instruction feature suggests that it represents a meaningful property of the data and that our embedding arithmetic can be interpreted as adversaries, it is reasonable to test if those adversaries transfer to another model trained on the same data. MemoryDT-GatedMLP is a variant of MemoryDT which is vulnerable to the same adversarial features <strong>(Figure 17).</strong> </p>
+    <p>Finally, since our explanation of the instruction feature suggests that it represents a meaningful property of the data and that our embedding arithmetic can be interpreted as adversaries, it is reasonable to test if those adversaries transfer to another model trained on the same data. MemoryDT-GatedMLP is a variant of MemoryDT which is vulnerable to the same adversarial features <strong>(Figure 19).</strong> </p>
     <ol>
       <li><strong>Reversing the instruction feature was more effective.</strong> The effect of adding two keys or two balls to flip the instruction was closer to the effect of flipping the original instruction and in some cases exceeded it.</li>
-      <li><strong>Inconsistent effect sizes and asymmetric effect sizes also appeared.</strong> As with MemoryDI, single complements varied in the strength of their effect on the logit difference and the same case of Ball, Ball-Key RTG 0 showed an effect for adding a key at (0,5) was more effective than adding a key at (4,2).</li>
+      <li><strong>Inconsistent effect sizes and asymmetric effect sizes also appeared.</strong> As with MemoryDT, single complements varied in the strength of their effect on the logit difference and the same case of Ball, Ball-Key RTG 0 showed an effect for adding a key at (0,5) was more effective than adding a key at (4,2).</li>
     </ol>
 
-    <p>Since MemoryDI+Gated MLP is a fairly similar model to MemoryDI, it's not particularly surprising that the adversaries transfer.</p>
+    <p>Since MemoryDT+Gated MLP is a fairly similar model to MemoryDT, it's not particularly surprising that the adversaries transfer.</p>
 
     <h2>Discussion</h2>
 
@@ -415,8 +459,8 @@
     <p>To validate our understanding of the instruction feature, we used both adversarial inputs as well as direct intervention on the instruction feature. We were able to correctly predict which embeddings could be used to trick the model and show that this effect was mediated entirely via the feature we identified.</p>
 
     <h2>Adversaries and Interpretability</h2>
-    <p>In general, our results support previous arguments that <a href="#">study of interpretability and adversaries are inseparable</a>. However, previous results connect <a href="#">adversarial robustness</a> to interpretability whereas this seems not to apply here. That the instruction feature was present in the embeddings of so many vocabulary items was both the reason we were able to interpret it and the reason it wasn't adversarially robust. Rather, MemoryDI' used a coherent, interpretable strategy to detect the instruction from lower level features that made it vulnerable to adversarial, out-of-distribution inputs. Moreover, in order to be robust to the adversaries we designed and still perform well on the original training distribution, we would predict that MemoryDI' would need to implement more complicated circuitry/representations that would be less interpretable.</p>
-    <p>One possible explanation is that adversarial robustness may be generally associated with crisper abstractions which favour interpretability but robustness to adversaries which deliberately break with simpler abstractions may not. This may be important to future interpretability in the gridworld context as we could study our ability to interpret models like MemoryDI' after training them to be adversarially robust to such examples.</p>
+    <p>In general, our results support previous arguments that <a href="#">study of interpretability and adversaries are inseparable</a>. However, previous results connect <a href="#">adversarial robustness</a> to interpretability whereas this seems not to apply here. That the instruction feature was present in the embeddings of so many vocabulary items was both the reason we were able to interpret it and the reason it wasn't adversarially robust. Rather, MemoryDT used a coherent, interpretable strategy to detect the instruction from lower level features that made it vulnerable to adversarial, out-of-distribution inputs. Moreover, in order to be robust to the adversaries we designed and still perform well on the original training distribution, we would predict that MemoryDT would need to implement more complicated circuitry/representations that would be less interpretable.</p>
+    <p>One possible explanation is that adversarial robustness may be generally associated with crisper abstractions which favour interpretability but robustness to adversaries which deliberately break with simpler abstractions may not. This may be important to future interpretability in the gridworld context as we could study our ability to interpret models like MemoryDT after training them to be adversarially robust to such examples.</p>
 
     <h2>Adversaries and Superposition</h2>
     <p>There are many <a href="#">reasons to think that adversaries are not bugs, they are features</a>. However, it has been suggested that <a href="#">vulnerability to adversarial examples</a> may be explained by superposition. The argument suggests that unrelated features in superposition can be adversarially perturbed, confusing the model, which would fit into the general category of adversaries as bugs.</p>
@@ -435,7 +479,7 @@
 
     <ol>
         <li><strong>The need for counterbalanced additions is tied to antipodality.</strong> Adding a single activation rather than an activation difference was less effective than adding a difference. When reversing the instruction feature, we found that simply adding a single complement was insufficient to reverse the logit difference as compared to two. In both cases, we must overcome the presence of the feature/features contained in the original forward pass that are antipodal with the feature representations in the steering vector. This is why flipping a bell to a key is approximately twice as strong as adding one new key.</li>
-        <li><strong>Coefficient strength may correspond to heterogeneous feature presence.</strong> During steering, it was found that a coefficient was useful for creating stronger steering effects. There are two ways the MemoryDI' results may help us understand why this is necessary. It may be that language models activations also contain the same features but at varying magnitudes, akin to the distribution of dot products between embedding vectors and the instruction direction (represented in Mathjax or as an image for Figure 9) which results in different degrees of projection onto the instruction feature in our adversarial prompts (represented in Mathjax or as an image for Figure 15).</li>
+        <li><strong>Coefficient strength may correspond to heterogeneous feature presence.</strong> During steering, it was found that a coefficient was useful for creating stronger steering effects. There are two ways the MemoryDT results may help us understand why this is necessary. It may be that language models activations also contain the same features but at varying magnitudes, akin to the distribution of dot products between embedding vectors and the instruction direction (represented in Mathjax or as an image for Figure 9) which results in different degrees of projection onto the instruction feature in our adversarial prompts (represented in Mathjax or as an image for Figure 19).</li>
     </ol>
 
     <p>Whilst it's possible that common explanations or correspondences here are superficial, this seems unlikely to me (Joseph) and I suspect that for understanding and experimenting with steering vectors, gridworld tasks may be quite informative.</p>
@@ -448,20 +492,20 @@
         <li><strong>MemoryDT Circuit Analysis:</strong>
             <ul>
                 <li>Show how the embeddings/features are used by circuits to generate predictions about the next action.</li>
-                <li>Explain why/how Memory DTI fails to flips in action preferences when it does.</li>
+                <li>Explain why/how MemoryDT fails to flips in action preferences when it does.</li>
                 <li>Study more trajectories than in this investigation.</li>
             </ul>
         </li>
 
         <li><strong>Studying Reward-to-Go:</strong>
             <ul>
-                <li>Provide insight as to how MemoryDTI conditions on RTG, and show how this affects related circuits.</li>
+                <li>Provide insight as to how MemoryDT conditions on RTG, and show how this affects related circuits.</li>
             </ul>
         </li>
 
         <li><strong>Training Dynamics:</strong>
             <ul>
-                <li>Understand the training dynamics of circuits/features in MemoryDTI and similar gridworld models.</li>
+                <li>Understand the training dynamics of circuits/features in MemoryDT and similar gridworld models.</li>
                 <li>We’re particularly interested in understanding whether phase changes such as those associated with grokking can be understood with reference to features quickly “spreading” to distinct embeddings, head outputs or neuron activations.</li>
             </ul>
         </li>
@@ -482,9 +526,9 @@
 
     <li><strong>Antipodal:</strong> An antipodal representation is a pair of features that are opposite to each other while both occupying a single direction - one positive, and one negative.</li>
 
-    <li><strong>Decision Transformer:</strong> A Decision Transformer treats reinforcement learning as a sequence modelling problem, letting us train a transformer to predict what a trained RL agent would do in a given environment. In this post, we do this on a gridworld task to train our MemoryDTI agent.</li>
+    <li><strong>Decision Transformer:</strong> A Decision Transformer treats reinforcement learning as a sequence modelling problem, letting us train a transformer to predict what a trained RL agent would do in a given environment. In this post, we do this on a gridworld task to train our MemoryDT agent.</li>
 
-    <li><strong>Embedding:</strong> An embedding is the initial representation of the input before computation or attention is applied. In a language model, the input is the model’s vocabulary. In MemoryDTI, the input is the 7x7x20 tensor representing the model’s observations of the gridworld space.</li>
+    <li><strong>Embedding:</strong> An embedding is the initial representation of the input before computation or attention is applied. In a language model, the input is the model’s vocabulary. In MemoryDT, the input is the 7x7x20 tensor representing the model’s observations of the gridworld space.</li>
 
     <li><strong>Feature:</strong> A feature is any property of the input and therefore could correspond to any of the following:
         <ul>
@@ -505,11 +549,11 @@
         </ul>
     </li>
 
-    <li><strong>Offline RL:</strong> RL that only uses previously collected data for training. Contrasted with online RL, where the agent learns by interacting with the environment directly. MemoryDTI is trained using offline RL, since it does not create trajectories itself during training.</li>
+    <li><strong>Offline RL:</strong> RL that only uses previously collected data for training. Contrasted with online RL, where the agent learns by interacting with the environment directly. MemoryDT is trained using offline RL, since it does not create trajectories itself during training.</li>
 
     <li><strong>Principal Component Analysis:</strong> Principal component analysis, or PCA, is a dimensionality reduction method that is often used to reduce the number of variables of a data set, while preserving as much information as possible.</li>
 
-    <li><strong>Reward-To-Go:</strong> The reward value that MemoryDTI is predicting the sequence for. High values (0.892) imply correct sequences, while low values (0) imply the model should play incorrectly.</li>
+    <li><strong>Reward-To-Go:</strong> The reward value that MemoryDT is predicting the sequence for. High values (0.892) imply correct sequences, while low values (0) imply the model should play incorrectly.</li>
 
     <li><strong>Target:</strong> Targets are the key/ball pair that the agent can move into in order to end the current episode. The target should match the instruction for a successful completion.</li>
 
