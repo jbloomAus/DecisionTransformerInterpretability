@@ -24,11 +24,11 @@
     d-article li {
         margin-bottom: 0em;
     }
+    d-article ul {
+      margin-bottom: 0em;
+  }
 </style>
-
 </head>
-
-
 
 <body>
   <distill-header></distill-header>
@@ -74,7 +74,7 @@
     <a class="marker" href="#section-1" id="section-1"><span>1</span></a>
     <h2>TL;DR</h2>
     <p>
-      We analyse the embedding space of a gridworld decision transformer showing that it has developed extensive structure which reflects properties of the model, the gridworld environment and the task. We’re able to extract features and corresponding linear feature representations. Finding that one of these feature representations is present in many different embeddings, we predicted several adversarial inputs  (observations with “distractor” items) that trick the model about what it is seeing. We show that these adversaries work as effectivelye as changing the feature (in the environment), but that we can also intervene directly on the underlying linear feature representation to achieve the same effects. Whilst methodologically simple, this analysis shows that mechanistic investigation of gridworld models are tractable and may support fundamental mechanistic interpretability research and its application to AI alignment. <br><br> 
+      We analyse the embedding space of a gridworld decision transformer showing that it has developed extensive structure which reflects properties of the model, the gridworld environment and the task. We’re able to extract features and corresponding linear feature representations. Finding that one of these feature representations is present in many different embeddings, we predicted several adversarial inputs  (observations with “distractor” items) that trick the model about what it is seeing. We show that these adversaries work as effectively as changing the feature (in the environment), but that we can also intervene directly on the underlying linear feature representation to achieve the same effects. Whilst methodologically simple, this analysis shows that mechanistic investigation of gridworld models are tractable and may support fundamental mechanistic interpretability research and its application to AI alignment. <br><br> 
 
       For readers short on time, we recommend reading the following sections:
       <ol>
@@ -84,60 +84,94 @@
       </ol> 
     </p>
     <h2>Key Results</h2>
+    <h3>Object Level Results</h3>
     <ul>
         <li>
             <strong>We show that our observation space has extensive <a href="#geometric_structure">geometric structure</a>.</strong>
             <ul>
                 <li>We think this structure is induced by properties of experimental set up (partial observations), architectural design (compositional embedding schema) and nature of the RL task.</li>
                 <li>The learned structure included the use of clustered embeddings and antipodal pairs.</li>
-                <li>We see examples of <a href="#isotropic">isotropic</a> and <a href="#anisotropic">anisotropic superposition</a>.</li>
+                <li>We see examples of <a href="#isotropic">isotropic</a> and <a href="https://www.google.com/url?q=https://transformer-circuits.pub/2023/monosemantic-features/index.html%23phenomenology-feature-splitting&sa=D&source=editors&ust=1697689300191473&usg=AOvVaw2oF_lthm1whpGnFMS5lA5A">anisotropic superposition</a>.</li>
             </ul>
         </li>
         <li>
-            <strong>We identify <a href="#linear_feature_representations">interpretable linear feature representations</a> in MemoryDI’s observation embedding space.</strong>
+            <strong>We identify <a href="#linear_feature_representations">interpretable linear feature representations</a> in MemoryDT’s observation embedding space.</strong>
             <ul>
-                <li>We find that Principal Component Analysis of a Subset of Embedding vectors produces vectors that linearly classify the input space according to task relevant concepts.</li>
-                <li>Calling some of these directions linear feature representations, we find that the underlying features appear “smeared” across many embeddings which we interpret as a form of equivariance.</li>
+                <li>We find that Principal Component Analysis of a subset of embedding vectors produces vectors that linearly classify the input space according to task relevant concepts.</li>
+                <li>We find that the underlying features appear “smeared” across many embeddings which we interpret as a form of equivariance.</li>
             </ul>
         </li>
         <li>
             <strong>We causally validate one of these features, the “<a href="#instruction_feature">instruction feature</a>” using <a href="#adversarial_inputs">adversarial inputs/embedding arithmetic</a> and <a href="#direct_interventions">direct interventions</a>.</strong>
             <ul>
-                <li>Adversarial examples provide a clear demonstration that the instruction feature can be leveraged.</li>
-                <li>Due to how we embed observations, this experiment can be related to embedding arithmetic/steering vectors.</li>
-                <li>To provide more detail/rigour, we directly intervene on the instruction feature to show it is causal.</li>
-                <li>We also show that the adversaries transfer to a different model trained on the same training data.</li>
+              <li>It’s easy to break models trained on simple tasks, but our adversaries are targeted, directly flipping the models' detection of the learned feature. </li>
+              <li>The prediction behind our adversaries also included an arithmetic component which we validated, enabling us to relate our results to arithmetic techniques used to generate steering vectors. </li>
+              <li>For rigour and completeness, we use direct intervention on the feature to show that it is causal.</li>
+              <li>Lastly, we confirm that the adversarial inputs transfer to a different model trained on the same data indicating consistent with our adversary working via a feature not a bug.</li> 
+              
             </ul>
         </li>
     </ul>
-    <h2>Introduction</h2>
 
-    <h3>Why study Decision Transformers?</h3>
-
-    <p><strong>Decision Transformers</strong> are a form of offline RL (reinforcement learning) which enable us to use Transformers to solve traditional RL tasks. While traditional “online” RL trains a model to receive reward by completing a task, offline RL is analogous to language model training with the model being rewarded for predicting the next token.</p>
-
-    <p>Decision Transformers are trained on recorded trajectories which are labelled with the reward achieved, Reward-to-Go (RTG), which enables them to condition on performance quality.</p>
-
-    <p>They are interesting for two reasons:</p>
+    <h3>WIP: Broader Implications</h3>
     <ul>
-        <li><strong>We can study transformers that are solving much simpler tasks than language models.</strong> Even small models like GPT-1? language models can be <em>quite complicated</em>, but SOTA <a href="#">large language models</a> are transformers so we’d prefer insights that apply to transformers. Working with transformers also gives us the ability to use existing ideas and techniques such as a <a href="#">Mathematical Framework for Transformer Circuits</a>.</li>
-        <li><strong>We might be able to study alignment relevant phenomena in decision transformers.</strong> Previous work has studied alignment relevant phenomena (such as goal misalignment) in the absence of <em>interpretability</em>, or with non-transformer architectures.</li>
+        <li><strong>Features Stuff:</strong>
+            <ul>
+                <li>My work shows that an architectural approach to interpretability can be valuable, even without eliminating polysemanticity.</li>
+                <li>We add to a body of evidence suggesting that intervening on features may be akin to changing what a model "believes" which would be an incredibly powerful tool for evals.</li>
+            </ul>
+        </li>
+
+        <li><strong>Applied Stuff</strong>
+            <ul>
+                <li>We're able to propose <a href="https://docs.google.com/document/d/1FNd4KbYRRPbs1YVLlsDUGpshZ68AIdDKYyI5uQz3TQM/edit#heading=h.xrdmr0yhnwgw">a testable hypothesis</a> around how adversarial prompts work to jailbreak language models.</li>
+                <li>The results here make it easier to understand/study the <a href="https://docs.google.com/document/d/1FNd4KbYRRPbs1YVLlsDUGpshZ68AIdDKYyI5uQz3TQM/edit#heading=h.7yejkprmgk38">phenomenology of steering vectors</a>.</li>
+            </ul>
+        </li>
+
+        <li>We see elements of toy model, vision and language model phenomena (which is interesting from the perspective of unifying interpretability work at different scales/modalities).
+            <ul>
+                <li>DIs trained on toy models are a useful playground for the study of related phenomena in language models, because we can see similar ideas crop up in different contexts.</li>
+            </ul>
+        </li>
     </ul>
 
-    <h3>The Linear Feature Hypothesis</h3>
+    <h2>Introduction</h2>
 
-    <p>Linear feature representations are a hot topic in Mechanistic interpretability <strong>because they represent a best case scenario for interpretability</strong>. Efforts have been made to find linear feature representations in the residual stream with techniques such as <a href="#">sparse auto-encoders</a> or <a href="#">sparse linear probing</a>. These techniques seek to find a sparse, over-complete linear solution to <strong>superposition</strong>/lack of an <strong>interpretable basis</strong> in the residual stream.</p>
+    <h2>Why study GridWorld Decision Transformers?</h2>
 
-    <p><em>In simple English, if the linear feature hypothesis is true and we’re able to find the corresponding directions in deep neural networks, we may be able to read the thoughts of AI systems directly.</em></p>
+    <p><a href="https://www.google.com/url?q=https://arxiv.org/abs/2106.01345&sa=D&source=editors&ust=1697689300194242&usg=AOvVaw3VYDT5VZH8BRgQMCFzqqhO">Decision Transformers</a> are a form of offline RL (reinforcement learning) which enable us to use Transformers to solve traditional RL tasks. While traditional “online” RL trains a model to receive reward by completing a task, offline RL is analogous to language model training with the model being rewarded for predicting the next token.</p>
+    
+    <p>Decision Transformers are trained on recorded trajectories which are labelled with the reward achieved. Reward-to-Go (RIG). RIG is the time-discounted reward stream that the agent should be getting, i.e., if it’s set close to 1 then the model will be incentivised to do well, because it will be taking actions consistent with the reference class of other agents which got this reward. RIG isn’t critical to this post, but will be discussed in more detail in subsequent posts.</p>
+    
+    <p>We’re interested in gridworld decision transformers for the following reasons:</p>
+    <ol>
+        <li>Decision Transformers are smaller/simpler to the language models we want to understand and align. Decision Transformers are transformers, the training trajectories operate a lot like a training corpus and RIG works a lot like an instruction/goal prompting. It may be the case that various phenomena associated with <a href="https://www.google.com/url?q=https://openai.com/research/gpt-4&sa=D&source=editors&ust=1697689300195010&usg=AOvVaw0cOwkTfQ2FF2BY2iKlSTaE">large language models</a> are also present in these models and can be studied.</li>
+        <li>We might be able to study alignment relevant phenomena in decision transformers. Previous work has studied alignment relevant phenomena (such as goal misgeneralization) in the <a href="https://www.google.com/url?q=https://arxiv.org/abs/1711.09883&sa=D&source=editors&ust=1697689300195324&usg=AOvVaw2Cgs54NZajORflqbZ6-FFJ">absence of interpretability</a>, or with <a href="https://www.google.com/url?q=https://www.lesswrong.com/posts/cAC4AXiNC5ig6jQnc/understanding-and-controlling-a-maze-solving-policy-network&sa=D&source=editors&ust=1697689300195503&usg=AOvVaw2GTpjCdoks_iBJrYtkRZ4z">non-transformer</a> <a href="https://distill.pub/2020/understanding-rl-vision">architectures</a>. Decision transformers are more analogous to pre-trained language models or instruction-tuned language models by default, but we could conceivably train them with online learning analogous to RLHF.</li>
+        <li>We’re working with gridworld tasks because they’re simpler and easier to write. Gridworld RL tasks have been used to study <a href="https://www.google.com/url?q=https://arxiv.org/abs/1711.09883&sa=D&source=editors&ust=1697689300195875&usg=AOvVaw3zjubmq_HFiS0v5nxOt6L7">alignment relevant properties</a> in the past and we’re able to avoid training convolutional layers to process images which speeds up training.</li>
+    </ol>
+    
 
-    <p>Anthropic’s most recent publication <a href="#">Towards Monosemanticity: Decomposing Language Models With Dictionary Learning</a>, shows convincing evidence that is possible to find and interpret such a basis in the residual stream. Among other results, they found that some features clump together in groups (<strong>anisotropic superposition</strong>) as opposed to repelling and spreading as far as possible (<strong>isotropic superposition</strong>). They also conjecture that features clumping together may correspond to features that are likely to produce similar behaviours in the model.</p>
+    <h3>AI Alignment and the Linear Representation Hypothesis</h3>
+
+    <p>The <a href="https://www.google.com/url?q=https://transformer-circuits.pub/2022/toy_model/index.html%23motivation&sa=D&source=editors&ust=1697689300196253&usg=AOvVaw0-Q3o4WFOncfqXBP_tHyKD">linear representation hypothesis</a> proposes that the neural networks represent features of the input as directions in latent space.</p>
+
+    <p>This post focuses on linear representations for 3 reasons:</p>
+    <ol>
+        <li><strong>The Linear Representation Hypothesis seems likely to be true.</strong> Evidence on many fronts suggest that <a href="https://www.google.com/url?q=https://www.beren.io/2023-04-04-DL-models-are-secretly-linear/&sa=D&source=editors&ust=1697689300196673&usg=AOvVaw2DuQx2mOm9nizxSiWSXdLB"></a>some version of the linear representation hypothesis holds</a>. Also, <a href="https://www.google.com/url?q=https://arxiv.org/pdf/2309.08600.pdf&sa=D&source=editors&ust=1697689300196783&usg=AOvVaw2xj4qsOSo6s6gGkCXptDcL">recent</a> <a href="https://www.google.com/url?q=https://transformer-circuits.pub/2023/monosemantic-features/index.html&sa=D&source=editors&ust=1697689300196917&usg=AOvVaw1odu0hp6ZcaciNVPHNhpdI">publications</a> show evidence that is possible to find and interpret linear representations in the residual stream. Therefore, it's likely that MemoryDT and other gridworld / decision transformers will make use of linear representations.</li>
+        
+        <li><strong>The Linear Representation Hypothesis seems likely to be useful.</strong> If the linear representation hypothesis is true and we're able to find the corresponding directions in deep neural networks, then we may be able to read the thoughts of AI systems directly. Such a feat would not only be step one in <a href="https://www.google.com/url?q=https://www.lesswrong.com/posts/w4aeAFzSAguvqA5qu/how-to-go-from-interpretability-to-alignment-just-retarget&sa=D&source=editors&ust=1697689300197401&usg=AOvVaw370vU5dqaa2lncLV73BGwI">retargeting the search</a>, but a huge win for interpretability and many other alignment agendas. Showing that we can retarget the search on MemoryDT is one of various win-scenarios for our work.</li>
+        
+        <li>Our results seem interesting from the perspective of <a href="https://www.google.com/url?q=https://transformer-circuits.pub/2022/toy_model/index.html&sa=D&source=editors&ust=1697689300197639&usg=AOvVaw3lX3jsHvBw1h1pOJ1x5OIR">superposition</a>, a phenomena which represents a significant obstacle in interpretability. Previously, it was thought that finding meaningful directions in a residual stream would be very difficult due to superposition / entanglement (the property whereby linear features are represented in shared dimensions). Results from recent work with sparse autoencoders found interpretable features which clump together in groups (<strong>anisotropic superposition</strong>) as opposed to repelling and spreading as far as possible (<strong>isotropic superposition</strong>).</li>
+    </ol>
+
 
     <h2>The MiniGrid Memory Task</h2>
 
-    <p><em>MemoryDL</em> is trained to predict actions in trajectories produced by a policy that solves the <strong>MiniGrid Memory</strong> task. In this task, the agent is spawned next to an object (a ball or a key) and is rewarded for walking to the matching object at the end of the corridor. Due to partial observability, the instruction can’t be seen without facing it. <strong>Figure 1</strong> shows all 4 variations on the environment. We refer to the first object as the “instruction” and the latter two objects as the “targets”. The action space is made up of the actions “Left”, “Right” and “Forward” along with 4 other actions not useful in this environment.</p>
+    <p><a href="https://www.google.com/url?q=https://www.lesswrong.com/posts/JvQWbrbPjuvw4eqxv/a-mechanistic-interpretability-analysis-of-a-gridworld-agent&sa=D&source=editors&ust=1697689300198182&usg=AOvVaw0rmLWFVNUPq7ysl7K-6yZY">MemoryDT</a> is trained to predict actions in trajectories produced by a policy that solves the <a href="https://www.google.com/url?q=https://minigrid.farama.org/index.html&sa=D&source=editors&ust=1697689300198327&usg=AOvVaw1fPFZFyT1I8aBTLPV9PHE4">MiniGrid</a> Memory task. In this task, the agent is spawned next to an object (a ball or a key) and is rewarded for walking to the matching object at the end of the corridor. Due to partial observability, the instruction can’t be seen without facing it. <strong>Figure 1</strong> shows all 4 variations on the environment. We refer to the first object as the “instruction” and the latter two objects as the “targets”. The action space is made up of the actions “Left”, “Right” and “Forward” along with 4 other actions not useful in this environment.</p>
 
-    <img src="path_to_combined_image.jpg" alt="All 4 Variations of the MiniGrid Memory Task as seen from the starting position">
-    <img src="path_to_combined_gif.gif" alt="A recording of high performing trajectories">
+    <img src="images/memory_dt2/image1.png" alt="All 4 Variations of the MiniGrid Memory Task as seen from the starting position">
+    <img src="images/memory_dt2/image2.gif" alt="A recording of high performing trajectories">
 
     <p><strong>Figure 1: MiniGrid Memory Task Partial Observations.</strong> Above: All 4 Variations of the MiniGrid Memory Task as seen from the starting position. Below: A recording of high performing trajectories.</p>
 
@@ -162,17 +196,17 @@
 
     <p><strong>Figure 2</strong> shows how the decision transformer architecture interacts with the gridworld observations and the central decision. We discuss tokenization of the observation in the next section.</p>
 
-    <img src="path-to-figure2-image.jpg" alt="Decision Transformer Diagram with Gridworld Observations">
+    <img src="images/memory_dt2/image3.png" alt="Decision Transformer Diagram with Gridworld Observations">
     <strong>Figure 2:</strong> Decision Transformer Diagram with Gridworld Observations. R corresponds to the tokenized Reward-to-Go, S stands in for state (replaced with O in practice we have partial observations). A corresponds to actions tokens.
     
     <h3>MemoryDT Observation Embeddings are constructed via a Compositional Code.</h3>
     
     <p>
-    In order to adapt the Decision Transformer architecture to gridworld tasks we tokenize the observations using a <a href="path-to-compositional-code-link.html">compositional code</a> whose components are “objects at (x,y)” or colour at (x,y). For example, Key at (2,3) will have its own embedding and so will Green (2,3) etc. <strong>Figure 3</strong> shows example observations with important vocabulary items shown.
+    In order to adapt the Decision Transformer architecture to gridworld tasks we tokenize the observations using a <a href="https://www.google.com/url?q=https://transformer-circuits.pub/2023/superposition-composition/index.html%23distributed-compositional&sa=D&source=editors&ust=1697689300201170&usg=AOvVaw18ozniSQ7pL5wvRmEeDG5Y">compositional code</a> whose components are “objects at (x,y)” or colour at (x,y). For example, Key at (2,3) will have its own embedding and so will Green (2,3) etc. <strong>Figure 3</strong> shows example observations with important vocabulary items shown.
     </p>
 
     <figure>
-        <img src="path-to-figure3-image.jpg" alt="Example Observations with annotated target/instruction vocabulary items">
+        <img src="images/memory_dt2/image4.png" alt="Example Observations with annotated target/instruction vocabulary items">
         <figcaption>
             <strong>Figure 3:</strong> Example Observations with annotated target/instruction vocabulary items.
         </figcaption>
@@ -192,14 +226,15 @@
     Where \( o_t \) is the observation embedding (which is a vector of length 256), \( i \) is the horizontal position, \( j \) is the vertical position, \( c \) is the channel (colour, object or state), and \( f_{i,j,c} \) is the corresponding learned token embedding with the same dimension as the observation embedding. \( I(i,j,c) \) is an indicator function. For example \( I(2,6, \text{key}) \) means that there is a key at position (2,6).
     </p>
     
-    <img src="path-to-figure4-image.jpg" alt="Illustration of how the observation tokens are made of embeddings">
-    <strong>Figure 4:</strong> Illustrates how the observation tokens are made of embeddings, which might themselves be made of features, which match the task relevant concepts.
+    <p><strong>Figure 4</strong> Illustrates how the observation tokens are made of embeddings, which might themselves be made of features, which match the task relevant concepts.</p>
+    <img src="images/memory_dt2/image5.png" alt="Illustration of how the observation tokens are made of embeddings">
+    <p><strong>Figure 4: Diagram showing how concepts, features, vocabulary item embeddings and token embeddings are related.</strong> We learn embeddings for each vocabulary item but the model can treat those independently or use them to represent other features if desired. </p>
 
     <p><strong>A few notes on this setup:</strong></p>
 
     <ol>
         <li>
-            Our observation tokenization method is intentionally linear and is therefore decomposable into embeddings (which are linear feature representations). By constructing it like this we make it harder for the model to memorise the observations since it must create them from a linear sum of fundamentally (more) <a href="#">generalising features</a>. Furthermore, the function A XOR B can’t be solved using a linear classifier stopping the model from solving the entire task in the first observation.
+            Our observation tokenization method is intentionally linear and is therefore decomposable into embeddings (which are linear feature representations). By constructing it like this we make it harder for the model to memorise the observations since it must create them from a linear sum of fundamentally (more) <a href="https://www.google.com/url?q=https://transformer-circuits.pub/2023/toy-double-descent/index.html%23datapoints-vs-features&sa=D&source=editors&ust=1697689300232966&usg=AOvVaw3EuWVQBopYVZi1V3sYOMX3">generalising features</a>. Furthermore, the function A XOR B can’t be solved using a linear classifier stopping the model from solving the entire task in the first observation.
         </li>
         <li>
             Our observation tokenization method is compositional with respect to vocabulary items but not task relevant concepts. The underlying “instruction feature” isn’t itself a member of the vocabulary.
@@ -216,10 +251,428 @@
     </ol>
 
     <h2>Results</h2>
+    <h3>Geometric Structure in Embedding Space</h3>
 
-  <d-appendix>
-    <h3>TBD</h3>
-  </d-appendix>
+    <p>
+    In order to determine whether MemoryDT has learned to represent the underlying task-relevant concepts, we start by looking at the observation embedding space.
+    </p>
 
-  <distill-footer></distill-footer>
+    <p>
+    Many embeddings have much larger L2 norms than others.
+    </p>
+
+    <p>
+    <b>Channels likely to be activated and likely to be important to the task such as keys/balls appeared to have the largest norms</b>, along with “green” and other channels which may encode useful information. Some of the largest embedding vectors corresponded to vocabulary items that were understandable important such as Ball (2,6), the ball as seen from the starting position, whilst others were less obvious Ball (0,6) which shouldn’t appear unless the agent moves the ball (it can do that). Embedding vectors are initialised with L2 norms of approximately 0.32, but these vectors weren’t subject to weight decay and clearly some grew during training.
+    </p>
+
+    <img src="images/memory_dt2/image6.png" alt="Strip Plot of L2 Norms of embedding vectors in MemoryDT’s Observation Space.">
+    <strong>Figure 5:</strong> Strip Plot of L2 Norms of embedding vectors in MemoryDT’s Observation Space.
+
+    <h3>Cosine Similarity Heatmaps reveal Geometric Structure</h3>
+
+    <p>We initially attempted PCA / U-Map for dimensionality reduction, however neither were particularly informative. However, we were able to borrow the concept of a <a href="https://www.google.com/url?q=https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5634325/&sa=D&source=editors&ust=1697689300234936&usg=AOvVaw0Q3y7DxJEiVe_o7z0ibZm-">clustergram</a> from systems biology. The idea is to plot a heatmap of the adjacency matrix, in this case the cosine similarity matrix of the embeddings and reorder rows according to a clustering algorithm. The resulting cosine similarity heatmaps were interesting with and without reordering of rows for clustering (<strong>Figure 6</strong>).</p>
+
+    <img src="images/memory_dt2/image7.png" alt="Cosine Similarity Heatmaps" />
+    <strong>Figure 6:</strong> Cosine Similarity Heatmap of Embeddings for Key/Ball Channels. LHS: Order of rows/columns is determined by descending order given channel, y-position, x-position. The first row is Key (0,0), the next is Key (0,1) and so forth. RHS: Order of rows/columns is determined by agglomerative clustering. <strong>Figure 6</strong> is best understood via interactions (zooming/panning).
+
+    <p>There were a number of possible stories which might explain the structural features observed in <strong>Figure 6</strong>. Many embeddings clearly don’t have very high cosine similarity with any others. These were the embeddings with low norms and weren’t updated much or at all during training. There were two effects which may be interpreted with respect to correlation or anti-correlation:</p>
+
+    <p>There were a number of possible stories which might explain the structural features observed in <strong>Figure 6</strong>. Many embeddings clearly don’t have very high cosine similarity with any others. These were the embeddings with low norms and weren’t updated much or at all during training. There were two effects which may be interpreted with respect to correlation or anti-correlation:</p>
+
+    <ol>
+        <li><strong>Spatial Exclusivity/Anti-correlation</strong> was associated with <strong>antipodality</strong>: Without reordering, we can see off-center lines of negative cosine similarity which correspond to keys/balls at the same positions. This may suggest that the mutual exclusivity of keys/balls at the same position induced anti-correlation which led to antipodality in these representations.</li>
+        
+        <li><strong>Correlated Vocabulary</strong> items had higher cosine similarity: Some vocabulary items have particularly high cosine similarity with each other. For example, vocabulary items associated with one variation of the target configuration as seen from the starting position: key (1,2) and ball (5,2).</li>
+    </ol>
+
+    <p>To address these ideas more directly, we plotted cosine similarity as a function of whether the two vocabulary items shared the same channel (key or ball) or position (<strong>Figure 7</strong>).</p>
+
+    <img src="images/memory_dt2/image8.png" alt="Cosine Similarity Distribution" />
+    <strong>Figure 7:</strong> Distribution of Cosine Similarity of pairs of embeddings/vocabulary items (limited to Key/Ball channels), filtered to have L2 norm above 0.8.
+
+    <p>Even though channel/position are not a perfect proxy for correlation beyond the anti-correlation induced by spatial exclusivity, <strong>Figure 7</strong> shows some general trends better than <strong>Figure 6</strong>. Beyond potentially interesting trends (which aren’t trivial to interpret), we can see many outliers who embedding directions relative to each other can’t easily be interpreted without reference to the training distribution.</p>
+
+    <p>This leads us to the hypothesis that <strong>semantic similarity</strong> may also be affecting <strong>geometric structure</strong>. By “semantic similarity”, we mean that maybe some vocabulary items may be related not just by when they are likely to occur, but by the actions which the decision transformer should make having observed them. To provide evidence for such a hypothesis, we focus on groups of vocabulary items with particularly absolute cosine similarity and clusters. For example, we observed clusters corresponding to vocabulary items in a single channel at multiple positions such as Keys at (0,5), (2,6) and (4,2). Interpreting these clusters was possible with reference to the training distribution, specifically, look at which positions the agent might be in when those channels activated (Figure 8).</p>
+
+    <img src="images/memory_dt2/image9.png" alt="Observations" />
+    <strong>Figure 8:</strong> Reference Observations to assist interpretation of Feature Maps. Agent is always in position (3,6).
+
+    <p>By combining the clusters observed in Figure 8 with the distribution of possible observations in the training dataset, it's possible to see several semantically interpretable groups:</p>
+    <ol>
+        <li>Targets seen from the end-of-corridor and the “look-back” position. These included Keys and Balls at (1,6) and (5,6).</li>
+        <li>Targets as seen from the start. These included Keys and Balls at (1,2) and (5,2).</li>
+        <li>Instructions as seen from various positions: These include: Start -> (2,6), Look-Back -> (4,2) (4,3), Early Turn 1, 2 -> (1,5), (0,5).</li>
+    </ol>
+
+    <p>At this point, we hypothesised that each of these groups of vocabulary items may contain underlying linear features corresponding to the semantic interpretation of the group.</p>
+
+    <h3>Extracting and Interpreting Feature Directions in MemoryDT’s Observation Embeddings</h3>
+
+    <p>To extract each feature direction, we perform feature extraction via Principal Component Analysis on the subset of relevant embedding vectors. By using PCA we hope to throw away unimportant directions while quantifying the variance explained by the first few directions. We can attempt to interpret both the resulting geometry of the PCA and the principal component directions themselves.</p>
+
+    <p>To interpret the principal component directions, we show heatmaps of the dot product between the PC and each embedding vector, arranging these values to match the corresponding positions in the visualisations of gridworld partial observations. These heatmaps, which I call “feature maps”, have much in common with heatmaps of convolutional layers in vision models and represent virtual weights between each embedding the underlying principal component.</p>
+
+    <h3>The Primary Instruction Feature</h3>
+    <img src="images/memory_dt2/image10.png" alt="Heatmap illustrating the Primary Instruction Feature" />
+    <p><strong>Figure 9: Exploratory Analysis of the “Instruction” subset of Observation Embeddings. Left) Cosine Similarity Heatmap of the Instruction Embeddings. Right) 2D Scatter Plot of the first 2 Principal Components of a PCA generated from the embedding subset.</strong></p>
+
+    <p>Previously, we identified that keys/balls at positions (4,2), (4,3), (0,5) and (2,6) as clustering and hypothesised that this may be due to an underlying “instruction feature”. The first 2 principal components of the PCA explain 85.12% of the variance in those embeddings and the first two dimensions create a space in which keys/balls appear in antipodal pairs (Figure 9). This projection is reminiscent of <a href="https://www.google.com/url?q=https://transformer-circuits.pub/2023/monosemantic-features/index.html%23phenomenology-feature-splitting&sa=D&source=editors&ust=1697689300239283&usg=AOvVaw3DqSA3BrXBCqATTzW_jVDD">feature splitting/anisotropic superposition</a> which is thought to occur when highly correlated features have similar output actions and <a href="https://www.google.com/url?q=https://transformer-circuits.pub/2022/toy_model/index.html%23geometry&sa=D&source=editors&ust=1697689300239477&usg=AOvVaw1jD-x-8VPyiXyCUJC5uGPL">antipodality found in toy models</a>.</p>
+
+    <p>Clearly, PC1 separates keys from balls independently of position, making it a candidate for a linear representation of an instruction feature. One way to interpret this is a very simple form of <a href="https://www.google.com/url?q=https://distill.pub/2020/circuits/equivariance/&sa=D&source=editors&ust=1697689300239861&usg=AOvVaw1dhSfxJ-SesAcq6bpO2Nvz">equivariance</a>, where each vocabulary item is an (in-built, not learned) feature detector akin to a neuron firing only when the feature is present.</p>
+
+    <p>To visualise this instruction feature, we generate a feature map for PC1 (Figure 10), which shows that this feature is present to varying degrees in embeddings for keys/balls at many different positions where the instruction might be seen. We note that the instruction feature tends to be present at similar absolute values but opposite signs between keys and balls suggesting a broader symmetry in the instruction feature between keys and balls.</p>
+
+    <img src="images/memory_dt2/image11.png" alt="Feature Map showing Instruction PC1 Values" />
+    <strong>Figure 10: Feature Map showing Instruction PC1 Values for all embeddings corresponding to Keys/Ball.</strong>
+
+    <h2>Another Instruction Feature?</h2>
+
+    <p>PC2 in the Instruction subset PCA is less easy to interpret. Figure 9 appears to distinguish whether the has been identified from “look-back” and “starting” positions. However, it appears to “flip” the effect it has for embeddings which correspond to “instruction is key” vs “instruction is ball”. Moreover, the feature map for PC2 (Figure 11) shows keys and balls at (3,4) as having noticeable cosine similarity with this direction which doesn’t fit that interpretation. Nor does this explanation predict that keys/balls at (4,3), a position similar to the look-back feature barely projects onto PC2.</p>
+
+    <p>One explanation might be that because PCA finds orthogonal directions, it fails at finding a second interpretable feature direction.</p>
+
+    <img src="images/memory_dt2/image12.png" alt="Feature Map showing Instruction PC2 Values" />
+    <strong>Figure 11: Feature Map showing Instruction PC2 Values for all embeddings corresponding to Keys/Ball.</strong>
+
+    <h3>Target Features</h3>
+
+    <img src="images/memory_dt2/image13.png" alt="Target Features Visualization" />
+    <p><strong>Figure 12: Exploratory Analysis of the Target Embeddings.Left: Cosine Similarity Heatmap of the Target Embeddings. Right: 2D Scatter Plot of the first 2 Principal Components.</strong></p>
+
+    <p>For the target feature, we identified two separate clusters each made up of two sets of almost antipodal pairs (Figure 12). The geometry here is much closer to isotropic <a href="https://www.google.com/url?q=https://transformer-circuits.pub/2022/toy_model/index.html&sa=D&source=editors&ust=1697689300241776&usg=AOvVaw30mGCQr7qOBQ4keXmjiZ0D">superposition / toy model results</a>. The faint-checkerboard pattern suggests the slightest hint of a more general target feature which we suspect may be learnt if we trained MemoryDT for long enough.</p>
+
+    <p>The first two principal components of the resulting PCA explain 83.69% of the variance in those embeddings and produced interpretable feature maps (Figure 13):</p>
+
+    <ol>
+        <li><strong>Starting Target Feature:</strong> PC1 can be interpreted as reflecting the configuration of the targets as seen from the starting position \( (1,2) \) and \( (5,2) \). There's slight evidence that targets seen at intermediate positions while walking up to the targets \( (1,3) \) and \( (1,4) \).</li>
+        <li><strong>End Target Feature:</strong> PC2 can be interpreted as reflecting the configuration of the targets as seen from the end of the corridor position \( (1,2) \) and \( (5,2) \).</li>
+    </ol>
+
+    <img src="images/memory_dt2/image14.png" alt="Cosine Similarity Heatmap of the PC1 Values" />
+    <img src="images/memory_dt2/image15.png" alt="Cosine Similarity Heatmap of the PC2 Embeddings">
+    <strong>Figure 13: Feature map showing Instruction PC1 Values (above) and PC2 embedding (below) for all embeddings corresponding to Keys/Ball. </strong>
+
+    <h3>Using Embedding Arithmetic to Reverse Detected Features</h3>
+
+    <h4>Embedding Arithmetic with the Instruction Feature</h4>
+
+    <p>We previously observed that the group of vocabulary items associated with the instruction concept were separated cleanly into Keys and Balls by a single principal component explaining 60% of the total variance associated with 6 vectors included. From this, we hypothesised that this principal component reflects an underlying “instruction feature”. To validate this interpretation, we want to show that we can leverage this prediction in non-trivial ways such as by generating adversarial examples.</p>
+
+    <p>Based on the previous result, we predicted that if we added two vocabulary items matching the opposite instruction (ie: if the instruction is a key, seen at (2,6), we can add a ball to (0,5) and a ball to (4,2)) and this would induce the model to behave as if the instruction were flipped. I've drawn a diagram below to explain the concept (Figure 14).</p>
+
+    <img src="images/memory_dt2/image16.png" alt="Diagram explaining concept of instruction feature">
+    <strong>Figure 14: Diagram showing the basic inspiration behind “instruction adversaries”.</strong>
+
+    <h4>Effectiveness of Instruction Feature Adversaries</h4>
+    <img src="images/memory_dt2/image17.gif" alt="Ball, Key-Ball sequence">
+
+    <p><strong>Figure 15: Animation showing the trajectory associated with the Instruction Reversal Experiment.</strong></p>
+
+    <p>To test adversarial features / embedding arithmetic hypothesis, we generated a set of prompts/trajectories ending in a position where the model’s action preference is directly determined by the observation of the instruction being a key/ball (<strong>Figure 15</strong>). For each of the target/instruction configurations in <strong>Figure 15</strong>, we generate 5 different edits (<strong>Figure 14</strong>) to the first frame:</p>
+
+    <ul>
+        <li><strong>The original first frame</strong>: This is our negative control.</li>
+        <li><strong>S5 with the instruction flipped</strong>: This is our positive control. Changing the instruction from a key to a ball or vice versa at S5 makes the model flip its left/right preference.</li>
+        <li><strong>S5 complement* instruction added at (0,5)</strong>. We expect this to partially reduce the left-right preference but not flip it. (Unless we also removed the original instruction)</li>
+        <li><strong>S5 with the complement instruction added at (2,4)</strong>. Same as the previous one.</li>
+        <li><strong>S5 with the complement instruction added at (0,5) and (2,4)</strong>. Even though this frame was not present in the training data, we expect it to override the detection of original instruction.</li>
+    </ul>
+
+    <p>Note that due to the tokenization of the observation, we can think of adding these vocabulary items to the input as adding adversarial features.</p>
+
+    <p><em>Note: I’m using the word “complement” because if the original instruction was a key, add a ball to reverse it and vice versa.</em></p>
+
+    <img src="images/memory_dt2/image18.png" alt="Adversarial Observation Token Variations">
+
+    <p><strong>Figure 16:</strong> Adversarial Observation Token Variations. Added objects are shown red though only the object embedding is added.</p>
+
+    <p><strong>Figure 17</strong> shows us the restored logit difference for each of the three test cases Complement (0,5), Complement (4,2) and Complement (0,5), (4,2) using the original frame as our negative control or “clean” input and Instruction Flipped as our “corrupt”/positive control.</p>
+
+    <img src="images/memory_dt2/image19.png" alt="Restored Logit Difference">
+
+    <p><strong>Figure 17:</strong> Restored Logit Difference between left/right for instruction feature adversaries in scenario 1. (MemoryDT). 8 facet images correspond to each target, instruction and RTG combination. (RTG = 0.892 corresponds to the highest possible reward which an optimal policy would receive. RTG = 0 corresponds to no reward, often achieved by going to the wrong target)</p>
+
+    <p>These results are quite exciting! We were able to predict very particular adversaries in the training data that would cause the model to behave (almost) as if it had seen the opposite instruction and did so from the feature-map (an interpretability tool).</p>
+
+    <p>Let's break the results in <strong>Figure 17</strong> down further:</p>
+
+    <ol>
+        <li>Adding two decoys <strong>isn't as effective as reverse the original instruction</strong>. We expected that adding two “decoy” instructions will work as well as flipping the original instruction but the best result attained is 0.92 and most results are around 0.80-0.90.</li>
+        <li>Adding a single decoy <strong>isn't consistently additive</strong>. If the effects were linear, we would expect that adding each single decoy would restore ~half the logit difference. This appears to be roughly the case half the time. If the effect was non-linear and we needed both to achieve the result, adding each alone would achieve a negligible effect. This also happens in some cases.</li>
+        <li>The effect of individual decoys should be symmetric in their effects under our theory but they <strong>aren’t always</strong>. In the case of Ball, Ball-Key at RTG 0. Adding a key at (0,5) alone achieves 0.43 of the logits difference of both complements but adding a key at (4,2) achieves 0.03.</li>
+    </ol>
+
+    <h3>Proving that Instruction Feature Adversaries operate only via the Instruction Feature.</h3>
+
+    <p>Whilst the previous results are encouraging, we would like to provide stronger evidence behind the notion that the projection of the embedding space into instruction feature direction is causally responsible for changing the output logits. To show this we provide two lines of evidence:</p>
+
+    <ol>
+        <li>We show that the adversarial inputs are genuinely changing the presence of the instruction feature.</li>
+        <li>We show that we can <strong>directly intervene on the instruction feature</strong> to induce the same effects as the adversaries or flipping the instruction.</li>
+    </ol>
+
+    <h4>The adversarial inputs are genuinely changing the presence of the instruction feature</h4>
+
+    <p>For each of the forward passes in the experiment above, we plot the dot product of the instruction feature with the observation embedding against the difference between the logits for turning left and right <em>(Figure 18)</em>. We see that:</p>
+
+    <ol>
+        <li>The dot product of the instruction feature with the observation embedding ranges from about -2 to 2 in each scenario.</li>
+        <li>Complement (0,5), (4,2) isn’t projecting as strongly into the instruction feature direction as the Instruction Flipped observation. This may explain why our restored logit differences weren’t stronger before. We weren’t flipping the instruction feature hard enough.</li>
+        <li>Whilst flipping the sign on the instruction feature flips the action preference in most cases. However, it fails to do so when the target configuration is “Key-Ball” and R1TG = 0.892. We think that MemoryDT mostly wants to predict “A XOR B” at high R1TG and its complement at low R1TG, but it doesn’t quite do this. This will be discussed in later posts.</li>
+    </ol>
+
+    <img src="images/memory_dt2/image20.png" alt="Measuring the projection of the S5 observation embeddings" />
+    <figcaption>Figure 18: Measuring the projection of the S5 observation embeddings into the Instruction PC0 direction (x-axis) and showing the logit difference between left / right (y-axis).</figcaption>
+
+    <h4>Direct Interventions on the Instruction Feature</h4>
+    <p>We directly intervene on the instruction feature on the instruction feature in each of the scenarios tested above, again plotting the logit difference for the final left minus right direction <em>(Figure 19)</em>.</p>
+
+    <p><strong>This similarity in the functions mapped by the adversarial intervention (Figure 18) and the direct intervention are striking!</strong> They show a very similar functional mapping from the instruction feature sign/magnitude to the logit difference suggesting the instruction feature entirely explains our adversarial results.</p>
+
+    <img src="images/memory_dt2/image21.png" alt="Intervened Instruction PC0 direction and logit difference" />
+    <p><strong>Figure 19:</strong> Intervened Instruction PC0 direction (x-axis) and showing the logit difference between left / right (y-axis).</p>
+
+    <h3>Do the Instruction Feature Adversaries Transfer?</h3>
+    <p>Finally, since our explanation of the instruction feature suggests that it represents a meaningful property of the data and that our embedding arithmetic can be interpreted as adversaries, it is reasonable to test if those adversaries transfer to another model trained on the same data. MemoryDT-GatedMLP is a variant of MemoryDT which is vulnerable to the same adversarial features <strong>(Figure 20).</strong> </p>
+
+    <img src="images/memory_dt2/image22.png" alt="Restored Logit Difference between left/right for instruction feature adversaries" />
+    <p><strong>Figure 20:</strong> Restored Logit Difference between left/right for instruction feature adversaries. MemoryDT+GatedMLP (RTG = 0.892).</p>
+
+    <p><strong>Figure 20</strong> suggests the following:</p>
+    
+    <ol>
+      <li><strong>Reversing the instruction feature was more effective.</strong> The effect of adding two keys or two balls to flip the instruction was closer to the effect of flipping the original instruction and in some cases exceeded it.</li>
+      <li><strong>Inconsistent effect sizes and asymmetric effect sizes also appeared.</strong> As with MemoryDT, single complements varied in the strength of their effect on the logit difference and the same case of Ball, Ball-Key RTG 0 showed an effect for adding a key at (0,5) was more effective than adding a key at (4,2).</li>
+    </ol>
+
+    <p>Since MemoryDT+Gated MLP is a fairly similar model to MemoryDT, it's not particularly surprising that the adversaries transfer.</p>
+
+    <h2>Discussion</h2>
+
+    <h3>Feature Representations in GridWorld Observation Embeddings</h3>
+
+    <h4>Reasoning about MemoryDT’s Observation Embeddings</h4>
+
+    <p>There are a number of ways to explain our results and connect them to previous work. At the broadest level, it’s not surprising to see structure in our embeddings. Highly structured embeddings have been <a href="https://www.google.com/url?q=https://browse.arxiv.org/pdf/2205.10343.pdf&sa=D&source=editors&ust=1697689300250577&usg=AOvVaw226P3JSrqXkjaXYmYheo-A">previously linked</a> to generalisation and grokking in toy models and the presence of composable linear features in token embeddings has been <a href="https://www.google.com/url?q=https://scholar.google.com/scholar?cluster%3D2584655260765062813%26hl%3Den%26as_sdt%3D7,39&sa=D&source=editors&ust=1697689300250770&usg=AOvVaw095Zs67ejDimMAVmiLQy9u">known</a> for a long time.</p>
+
+    <p>Moreover, there’s a fairly simple story which can be told to explain many of our observations:</p>
+
+    <ol>
+        <li>Our observation embeddings correspond to features (like a ball at (0,5)) at some level of abstraction in the gridworld/task. A symbolic representation shortcuts the process whereby a convolutional model would first detect a ball at (0,5) with our chosen architecture.</li>
+        <li>These embedding-features had non-trivial patterns of cosine similarity due to partial observability and spatial restraints as well as correlation induced by the specific task. That correlation meant that frequently occurring vocabulary items tended to have embedding vectors that were larger and either aligned or antipodal with other vectors as determined by similar effects to those studied in <a href="https://www.google.com/url?q=https://transformer-circuits.pub/2022/toy_model/index.html&sa=D&source=editors&ust=1697689300251340&usg=AOvVaw1k5NSY2Pme6X3vhcrnZlzR">Anthropic’s Toy Models of Superposition investigation</a>.</li>
+        <li>However, clearly features like ball (0,5) don’t correspond directly to the most useful underlying concepts, which we think are the instruction and “targets”. Thus the model eventually learned to assign directions that represent features like “the instruction is a key” and since these were representing binary variables, MemoryDT made use of antipodal representations for the observations pertaining to instruction/target vocabulary items.</li>
+        <li>We then saw different variations on the relationship between the embeddings and the representations of higher level features:
+            <ul>
+                <li>For the instruction feature, we saw embeddings with pairs of antipodal embedding with high cosine similarity. PCA of these embeddings suggests underlying geometry similar to <a href="https://www.google.com/url?q=https://transformer-circuits.pub/2023/monosemantic-features/index.html&sa=D&source=editors&ust=1697689300251879&usg=AOvVaw3e72tdvBDzpVV0M4nJ0wNk">anisotropic superposition</a>. It seems possible, but unclear whether lower order principal components were meaningful there, but clear that the first component is a meaningful feature that is present in many different embeddings.</li>
+                <li>For the target features, we saw two features (possibility with some overlap) representing the targets as seen from different positions in close to isotropic superposition.</li>
+            </ul>
+        </li>
+    </ol>
+  
+  <h3>WIP: Intervening in the World Model as a type of Eval Tool</h3>
+  
+  <p>Previous work with adversaries and embeddings: <a href="https://www.google.com/url?q=https://aclanthology.org/2021.deelio-1.1.pdf&sa=D&source=editors&ust=1697689300253468&usg=AOvVaw2ZYNuM9ylLNgQ4IeQ_26gh">Transformer visualization via dictionary learning: contextualized embedding as a linear superposition of transformer factors</a></p>
+  
+  <p>More theoretically, my results add to a body of evidence suggesting that intervening on features may be akin to changing what a model "believes" which would be an incredibly powerful tool for evals. This is a bit subtle but my interventions make the model act as if a particular fact was different. This is very different from just making one action more likely. To apply this, imagine you finetune your model to the point where you can't jailbreak it anymore but want to keep going, making it even more unlikely for the model to ever take hostile or power-seeking actions. One way to do this is to use latent perturbations. Intervene on features to simulate if the model had been jailbroken and then make it so even that wouldn't work. This could be honeypotting on steroids. Not just useful because you can create situations you might not know how to prompt yourself into, but might be a much more efficient way to explore the space of "states of mind the AI could be in" rather than "situations it could be in".</p>
+  
+
+    <p>However, many pertinent questions are still unanswered:</p>
+
+    <ol>
+        <li>To the extent that some embeddings were represented almost antipodally, why weren’t more antipodal? It could be the model was simply undertrained or there could be more to it.</li>
+        <li>How precisely do the feature directions representing the instructions or target formation end up present in so many different embeddings? Did the instruction feature first form in association with more frequently observed vocabulary items and then undergo a <a href="https://www.google.com/url?q=https://arxiv.org/abs/2301.05217&sa=D&source=editors&ust=1697689300252711&usg=AOvVaw1EiiTJWepJRSLRUx6JY0Dz">phase change</a> in which they spread to other embeddings or was it more continuous?</li>
+        <li>What are the circuits making use of each of these features? Can we understand the learned embedding directions better with reference to the circuits that make use of them or by <a href="https://www.google.com/url?q=https://www.alignmentforum.org/posts/RFtkRXHebkwxygDe2/an-interpretability-illusion-for-activation-patching-of&sa=D&source=editors&ust=1697689300253015&usg=AOvVaw3eQctiC8oQjmYNh4wAPOff">comparing the directions we find to optimal causal directions</a>?</li>
+    </ol>
+
+    <h2>Adversarial Inputs</h2>
+    <p>To validate our understanding of the instruction feature, we used both adversarial inputs as well as direct intervention on the instruction feature. We were able to correctly predict which embeddings could be used to trick the model and show that this effect was mediated entirely via the feature we identified.</p>
+
+    <h2>Adversaries and Interpretability</h2>
+    <p>In general, our results support previous arguments that <a href="https://www.google.com/url?q=https://www.lesswrong.com/s/a6ne2ve5uturEEQK7/p/kYNMXjg8Tmcq3vjM6%23The_studies_of_interpretability_and_adversaries_are_inseparable_&sa=D&source=editors&ust=1697689300254446&usg=AOvVaw1AGFd9wqrUZ15h_EzWVyl_">study of interpretability and adversaries are inseparable</a>. However, previous results connect <a href="https://www.google.com/url?q=https://arxiv.org/abs/1906.00945&sa=D&source=editors&ust=1697689300254577&usg=AOvVaw0D6D0SordUEvQLlblvKjBG">adversarial</a> <a href="https://www.google.com/url?q=https://arxiv.org/abs/2206.11212&sa=D&source=editors&ust=1697689300254667&usg=AOvVaw04_JtwTdG7J2OHljKFyssj">robustness</a> to interpretability whereas this seems not to apply here. That the instruction feature was present in the embeddings of so many vocabulary items was both the reason we were able to interpret it and the reason it wasn't adversarially robust. Rather, MemoryDT used a coherent, interpretable strategy to detect the instruction from lower level features that made it vulnerable to adversarial, out-of-distribution inputs. Moreover, in order to be robust to the adversaries we designed and still perform well on the original training distribution, we would predict that MemoryDT would need to implement more complicated circuitry/representations that would be less interpretable.</p>
+    <p>One possible explanation is that adversarial robustness may be generally associated with crisper abstractions which favour interpretability but robustness to adversaries which deliberately break with simpler abstractions may not. This may be important to future interpretability in the gridworld context as we could study our ability to interpret models like MemoryDT after training them to be adversarially robust to such examples.</p>
+
+    <h2>Adversaries and Superposition</h2>
+    <p>There are <a href="https://www.google.com/url?q=https://www.lesswrong.com/s/a6ne2ve5uturEEQK7/p/kYNMXjg8Tmcq3vjM6%23Are_adversaries_features_or_bugs_&sa=D&source=editors&ust=1697689300255226&usg=AOvVaw2TgEvrn-eyaFfJFo_WNpGJ">many reasons</a> to think that <a href="https://www.google.com/url?q=https://proceedings.neurips.cc/paper_files/paper/2019/file/e2c420d928d4bf8ce0ff2ec19b371514-Paper.pdf&sa=D&source=editors&ust=1697689300255345&usg=AOvVaw1YPHtvI_NPOwRkStr8WU1a">adversaries are not bugs, they are features</a>. However, it has been suggested that <a href="https://www.google.com/url?q=https://transformer-circuits.pub/2022/toy_model/index.html%23adversarial&sa=D&source=editors&ust=1697689300255436&usg=AOvVaw0bel1y8WAUV8eJTj9AHmnj">vulnerability to adversarial examples</a> may be explained by superposition. The argument suggests that unrelated features in superposition can be adversarially perturbed, confusing the model, which would fit into the general category of adversaries as bugs.</p>
+    <p>However, this was suggested in the context of isotropic superposition and not <a href="https://www.google.com/url?q=https://transformer-circuits.pub/2023/monosemantic-features%23discussion-superposition&sa=D&source=editors&ust=1697689300255642&usg=AOvVaw3GhsexJeuUzEy6aXT1GYK0">anisotropic superposition</a>. Isotropic superposition involves feature directions which aren't representing similar underlying objects sharing dimensions whilst anisotropic superposition may involve features that “produce similar actions” (or represent related underlying features).</p>
+    <p>There are 2 mechanisms through which anisotropic superposition might be related to adversaries:</p>
+    <ol>
+      <li>Features in anisotropic superposition are more likely to be mistaken for each other and targeted adversarial attacks exploit this. Humans and convolutional neural networks may both be easier to trick into thinking a photo of a panda is a bear and vice versa because they both look similarly. These attacks seem less inherently dangerous.</li>
+      <li>Adversarial attacks exploit antipodality of features represented in anisotropic superposition. If features are present in many different embeddings, or neurons, then it's possible that combinations of events which add antipodal represented features can flip model behaviour with respect to a given feature. In other words, there may be non-trivial analogies between the mechanism by which the adversary found in this analysis operates and broader phenomena (though this is highly speculative).</li>
+    </ol>
+
+    <p>A priori, this second mechanism may seem complicated and underspecified. For that reason it seems unlikely as compared to the first, but having the example in MemoryDT provides proof of concept. For example, it could be that the use of many different anti-correlated, antipodal representations are exactly the kind of underlying mechanism behind the effectiveness of <a href="https://www.google.com/url?q=https://arxiv.org/pdf/2307.15043.pdf&sa=D&source=editors&ust=1697689300256096&usg=AOvVaw390rNLvxmsYWAmAQTue5Uw">initial</a> <a href="https://www.google.com/url?q=https://arxiv.org/pdf/2307.02483.pdf&sa=D&source=editors&ust=1697689300256213&usg=AOvVaw3kaLB6xc5BCl52U-_ZtXK_">affirmative</a> <a href="https://www.google.com/url?q=https://arxiv.org/abs/2306.15447&sa=D&source=editors&ust=1697689300256276&usg=AOvVaw3LovGwRHOOazVqjFx4PLUR">responses</a> as an adversarial prompting strategy and <a href="https://www.google.com/url?q=https://www.lesswrong.com/posts/D7PumeYTDPfBTp3i7/the-waluigi-effect-mega-post&sa=D&source=editors&ust=1697689300256375&usg=AOvVaw1qcL6GRef0zfItspxKFvYq">narrative-type</a> strategies for jailbreaking models.</p>
+
+    <p>I’m excited about the prospect that this is the case, and that the corresponding features may be found via techniques such as use of sparse auto-encoders, it’s possible that techniques could be devised to achieve much stronger robustness.</p>
+
+    <h3>Relation to Activation Addition</h3>
+
+    <p>A method was recently <a href="https://www.google.com/url?q=https://arxiv.org/pdf/2308.10248.pdf&sa=D&source=editors&ust=1697689300256663&usg=AOvVaw200JOf6mdSfqtmpg-b4ULF">proposed</a> to steering language model generation via steering vectors via arithmetic in activation space, though similar <a href="https://www.google.com/url?q=https://arxiv.org/abs/2205.05124&sa=D&source=editors&ust=1697689300256742&usg=AOvVaw3RiOlt3gK6bWBJh9UX3_WA">previous</a> <a href="https://www.google.com/url?q=https://arxiv.org/abs/2304.00740&sa=D&source=editors&ust=1697689300256800&usg=AOvVaw0vj6hlA9663_IOYS1eV7uL">methods</a> existed which found steering vectors via stochastic gradient descent. The use of <a href="https://www.google.com/url?q=https://www.lesswrong.com/posts/5spBue2z2tw4JuDCx/steering-gpt-2-xl-by-adding-an-activation-vector&sa=D&source=editors&ust=1697689300256892&usg=AOvVaw1QEXidgnBCezJ_dkWcxBxZ">counterbalanced steering vectors</a> is justified by the need to emphasise some property in which two prompts or tokens differ, which is then further emphasised via use of a scaling factor which can affect steering performance.</p>
+
+    <h3>We propose that the results in this analysis may be highly relevant to the study of steering vectors in the following ways:</h3>
+
+    <ol>
+        <li><strong>The need for counterbalanced additions is tied to antipodality.</strong> Adding a single activation rather than an activation difference was less effective than adding a difference. When reversing the instruction feature, we found that simply adding a single complement was insufficient to reverse the logit difference as compared to two. In both cases, we must overcome the presence of the feature/features contained in the original forward pass that are antipodal with the feature representations in the steering vector. This is why flipping a bell to a key is approximately twice as strong as adding one new key.</li>
+        <li><strong>Coefficient strength may correspond to heterogeneous feature presence.</strong> During steering, it was found that a coefficient was useful for creating stronger steering effects. There are two ways the MemoryDT results may help us understand why this is necessary. It may be that language models activations also contain the same features but at varying magnitudes, akin to the distribution of dot products between embedding vectors and the instruction direction (represented in Mathjax or as an image for Figure 10) which results in different degrees of projection onto the instruction feature in our adversarial prompts (represented in Mathjax or as an image for Figure 20).</li>
+    </ol>
+
+    <p>Whilst it's possible that common explanations or correspondences here are superficial, this seems unlikely to me (Joseph) and I suspect that for understanding and experimenting with steering vectors, gridworld tasks may be quite informative.</p>
+
+    <h2>Conclusion and Future Work</h2>
+
+    <p>Our primary aims moving forward with this analysis are to:</p>
+
+    <ol>
+        <li><strong>MemoryDT Circuit Analysis:</strong>
+            <ul>
+                <li>Show how the embeddings/features are used by circuits to generate predictions about the next action.</li>
+                <li>Explain why/how MemoryDT fails to flips in action preferences when it does.</li>
+                <li>Study more trajectories than in this investigation.</li>
+            </ul>
+        </li>
+
+        <li><strong>Studying Reward-to-Go:</strong>
+            <ul>
+                <li>Provide insight as to how MemoryDT conditions on RTG, and show how this affects related circuits.</li>
+            </ul>
+        </li>
+
+        <li><strong>Training Dynamics:</strong>
+            <ul>
+                <li>Understand the training dynamics of circuits/features in MemoryDT and similar gridworld models.</li>
+                <li>We’re particularly interested in understanding whether phase changes such as those associated with grokking can be understood with reference to features quickly “spreading” to distinct embeddings, head outputs or neuron activations.</li>
+            </ul>
+        </li>
+    </ol>
+
+    <p>However, we're also interested in continuing to explore the following topics:</p>
+
+    <ol start="4">
+        <li><strong>Superposition in the Wild:</strong> It’s clear that superposition in language models may have a very different flavour to superposition in Toy Models. Do Gridworld models provide an intermediate which isn’t quite as messy as language models but is more diverse than toy models?</li>
+        <li><strong>Adversarial Inputs:</strong> What can gridworld models tell us about the relationship between interpretability, generalisation and robustness?</li>
+        <li><strong>Steering Vectors:</strong> Are there experiments with gridworld models that substantiate possible connections between our results here and previous work? We've already got preliminary evidence to explain why sometimes injection coefficients can be arbitrarily large? (We’ve already found preliminary examples where we see similar behaviour).</li>
+    </ol>
+
+    <h2>Glossary</h2>
+
+<ul>
+    <li><strong>Adversary:</strong> An adversarial input is an input optimised (by a human or by a search process) to fool a model. This may involve exploiting understanding of a model’s internals, such as the adversarial inputs in this post.</li>
+
+    <li><strong>Antipodal:</strong> An antipodal representation is a pair of features that are opposite to each other while both occupying a single direction - one positive, and one negative.</li>
+
+    <li><strong>Decision Transformer:</strong> A Decision Transformer treats reinforcement learning as a sequence modelling problem, letting us train a transformer to predict what a trained RL agent would do in a given environment. In this post, we do this on a gridworld task to train our MemoryDT agent.</li>
+
+    <li><strong>Embedding:</strong> An embedding is the initial representation of the input before computation or attention is applied. In a language model, the input is the model’s vocabulary. In MemoryDT, the input is the 7x7x20 tensor representing the model’s observations of the gridworld space.</li>
+
+    <li><strong>Feature:</strong> A feature is any property of the input and therefore could correspond to any of the following:
+        <ul>
+            <li>A key is present at position (0,5).</li>
+            <li>The instruction is a key in the current trajectory.</li>
+            <li>The correct action to take according to the optimal policy is “right”.</li>
+        </ul>
+    </li>
+
+    <li><strong>Gridworld:</strong> A toy environment for simple RL tasks that involves a task to be completed on a 2D grid. In our case, we chose the <a href="https://www.google.com/url?q=https://minigrid.farama.org/environments/minigrid/MemoryEnv/&sa=D&source=editors&ust=1697689300259025&usg=AOvVaw26U1gRMIj4Be_86Qb4LDBY">Memory environment in Minigrid</a>.</li>
+
+    <li><strong>Instruction:</strong> An instruction is the key or ball represented at position (2, 6) directly to the left of the agent in the first timestep. It tells the agent which target it should go to in order to successfully complete the task.</li>
+
+    <li><strong>Linear Feature Representation:</strong> A linear feature representation is when a feature is represented by a direction.
+        <ul>
+            <li>All vocabulary items have linear feature representations in so far as they each have an embedding vector which corresponds to them.</li>
+            <li>Features which are not vocabulary items could have linear feature representations.</li>
+        </ul>
+    </li>
+
+    <li><strong>Offline RL:</strong> RL that only uses previously collected data for training. Contrasted with online RL, where the agent learns by interacting with the environment directly. MemoryDT is trained using offline RL, since it does not create trajectories itself during training.</li>
+
+    <li><strong>Principal Component Analysis:</strong> Principal component analysis, or PCA, is a dimensionality reduction method that is often used to reduce the number of variables of a data set, while preserving as much information as possible.</li>
+
+    <li><strong>Reward-To-Go:</strong> The reward value that MemoryDT is predicting the sequence for. High values (0.892) imply correct sequences, while low values (0) imply the model should play incorrectly.</li>
+
+    <li><strong>Target:</strong> Targets are the key/ball pair that the agent can move into in order to end the current episode. The target should match the instruction for a successful completion.</li>
+
+    <li><strong>Vocabulary Item:</strong> A vocabulary item is something like key (2,5) or green (2,3). 
+      <ul>
+          <li>Each vocabulary item has a corresponding embedding vector.</li>
+      </ul>
+    </li>
+
+    <h2>Gratitude</h2>
+
+    <p>This work was supported by grants from the Long Term Future Fund, as well as the Manifund Regranting program. I'd also like to thank Trajan house for hosting me (Joseph). I’m thankful to Jay for his TODO: Complete this later.</p>
+
+    <p>We’re thankful for feedback and support from community members including TODO: Add these.</p>
+
+    <h2>Appendix</h2>
+
+    <h3>Methods</h3>
+
+    <h4>Identifying Related Embeddings with Cosine Similarity Heatmaps</h4>
+
+    <p>Even though we had fairly strong prior expectations over which sets of vocabulary items were likely to be related to each other, we needed a method for pulling out these groups of embeddings in an unbiased fashion. They are more useful when clustered so we use <a href="https://www.google.com/url?q=https://docs.scipy.org/doc/scipy/reference/generated/scipy.cluster.hierarchy.linkage.html&sa=D&source=editors&ust=1697689300260402&usg=AOvVaw1raJ8i4bEzq-nLfzaC6l_S">scikit-learn</a> to perform agglomerative clustering based on single linkage with euclidean distance. This is just a fancy method for finding similar groups of tokens.</p>
+
+    <p>This works quite effectively for these embeddings but likely would be insufficient in the case of a language model. Only the largest underlying feature (if any) would determine the nearest points and so you would struggle to retrieve meaningful clusters. A probing strategy or use of <a href="https://www.google.com/url?q=https://transformer-circuits.pub/2023/monosemantic-features/index.html&sa=D&source=editors&ust=1697689300260614&usg=AOvVaw2oW9zs7QCNFL6lBeyFuw6v">sparse</a> <a href="https://www.google.com/url?q=https://www.lesswrong.com/posts/z6QQJbtpkEAX3Aojj/interim-research-report-taking-features-out-of-superposition&sa=D&source=editors&ust=1697689300260718&usg=AOvVaw3QXc69BIpjNg28D_6KRBd-">autoencoders</a> to find features followed by measuring token similarity with those features might be better in that case.</p>
+
+    <h4>Principal Component Analysis on a Subset of Embeddings for Feature Identification</h4>
+
+    <p>Clustering heatmaps aren’t useful for understanding geometry unless they have very few vectors so we make use of Principal Component Analysis for this instead. Principal Component Analysis is a statistical technique which constructs an orthonormal basis from the directions of maximum variance within a vector space.</p>
+
+    <p>It turns out that PCA is very useful for showing feature geometry in this case, for the following reasons:</p>
+    <ol>
+        <li>Dimensionality Reduction. Embedded vectors are very high dimensional but PCA can show us if the space can be understood in terms of many fewer dimensions.</li>
+        <li>Quantifying variance explained. We use the percent variance explained to suggest the quality of the approximation achieved by the first 2 or 3 principal component vectors as in other recent mechanistic interpretability <a href="https://www.google.com/url?q=https://arxiv.org/abs/2307.09458&sa=D&source=editors&ust=1697689300261196&usg=AOvVaw0uhoNWs6eIzXSWPgwuchhe">analyses</a>.</li>
+    </ol>
+
+    <p>There are two issues with PCA:</p>
+    <ol>
+        <li>It’s not obvious that the directions found by PCA on subsets of embedding space correspond to meaningful features by default. We can address this by biasing the directions it finds by taking sets of embeddings performing PCA on them only. This makes the direction of maximal variance more likely to correspond to the linear representation of the semantic feature which is shared by these embeddings.</li>
+        <li>Vectors produced by PCA are orthogonal which may not be true of the underlying features. For this reason it might make sense to interpret any features we think we find with caution.</li>
+    </ol>
+
+    <p>In order to interpret principal components, we project them onto the embedding space for relevant channels (mainly keys/balls) and then show the resulting scores arranged in a grid with the same shape as the observations generated by the MiniGrid Environment. It’s possible to interpret these by making reference to the positions where different vocabulary items sit and which concepts they represent.</p>
+
+    <h3>Interpreting Feature Directions with Feature Maps</h3>
+
+    <p>Once we have a direction which we believe corresponds to a meaningful feature, we’re able to take the cosine similarity between this direction and every element of embedding space. Since the embedding space is inherently structured as a 7×7 grid with 20 channels, we can simply look at the embeddings for the relevant channels (keys, and balls). This is similar to a convolution with height/width and as many channels as the embedding dimension.</p>
+
+    <p>Feature maps are similar to the heat maps produced by Neel in his <a href="https://www.google.com/url?q=https://www.lesswrong.com/posts/nmxzr2zsjNtjaHh7x/actually-othello-gpt-has-a-linear-emergent-world&sa=D&source=editors&ust=1697689300261817&usg=AOvVaw1F4HGjokijlh-4NEQjfEyL">investigation</a> into OthelloGPT, using probe directions where we used embeddings and the residual stream where we use our feature.</p>
+
+    <h3>Validating Identified Features by Embedding Arithmetic</h3>
+
+    <p>In order to test whether a linear feature representation corresponds to a feature, we could intervene directly on the feature, removing or adding it from the observation token, but we can also simply add or subtract vocabulary items which contain that feature.</p>
+
+    <p>Our method is similar to the <a href="https://www.google.com/url?q=https://arxiv.org/abs/2308.10248&sa=D&source=editors&ust=1697689300262124&usg=AOvVaw1pxx8vBfDTI-M6sOyN0zvt">activation addition</a> technique which operates on the residual stream at a token position, but works at the level of the input. If we operated directly on the hypothesised linear feature representation direction then this method would be similar to the causal intervention on the word model used on <a href="https://www.google.com/url?q=https://www.lesswrong.com/posts/nmxzr2zsjNtjaHh7x/actually-othello-gpt-has-a-linear-emergent-world&sa=D&source=editors&ust=1697689300262231&usg=AOvVaw2gg9VdYEYDgdjTRGcryV1o">OthelloGPT</a> to test whether a probe vector could be used to intervene in a transformers world representation.</p>
+
+    <p>In order to evaluate the effect of each possible embedding arithmetic, we take the modal scenario where the model has walked forward 4 times and is choosing between left / right. We measure the logit difference between left and right in the following contexts:</p>
+<ul>
+    <li>A negative control (the base-case).</li>
+    <li>A positive control (the in-distribution complement).</li>
+    <li>The test case (the out-of-distribution complement).</li>
+</ul>
+
+<p>Then for each test case we report the proportion of logit difference restored \(\frac{LD(\text{test}) - LD(\text{negative control})}{LD(\text{positive control}) - LD(\text{negative control})}\).</p>
+
+<p>This is identical to the metric we would use if evaluating the effect size of a patching experiment and while it hides some of the variability in the results, it also makes the trends very obvious.</p>
+
+<h3>Related Work</h3>
+
+<p><strong>Decision Transformers:</strong><a href="https://www.google.com/url?q=https://arxiv.org/pdf/2106.01345.pdf&sa=D&source=editors&ust=1697689300262813&usg=AOvVaw1bVu-qY-FGPFDnFi6_p3DL">Decision Transformers</a> are one of <a href="https://www.google.com/url?q=https://arxiv.org/abs/2106.02039&sa=D&source=editors&ust=1697689300262878&usg=AOvVaw3zK38j7ngRQJ92xQElSwSW">several</a> methods developed to apply transformers to RL tasks. These methods are referred to as “offline” since the transformer learns from a corpus of recorded trajectories. Decision Transformers are conditioned to predict actions consistent with a given reward because they are “goal conditioned” receiving a token representing remaining reward to be achieved at each timestep. The decision transformer architecture is the basis for SOTA models developed by DeepMind including <a href="https://www.google.com/url?q=https://openreview.net/pdf?id%3D1ikK0kHjvj&sa=D&source=editors&ust=1697689300262990&usg=AOvVaw0Vr5AZs9uww_rTiYQAJogT">Gato</a> (a highly generalist agent) and <a href="https://www.google.com/url?q=https://www.deepmind.com/blog/robocat-a-self-improving-robotic-agent&sa=D&source=editors&ust=1697689300263086&usg=AOvVaw2ICQhPOrspbozx5jD3IZAH">Robocat</a> (A foundation agent for robotics).</p>
+
+<p><strong>GridWorld Decision Transformers:</strong>Earlier this year we studied a small <a href="https://www.google.com/url?q=https://www.lesswrong.com/posts/bBuBDJBYHt39Q5zZy/decision-transformer-interpretability&sa=D&source=editors&ust=1697689300263279&usg=AOvVaw2-NpsUGtKbIDubvtbWSIAA">gridworld decision transformer</a> mainly via attribution and ablations. More recently, I posted details about <a href="https://www.google.com/url?q=https://www.lesswrong.com/posts/JvQWbrbPjuvw4eqxv/a-mechanistic-interpretability-analysis-of-a-gridworld-agent&sa=D&source=editors&ust=1697689300263380&usg=AOvVaw0m0jsgr5F0BslhNwOwnA0m">MemoryDT</a>, the model discussed in this post.</p>
+
+<p><strong>Circuit-Style Interpretability:</strong>A large body of <a href="https://www.google.com/url?q=https://arxiv.org/abs/2207.13243&sa=D&source=editors&ust=1697689300263591&usg=AOvVaw34O7EIvEb1ey3cnYRzUaLc">previous work</a> exists attempting to understand the inner structures of deep neural networks. Focusing on the most relevant work to this investigation, we attempt to find features/linear feature representations with the framing the <a href="https://www.google.com/url?q=https://distill.pub/2020/circuits/zoom-in/&sa=D&source=editors&ust=1697689300263670&usg=AOvVaw2SxG2TRG4hKdlN46UqLlSz">circuit style interpretability</a>. We make reference to previously documented phenomena such as <a href="https://www.google.com/url?q=https://distill.pub/2020/circuits/equivariance/&sa=D&source=editors&ust=1697689300263737&usg=AOvVaw1Jg7xMs-ma9lo15hToAQ_Q">equivariance</a>, <a href="https://www.google.com/url?q=https://arxiv.org/abs/2209.10652&sa=D&source=editors&ust=1697689300263806&usg=AOvVaw0XQM1K8lSL_T4z6E0wC_xe"></a>isotropic superposition</a> (previously “superposition”) and recently documented <a href="https://www.google.com/url?q=https://transformer-circuits.pub/2023/monosemantic-features/index.html&sa=D&source=editors&ust=1697689300263890&usg=AOvVaw0Tqj-61Cdylyjv5y-e2vyX">anisotropic superposition</a>. Our use of PCA was inspired by its application to key/query and value subspaces in <a href="https://www.google.com/url?q=https://arxiv.org/pdf/2307.09458.pdf&sa=D&source=editors&ust=1697689300263954&usg=AOvVaw0uZ5xijseEOfbY1HxupbFf">analysis</a> in the 70B Chinchilla Model.</p>
+
+<p><strong>Linear Representations:</strong>Linear algebraic structure has been previously <a href="https://www.google.com/url?q=https://arxiv.org/pdf/1601.03764.pdf&sa=D&source=editors&ust=1697689300264180&usg=AOvVaw1M1VLU4ipjj5fMhDmMZpJ8">predicted</a> in word embeddings and found using techniques such as <a href="https://www.google.com/url?q=https://arxiv.org/pdf/1910.03833.pdf&sa=D&source=editors&ust=1697689300264287&usg=AOvVaw2J4s0u0TiIrtNKsaNHdpsE">dictionary learning</a> and <a href="https://www.google.com/url?q=https://arxiv.org/abs/1711.08792&sa=D&source=editors&ust=1697689300264362&usg=AOvVaw1pjlevKDLLRi9sJMmuImfB">sparse autoencoders</a>. Such representations can be understood as suggesting that the underlying token embedding is a sum of “word factors” or features.</p>
+
+<img src="images/memory_dt2/image23.png" alt="Equation" style="display:block; margin:auto;">
+<p>Taken from <a href="https://www.google.com/url?q=https://arxiv.org/pdf/1910.03833.pdf&sa=D&source=editors&ust=1697689300264597&usg=AOvVaw0FnUNEtWx5iHPSiSzBeSJm">Zhang et al 2021</a></p>
+
+<p>More recently, efforts have been made to find linear feature representations in the residual stream with techniques such as <a href="https://www.google.com/url?q=https://aclanthology.org/2021.deelio-1.1.pdf&sa=D&source=editors&ust=1697689300264759&usg=AOvVaw0daT23ioQdbnRrYHshmL1E">dictionary learning</a>, <a href="https://www.google.com/url?q=https://www.lesswrong.com/posts/z6QQJbtpkEAX3Aojj/interim-research-report-taking-features-out-of-superposition&sa=D&source=editors&ust=1697689300264856&usg=AOvVaw1v7zVq6DBwbDan6XZBnPZq">sparse auto-encoders</a> or <a href="https://www.google.com/url?q=https://arxiv.org/abs/2305.01610&sa=D&source=editors&ust=1697689300264926&usg=AOvVaw3_1OvQ7FMBh3juuqXOwS6M">sparse linear probing</a>. What started as an attempt to understand how language models deal with polysemy (the property of a word/token having more than one distinct meaning), has continued as a much more ambitious attempt to understand how language models represent information in all layers.</p>
+
+<p><strong>RL Interpretability:</strong>A variety of previous investigations have applied interpretability techniques to models solving RL tasks. <b>Convolutional Neural Networks:</b> This includes <a href="https://www.google.com/url?q=https://distill.pub/2020/understanding-rl-vision/&sa=D&source=editors&ust=1697689300265159&usg=AOvVaw0ZX1L5WpjGYCVwLAKOzPIS">analysis of a convolutional neural network</a> solving the Procgen <a href="https://www.google.com/url?q=https://openai.com/research/procgen-benchmark&sa=D&source=editors&ust=1697689300265227&usg=AOvVaw21fQ7IiYFjUmS41R8keS1I">>CoinRun</a> task using attribution and model editing. Similarly, <a href="https://www.google.com/url?q=https://www.lesswrong.com/sequences/sCGfFb5DPfjEmtEdn&sa=D&source=editors&ust=1697689300265299&usg=AOvVaw10JaMPi6W1SVnVb77sMeVn">a series of investigations</a> into models which solve the Procgen <a href="https://www.google.com/url?q=https://www.lesswrong.com/sequences/sCGfFb5DPfjEmtEdn&sa=D&source=editors&ust=1697689300265368&usg=AOvVaw2KrBC8ErEz97QxLzZfInVg">Maze</a> task identified a subset of channels responsible for identifying the target location which could be retargeted (a limited version of <a href="https://www.google.com/url?q=https://www.lesswrong.com/posts/w4aeAFzSAguvqA5qu/how-to-go-from-interpretability-to-alignment-just-retarget&sa=D&source=editors&ust=1697689300265490&usg=AOvVaw0k9hoE9sfV9T24XW5jVwt5">retargeting the search</a>). Transformers: An investigation by <a href="https://www.google.com/url?q=https://arxiv.org/abs/2210.13382&sa=D&source=editors&ust=1697689300265582&usg=AOvVaw3GFHDE26wFLsk-Xo9VIXV6">Li et al.</a> found evidence for a non-linear world representation in an offline-RL agent playing Othello using probes. It was later found that this <a href="https://www.google.com/url?q=https://arxiv.org/abs/2309.00941&sa=D&source=editors&ust=1697689300265647&usg=AOvVaw3KtH0Db6zxRJxgLYVpZs6o">world representation was linear</a> and amenable to causal interventions.</p>
+
+<p><strong>Antipodal Representations:</strong>Toy models of superposition were found to use antipodal directions to <a href="https://www.google.com/url?q=https://transformer-circuits.pub/2022/toy_model/index.html%23geometry-organization&sa=D&source=editors&ust=1697689300265850&usg=AOvVaw3YEHX_z2-rgVGsw9_zKLc3">represent anti-correlated features in opposite directions</a>. There is some evidence that and we’ve seen that language models also make use of <a href="https://www.google.com/url?q=https://www.lesswrong.com/posts/mkbGjzxD8d8XqKHzA/the-singular-value-decompositions-of-transformer-weight%23Negative&sa=D&source=editors&ust=1697689300265978&usg=AOvVaw1oP-MDUJF49rDZA-o5xPNG">antipodal representations</a>.</p>
+
+<p><strong>Adversarial Inputs:</strong><a href="https://www.google.com/url?q=https://arxiv.org/abs/1706.06083&sa=D&source=editors&ust=1697689300266182&usg=AOvVaw0JpC4Y09Ymzm5gbIoxsvQO">Adversarial examples</a> are important to both <a href="https://www.google.com/url?q=https://www.lesswrong.com/s/a6ne2ve5uturEEQK7/p/kYNMXjg8Tmcq3vjM6&sa=D&source=editors&ust=1697689300266265&usg=AOvVaw3C_saHDRKJDbUs35CTwdnf">interpretability</a> and AI safety. A relevant debate is whether these are <a href="https://www.google.com/url?q=https://arxiv.org/abs/1905.02175&sa=D&source=editors&ust=1697689300266330&usg=AOvVaw09AZgJHEmM6v3sMFSzeD0k">bugs or features</a> (with our work suggesting the latter), though possibly the topic should be approached with significant nuance.</p>
+
+<p><strong>Activation Additions/Steering Vectors:</strong>We discuss <a href="https://www.google.com/url?q=https://arxiv.org/pdf/2308.10248.pdf&sa=D&source=editors&ust=1697689300266507&usg=AOvVaw3f6mTCwl3srp2pEJaUUJJG">activation addition</a> as equivalent to our embedding arithmetic (due to our observation tokenization schema). Activation additions attempt steering language model generation underpinned by <a href="https://www.google.com/url?q=https://www.lesswrong.com/posts/5spBue2z2tw4JuDCx/steering-gpt-2-xl-by-adding-an-activation-vector%23Benefits_from_paired__counterbalanced_activation_additions&sa=D&source=editors&ust=1697689300266635&usg=AOvVaw0fcDeHASyBgyYASDqf5RC6">paired, counterbalanced</a> vectors in activation space. Similar <a href="https://www.google.com/url?q=https://arxiv.org/abs/2205.05124&sa=D&source=editors&ust=1697689300266706&usg=AOvVaw0RhzLPlC4OVL24t9sApp8s">steering <a href="https://www.google.com/url?q=https://arxiv.org/abs/2304.00740&sa=D&source=editors&ust=1697689300266763&usg=AOvVaw0se6VMqo4E7XkhHf0o3jY9">approaches</a> have been developed previously finding directions with stochastic gradient descent. Of particular note, one investigation used an <a href="https://www.google.com/url?q=https://arxiv.org/abs/2306.03341&sa=D&source=editors&ust=1697689300266827&usg=AOvVaw0EX0fqUv4xZSl9rcouk3wU">internal direction representing truth</a> to steer model generation.</p>
 </body>

@@ -140,6 +140,4 @@ trajectories/
 ./models/
 artifacts/
 
-*.png
 *.mp4
-*.gif
