@@ -12,3 +12,6 @@ WORKDIR /home
 
 # Set up port forwarding for Streamlit
 EXPOSE 8501
+
+# For debugging
+ENV PYTHONBREAKPOINT=pdb.set_trace

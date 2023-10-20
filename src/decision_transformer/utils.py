@@ -9,7 +9,11 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 
-from src.config import EnvironmentConfig, TransformerModelConfig
+from src.config import (
+    EnvironmentConfig,
+    TransformerModelConfig,
+    ConfigJsonEncoder,
+)
 from src.models.trajectory_transformer import (
     CloneTransformer,
     DecisionTransformer,
@@ -91,6 +95,13 @@ def parse_args():
         default=False,
         action=argparse.BooleanOptionalAction,
     )
+    parser.add_argument(
+        "--num_checkpoints",
+        type=int,
+        default=10,
+        help="how many checkpoints are stored and uploaded to wandb during training",
+    )
+
     args = parser.parse_args()
     return args
 
@@ -519,3 +530,36 @@ def get_scheduler(
         )
     else:
         raise ValueError(f"Unsupported scheduler: {scheduler_name}")
+    
+
+def store_model_checkpoint(
+        model, exp_name, offline_config, checkpoint_num, checkpoint_artifact
+) -> int:
+    checkpoint_name = f"{exp_name}_{checkpoint_num:0>2}"
+    checkpoint_path = f"models/{checkpoint_name}.pt"
+
+    store_transformer_model(checkpoint_path, model, offline_config)
+
+    checkpoint_artifact.add_file(
+        local_path=checkpoint_path, name=f"{checkpoint_name}.pt"
+    )
+
+    return checkpoint_num + 1
+
+
+def store_transformer_model(path, model, offline_config):
+    torch.save(
+        {
+            "model_state_dict": model.state_dict(),
+            "offline_config": json.dumps(
+                offline_config, cls=ConfigJsonEncoder
+            ),
+            "environment_config": json.dumps(
+                model.environment_config, cls=ConfigJsonEncoder
+            ),
+            "model_config": json.dumps(
+                model.transformer_config, cls=ConfigJsonEncoder
+            ),
+        },
+        path,
+    )
