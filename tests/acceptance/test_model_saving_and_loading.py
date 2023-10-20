@@ -75,7 +75,7 @@ def online_config() -> OnlineTrainConfig:
         ent_coef=0.25,
         vf_coef=0.5,
         max_grad_norm=2,
-        trajectory_path="trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl",
+        trajectory_path="tests/MiniGrid-Dynamic-Obstacles-8x8-Test.pkl",
     )
     return online_config
 
@@ -101,7 +101,7 @@ def transformer_config() -> TransformerModelConfig:
 @pytest.fixture()
 def offline_config() -> OfflineTrainConfig:
     offline_config = OfflineTrainConfig(
-        trajectory_path="trajectories/MiniGrid-Dynamic-Obstacles-8x8-v0bd60729d-dc0b-4294-9110-8d5f672aa82c.pkl",
+        trajectory_path="tests/MiniGrid-Dynamic-Obstacles-8x8-Test.pkl",
         batch_size=128,
         lr=0.0001,
         weight_decay=0.0,
